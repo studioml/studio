@@ -1,0 +1,6 @@
+
+numpy
+tensorflow
+
+flask
+jinja2
