@@ -9,12 +9,16 @@ except ImportError:
 class FirebaseProvider(object):
     """Data provider for Firebase."""
 
-    def __init__(self, host, key):
-        self.db = firebase.FirebaseApplication(host, key)
+    def __init__(self, host, secret, email=None):
+        auth = firebase.FirebaseAuthentication(secret, email)
+        self.db = firebase.FirebaseApplication(host, auth)
 
-    def auth(self, username):
-        # TODO: implement auth
-        pass
+    def __getitem__(self, key):
+        return self.db.get(key)
+
+    def __setitem__(self, key, value):
+        return self.db.post(key, value)
+
 
 
 class PostgresProvider(object):
