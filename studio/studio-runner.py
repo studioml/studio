@@ -8,6 +8,7 @@ import argparse
 import uuid
 import yaml
 import hashlib
+import pip
 
 from configparser import ConfigParser
 
@@ -33,6 +34,7 @@ class LocalExecutor(object):
         keyBase = 'experiments/' + experimentName + '/'
         self.db[keyBase + 'args'] = args 
         self.saveWorkspace(keyBase)
+        self.savePythonEnv(keyBase)
                
         subprocess.call(["python", filename] + args)
 
@@ -55,6 +57,11 @@ class LocalExecutor(object):
                     sha = hashlib.sha256(data).hexdigest()
                     self.db[keyBase + "workspace/" + sha + "/data"] = data
                     self.db[keyBase + "workspace/" + sha + "/name"] = name
+
+    def savePythonEnv(self, keyBase):
+            packages = [p._key + '==' + p._version for p in pip.pip.get_installed_distributions(local_only=True)]
+            self.db[keyBase + "pythonenv"] = packages
+
 
     def getDefaultConfig(self):
         return {'database': {'type':'firebase', 'url':'https://studio-ed756.firebaseio.com/', 'secret':'3NE3ONN9CJgjqhC5Ijlr9DTNXmmyladvKhD2AbLk'}}
