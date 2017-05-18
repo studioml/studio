@@ -65,8 +65,7 @@ class LocalExecutor(object):
 
 
 def main(args):
-    
-    if len(args.script_args) < 2:
+    if len(args.script_args) < 1:
         print("Usage: studio-runner myfile.py <args>")
         return
 
@@ -79,8 +78,6 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='TensorFlow Studio runner')
     parser.add_argument('script_args', metavar='N', type=str, nargs='+')
     parser.add_argument('--config', '-c', help='configuration file')
-
-
 
     args = parser.parse_args()
     main(args)
