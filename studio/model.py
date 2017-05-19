@@ -14,10 +14,16 @@ class FirebaseProvider(object):
         self.db = firebase.FirebaseApplication(host, auth)
 
     def __getitem__(self, key):
-        return self.db.get(key)
+        splitKey = key.split('/')
+        keyPath = '/'.join(splitKey[:-1])
+        keyName = splitKey[-1]
+        return self.db.get(keyPath, keyName)
 
     def __setitem__(self, key, value):
-        return self.db.post(key, value)
+        splitKey = key.split('/')
+        keyPath = '/'.join(splitKey[:-1])
+        keyName = splitKey[-1]
+        return self.db.patch(keyPath, {keyName: value})
 
 
 
