@@ -3,15 +3,16 @@
 import os
 import sys
 import subprocess
-import model
 import argparse
 import uuid
 import yaml
 import hashlib
 import pip
 import logging
-
 logging.basicConfig()
+
+import model
+import studiologging
 
 from apscheduler.schedulers.background import BackgroundScheduler
 from configparser import ConfigParser
@@ -40,17 +41,26 @@ class LocalExecutor(object):
 
         keyBase = 'experiments/' + experimentName + '/'
         self.db[keyBase + 'args'] = [filename] + args 
-        self.saveWorkspace(keyBase)
+        self.saveDir(".", keyBase + "workspace/")
         self.savePythonEnv(keyBase)
 
-        self.sched.add_job(lambda: self.saveWorkspace(keyBase + "latest_"), 'interval', minutes = self.config['saveWorkspaceFrequency'])
+
+        
 
         with open(self.config['log']['name'], self.config['log']['mode']) as outputFile:
-            p = subprocess.Popen(["python", filename] + args, stdout=outputFile, stderr=subprocess.STDOUT)
-            ptail = subprocess.Popen(["tail", "-f", self.config['log']['name']])
+            env = os.environ.copy()
+            studiologging.setup_model_directory(env, experimentName)
+
+            p = subprocess.Popen(["python", filename] + args, stdout=outputFile, stderr=subprocess.STDOUT, env=env)
+            ptail = subprocess.Popen(["tail", "-f", self.config['log']['name']]) # simple hack to show what's in the log file
+
+            self.sched.add_job(lambda: self.saveDir(env['TFSTUDIO_MODEL_PATH'], keyBase + "modeldir/"), 'interval', minutes = self.config['saveWorkspaceFrequency'])
+            self.sched.add_job(lambda: self.saveDir(".", keyBase + "workspace_latest/"), 'interval', minutes = self.config['saveWorkspaceFrequency'])
+
             p.wait()
             ptail.kill()
-
+    
+        
     def getUniqueExperimentName(self):
         return str(uuid.uuid4())
 
@@ -60,17 +70,17 @@ class LocalExecutor(object):
         assert dbConfig['type'].lower() == 'firebase'.lower()
         return model.FirebaseProvider(dbConfig['url'], dbConfig['secret'])
 
-    def saveWorkspace(self, keyBase):
+    def saveDir(self, localFolder, keyBase):
         self.logger.debug("saving workspace to keyBase = " + keyBase)
-        for root, dirs, files in os.walk(".", topdown=False):
+        for root, dirs, files in os.walk(localFolder, topdown=False):
             for name in files:
                 fullFileName = os.path.join(root, name)
                 self.logger.debug("Saving " + fullFileName)
                 with open(fullFileName) as f:
                     data = f.read()
                     sha = hashlib.sha256(data).hexdigest()
-                    self.db[keyBase + "workspace/" + sha + "/data"] = data
-                    self.db[keyBase + "workspace/" + sha + "/name"] = name
+                    self.db[keyBase + sha + "/data"] = data
+                    self.db[keyBase + sha + "/name"] = name
                     
         self.logger.debug("Done saving")
 

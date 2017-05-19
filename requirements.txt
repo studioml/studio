@@ -4,3 +4,7 @@ tensorflow
 
 flask
 jinja2
+
+python-firebase
+apscheduler
+
