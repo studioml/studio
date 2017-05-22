@@ -1,8 +1,7 @@
 import unittest
 import sys
 
-sys.path.append('../')
-from model import FirebaseProvider
+from studio.model import FirebaseProvider
 
 class FirebaseProviderTest(unittest.TestCase):
 
