@@ -3,15 +3,16 @@
 import os
 import sys
 import subprocess
-import model
 import argparse
 import uuid
 import yaml
 import hashlib
 import pip
 import logging
-
 logging.basicConfig()
+
+import model
+import studiologging as sl
 
 from apscheduler.schedulers.background import BackgroundScheduler
 from configparser import ConfigParser
@@ -23,62 +24,70 @@ class LocalExecutor(object):
     """
 
     def __init__(self, configFile=None):
-        self.config = self.getDefaultConfig()
+        self.config = self.get_default_config()
         if configFile:
             with open(configFile) as f:
                 self.config.update(yaml.load(f))
 
-        self.db = self.getDbProvider()
+        self.db = self.get_db_provider()
         self.sched = BackgroundScheduler()
         self.sched.start()
         self.logger = logging.getLogger('LocalExecutor')
         self.logger.setLevel(10)
 
     def run(self, filename, args):
-        experimentName = self.getUniqueExperimentName() 
+        experimentName = self.get_unique_experiment_name() 
         self.logger.info("Experiment name: " + experimentName)
 
         keyBase = 'experiments/' + experimentName + '/'
         self.db[keyBase + 'args'] = [filename] + args 
-        self.saveWorkspace(keyBase)
-        self.savePythonEnv(keyBase)
+        self.save_dir(".", keyBase + "workspace/")
+        self.save_python_env(keyBase)
 
-        self.sched.add_job(lambda: self.saveWorkspace(keyBase + "latest_"), 'interval', minutes = self.config['saveWorkspaceFrequency'])
+        env = os.environ.copy()
+        sl.setup_model_directory(env, experimentName)
+        modelDir = sl.get_model_directory(experimentName)
+        logPath = os.path.join(modelDir, self.config['log']['name'])
 
-        with open(self.config['log']['name'], self.config['log']['mode']) as outputFile:
-            p = subprocess.Popen(["python", filename] + args, stdout=outputFile, stderr=subprocess.STDOUT)
-            ptail = subprocess.Popen(["tail", "-f", self.config['log']['name']])
+        with open(logPath, 'w') as outputFile:
+            p = subprocess.Popen(["python", filename] + args, stdout=outputFile, stderr=subprocess.STDOUT, env=env)
+            ptail = subprocess.Popen(["tail", "-f", logPath]) # simple hack to show what's in the log file
+
+            self.sched.add_job(lambda: self.save_dir(modelDir, keyBase + "modeldir/"), 'interval', minutes = self.config['saveWorkspaceFrequency'])
+            self.sched.add_job(lambda: self.save_dir(".", keyBase + "workspace_latest/"), 'interval', minutes = self.config['saveWorkspaceFrequency'])
+
             p.wait()
             ptail.kill()
-
-    def getUniqueExperimentName(self):
+    
+        
+    def get_unique_experiment_name(self):
         return str(uuid.uuid4())
 
-    def getDbProvider(self):
+    def get_db_provider(self):
         assert 'database' in self.config.keys()
         dbConfig = self.config['database']
         assert dbConfig['type'].lower() == 'firebase'.lower()
         return model.FirebaseProvider(dbConfig['url'], dbConfig['secret'])
 
-    def saveWorkspace(self, keyBase):
+    def save_dir(self, localFolder, keyBase):
         self.logger.debug("saving workspace to keyBase = " + keyBase)
-        for root, dirs, files in os.walk(".", topdown=False):
+        for root, dirs, files in os.walk(localFolder, topdown=False):
             for name in files:
                 fullFileName = os.path.join(root, name)
                 self.logger.debug("Saving " + fullFileName)
                 with open(fullFileName) as f:
                     data = f.read()
                     sha = hashlib.sha256(data).hexdigest()
-                    self.db[keyBase + "workspace/" + sha + "/data"] = data
-                    self.db[keyBase + "workspace/" + sha + "/name"] = name
+                    self.db[keyBase + sha + "/data"] = data
+                    self.db[keyBase + sha + "/name"] = name
                     
         self.logger.debug("Done saving")
 
-    def savePythonEnv(self, keyBase):
+    def save_python_env(self, keyBase):
             packages = [p._key + '==' + p._version for p in pip.pip.get_installed_distributions(local_only=True)]
             self.db[keyBase + "pythonenv"] = packages
 
-    def getDefaultConfig(self):
+    def get_default_config(self):
         defaultConfigFile = os.path.dirname(os.path.realpath(__file__))+"/defaultConfig.yaml"
         with open(defaultConfigFile) as f:
             return yaml.load(f)
