@@ -12,7 +12,7 @@ import logging
 logging.basicConfig()
 
 import model
-import studiologging
+import studiologging as sl
 
 from apscheduler.schedulers.background import BackgroundScheduler
 from configparser import ConfigParser
@@ -44,14 +44,16 @@ class LocalExecutor(object):
         self.save_dir(".", keyBase + "workspace/")
         self.save_python_env(keyBase)
 
-        with open(self.config['log']['name'], self.config['log']['mode']) as outputFile:
-            env = os.environ.copy()
-            studiologging.setup_model_directory(env, experimentName)
+        env = os.environ.copy()
+        sl.setup_model_directory(env, experimentName)
+        modelDir = sl.get_model_directory(experimentName)
+        logPath = os.path.join(modelDir, self.config['log']['name'])
 
+        with open(logPath, 'w') as outputFile:
             p = subprocess.Popen(["python", filename] + args, stdout=outputFile, stderr=subprocess.STDOUT, env=env)
-            ptail = subprocess.Popen(["tail", "-f", self.config['log']['name']]) # simple hack to show what's in the log file
+            ptail = subprocess.Popen(["tail", "-f", logPath]) # simple hack to show what's in the log file
 
-            self.sched.add_job(lambda: self.save_dir(env['TFSTUDIO_MODEL_PATH'], keyBase + "modeldir/"), 'interval', minutes = self.config['saveWorkspaceFrequency'])
+            self.sched.add_job(lambda: self.save_dir(modelDir, keyBase + "modeldir/"), 'interval', minutes = self.config['saveWorkspaceFrequency'])
             self.sched.add_job(lambda: self.save_dir(".", keyBase + "workspace_latest/"), 'interval', minutes = self.config['saveWorkspaceFrequency'])
 
             p.wait()

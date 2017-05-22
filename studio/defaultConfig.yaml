@@ -5,6 +5,5 @@ database:
 
 log:
     name: output.log
-    mode: w
 
 saveWorkspaceFrequency: 1 #how often is workspace being saved (minutes)
