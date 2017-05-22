@@ -1,5 +1,4 @@
 from setuptools import setup
-# TODO: Write me
 
 setup(name='tfstudio',
       version = '0.0',
