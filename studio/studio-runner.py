@@ -24,28 +24,25 @@ class LocalExecutor(object):
     """
 
     def __init__(self, configFile=None):
-        self.config = self.getDefaultConfig()
+        self.config = self.get_default_config()
         if configFile:
             with open(configFile) as f:
                 self.config.update(yaml.load(f))
 
-        self.db = self.getDbProvider()
+        self.db = self.get_db_provider()
         self.sched = BackgroundScheduler()
         self.sched.start()
         self.logger = logging.getLogger('LocalExecutor')
         self.logger.setLevel(10)
 
     def run(self, filename, args):
-        experimentName = self.getUniqueExperimentName() 
+        experimentName = self.get_unique_experiment_name() 
         self.logger.info("Experiment name: " + experimentName)
 
         keyBase = 'experiments/' + experimentName + '/'
         self.db[keyBase + 'args'] = [filename] + args 
-        self.saveDir(".", keyBase + "workspace/")
-        self.savePythonEnv(keyBase)
-
-
-        
+        self.save_dir(".", keyBase + "workspace/")
+        self.save_python_env(keyBase)
 
         with open(self.config['log']['name'], self.config['log']['mode']) as outputFile:
             env = os.environ.copy()
@@ -54,23 +51,23 @@ class LocalExecutor(object):
             p = subprocess.Popen(["python", filename] + args, stdout=outputFile, stderr=subprocess.STDOUT, env=env)
             ptail = subprocess.Popen(["tail", "-f", self.config['log']['name']]) # simple hack to show what's in the log file
 
-            self.sched.add_job(lambda: self.saveDir(env['TFSTUDIO_MODEL_PATH'], keyBase + "modeldir/"), 'interval', minutes = self.config['saveWorkspaceFrequency'])
-            self.sched.add_job(lambda: self.saveDir(".", keyBase + "workspace_latest/"), 'interval', minutes = self.config['saveWorkspaceFrequency'])
+            self.sched.add_job(lambda: self.save_dir(env['TFSTUDIO_MODEL_PATH'], keyBase + "modeldir/"), 'interval', minutes = self.config['saveWorkspaceFrequency'])
+            self.sched.add_job(lambda: self.save_dir(".", keyBase + "workspace_latest/"), 'interval', minutes = self.config['saveWorkspaceFrequency'])
 
             p.wait()
             ptail.kill()
     
         
-    def getUniqueExperimentName(self):
+    def get_unique_experiment_name(self):
         return str(uuid.uuid4())
 
-    def getDbProvider(self):
+    def get_db_provider(self):
         assert 'database' in self.config.keys()
         dbConfig = self.config['database']
         assert dbConfig['type'].lower() == 'firebase'.lower()
         return model.FirebaseProvider(dbConfig['url'], dbConfig['secret'])
 
-    def saveDir(self, localFolder, keyBase):
+    def save_dir(self, localFolder, keyBase):
         self.logger.debug("saving workspace to keyBase = " + keyBase)
         for root, dirs, files in os.walk(localFolder, topdown=False):
             for name in files:
@@ -84,11 +81,11 @@ class LocalExecutor(object):
                     
         self.logger.debug("Done saving")
 
-    def savePythonEnv(self, keyBase):
+    def save_python_env(self, keyBase):
             packages = [p._key + '==' + p._version for p in pip.pip.get_installed_distributions(local_only=True)]
             self.db[keyBase + "pythonenv"] = packages
 
-    def getDefaultConfig(self):
+    def get_default_config(self):
         defaultConfigFile = os.path.dirname(os.path.realpath(__file__))+"/defaultConfig.yaml"
         with open(defaultConfigFile) as f:
             return yaml.load(f)
