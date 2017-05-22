@@ -1,4 +1,3 @@
-#!python
 
 import os
 import sys
@@ -11,8 +10,8 @@ import pip
 import logging
 logging.basicConfig()
 
-from studio import model
-from studio import studiologging as sl
+import model
+import studiologging as sl
 
 from apscheduler.schedulers.background import BackgroundScheduler
 from configparser import ConfigParser
@@ -100,16 +99,16 @@ class LocalExecutor(object):
     def __del__(self):
         self.sched.shutdown()
 
-def main(args):
-    exec_filename, other_args = args.script_args[0], args.script_args[1:]
-    # TODO: Queue the job based on arguments and only then execute.
-    LocalExecutor(args.config).run(exec_filename, other_args)
-    
-
-if __name__ == "__main__":
+def main(args=sys.argv):
     parser = argparse.ArgumentParser(description='TensorFlow Studio runner. Usage: studio-runner script <script_arguments>')
     parser.add_argument('script_args', metavar='N', type=str, nargs='+')
     parser.add_argument('--config', '-c', help='configuration file')
 
-    args = parser.parse_args()
-    main(args)
+    parsed_args = parser.parse_args(args)
+    exec_filename, other_args = parsed_args.script_args[0], parsed_args.script_args[1:]
+    # TODO: Queue the job based on arguments and only then execute.
+    LocalExecutor(parsed_args.config).run(exec_filename, other_args)
+    
+
+if __name__ == "__main__":
+    main()

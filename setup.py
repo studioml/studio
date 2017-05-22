@@ -11,7 +11,7 @@ setup(name='tfstudio',
         'tensorflow',
         'apscheduler',
         ],
-      scripts=['studio/studio-runner'],
+      scripts=['studio/scripts/studio-runner'],
       include_package_data=True,
       zip_safe = False)
 
