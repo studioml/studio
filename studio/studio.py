@@ -19,5 +19,8 @@ def experiment(key):
     return render_template("experiment_details.html", experiment=experiment)
 
 
-if __name__ == "__main__":
+def main():
     app.run(debug=True)
+
+if __name__ == "__main__":
+    main()

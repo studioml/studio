@@ -3,7 +3,6 @@ import time
 import sys
 import os
 
-sys.path.append('../../../')
 
 import studio
 

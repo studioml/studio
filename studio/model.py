@@ -21,8 +21,8 @@ class Experiment(object):
         self.pythonenv = pythonenv
 
 
-def create_experiment(filename, args):
-     key = str(uuid.uuid4())
+def create_experiment(filename, args, experiment_name = None):
+     key = str(uuid.uuid4()) if not experiment_name else experiment_name
      packages = [p._key + '==' + p._version for p in pip.pip.get_installed_distributions(local_only=True)]
      return Experiment(
         key=key, filename=filename, args=args, pythonenv=packages)
@@ -46,6 +46,12 @@ class FirebaseProvider(object):
         keyPath = '/'.join(splitKey[:-1])
         keyName = splitKey[-1]
         return self.db.patch(keyPath, {keyName: value})
+
+    def delete(self, key):
+        splitKey = key.split('/')
+        keyPath = '/'.join(splitKey[:-1])
+        keyName = splitKey[-1]
+        self.db.delete(keyPath, keyName)
 
     def add_experiment(self, experiment):
         self.db.patch(
@@ -90,6 +96,9 @@ class PostgresProvider(object):
         raise NotImplementedError()
 
     def get_user_experiments(self, user):
+        raise NotImplementedError()
+
+    def delete(self, key):
         raise NotImplementedError()
 
 

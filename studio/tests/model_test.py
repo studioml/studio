@@ -2,8 +2,7 @@ import unittest
 import inspect
 import sys
 
-sys.path.append('../')
-import model
+from studio import model
 
 
 def get_methods(cls):
