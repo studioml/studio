@@ -42,6 +42,7 @@ class RunnerTest(unittest.TestCase):
 
     def checkWorkspace(self, db, keyBase):
         dbFiles = db[keyBase]
+        savedFiles = []
         for k in dbFiles.keys():
             savedData = zlib.decompress(base64.b64decode(dbFiles[k]['data']))
             self.assertTrue(k == hashlib.sha256(savedData).hexdigest())
@@ -49,6 +50,12 @@ class RunnerTest(unittest.TestCase):
             with open(savedName, 'rb') as f:
                 localData = f.read()
                 self.assertEquals(localData, savedData)
+            savedFiles.append(savedName)
+        
+        savedFilesSet = set(savedFiles)
+        localFilesSet = set(os.listdir('.'))
+
+        self.assertTrue(len(savedFilesSet) == len(savedFilesSet | localFilesSet))
 
 
        
