@@ -25,6 +25,12 @@ class FirebaseProvider(object):
         keyName = splitKey[-1]
         return self.db.patch(keyPath, {keyName: value})
 
+    def delete(self, key):
+        splitKey = key.split('/')
+        keyPath = '/'.join(splitKey[:-1])
+        keyName = splitKey[-1]
+        self.db.delete(keyPath, keyName)
+
 
 
 class PostgresProvider(object):

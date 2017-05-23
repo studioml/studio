@@ -1,4 +1,3 @@
-#!/usr/bin/python
 
 import os
 import sys
@@ -8,7 +7,9 @@ import uuid
 import yaml
 import hashlib
 import pip
+import base64
 import logging
+import zlib
 logging.basicConfig()
 
 import model
@@ -30,18 +31,17 @@ class LocalExecutor(object):
                 self.config.update(yaml.load(f))
 
         self.db = self.get_db_provider()
-        self.sched = BackgroundScheduler()
-        self.sched.start()
         self.logger = logging.getLogger('LocalExecutor')
         self.logger.setLevel(10)
 
-    def run(self, filename, args):
-        experimentName = self.get_unique_experiment_name() 
-        self.logger.info("Experiment name: " + experimentName)
+    def run(self, filename, args, experimentName = None, saveWorkspace = True):
+        if not experimentName:
+            experimentName = self.get_unique_experiment_name()
 
+        self.logger.info("Experiment name: " + experimentName)
         keyBase = 'experiments/' + experimentName + '/'
-        self.db[keyBase + 'args'] = [filename] + args 
-        self.save_dir(".", keyBase + "workspace/")
+        self.db[keyBase + 'args'] = [filename] + args
+
         self.save_python_env(keyBase)
 
         env = os.environ.copy()
@@ -49,15 +49,33 @@ class LocalExecutor(object):
         modelDir = sl.get_model_directory(experimentName)
         logPath = os.path.join(modelDir, self.config['log']['name'])
 
+        def save_workspace(keySuffix='workspace_latest/'):
+            if saveWorkspace:
+                self.save_dir('.', keyBase + keySuffix)
+
+        def save_modeldir():
+            self.save_dir(modelDir, keyBase + "modeldir/")
+        
+        save_workspace('workspace/')
+        sched = BackgroundScheduler()
+        sched.start()
+
         with open(logPath, 'w') as outputFile:
             p = subprocess.Popen(["python", filename] + args, stdout=outputFile, stderr=subprocess.STDOUT, env=env)
             ptail = subprocess.Popen(["tail", "-f", logPath]) # simple hack to show what's in the log file
 
-            self.sched.add_job(lambda: self.save_dir(modelDir, keyBase + "modeldir/"), 'interval', minutes = self.config['saveWorkspaceFrequency'])
-            self.sched.add_job(lambda: self.save_dir(".", keyBase + "workspace_latest/"), 'interval', minutes = self.config['saveWorkspaceFrequency'])
+            sched.add_job(save_modeldir,  'interval', minutes = self.config['saveWorkspaceFrequency'])
+            sched.add_job(save_workspace, 'interval', minutes = self.config['saveWorkspaceFrequency'])
+            
+            try:
+                p.wait()
+            finally:
+                ptail.kill()
 
-            p.wait()
-            ptail.kill()
+                self.save_dir(modelDir, keyBase + 'modeldir/')
+                save_workspace()
+                sched.shutdown()
+                
     
         
     def get_unique_experiment_name(self):
@@ -75,10 +93,10 @@ class LocalExecutor(object):
             for name in files:
                 fullFileName = os.path.join(root, name)
                 self.logger.debug("Saving " + fullFileName)
-                with open(fullFileName) as f:
+                with open(fullFileName, 'rb') as f:
                     data = f.read()
                     sha = hashlib.sha256(data).hexdigest()
-                    self.db[keyBase + sha + "/data"] = data
+                    self.db[keyBase + sha + "/data"] = base64.b64encode(zlib.compress(bytes(data)))
                     self.db[keyBase + sha + "/name"] = name
                     
         self.logger.debug("Done saving")
@@ -92,19 +110,16 @@ class LocalExecutor(object):
         with open(defaultConfigFile) as f:
             return yaml.load(f)
 
-    def __del__(self):
-        self.sched.shutdown()
-
-def main(args):
-    exec_filename, other_args = args.script_args[0], args.script_args[1:]
-    # TODO: Queue the job based on arguments and only then execute.
-    LocalExecutor(args.config).run(exec_filename, other_args)
-    
-
-if __name__ == "__main__":
+def main(args=sys.argv):
     parser = argparse.ArgumentParser(description='TensorFlow Studio runner. Usage: studio-runner script <script_arguments>')
     parser.add_argument('script_args', metavar='N', type=str, nargs='+')
     parser.add_argument('--config', '-c', help='configuration file')
 
-    args = parser.parse_args()
-    main(args)
+    parsed_args = parser.parse_args(args)
+    exec_filename, other_args = parsed_args.script_args[0], parsed_args.script_args[1:]
+    # TODO: Queue the job based on arguments and only then execute.
+    LocalExecutor(parsed_args.config).run(exec_filename, other_args)
+    
+
+if __name__ == "__main__":
+    main()
