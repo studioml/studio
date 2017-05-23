@@ -12,21 +12,21 @@ from studio.runner import LocalExecutor
 class RunnerTest(unittest.TestCase):
     def test_LocalExecutor_run(self):
         executor = LocalExecutor()
-        myPath = os.path.dirname(os.path.realpath(__file__))
-        os.chdir(myPath)
+        my_path = os.path.dirname(os.path.realpath(__file__))
+        os.chdir(my_path)
 
-        testScript = 'tf_hello_world.py'
-        experimentName = 'experimentHelloWorld' 
-        executor.db.delete('experiments/' + experimentName)
-        executor.run(testScript, [], experimentName, saveWorkspace=True)
+        test_script = 'tf_hello_world.py'
+        experiment_name = 'experimentHelloWorld' 
+        executor.db.delete('experiments/' + experiment_name)
+        executor.run(test_script, [], experiment_name = experiment_name, save_workspace=True)
  
         # test saved arguments
-        savedArgs = executor.db['experiments/' + experimentName + '/args']
-        self.assertTrue(len(savedArgs) == 1)
-        self.assertTrue(savedArgs[0] == testScript)
+        saved_args = executor.db['experiments/' + experiment_name + '/args']
+        self.assertTrue(len(saved_args) == 1)
+        self.assertTrue(saved_args[0] == test_script)
 
         # test saved stdout
-        modelDir = executor.db['experiments/' + experimentName + '/modeldir']
+        modelDir = executor.db['experiments/' + experiment_name + '/modeldir']
         for k in modelDir.keys():
             if modelDir[k]['name'] == 'output.log':
                 data = zlib.decompress(base64.b64decode(modelDir[k]['data']))
@@ -36,11 +36,11 @@ class RunnerTest(unittest.TestCase):
                 self.assertEquals(splitData[-1],'[ 2.  6.]')
 
         
-        self.checkWorkspace(executor.db, 'experiments/' + experimentName + '/workspace/')
-        self.checkWorkspace(executor.db, 'experiments/' + experimentName + '/workspace_latest/')
+        self.check_workspace(executor.db, 'experiments/' + experiment_name + '/workspace/')
+        self.check_workspace(executor.db, 'experiments/' + experiment_name + '/workspace_latest/')
 
 
-    def checkWorkspace(self, db, keyBase):
+    def check_workspace(self, db, keyBase):
         dbFiles = db[keyBase]
         savedFiles = []
         for k in dbFiles.keys():

@@ -1,9 +1,12 @@
+configparser
 
 numpy
 tensorflow
 
 flask
 jinja2
+
+pyyaml
 
 python-firebase
 apscheduler

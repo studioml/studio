@@ -9,8 +9,10 @@ setup(name='tfstudio',
       install_requires = [
         'tensorflow',
         'apscheduler',
+        'flask',
+        'jinja2'
         ],
-      scripts=['studio/scripts/studio-runner'],
+      scripts=['studio/scripts/studio-runner', 'studio/scripts/studio'],
       include_package_data=True,
       zip_safe = False)
 
