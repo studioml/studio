@@ -4,18 +4,17 @@ import os
 import sys
 import subprocess
 import argparse
-import uuid
 import yaml
 import hashlib
-import pip
 import logging
 logging.basicConfig()
 
-import model
-import studiologging as sl
-
 from apscheduler.schedulers.background import BackgroundScheduler
 from configparser import ConfigParser
+
+import fs_tracker
+import model
+
 
 class LocalExecutor(object):
     """Runs job while capturing environment and logging results.
@@ -23,51 +22,41 @@ class LocalExecutor(object):
     TODO: capturing state and results.
     """
 
-    def __init__(self, configFile=None):
-        self.config = self.get_default_config()
-        if configFile:
-            with open(configFile) as f:
+    def __init__(self, config_file=None):
+        self.config = model.get_default_config()
+        if config_file:
+            with open(config_file) as f:
                 self.config.update(yaml.load(f))
 
-        self.db = self.get_db_provider()
+        self.db = model.get_db_provider(self.config)
         self.sched = BackgroundScheduler()
         self.sched.start()
         self.logger = logging.getLogger('LocalExecutor')
         self.logger.setLevel(10)
 
     def run(self, filename, args):
-        experimentName = self.get_unique_experiment_name() 
-        self.logger.info("Experiment name: " + experimentName)
+        experiment = model.create_experiment(
+            filename=filename, args=args)
+        self.logger.info("Experiment name: " + experiment.key)
 
-        keyBase = 'experiments/' + experimentName + '/'
-        self.db[keyBase + 'args'] = [filename] + args 
+        keyBase = 'experiments/' + experiment.key + '/'
+        self.db.add_experiment(experiment)
         self.save_dir(".", keyBase + "workspace/")
-        self.save_python_env(keyBase)
 
         env = os.environ.copy()
-        sl.setup_model_directory(env, experimentName)
-        modelDir = sl.get_model_directory(experimentName)
-        logPath = os.path.join(modelDir, self.config['log']['name'])
+        fs_tracker.setup_model_directory(env, experiment.key)
+        model_dir = fs_tracker.get_model_directory(experiment.key)
+        log_path = os.path.join(model_dir, self.config['log']['name'])
 
-        with open(logPath, 'w') as outputFile:
-            p = subprocess.Popen(["python", filename] + args, stdout=outputFile, stderr=subprocess.STDOUT, env=env)
-            ptail = subprocess.Popen(["tail", "-f", logPath]) # simple hack to show what's in the log file
+        with open(log_path, 'w') as output_file:
+            p = subprocess.Popen(["python", filename] + args, stdout=output_file, stderr=subprocess.STDOUT, env=env)
+            ptail = subprocess.Popen(["tail", "-f", log_path]) # simple hack to show what's in the log file
 
-            self.sched.add_job(lambda: self.save_dir(modelDir, keyBase + "modeldir/"), 'interval', minutes = self.config['saveWorkspaceFrequency'])
+            self.sched.add_job(lambda: self.save_dir(model_dir, keyBase + "modeldir/"), 'interval', minutes = self.config['saveWorkspaceFrequency'])
             self.sched.add_job(lambda: self.save_dir(".", keyBase + "workspace_latest/"), 'interval', minutes = self.config['saveWorkspaceFrequency'])
 
             p.wait()
             ptail.kill()
-    
-        
-    def get_unique_experiment_name(self):
-        return str(uuid.uuid4())
-
-    def get_db_provider(self):
-        assert 'database' in self.config.keys()
-        dbConfig = self.config['database']
-        assert dbConfig['type'].lower() == 'firebase'.lower()
-        return model.FirebaseProvider(dbConfig['url'], dbConfig['secret'])
 
     def save_dir(self, localFolder, keyBase):
         self.logger.debug("saving workspace to keyBase = " + keyBase)
@@ -80,26 +69,18 @@ class LocalExecutor(object):
                     sha = hashlib.sha256(data).hexdigest()
                     self.db[keyBase + sha + "/data"] = data
                     self.db[keyBase + sha + "/name"] = name
-                    
+
         self.logger.debug("Done saving")
-
-    def save_python_env(self, keyBase):
-            packages = [p._key + '==' + p._version for p in pip.pip.get_installed_distributions(local_only=True)]
-            self.db[keyBase + "pythonenv"] = packages
-
-    def get_default_config(self):
-        defaultConfigFile = os.path.dirname(os.path.realpath(__file__))+"/defaultConfig.yaml"
-        with open(defaultConfigFile) as f:
-            return yaml.load(f)
 
     def __del__(self):
         self.sched.shutdown()
+
 
 def main(args):
     exec_filename, other_args = args.script_args[0], args.script_args[1:]
     # TODO: Queue the job based on arguments and only then execute.
     LocalExecutor(args.config).run(exec_filename, other_args)
-    
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='TensorFlow Studio runner. Usage: studio-runner script <script_arguments>')

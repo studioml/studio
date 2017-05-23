@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <h1>{{ experiment.key }}</h1>
+
+    <p>Filename: {{ experiment.filename }}</p>
+    <p>Args: {{ experiment.args }}</p>
+    <p>Dependencies:</p>
+    <pre>
+    {{ experiment.pythonenv }}
+    </pre>
+{% endblock %}
