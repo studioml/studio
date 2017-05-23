@@ -3,8 +3,9 @@ import time
 import sys
 import os
 
-sys.path.append('../../')
-import studiologging
+sys.path.append('../../../')
+
+import studio
 
 s = tf.Session()
 
@@ -19,10 +20,7 @@ logger.setLevel(10)
 
 while True:
     logger.info(s.run(y))
-    with open(studiologging.get_model_directory() + "a.txt", "w") as f:
+    with open(studio.get_model_directory() + "a.txt", "w") as f:
         f.write('111')
 
     time.sleep(10)
-
-
-
