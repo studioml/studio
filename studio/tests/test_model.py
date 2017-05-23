@@ -1,5 +1,6 @@
 import unittest
 import sys
+import uuid
 
 from studio.model import FirebaseProvider
 
@@ -10,13 +11,17 @@ class FirebaseProviderTest(unittest.TestCase):
         dbSecret = "3NE3ONN9CJgjqhC5Ijlr9DTNXmmyladvKhD2AbLk"
         return FirebaseProvider(dbUrl, dbSecret)
 
-    def testGet(self):
+    def testGetSet(self):
         fb = self.getFirebaseProvider()
-        response = fb.db.get("test/hello", None)
+        response = fb["test/hello"]
         self.assertTrue(response, "world")
+        
+        randomStr = str(uuid.uuid4())
+        keyPath = 'test/randomKey'
+        fb[keyPath] = randomStr
 
-        response = fb.db.get("test/", "hello")
-        self.assertTrue(response, "world")
+        self.assertTrue(fb[keyPath] == randomStr)
+        fb.delete(keyPath)
 
 
 
