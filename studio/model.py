@@ -159,7 +159,7 @@ def get_default_config():
     print(os.path.dirname(os.path.realpath(__file__)))
     config_file = os.path.join(
         os.path.dirname(os.path.realpath(__file__)),
-        "defaultConfig.yaml")
+        "default_config.yaml")
     with open(config_file) as f:
         return yaml.load(f)
 

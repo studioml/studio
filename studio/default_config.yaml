@@ -1,7 +1,5 @@
 database: 
     type: FireBase
-    #url: https://studio-ed756.firebaseio.com/
-    #secret: 3NE3ONN9CJgjqhC5Ijlr9DTNXmmyladvKhD2AbLk
 
     apiKey: AIzaSyCLQbp5X2B4SWzBw-sz9rUnGHNSdMl0Yx8
     authDomain: studio-ed756.firebaseapp.com
