@@ -123,12 +123,12 @@ class FirebaseProvider(object):
         )
 
     def get_experiment(self, key):
-        data = self.__getitem__(self._get_experiments_keybase(), key)
+        data = self.__getitem__(self._get_experiments_keybase() + key)
         return self._experiment(key, data)
 
     def get_user_experiments(self, user):
         # TODO: Add users and filtering
-        values = self.db.get(".", "experiments")
+        values = self[self._get_experiments_keybase()]
         experiments = []
         for key, data in values.iteritems():
             experiments.append(self._experiment(key, data))

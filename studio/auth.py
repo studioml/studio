@@ -39,7 +39,7 @@ class FirebaseAuth(object):
         return self.user['idToken']
 
     def get_user_id(self):
-        return self.user['localId']
+        return self.user['localId'] if 'localId' in self.user.keys() else self.user['userId']
 
     def __del__(self):
         self.sched.shutdown()
