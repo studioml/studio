@@ -9,6 +9,8 @@ database:
     projectId: studio-ed756
     storageBucket: studio-ed756.appspot.com
     messagingSenderId: 81790704397
+
+    guest: true
                                                                     
 log:
     name: output.log

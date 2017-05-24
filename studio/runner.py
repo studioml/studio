@@ -40,7 +40,6 @@ class LocalExecutor(object):
             filename=filename, args=args, experiment_name = experiment_name)
         self.logger.info("Experiment name: " + experiment.key)
 
-        key_base = 'experiments/' + experiment.key + '/'
         self.db.add_experiment(experiment)
 
         env = os.environ.copy()
@@ -48,50 +47,24 @@ class LocalExecutor(object):
         model_dir = fs_tracker.get_model_directory(experiment.key)
         log_path = os.path.join(model_dir, self.config['log']['name'])
 
-        def save_workspace(keySuffix='workspace_latest/'):
-            if save_workspace:
-                self.save_dir('.', key_base + keySuffix)
-
-        def save_modeldir():
-            self.save_dir(model_dir, key_base + "modeldir/")
-        
-        save_workspace('workspace/')
         sched = BackgroundScheduler()
         sched.start()
-
-
 
         with open(log_path, 'w') as output_file:
             p = subprocess.Popen(["python", filename] + args, stdout=output_file, stderr=subprocess.STDOUT, env=env)
             ptail = subprocess.Popen(["tail", "-f", log_path]) # simple hack to show what's in the log file
 
-            sched.add_job(save_modeldir,  'interval', minutes = self.config['saveWorkspaceFrequency'])
-            sched.add_job(save_workspace, 'interval', minutes = self.config['saveWorkspaceFrequency'])
+            sched.add_job(lambda: self.db.checkpoint_experiment(experiment),  'interval', minutes = self.config['saveWorkspaceFrequency'])
             
             try:
                 p.wait()
             finally:
                 ptail.kill()
 
-                self.save_dir(model_dir, key_base + 'modeldir/')
-                save_workspace()
+                self.db.checkpoint_experiment(experiment)
                 sched.shutdown()
                 
        
-    def save_dir(self, localFolder, key_base):
-        self.logger.debug("saving workspace to key_base = " + key_base)
-        for root, dirs, files in os.walk(localFolder, topdown=False):
-            for name in files:
-                fullFileName = os.path.join(root, name)
-                self.logger.debug("Saving " + fullFileName)
-                with open(fullFileName, 'rb') as f:
-                    data = f.read()
-                    sha = hashlib.sha256(data).hexdigest()
-                    self.db[key_base + sha + "/data"] = base64.b64encode(zlib.compress(bytes(data)))
-                    self.db[key_base + sha + "/name"] = name
-
-        self.logger.debug("Done saving")
-
 def main(args=sys.argv):
     parser = argparse.ArgumentParser(description='TensorFlow Studio runner. Usage: studio-runner script <script_arguments>')
     parser.add_argument('script_args', metavar='N', type=str, nargs='+')
