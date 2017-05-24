@@ -1,0 +1,14 @@
+database: 
+    type: FireBase
+
+    apiKey: AIzaSyCLQbp5X2B4SWzBw-sz9rUnGHNSdMl0Yx8
+    authDomain: studio-ed756.firebaseapp.com
+    databaseURL: https://studio-ed756.firebaseio.com
+    projectId: studio-ed756
+    storageBucket: studio-ed756.appspot.com
+    messagingSenderId: 81790704397
+                                                                    
+log:
+    name: output.log
+
+saveWorkspaceFrequency: 1 #how often is workspace being saved (minutes)

@@ -1,9 +1,10 @@
 import unittest
 import inspect
 import sys
+import yaml
+import uuid
 
-sys.path.append('../')
-import model
+from studio import model
 
 
 def get_methods(cls):
@@ -20,17 +21,23 @@ class ProvidersTest(unittest.TestCase):
         self.assertEqual(firebase_methods, postgres_methods)
 
     def get_firebase_provider(self):
-        dbUrl = "https://studio-ed756.firebaseio.com/"
-        dbSecret = "3NE3ONN9CJgjqhC5Ijlr9DTNXmmyladvKhD2AbLk"
-        return model.FirebaseProvider(dbUrl, dbSecret)
+        config_file = 'test_config.yaml'
+        with open(config_file) as f:
+            config = yaml.load(f)
+       
+        return model.FirebaseProvider(config['database'])
 
-    def test_firebase_get(self):
+    def test_get_set(self):
         fb = self.get_firebase_provider()
-        response = fb.db.get("test/hello", None)
+        response = fb["test/hello"]
         self.assertTrue(response, "world")
+        
+        randomStr = str(uuid.uuid4())
+        keyPath = 'test/randomKey'
+        fb[keyPath] = randomStr
 
-        response = fb.db.get("test/", "hello")
-        self.assertTrue(response, "world")
+        self.assertTrue(fb[keyPath] == randomStr)
+        fb._delete(keyPath)
 
 
 if __name__ == "__main__":

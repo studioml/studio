@@ -18,6 +18,16 @@ def experiment(key):
     experiment = db_provider.get_experiment(key)
     return render_template("experiment_details.html", experiment=experiment)
 
+@app.route('/auth')
+def auth():
+    #db_provider = model.get_db_provider()
+    #experiments = db_provider.get_user_experiments('me')
+    return render_template("auth.html")
+
+
+
+def main():
+    app.run(debug=True)
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    main()
