@@ -3,6 +3,7 @@ import inspect
 import sys
 import yaml
 import uuid
+import os
 
 from studio import model
 
@@ -21,7 +22,7 @@ class ProvidersTest(unittest.TestCase):
         self.assertEqual(firebase_methods, postgres_methods)
 
     def get_firebase_provider(self):
-        config_file = 'test_config.yaml'
+        config_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'test_config.yaml')
         with open(config_file) as f:
             config = yaml.load(f)
        

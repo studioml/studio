@@ -27,10 +27,12 @@ class FirebaseAuth(object):
             email = raw_input('Firebase token is not found or expired! You need to re-login. \nemail:')
             password = getpass.getpass('password:')
             self.user = self.firebase.auth().sign_in_with_email_and_password(email, password)
+            self.user['email'] = email
         else:
             with open(api_key, 'r') as f:
-                self.user = json.load(f)
-            self.user = self.firebase.auth().refresh(self.user['refreshToken'])
+                olduser = json.load(f)
+            self.user = self.firebase.auth().refresh(olduser['refreshToken'])
+            self.user['email'] = olduser['email']
 
         with open(api_key, 'w') as f:
             json.dump(self.user, f)
@@ -40,6 +42,11 @@ class FirebaseAuth(object):
 
     def get_user_id(self):
         return self.user['localId'] if 'localId' in self.user.keys() else self.user['userId']
+
+    def get_user_email(self):
+        # we could also use the get_account_info 
+        # print self.firebase.auth().get_account_info(self.get_token())
+        return self.user['email']
 
     def __del__(self):
         self.sched.shutdown()

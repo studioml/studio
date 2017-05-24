@@ -2,11 +2,21 @@
 
 {% block content %}
     <h1>{{ experiment.key }}</h1>
-
+    {% if experiment.project %}
+        <p>Project: {{ experiment.project }}</p>
+    {% endif %}
     <p>Filename: {{ experiment.filename }}</p>
     <p>Args: {{ experiment.args }}</p>
     <p>Dependencies:</p>
     <pre>
     {{ experiment.pythonenv }}
     </pre>
+    <p>Status: {{ experiment.status }}</p>
+    <p>Creation time: {{ experiment.time_to_string(experiment.time_added) }}</p>
+    {% if experiment.status == 'finished' or experiment.status == 'running' %}
+        <p>Start time: {{ experiment.time_to_string(experiment.time_started) }}</p>
+    {% endif %}
+    {% if experiment.status == 'finished' %}
+        <p>Finish time: {{ experiment.time_to_string(experiment.time_finished) }}</p>
+    {% endif %}
 {% endblock %}

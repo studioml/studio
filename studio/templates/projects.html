@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <div class="container">
+        <h1>Projects</h1>
+        <table class="table table-striped">
+            {% for project in projects.keys() %}
+                <tr>
+                    <td><a href="/project/{{ project }}">{{ project }}</a></td>
+                    <td>{{ project }}</td>
+                </tr>
+            {% endfor %}
+        </table>
+    </div>
+{% endblock %}
