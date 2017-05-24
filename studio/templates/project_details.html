@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <div class="container">
+            <h1>Project {{ project_name }} </h1>
+        <table class="table table-striped">
+            {% for experiment in project_dict.keys() %}
+                <tr>
+                    <td><a href="/experiment/{{ experiment }}">{{ experiment }}</a></td>
+                    <td>{{ experiment }}</td>
+                </tr>
+            {% endfor %}
+        </table>
+    </div>
+{% endblock %}

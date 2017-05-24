@@ -10,6 +10,7 @@ import logging
 import hashlib
 import base64
 import zlib
+import time
 
 import fs_tracker
 from auth import FirebaseAuth
@@ -17,20 +18,37 @@ from auth import FirebaseAuth
 class Experiment(object):
     """Experiment information."""
 
-    def __init__(self, key, filename, args, pythonenv, workspace_path='.', model_dir=None):
+    def __init__(self, key, filename, args, pythonenv, 
+                    project=None,
+                    workspace_path='.', 
+                    model_dir=None, 
+                    status='waiting', 
+                    time_added=None,
+                    time_started=None,
+                    time_last_checkpoint=None,
+                    time_finished=None):
         self.key = key
         self.filename = filename
-        self.args = args
+        self.args = args if args else []
         self.pythonenv = pythonenv
+        self.project = project
         self.workspace_path = workspace_path
         self.model_dir = model_dir if model_dir else fs_tracker.get_model_directory(key)
+        self.status = status
+        self.time_added = time_added
+        self.time_started = time_started
+        self.time_last_checkpoint = time_last_checkpoint
+        self.time_finished = time_finished
+
+    def time_to_string(self, timestamp):
+        return time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(timestamp))
     
 
-def create_experiment(filename, args, experiment_name = None):
+def create_experiment(filename, args, experiment_name=None, project=None):
      key = str(uuid.uuid4()) if not experiment_name else experiment_name
      packages = [p._key + '==' + p._version for p in pip.pip.get_installed_distributions(local_only=True)]
      return Experiment(
-        key=key, filename=filename, args=args, pythonenv=packages)
+        key=key, filename=filename, args=args, pythonenv=packages, project=project)
 
 
 class FirebaseProvider(object):
@@ -45,8 +63,10 @@ class FirebaseProvider(object):
 
         if not guest:
             self.auth = FirebaseAuth(app)
+            self.__setitem__(self._get_user_keybase() + "email", self.auth.get_user_email())
         else:
             self.auth = None
+
 
         #self.db = firebase.FirebaseApplication(host, auth)
 
@@ -78,25 +98,51 @@ class FirebaseProvider(object):
         else:
             dbobj.remove()
 
+    def _get_user_keybase(self, userid=None):
+        if not userid:
+            if not self.auth:
+                userid = 'guest'
+            else:
+                userid = self.auth.get_user_id()
 
-    def _get_experiments_keybase(self):
-            return "users/" + (self.auth.get_user_id() if self.auth else 'guest') + "/experiments/"
+        return "users/" + userid + "/" 
+
+    def _get_experiments_keybase(self, userid=None):
+        return self._get_user_keybase(userid) + "experiments/"
+    
+    def _get_projects_keybase(self):
+        return "projects/"
          
-
 
     def add_experiment(self, experiment):
         self._delete(self._get_experiments_keybase() + experiment.key)
-        self.__setitem__(self._get_experiments_keybase() + experiment.key,
-            {
-                "args": [experiment.filename] + experiment.args,
-                "pythonenv": experiment.pythonenv
-            })
+        experiment.time_added = time.time()
+        experiment.status = 'waiting'
+        self.__setitem__(self._get_experiments_keybase() + experiment.key, experiment.__dict__)   
         self._save_dir(experiment.workspace_path, self._get_experiments_keybase() + experiment.key + "/workspace/")
-     
+
+        if experiment.project and self.auth:
+            self.__setitem__(self._get_projects_keybase() + experiment.project + "/" + experiment.key + "/userId",  self.auth.get_user_id())
+
+    def start_experiment(self, experiment):
+        experiment.time_started = time.time()
+        experiment.status = 'running'
+        self.__setitem__(self._get_experiments_keybase() + experiment.key + "/status", "running")
+        self.__setitem__(self._get_experiments_keybase() + experiment.key + "/time_started", experiment.time_started)
+        self.checkpoint_experiment(experiment)
+        
+    def finish_experiment(self, experiment):
+        self.checkpoint_experiment(experiment)
+        experiment.status = 'finished'
+        experiment.time_finished = time.time()
+        self.__setitem__(self._get_experiments_keybase() + experiment.key + "/status", "finished")
+        self.__setitem__(self._get_experiments_keybase() + experiment.key + "/time_finished", experiment.time_finished)
+      
 
     def checkpoint_experiment(self, experiment):
         self._save_dir(experiment.workspace_path, self._get_experiments_keybase() + experiment.key + "/workspace_latest/")
         self._save_dir(experiment.model_dir, self._get_experiments_keybase() + experiment.key + "/modeldir/")
+        self.__setitem__(self._get_experiments_keybase() + experiment.key + "/time_last_checkpoint", time.time())
 
     def _save_dir(self, local_folder, key_base):
         self.logger.debug("saving local folder %s to key_base %s " % (local_folder, key_base))
@@ -113,26 +159,34 @@ class FirebaseProvider(object):
         self.logger.debug("Done saving")
 
 
-
     def _experiment(self, key, data):
         return Experiment(
             key=key,
-            filename=data['args'][0],
-            args=data['args'][1:],
-            pythonenv=data['pythonenv']
+            filename=data['filename'],
+            args=data['args'] if 'args' in data.keys() else None,
+            pythonenv=data['pythonenv'],
+            project=data['project'] if 'project' in data.keys() else None,
+            status=data['status'],
+            time_added=data['time_added'],
+            time_started=data['time_started'] if 'time_started' in data.keys() else None,
+            time_last_checkpoint=data['time_last_checkpoint'] if 'time_last_checkpoint' in data.keys() else None,
+            time_finished=data['time_finished'] if 'time_finished' in data.keys() else None
         )
 
     def get_experiment(self, key):
         data = self.__getitem__(self._get_experiments_keybase() + key)
         return self._experiment(key, data)
 
-    def get_user_experiments(self, user):
+    def get_user_experiments(self, userid=None):
         # TODO: Add users and filtering
-        values = self[self._get_experiments_keybase()]
+        values = self[self._get_experiments_keybase(userid)]
         experiments = []
         for key, data in values.iteritems():
             experiments.append(self._experiment(key, data))
         return experiments
+    
+    def get_projects(self):
+        return self.__getitem__(self._get_projects_keybase())
 
 
 class PostgresProvider(object):
@@ -145,10 +199,19 @@ class PostgresProvider(object):
     def add_experiment(self, experiment):
         raise NotImplementedError()
 
+    def start_experiment(self, experiment):
+        raise NotImplementedError()
+
+    def finish_experiment(self, experiment):
+        raise NotImplementedError()
+
     def get_experiment(self, key):
         raise NotImplementedError()
 
     def get_user_experiments(self, user):
+        raise NotImplementedError()
+
+    def get_projects(self):
         raise NotImplementedError()
 
     def checkpoint_experiment(self, experiment):
@@ -156,7 +219,6 @@ class PostgresProvider(object):
 
 
 def get_default_config():
-    print(os.path.dirname(os.path.realpath(__file__)))
     config_file = os.path.join(
         os.path.dirname(os.path.realpath(__file__)),
         "default_config.yaml")

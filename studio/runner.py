@@ -35,12 +35,13 @@ class LocalExecutor(object):
         self.logger.debug("Config: ")
         self.logger.debug(self.config)
 
-    def run(self, filename, args, experiment_name = None,  save_workspace = True):
+    def run(self, filename, args, experiment_name=None, project=None):
         experiment = model.create_experiment(
-            filename=filename, args=args, experiment_name = experiment_name)
+            filename=filename, args=args, experiment_name=experiment_name, project=project)
         self.logger.info("Experiment name: " + experiment.key)
 
         self.db.add_experiment(experiment)
+        self.db.start_experiment(experiment)
 
         env = os.environ.copy()
         fs_tracker.setup_model_directory(env, experiment.key)
@@ -60,20 +61,20 @@ class LocalExecutor(object):
                 p.wait()
             finally:
                 ptail.kill()
-
-                self.db.checkpoint_experiment(experiment)
+                self.db.finish_experiment(experiment)
                 sched.shutdown()
                 
        
 def main(args=sys.argv):
     parser = argparse.ArgumentParser(description='TensorFlow Studio runner. Usage: studio-runner script <script_arguments>')
-    parser.add_argument('script_args', metavar='N', type=str, nargs='+')
-    parser.add_argument('--config', '-c', help='configuration file')
+    parser.add_argument('--config', help='configuration file')
+    parser.add_argument('--project', help='name of the project', default=None)
+    parser.add_argument('--experiment', help='name of the experiment. If none provided, random uuid will be generated', default=None)
 
-    parsed_args = parser.parse_args(args)
-    exec_filename, other_args = parsed_args.script_args[1], parsed_args.script_args[2:]
+    parsed_args,script_args = parser.parse_known_args(args)
+    exec_filename, other_args = script_args[1], script_args[2:]
     # TODO: Queue the job based on arguments and only then execute.
-    LocalExecutor(parsed_args.config).run(exec_filename, other_args)
+    LocalExecutor(parsed_args.config).run(exec_filename, other_args, experiment_name=parsed_args.experiment, project=parsed_args.project)
     
 if __name__ == "__main__":
     main()

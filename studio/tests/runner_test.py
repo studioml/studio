@@ -10,19 +10,21 @@ from studio.runner import LocalExecutor
 
 class RunnerTest(unittest.TestCase):
     def test_LocalExecutor_run(self):
-        executor = LocalExecutor('test_config.yaml')
         my_path = os.path.dirname(os.path.realpath(__file__))
         os.chdir(my_path)
+        executor = LocalExecutor('test_config.yaml')
+
 
         test_script = 'tf_hello_world.py'
         experiment_name = 'experimentHelloWorld' 
         keybase = "users/guest/experiments/" + experiment_name
-        executor.run(test_script, [], experiment_name = experiment_name, save_workspace=True)
+        executor.run(test_script, ['arg0'], experiment_name = experiment_name)
  
         # test saved arguments
         saved_args = executor.db[keybase + '/args']
         self.assertTrue(len(saved_args) == 1)
-        self.assertTrue(saved_args[0] == test_script)
+        self.assertTrue(saved_args[0] == 'arg0')
+        self.assertTrue(executor.db[keybase + '/filename'] == test_script)
 
         # test saved stdout
         model_dir = executor.db[keybase + '/modeldir']

@@ -8,7 +8,7 @@ import model
 @app.route('/')
 def dashboard():
     db_provider = model.get_db_provider()
-    experiments = db_provider.get_user_experiments('me')
+    experiments = db_provider.get_user_experiments()
     return render_template("dashboard.html", experiments=experiments)
 
 
@@ -18,11 +18,19 @@ def experiment(key):
     experiment = db_provider.get_experiment(key)
     return render_template("experiment_details.html", experiment=experiment)
 
-@app.route('/auth')
-def auth():
-    #db_provider = model.get_db_provider()
-    #experiments = db_provider.get_user_experiments('me')
-    return render_template("auth.html")
+@app.route('/projects')
+def projects():
+    db_provider = model.get_db_provider()
+    projects = db_provider.get_projects()
+    return render_template("projects.html", projects=projects)
+
+@app.route('/project/<key>')
+def project_details(key):
+    db_provider = model.get_db_provider()
+    projects = db_provider.get_projects()
+
+    return render_template("project_details.html", project_name=key, project_dict=projects[key])
+
 
 
 
