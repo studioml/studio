@@ -174,9 +174,9 @@ class FirebaseProvider(object):
             time_finished=data['time_finished'] if 'time_finished' in data.keys() else None
         )
 
-    def get_experiment(self, key, userId=None):
-        data = self.__getitem__(self._get_experiments_keybase(userId) + key)
-        assert data, "data at path %s not found! " % (self._get_experiments_keybase(userId) + key)
+    def get_experiment(self, key, user_id=None):
+        data = self.__getitem__(self._get_experiments_keybase(user_id) + key)
+        assert data, "data at path %s not found! " % (self._get_experiments_keybase(user_id) + key)
         return self._experiment(key, data)
 
     def get_user_experiments(self, userid=None):
