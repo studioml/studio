@@ -6,7 +6,7 @@
         <table class="table table-striped">
             {% for experiment in project_dict.keys() %}
                 <tr>
-                    <td><a href="/experiment/{{ experiment }}">{{ experiment }}</a></td>
+                        <td><a href="/experiment/{{ project_dict[experiment]['userId'] }}/{{ experiment }}">{{ experiment }}</a></td>
                     <td>{{ experiment }}</td>
                 </tr>
             {% endfor %}

@@ -6,7 +6,7 @@
         <table class="table table-striped">
             {% for experiment in experiments %}
                 <tr>
-                    <td><a href="/experiment/{{ experiment.key }}">{{ experiment.key }}</a></td>
+                        <td><a href="/experiment/{{ userid }}/{{ experiment.key }}">{{ experiment.key }}</a></td>
                     <td>{{ experiment.filename }}</td>
                 </tr>
             {% endfor %}

@@ -27,6 +27,7 @@ class Experiment(object):
                     time_started=None,
                     time_last_checkpoint=None,
                     time_finished=None):
+
         self.key = key
         self.filename = filename
         self.args = args if args else []
@@ -173,13 +174,17 @@ class FirebaseProvider(object):
             time_finished=data['time_finished'] if 'time_finished' in data.keys() else None
         )
 
-    def get_experiment(self, key):
-        data = self.__getitem__(self._get_experiments_keybase() + key)
+    def get_experiment(self, key, userId=None):
+        data = self.__getitem__(self._get_experiments_keybase(userId) + key)
+        assert data, "data at path %s not found! " % (self._get_experiments_keybase(userId) + key)
         return self._experiment(key, data)
 
     def get_user_experiments(self, userid=None):
         # TODO: Add users and filtering
         values = self[self._get_experiments_keybase(userid)]
+        if not values:
+            values = {}
+
         experiments = []
         for key, data in values.iteritems():
             experiments.append(self._experiment(key, data))
@@ -187,6 +192,12 @@ class FirebaseProvider(object):
     
     def get_projects(self):
         return self.__getitem__(self._get_projects_keybase())
+
+    def get_users(self):
+        return self.__getitem__('users/')
+
+    def get_myuser_id(self):
+        return 'guest' if not self.auth else self.auth.get_user_id()
 
 
 class PostgresProvider(object):
@@ -212,6 +223,12 @@ class PostgresProvider(object):
         raise NotImplementedError()
 
     def get_projects(self):
+        raise NotImplementedError()
+
+    def get_users(self):
+        raise NotImplementedError()
+
+    def get_myuser_id(self):
         raise NotImplementedError()
 
     def checkpoint_experiment(self, experiment):

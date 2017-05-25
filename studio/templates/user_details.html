@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <div class="container">
+        {% if 'email' in users[user].keys() %}
+             <h1>User {{ users[user]['email'] }} </h1>
+        {% else %}
+            <h1>User {{ users[user]['email'] }} <h1>
+        {% endif %}
+
+        <table class="table table-striped">
+            {% if 'experiments' in users[user].keys() %}
+            {% for experiment in users[user]['experiments'].keys() %}
+                <tr>
+                        <td><a href="/experiment/{{ user }}/{{ experiment }}">{{ experiment }}</a></td>
+                    <td>{{ experiment }}</td>
+                </tr>
+            {% endfor %}
+            {% endif %}
+        </table>
+    </div>
+{% endblock %}
