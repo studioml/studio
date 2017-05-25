@@ -2,21 +2,20 @@
 
 {% block content %}
     <div class="container">
-        {% if 'email' in users[user].keys() %}
-             <h1>User {{ users[user]['email'] }} </h1>
+        {% if email  %}
+            <h1>User {{ email }} </h1>
         {% else %}
-            <h1>User {{ users[user]['email'] }} <h1>
+            <h1>User {{ user }} <h1>
         {% endif %}
 
         <table class="table table-striped">
-            {% if 'experiments' in users[user].keys() %}
-            {% for experiment in users[user]['experiments'].keys() %}
+            {% for experiment in experiments %}
                 <tr>
-                        <td><a href="/experiment/{{ user }}/{{ experiment }}">{{ experiment }}</a></td>
-                    <td>{{ experiment }}</td>
+                    <td><a href="/experiment/{{ user }}/{{ experiment.key }}">{{ experiment.key }}</a></td>
+                    <td>{{ experiment.filename }}</td>
+                    <td>{{ experiment.status  }}</td>
                 </tr>
             {% endfor %}
-            {% endif %}
         </table>
     </div>
 {% endblock %}

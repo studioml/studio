@@ -42,11 +42,10 @@ def users():
 @app.route('/user/<key>')
 def user_experiments(key):
     db_provider = model.get_db_provider()
-    projects = db_provider.get_user_experiments(key)
+    experiments = db_provider.get_user_experiments(key)
     users = db_provider.get_users()
-    return render_template("user_details.html", users=users, user=key)
-
-
+    email = users[key]['email'] if 'email' in users[key].keys() else None
+    return render_template("user_details.html", user=key, email=email, experiments=experiments)
 
 def main():
     app.run(debug=True)
