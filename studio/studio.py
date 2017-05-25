@@ -16,7 +16,7 @@ def dashboard():
 @app.route('/experiment/<user>/<key>')
 def experiment(user,key):
     db_provider = model.get_db_provider()
-    experiment = db_provider.get_experiment(key, userId=user)
+    experiment = db_provider.get_experiment(key, user_id=user)
     return render_template("experiment_details.html", experiment=experiment)
 
 @app.route('/projects')
