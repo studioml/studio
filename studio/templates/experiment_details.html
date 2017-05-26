@@ -19,4 +19,8 @@
     {% if experiment.status == 'finished' %}
         <p>Finish time: {{ experiment.time_to_string(experiment.time_finished) }}</p>
     {% endif %}
+    {% if experiment.info and 'type' in experiment.info.keys() %}
+        <p>Experiment type: {{ experiment.info['type'] }}</p>
+        <p>Number of steps: {{ experiment.info['global_step'] }}</p>
+    {% endif %}
 {% endblock %}

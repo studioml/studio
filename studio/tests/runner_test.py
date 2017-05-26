@@ -37,8 +37,8 @@ class RunnerTest(unittest.TestCase):
                 self.assertEquals(splitData[-1],'[ 2.  6.]')
 
         
-        self.check_workspace(executor.db, keybase + '/workspace/')
-        self.check_workspace(executor.db, keybase + '/workspace_latest/')
+        #self.check_workspace(executor.db, keybase + '/workspace/')
+        #self.check_workspace(executor.db, keybase + '/workspace_latest/')
 
 
     def check_workspace(self, db, keyBase):

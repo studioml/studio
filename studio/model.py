@@ -11,6 +11,9 @@ import hashlib
 import base64
 import zlib
 import time
+import glob
+import tensorflow as tf
+from tensorflow.contrib.framework.python.framework import checkpoint_utils
 
 import fs_tracker
 from auth import FirebaseAuth
@@ -26,7 +29,8 @@ class Experiment(object):
                     time_added=None,
                     time_started=None,
                     time_last_checkpoint=None,
-                    time_finished=None):
+                    time_finished=None,
+                    info={}):
 
         self.key = key
         self.filename = filename
@@ -40,6 +44,7 @@ class Experiment(object):
         self.time_started = time_started
         self.time_last_checkpoint = time_last_checkpoint
         self.time_finished = time_finished
+        self.info = info
 
     def time_to_string(self, timestamp):
         return time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(timestamp))
@@ -120,7 +125,7 @@ class FirebaseProvider(object):
         experiment.time_added = time.time()
         experiment.status = 'waiting'
         self.__setitem__(self._get_experiments_keybase() + experiment.key, experiment.__dict__)   
-        self._save_dir(experiment.workspace_path, self._get_experiments_keybase() + experiment.key + "/workspace/")
+        #self._save_dir(experiment.workspace_path, self._get_experiments_keybase() + experiment.key + "/workspace/")
 
         if experiment.project and self.auth:
             self.__setitem__(self._get_projects_keybase() + experiment.project + "/" + experiment.key + "/userId",  self.auth.get_user_id())
@@ -141,7 +146,7 @@ class FirebaseProvider(object):
       
 
     def checkpoint_experiment(self, experiment):
-        self._save_dir(experiment.workspace_path, self._get_experiments_keybase() + experiment.key + "/workspace_latest/")
+        #self._save_dir(experiment.workspace_path, self._get_experiments_keybase() + experiment.key + "/workspace_latest/")
         self._save_dir(experiment.model_dir, self._get_experiments_keybase() + experiment.key + "/modeldir/")
         self.__setitem__(self._get_experiments_keybase() + experiment.key + "/time_last_checkpoint", time.time())
 
@@ -151,16 +156,21 @@ class FirebaseProvider(object):
             for name in files:
                 full_file_name = os.path.join(root, name)
                 self.logger.debug("Saving " + full_file_name)
-                with open(full_file_name, 'rb') as f:
-                    data = f.read()
-                    sha = hashlib.sha256(data).hexdigest()
-                    self[key_base + sha + "/data"] = base64.b64encode(zlib.compress(bytes(data)))
-                    self[key_base + sha + "/name"] = name
+                try:
+                    with open(full_file_name, 'rb') as f:
+                        data = f.read()
+                        sha = hashlib.sha256(data).hexdigest()
+                        self[key_base + sha + "/data"] = base64.b64encode(zlib.compress(bytes(data)))
+                        self[key_base + sha + "/name"] = name
+                        self[key_base + sha + "/time"] = time.time()
+                except IOError:
+                    self.logger.warn('Unable to save file %s. Potentially, deleted while saving'%(full_file_name))
+
 
         self.logger.debug("Done saving")
 
 
-    def _experiment(self, key, data):
+    def _experiment(self, key, data, info={}):
         return Experiment(
             key=key,
             filename=data['filename'],
@@ -171,13 +181,49 @@ class FirebaseProvider(object):
             time_added=data['time_added'],
             time_started=data['time_started'] if 'time_started' in data.keys() else None,
             time_last_checkpoint=data['time_last_checkpoint'] if 'time_last_checkpoint' in data.keys() else None,
-            time_finished=data['time_finished'] if 'time_finished' in data.keys() else None
+            time_finished=data['time_finished'] if 'time_finished' in data.keys() else None,
+            info=info
         )
+
+    def _download_modeldir(self, key, user_id=None):
+        self.logger.info("Downloading model directory...")
+        files = self.__getitem__(self._get_experiments_keybase(user_id) + key + "/modeldir/")
+        if files:
+            for _,fvalue in files.iteritems():
+                local_filename = os.path.join(fs_tracker.get_model_directory(key), fvalue['name'])
+                if not os.path.exists(local_filename) or fvalue['time'] > os.path.getmtime(local_filename):
+                    with open(os.path.join(fs_tracker.get_model_directory(key), fvalue['name']), "wb") as f:
+                        self.logger.info('Downloading file ' + fvalue['name'])
+                        f.write(zlib.decompress(base64.b64decode(fvalue['data'])))
+        self.logger.info("Done")
+
+    def _get_experiment_info(self, key, user_id):
+        self._download_modeldir(key, user_id)
+        local_modeldir = fs_tracker.get_model_directory(key)
+        info = {}
+        hdf5_files = glob.glob(os.path.join(local_modeldir, '*.hdf5'))
+        type_found = False
+        if any(hdf5_files):
+            info['type'] = 'keras'
+            type_found = True
+
+        meta_files = glob.glob(os.path.join(local_modeldir,'*.meta'))
+        if any(meta_files) and not type_found:
+            info['type'] = 'tensorflow'
+            global_step = checkpoint_utils.load_variable(local_modeldir, 'global_step')            
+            info['global_step'] = global_step
+            type_found = True
+
+        if not type_found:
+            info['type'] = 'unknown'
+
+        return info
 
     def get_experiment(self, key, user_id=None):
         data = self.__getitem__(self._get_experiments_keybase(user_id) + key)
+        info = self._get_experiment_info(key, user_id)
         assert data, "data at path %s not found! " % (self._get_experiments_keybase(user_id) + key)
-        return self._experiment(key, data)
+        return self._experiment(key, data, info)
 
     def get_user_experiments(self, userid=None):
         # TODO: Add users and filtering
