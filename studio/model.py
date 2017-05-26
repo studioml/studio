@@ -189,8 +189,11 @@ class FirebaseProvider(object):
         self.logger.info("Downloading model directory...")
         files = self.__getitem__(self._get_experiments_keybase(user_id) + key + "/modeldir/")
         if files:
+            path = fs_tracker.get_model_directory(key)
+            if not os.path.exists(path):
+                os.makedirs(path)
             for _,fvalue in files.iteritems():
-                local_filename = os.path.join(fs_tracker.get_model_directory(key), fvalue['name'])
+                local_filename = os.path.join(key, fvalue['name'])
                 if not os.path.exists(local_filename) or fvalue['time'] > os.path.getmtime(local_filename):
                     with open(os.path.join(fs_tracker.get_model_directory(key), fvalue['name']), "wb") as f:
                         self.logger.info('Downloading file ' + fvalue['name'])

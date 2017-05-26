@@ -1,7 +1,9 @@
 import tensorflow as tf
 import sys
 import os
+import time
 sess = tf.Session()
+
 
 from keras import backend as K
 K.set_session(sess)
@@ -49,3 +51,4 @@ with sess.as_default():
         
         sys.stdout.flush()
         saver.save(sess, os.path.join(fs_tracker.get_model_directory(), "ckpt"), global_step=global_step)
+        time.sleep(1)
