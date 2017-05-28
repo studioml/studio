@@ -14,9 +14,9 @@ def dashboard():
     return render_template("dashboard.html", userid=userid, experiments=experiments)
 
 
-@app.route('/experiment/<user>/<key>')
-def experiment(user,key):
-    experiment = db_provider.get_experiment(key, user_id=user)
+@app.route('/experiments/<key>')
+def experiment(key):
+    experiment = db_provider.get_experiment(key)
     return render_template("experiment_details.html", experiment=experiment)
 
 @app.route('/projects')

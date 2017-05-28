@@ -11,16 +11,30 @@
     <pre>
     {{ experiment.pythonenv }}
     </pre>
-    <p>Status: {{ experiment.status }}</p>
-    <p>Creation time: {{ experiment.time_to_string(experiment.time_added) }}</p>
+    <dl>
+    <dt> Experiment info: </dt>
+    <dd>Status: {{ experiment.status }}</dd>
+    <dd>Creation time: {{ experiment.time_to_string(experiment.time_added) }}</dd>
     {% if experiment.status == 'finished' or experiment.status == 'running' %}
-        <p>Start time: {{ experiment.time_to_string(experiment.time_started) }}</p>
+        <dd>Start time: {{ experiment.time_to_string(experiment.time_started) }}</dd>
     {% endif %}
     {% if experiment.status == 'finished' %}
-        <p>Finish time: {{ experiment.time_to_string(experiment.time_finished) }}</p>
+        <dd>Finish time: {{ experiment.time_to_string(experiment.time_finished) }}</dd>
     {% endif %}
-    {% if experiment.info and 'type' in experiment.info.keys() %}
-        <p>Experiment type: {{ experiment.info['type'] }}</p>
-        <p>Number of steps: {{ experiment.info['global_step'] }}</p>
+    {% if experiment.info %}
+        {% if 'type' in experiment.info.keys() %}
+            {% for infokey, infovalue in experiment.info.iteritems() %}
+                {% if not infokey == 'logtail' %}
+                    <dd>{{ infokey }} : {{ infovalue }}</dd>
+                {% endif %}
+            {% endfor %}
+        {% endif %}
+        {% if 'logtail' in experiment.info.keys() %}
+            <dt> Tail of the log: </dt>
+            {% for line in experiment.info['logtail'] %}
+                <dd>{{ line }}</dd>
+            {% endfor %}
+        {% endif %}
     {% endif %}
+    </dl>
 {% endblock %}
