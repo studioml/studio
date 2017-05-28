@@ -80,8 +80,6 @@ class FirebaseProvider(object):
             self.auth = None
 
 
-        #self.db = firebase.FirebaseApplication(host, auth)
-
     def __getitem__(self, key):
         splitKey = key.split('/')
         key_path = '/'.join(splitKey[:-1])
@@ -101,23 +99,21 @@ class FirebaseProvider(object):
 
     def _upload_file(self, key, local_file_path):
         storageobj = self.storage.child(key)
-        storageobj.put(local_file_path)
-        '''
         if self.auth:
             storageobj.put(local_file_path, self.auth.get_token())
         else:
             storageobj.put(local_file_path)
-        '''
+        
 
     def _download_file(self, key, local_file_path):
         storageobj = self.storage.child(key)
-        storageobj.download(local_file_path)
-        '''
+        
         if self.auth:
-            storageobj.get(local_file_path, self.auth.get_token())
+            storageobj.download(local_file_path, self.auth.get_token())
         else:
-            storageobj.get(local_file_path)
-        '''
+            storageobj.download(local_file_path)
+        
+
     def _upload_dir(self, key, local_path):
         if os.path.exists(local_path):
             tar_filename = os.path.join(tempfile.gettempdir(), str(uuid.uuid4()))
@@ -191,9 +187,14 @@ class FirebaseProvider(object):
       
 
     def checkpoint_experiment(self, experiment, blocking=False):
-        Thread(target=self._upload_dir, args=(self._get_experiments_keybase() + experiment.key + "/workspace_latest", experiment.workspace_path)).start()
-        Thread(target=self._upload_dir, args=(self._get_experiments_keybase() + experiment.key + "/modeldir", experiment.model_dir)).start()
+        checkpoint_threads = [
+                Thread(target=self._upload_dir, args=(self._get_experiments_keybase() + experiment.key + "/workspace_latest", experiment.workspace_path)),
+                Thread(target=self._upload_dir, args=(self._get_experiments_keybase() + experiment.key + "/modeldir", experiment.model_dir))
+                ]
+        for t in checkpoint_threads:
+            t.start()
         self.__setitem__(self._get_experiments_keybase() + experiment.key + "/time_last_checkpoint", time.time())
+        return checkpoint_threads
         
 
     def _experiment(self, key, data, info={}):
@@ -211,24 +212,12 @@ class FirebaseProvider(object):
             info=info
         )
 
+
     def _download_modeldir(self, key):
         self.logger.info("Downloading model directory...")
         self._download_dir(self._get_experiments_keybase() + key + '/modeldir', fs_tracker.get_model_directory(key))
-
-        '''
-        files = self.__getitem__(self._get_experiments_keybase() + key + "/modeldir/")
-        if files:
-            path = fs_tracker.get_model_directory(key)
-            if not os.path.exists(path):
-                os.makedirs(path)
-            for _,fvalue in files.iteritems():
-                local_filename = os.path.join(key, fvalue['name'])
-                if not os.path.exists(local_filename) or fvalue['time'] > os.path.getmtime(local_filename):
-                    with open(os.path.join(fs_tracker.get_model_directory(key), fvalue['name']), "wb") as f:
-                        self.logger.info('Downloading file ' + fvalue['name'])
-                        f.write(zlib.decompress(base64.b64decode(fvalue['data'])))
-        '''
         self.logger.info("Done")
+
 
     def _get_experiment_info(self, key):
         self._download_modeldir(key)
@@ -258,8 +247,8 @@ class FirebaseProvider(object):
             logtail = [_remove_backspaces(line) for line in tailp.stdout]
             info['logtail'] = logtail   
                 
-
         return info
+
 
     def get_experiment(self, key, getinfo=True):
         data = self.__getitem__(self._get_experiments_keybase() + key)
@@ -268,7 +257,6 @@ class FirebaseProvider(object):
         return self._experiment(key, data, info)
 
     def get_user_experiments(self, userid=None):
-        # TODO: Add users and filtering
         experiment_keys = self.__getitem__(self._get_user_keybase(userid)+"/experiments")
         if not experiment_keys:
             experiment_keys = {}
@@ -283,9 +271,6 @@ class FirebaseProvider(object):
 
     def get_users(self):
         return self.__getitem__('users/')
-
-    def get_myuser_id(self):
-        return 'guest' if not self.auth else self.auth.get_user_id()
 
 
 class PostgresProvider(object):
@@ -314,9 +299,6 @@ class PostgresProvider(object):
         raise NotImplementedError()
 
     def get_users(self):
-        raise NotImplementedError()
-
-    def get_myuser_id(self):
         raise NotImplementedError()
 
     def checkpoint_experiment(self, experiment):

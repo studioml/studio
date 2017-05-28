@@ -10,8 +10,7 @@ db_provider = model.get_db_provider()
 @app.route('/')
 def dashboard():
     experiments = db_provider.get_user_experiments()
-    userid = db_provider.get_myuser_id()
-    return render_template("dashboard.html", userid=userid, experiments=experiments)
+    return render_template("dashboard.html", experiments=experiments)
 
 
 @app.route('/experiments/<key>')

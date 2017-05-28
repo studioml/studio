@@ -2,10 +2,11 @@ import unittest
 import sys
 import os
 import subprocess
-import zlib
-import base64
-import hashlib
+import shutil
+import tempfile
+import uuid
 
+from studio import fs_tracker
 from studio.runner import LocalExecutor
 
 class RunnerTest(unittest.TestCase):
@@ -26,41 +27,43 @@ class RunnerTest(unittest.TestCase):
         self.assertTrue(saved_args[0] == 'arg0')
         self.assertTrue(executor.db[keybase + '/filename'] == test_script)
 
-        '''
-        # test saved stdout
-        model_dir = executor.db._download_d[keybase + '/modeldir']
-        for k in model_dir.keys():
-            if model_dir[k]['name'] == 'output.log':
-                data = zlib.decompress(base64.b64decode(model_dir[k]['data']))
-                self.assertTrue(k == hashlib.sha256(data).hexdigest())
-
-                splitData = data.strip().split('\n')
-                self.assertEquals(splitData[-1],'[ 2.  6.]')
-        '''
-        
-        #self.check_workspace(executor.db, keybase + '/workspace/')
-        #self.check_workspace(executor.db, keybase + '/workspace_latest/')
-
-
-    def check_workspace(self, db, keyBase):
-        dbFiles = db[keyBase]
-        savedFiles = []
-        for k in dbFiles.keys():
-            savedData = zlib.decompress(base64.b64decode(dbFiles[k]['data']))
-            self.assertTrue(k == hashlib.sha256(savedData).hexdigest())
-            savedName = dbFiles[k]['name']
-            with open(savedName, 'rb') as f:
-                localData = f.read()
-                self.assertEquals(localData, savedData)
-            savedFiles.append(savedName)
-        
-        savedFilesSet = set(savedFiles)
-        localFilesSet = set(os.listdir('.'))
-
-        self.assertTrue(len(savedFilesSet) == len(savedFilesSet | localFilesSet))
-
-
+        executor.db._download_modeldir(experiment_name)
+        with open(os.path.join(fs_tracker.get_model_directory(experiment_name), 'output.log'), 'r') as f:
+            data = f.read()
+            split_data = data.strip().split('\n')
+            self.assertEquals(split_data[-1],'[ 2.  6.]')
        
+        self.check_workspace(executor.db, keybase + '/workspace')
+        self.check_workspace(executor.db, keybase + '/workspace_latest')
+
+
+    def check_workspace(self, db, keybase):
+        
+        tmpdir = os.path.join(tempfile.gettempdir(), str(uuid.uuid4()))
+        os.mkdir(tmpdir)
+        db._download_dir(keybase, tmpdir)
+
+        for _,_,files in os.walk('.', topdown=False):
+            for filename in files:
+                downloaded_filename = os.path.join(tmpdir, filename)
+                with open(downloaded_filename, 'rb') as f1:
+                    data1 = f1.read();
+                with open(filename, 'rb') as f2:
+                    data2 = f2.read();
+
+                self.assertTrue(data1 == data2)
+
+        for _,_,files in os.walk('tmpdir', topdown=False):
+            for filename in files:
+                downloaded_filename = os.path.join(tmpdir, filename)
+                with open(downloaded_filename, 'rb') as f1:
+                    data1 = f1.read();
+                with open(filename, 'rb') as f2:
+                    data2 = f2.read();
+
+                self.assertTrue(data1 == data2)
+
+        shutil.rmtree(tmpdir)      
 
 if __name__ == "__main__":
     unittest.main()
