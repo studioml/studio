@@ -184,12 +184,8 @@ class FirebaseProviderTest(unittest.TestCase):
         self.assertTrue(line == random_str)
 
     def test_get_model_info(self):
-        #TODO implement get_model_info test
+        #TODO implement _get_model_info test
         pass
-
-        
-
-    
 
 
 def get_test_experiment():
