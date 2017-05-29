@@ -26,17 +26,16 @@ from auth import FirebaseAuth
 class Experiment(object):
     """Experiment information."""
 
-    def __init__(self, key, filename, args, pythonenv, 
-                    project=None,
-                    workspace_path='.', 
-                    model_dir=None, 
-                    status='waiting', 
-                    time_added=None,
-                    time_started=None,
-                    time_last_checkpoint=None,
-                    time_finished=None,
-                    info={}):
-
+    def __init__(self, key, filename, args, pythonenv,
+                 project=None,
+                 workspace_path='.',
+                 model_dir=None,
+                 status='waiting',
+                 time_added=None,
+                 time_started=None,
+                 time_last_checkpoint=None,
+                 time_finished=None,
+                 info={}):
         self.key = key
         self.filename = filename
         self.args = args if args else []
@@ -51,14 +50,11 @@ class Experiment(object):
         self.time_finished = time_finished
         self.info = info
 
-    def time_to_string(self, timestamp):
-        return time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(timestamp))
-    
 
 def create_experiment(filename, args, experiment_name=None, project=None):
-     key = str(uuid.uuid4()) if not experiment_name else experiment_name
-     packages = [p._key + '==' + p._version for p in pip.pip.get_installed_distributions(local_only=True)]
-     return Experiment(
+    key = str(uuid.uuid4()) if not experiment_name else experiment_name
+    packages = [p._key + '==' + p._version for p in pip.pip.get_installed_distributions(local_only=True)]
+    return Experiment(
         key=key, filename=filename, args=args, pythonenv=packages, project=project)
 
 
@@ -78,7 +74,6 @@ class FirebaseProvider(object):
             self.__setitem__(self._get_user_keybase() + "email", self.auth.get_user_email())
         else:
             self.auth = None
-
 
     def __getitem__(self, key):
         splitKey = key.split('/')
@@ -103,16 +98,14 @@ class FirebaseProvider(object):
             storageobj.put(local_file_path, self.auth.get_token())
         else:
             storageobj.put(local_file_path)
-        
 
     def _download_file(self, key, local_file_path):
         storageobj = self.storage.child(key)
-        
+
         if self.auth:
             storageobj.download(local_file_path, self.auth.get_token())
         else:
             storageobj.download(local_file_path)
-        
 
     def _upload_dir(self, key, local_path):
         if os.path.exists(local_path):
@@ -123,7 +116,6 @@ class FirebaseProvider(object):
             os.remove(tar_filename)
         else:
             self.logger.debug('Local path %s does not exist. Not uploading anything.'%(local_path))
-
 
     def _download_dir(self, key, local_path):
         tar_filename = os.path.join(tempfile.gettempdir(), str(uuid.uuid4()))
@@ -150,21 +142,21 @@ class FirebaseProvider(object):
             else:
                 userid = self.auth.get_user_id()
 
-        return "users/" + userid + "/" 
+        return "users/" + userid + "/"
 
     def _get_experiments_keybase(self, userid=None):
         return "experiments/"
         # return self._get_user_keybase(userid) + "/experiments/"
-    
+
     def _get_projects_keybase(self):
         return "projects/"
-         
+
 
     def add_experiment(self, experiment):
         self._delete(self._get_experiments_keybase() + experiment.key)
         experiment.time_added = time.time()
         experiment.status = 'waiting'
-        self.__setitem__(self._get_experiments_keybase() + experiment.key, experiment.__dict__)   
+        self.__setitem__(self._get_experiments_keybase() + experiment.key, experiment.__dict__)
         Thread(target=self._upload_dir, args=(self._get_experiments_keybase() + experiment.key + "/workspace", experiment.workspace_path)).start()
         self.__setitem__(self._get_user_keybase() + "experiments/" + experiment.key, experiment.key)
 
@@ -177,14 +169,14 @@ class FirebaseProvider(object):
         self.__setitem__(self._get_experiments_keybase() + experiment.key + "/status", "running")
         self.__setitem__(self._get_experiments_keybase() + experiment.key + "/time_started", experiment.time_started)
         self.checkpoint_experiment(experiment)
-        
+
     def finish_experiment(self, experiment):
         self.checkpoint_experiment(experiment)
         experiment.status = 'finished'
         experiment.time_finished = time.time()
         self.__setitem__(self._get_experiments_keybase() + experiment.key + "/status", "finished")
         self.__setitem__(self._get_experiments_keybase() + experiment.key + "/time_finished", experiment.time_finished)
-      
+
 
     def checkpoint_experiment(self, experiment, blocking=False):
         checkpoint_threads = [
@@ -195,7 +187,6 @@ class FirebaseProvider(object):
             t.start()
         self.__setitem__(self._get_experiments_keybase() + experiment.key + "/time_last_checkpoint", time.time())
         return checkpoint_threads
-        
 
     def _experiment(self, key, data, info={}):
         return Experiment(
@@ -212,12 +203,10 @@ class FirebaseProvider(object):
             info=info
         )
 
-
     def _download_modeldir(self, key):
         self.logger.info("Downloading model directory...")
         self._download_dir(self._get_experiments_keybase() + key + '/modeldir', fs_tracker.get_model_directory(key))
         self.logger.info("Done")
-
 
     def _get_experiment_info(self, key):
         self._download_modeldir(key)
@@ -233,7 +222,7 @@ class FirebaseProvider(object):
         meta_files = glob.glob(os.path.join(local_modeldir,'*.meta'))
         if any(meta_files) and not type_found:
             info['type'] = 'tensorflow'
-            global_step = checkpoint_utils.load_variable(local_modeldir, 'global_step')            
+            global_step = checkpoint_utils.load_variable(local_modeldir, 'global_step')
             info['global_step'] = global_step
             type_found = True
 
@@ -245,10 +234,9 @@ class FirebaseProvider(object):
         if os.path.exists(logpath):
             tailp = subprocess.Popen(['tail', '-50', logpath], stdout=subprocess.PIPE)
             logtail = [_remove_backspaces(line) for line in tailp.stdout]
-            info['logtail'] = logtail   
-                
-        return info
+            info['logtail'] = logtail
 
+        return info
 
     def get_experiment(self, key, getinfo=True):
         data = self.__getitem__(self._get_experiments_keybase() + key)
@@ -265,7 +253,7 @@ class FirebaseProvider(object):
         for key in experiment_keys.keys() if experiment_keys else []:
             experiments.append(self.get_experiment(key, getinfo=False))
         return experiments
-    
+
     def get_projects(self):
         return self.__getitem__(self._get_projects_keybase())
 
