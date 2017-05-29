@@ -14,12 +14,12 @@
     <dl>
     <dt> Experiment info: </dt>
     <dd>Status: {{ experiment.status }}</dd>
-    <dd>Creation time: {{ experiment.time_to_string(experiment.time_added) }}</dd>
+    <dd>Creation time: {{ experiment.time_added | format_time }}</dd>
     {% if experiment.status == 'finished' or experiment.status == 'running' %}
-        <dd>Start time: {{ experiment.time_to_string(experiment.time_started) }}</dd>
+        <dd>Start time: {{ experiment.time_started | format_time }}</dd>
     {% endif %}
     {% if experiment.status == 'finished' %}
-        <dd>Finish time: {{ experiment.time_to_string(experiment.time_finished) }}</dd>
+        <dd>Finish time: {{ experiment.time_finished | format_time }}</dd>
     {% endif %}
     {% if experiment.info %}
         {% if 'type' in experiment.info.keys() %}
