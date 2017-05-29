@@ -2,6 +2,11 @@
 
 Model management tools.
 
+## Installation:
+Once open, we'll publish package to PyPI. For now, pip install it from the git project directory:
+
+    git clone https://github.com/ilblackdragon/studio && cd studio && pip install -e . 
+
 ## Example usage
 
 Start visualizer:
