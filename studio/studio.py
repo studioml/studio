@@ -39,7 +39,6 @@ def project_details(key):
     projects = db_provider.get_projects()
     return render_template("project_details.html", project_name=key, project_dict=projects[key])
 
-
 @app.route('/users')
 def users():
     users = db_provider.get_users()
@@ -52,7 +51,6 @@ def user_experiments(key):
     users = db_provider.get_users()
     email = users[key]['email'] if 'email' in users[key].keys() else None
     return render_template("user_details.html", user=key, email=email, experiments=experiments)
-
 
 def main():
     app.run(debug=True)

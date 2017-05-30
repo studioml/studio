@@ -74,9 +74,14 @@ class FirebaseProvider(object):
 
         if not guest:
             self.auth = FirebaseAuth(app)
-            self.__setitem__(self._get_user_keybase() + "email", self.auth.get_user_email())
+            if self.auth.get_user_id() == 'guest':
+                self.auth = None
         else:
             self.auth = None
+
+        if self.auth:
+            self.__setitem__(self._get_user_keybase() + "email",
+                             self.auth.get_user_email())
 
     def __getitem__(self, key):
        try:
