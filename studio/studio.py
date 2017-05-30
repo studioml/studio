@@ -43,7 +43,6 @@ def project_details(key):
         project_dict=projects[key])
 
 
-
 @app.route('/users')
 def users():
     users = db_provider.get_users()
@@ -60,7 +59,6 @@ def user_experiments(key):
         user=key,
         email=email,
         experiments=experiments)
-
 
 
 def main():

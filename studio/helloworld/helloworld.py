@@ -1,17 +1,14 @@
 import tensorflow as tf
 import time
-import sys
-import os
-
-
 import studio
+import logging
+
 
 s = tf.Session()
 
 x = tf.constant([1.0, 2.0])
 y = x * 2
 
-import logging
 logging.basicConfig()
 
 logger = logging.getLogger('helloworld')

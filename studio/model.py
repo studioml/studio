@@ -52,6 +52,7 @@ class Experiment(object):
         self.time_finished = time_finished
         self.info = info
 
+
 def create_experiment(filename, args, experiment_name=None, project=None):
     key = str(uuid.uuid4()) if not experiment_name else experiment_name
     packages = [p._key + '==' + p._version for p in
@@ -80,10 +81,14 @@ class FirebaseProvider(object):
 
         if not guest:
             self.auth = FirebaseAuth(app)
-            self.__setitem__(self._get_user_keybase() + "email",
-                             self.auth.get_user_email())
+            if self.auth.get_user_id() == 'guest':
+                self.auth = None
         else:
             self.auth = None
+
+        if self.auth:
+            self.__setitem__(self._get_user_keybase() + "email",
+                             self.auth.get_user_email())
 
     def __getitem__(self, key):
         try:
