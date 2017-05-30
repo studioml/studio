@@ -1,3 +1,4 @@
+import time
 from flask import Flask, render_template
 import model
 
@@ -5,6 +6,12 @@ app = Flask(__name__)
 
 
 db_provider = model.get_db_provider()
+
+
+@app.template_filter('format_time')
+def format_time(timestamp):
+    return time.strftime(
+        '%Y-%m-%d %H:%M:%S', time.localtime(timestamp))
 
 
 @app.route('/')
@@ -36,6 +43,7 @@ def project_details(key):
         project_dict=projects[key])
 
 
+
 @app.route('/users')
 def users():
     users = db_provider.get_users()
@@ -52,6 +60,7 @@ def user_experiments(key):
         user=key,
         email=email,
         experiments=experiments)
+
 
 
 def main():

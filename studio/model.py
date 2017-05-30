@@ -52,10 +52,6 @@ class Experiment(object):
         self.time_finished = time_finished
         self.info = info
 
-    def time_to_string(self, timestamp):
-        return time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(timestamp))
-
-
 def create_experiment(filename, args, experiment_name=None, project=None):
     key = str(uuid.uuid4()) if not experiment_name else experiment_name
     packages = [p._key + '==' + p._version for p in
@@ -310,6 +306,7 @@ class FirebaseProvider(object):
             info['type'] = 'tensorflow'
             global_step = checkpoint_utils.load_variable(
                 local_modeldir, 'global_step')
+
             info['global_step'] = global_step
             type_found = True
 
