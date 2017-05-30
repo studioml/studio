@@ -8,6 +8,5 @@ jinja2
 
 pyyaml
 
-python-firebase
 apscheduler
 pyrebase
