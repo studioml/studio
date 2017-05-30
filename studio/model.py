@@ -19,6 +19,8 @@ from tensorflow.contrib.framework.python.framework import checkpoint_utils
 import fs_tracker
 from auth import FirebaseAuth
 
+logging.basicConfig()
+
 
 class Experiment(object):
     """Experiment information."""
@@ -88,37 +90,57 @@ class FirebaseProvider(object):
             self.auth = None
 
     def __getitem__(self, key):
-        splitKey = key.split('/')
-        key_path = '/'.join(splitKey[:-1])
-        key_name = splitKey[-1]
-        dbobj = self.db.child(key_path).child(key_name)
-        return dbobj.get(self.auth.get_token()).val() if self.auth \
-            else dbobj.get().val()
+        try:
+            splitKey = key.split('/')
+            key_path = '/'.join(splitKey[:-1])
+            key_name = splitKey[-1]
+            dbobj = self.db.child(key_path).child(key_name)
+            return dbobj.get(self.auth.get_token()).val() if self.auth \
+                else dbobj.get().val()
+        except Exception as err:
+            self.logger.error("Getting key {} from a database \
+                               raised an exception: {}".format(key, err))
+            return None
 
     def __setitem__(self, key, value):
-        splitKey = key.split('/')
-        key_path = '/'.join(splitKey[:-1])
-        key_name = splitKey[-1]
-        dbobj = self.db.child(key_path)
-        if self.auth:
-            dbobj.update({key_name: value}, self.auth.get_token())
-        else:
-            dbobj.update({key_name: value})
+        try:
+            splitKey = key.split('/')
+            key_path = '/'.join(splitKey[:-1])
+            key_name = splitKey[-1]
+            dbobj = self.db.child(key_path)
+            if self.auth:
+                dbobj.update({key_name: value}, self.auth.get_token())
+            else:
+                dbobj.update({key_name: value})
+        except Exception as err:
+            self.logger.error("Putting key {}, value {} into a database \
+                               raised an exception: {}"
+                              .format(key, value, err))
 
     def _upload_file(self, key, local_file_path):
-        storageobj = self.storage.child(key)
-        if self.auth:
-            storageobj.put(local_file_path, self.auth.get_token())
-        else:
-            storageobj.put(local_file_path)
+        try:
+            storageobj = self.storage.child(key)
+            if self.auth:
+                storageobj.put(local_file_path, self.auth.get_token())
+            else:
+                storageobj.put(local_file_path)
+        except Exception as err:
+            self.logger.error("Uploading file {} with key {} into storage \
+                               raised an exception: {}"
+                              .format(local_file_path, key, err))
 
     def _download_file(self, key, local_file_path):
-        storageobj = self.storage.child(key)
+        try:
+            storageobj = self.storage.child(key)
 
-        if self.auth:
-            storageobj.download(local_file_path, self.auth.get_token())
-        else:
-            storageobj.download(local_file_path)
+            if self.auth:
+                storageobj.download(local_file_path, self.auth.get_token())
+            else:
+                storageobj.download(local_file_path)
+        except Exception as err:
+            self.logger.error("Downloading file {} to local path {} from storage \
+                               raised an exception: {}"
+                              .format(key, local_file_path, err))
 
     def _upload_dir(self, key, local_path):
         if os.path.exists(local_path):
