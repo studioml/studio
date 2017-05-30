@@ -10,4 +10,4 @@ pyyaml
 
 python-firebase
 apscheduler
-
+pyrebase
