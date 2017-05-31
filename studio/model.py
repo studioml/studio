@@ -202,7 +202,7 @@ class FirebaseProvider(object):
                          experiment.__dict__)
         Thread(target=self._upload_dir,
                args=(self._get_experiments_keybase() +
-                     experiment.key + "/workspace",
+                     experiment.key + "/workspace.tgz",
                      experiment.workspace_path)
                ).start()
 
@@ -246,14 +246,14 @@ class FirebaseProvider(object):
             Thread(
                 target=self._upload_dir,
                 args=(self._get_experiments_keybase() +
-                      experiment.key + "/workspace_latest",
+                      experiment.key + "/workspace_latest.tgz",
                       experiment.workspace_path)
             ),
 
             Thread(
                 target=self._upload_dir,
                 args=(self._get_experiments_keybase() +
-                      experiment.key + "/modeldir",
+                      experiment.key + "/modeldir.tgz",
                       experiment.model_dir)
             )
         ]
@@ -286,7 +286,7 @@ class FirebaseProvider(object):
     def _download_modeldir(self, key):
         self.logger.info("Downloading model directory...")
         self._download_dir(self._get_experiments_keybase() +
-                           key + '/modeldir',
+                           key + '/modeldir.tgz',
                            fs_tracker.get_model_directory(key))
         self.logger.info("Done")
 
