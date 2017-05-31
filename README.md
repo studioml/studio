@@ -2,10 +2,31 @@
 
 Model management tools.
 
-## Installation:
+## Setting up virtualenv (recommended)
+If you don't want to set up a new virtual environment, feel free to skip this step 
+and go to the next section. 
+
+Create new virtual environment:
+    
+    virtualenv tfstudio
+
+Activate it. On Mac OS X:
+    
+    source activate tfstudio
+
+On Linux:
+
+    . ./tfstuio/bin/activate
+
+Upgrade pip:
+
+    pip install --upgrade pip
+
+## Installation
 Once open, we'll publish package to PyPI. For now, pip install it from the git project directory:
 
     git clone https://github.com/ilblackdragon/studio && cd studio && pip install -e . 
+
 
 ## Example usage
 
