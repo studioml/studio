@@ -180,9 +180,17 @@ class FirebaseProvider(object):
         self._delete(self._get_experiments_keybase() + experiment.key)
         experiment.time_added = time.time()
         experiment.status = 'waiting'
-        self.__setitem__(self._get_experiments_keybase() + experiment.key, experiment.__dict__)
-        Thread(target=self._upload_dir, args=(self._get_experiments_keybase() + experiment.key + "/workspace", experiment.workspace_path)).start()
-        self.__setitem__(self._get_user_keybase() + "experiments/" + experiment.key, experiment.key)
+       self.__setitem__(self._get_experiments_keybase() + experiment.key,
+                         experiment.__dict__)
+        Thread(target=self._upload_dir,
+               args=(self._get_experiments_keybase() +
+                     experiment.key + "/workspace.tgz",
+                     experiment.workspace_path)
+               ).start()
+
+        self.__setitem__(self._get_user_keybase() + "experiments/" +
+                         experiment.key,
+                         experiment.key)
 
         if experiment.project and self.auth:
             self.__setitem__(self._get_projects_keybase() + experiment.project + "/" + experiment.key + "/userId",  self.auth.get_user_id())
@@ -204,9 +212,21 @@ class FirebaseProvider(object):
 
     def checkpoint_experiment(self, experiment, blocking=False):
         checkpoint_threads = [
-                Thread(target=self._upload_dir, args=(self._get_experiments_keybase() + experiment.key + "/workspace_latest", experiment.workspace_path)),
-                Thread(target=self._upload_dir, args=(self._get_experiments_keybase() + experiment.key + "/modeldir", experiment.model_dir))
-                ]
+           Thread(
+                target=self._upload_dir,
+                args=(self._get_experiments_keybase() +
+                      experiment.key + "/workspace_latest.tgz",
+                      experiment.workspace_path)
+            ),
+
+            Thread(
+                target=self._upload_dir,
+                args=(self._get_experiments_keybase() +
+                      experiment.key + "/modeldir.tgz",
+                      experiment.model_dir)
+            )
+        ]
+
         for t in checkpoint_threads:
             t.start()
         self.__setitem__(self._get_experiments_keybase() + experiment.key + "/time_last_checkpoint", time.time())
@@ -229,7 +249,9 @@ class FirebaseProvider(object):
 
     def _download_modeldir(self, key):
         self.logger.info("Downloading model directory...")
-        self._download_dir(self._get_experiments_keybase() + key + '/modeldir', fs_tracker.get_model_directory(key))
+        self._download_dir(self._get_experiments_keybase() +
+                           key + '/modeldir.tgz',
+                           fs_tracker.get_model_directory(key))
         self.logger.info("Done")
 
     def _get_experiment_info(self, key):

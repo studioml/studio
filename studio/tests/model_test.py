@@ -140,6 +140,8 @@ class FirebaseProviderTest(unittest.TestCase):
             if value:
                 self.assertTrue(actual_experiment_dict[key] == value)
 
+        fb.finish_experiment(experiment)
+
     def test_start_experiment(self):
         fb = self.get_firebase_provider()
         experiment, experiment_name, _, _ = get_test_experiment()
@@ -157,6 +159,8 @@ class FirebaseProviderTest(unittest.TestCase):
         for key, value in experiment.__dict__.iteritems():
             if value:
                 self.assertTrue(actual_experiment_dict[key] == value)
+
+        fb.finish_experiment(experiment)
 
     def test_finish_experiment(self):
         fb = self.get_firebase_provider()
