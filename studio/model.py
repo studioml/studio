@@ -70,8 +70,7 @@ class FirebaseProvider(object):
     """Data provider for Firebase."""
 
     def __init__(self, database_config):
-        guest = database_config['guest'] if 'guest' in \
-            database_config.keys() else False
+        guest = database_config.get('guest')
 
         app = pyrebase.initialize_app(database_config)
         self.db = app.database()
@@ -79,7 +78,10 @@ class FirebaseProvider(object):
         self.logger.setLevel(10)
         self.storage = app.storage()
 
-        self.auth = FirebaseAuth(app) if not guest else None
+        self.auth = FirebaseAuth(app,
+                                 database_config.get("email"),
+                                 database_config.get("password")) \
+            if not guest else None
 
         if self.auth:
             self.__setitem__(self._get_user_keybase() + "email",
@@ -313,6 +315,7 @@ class FirebaseProvider(object):
         if not type_found:
             info['type'] = 'unknown'
 
+        #TODO: get the name of a log file from config
         logpath = os.path.join(
             fs_tracker.get_model_directory(key), 'output.log')
 
