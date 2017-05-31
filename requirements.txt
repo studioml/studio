@@ -2,6 +2,7 @@ configparser
 
 numpy
 tensorflow
+keras
 
 flask
 jinja2
@@ -10,6 +11,7 @@ pyyaml
 
 oauth2client==3.0.0
 google-gax==0.12.5
+oauth2client=3.0.0
 pyrebase
 apscheduler
 
