@@ -10,12 +10,14 @@ token_dir = os.path.join(os.path.expanduser('~'),'.tfstudio/keys')
 hour = 3600
 
 class FirebaseAuth(object):
-    def __init__(self, firebase):
+    def __init__(self, firebase, email=None, password=None):
         if not os.path.exists(token_dir):
             os.makedirs(token_dir)
 
         self.firebase = firebase
         self.user = {}
+        self.email = email
+        self.password = password
         self._update_user()
         self.sched = BackgroundScheduler()
         self.sched.start()
@@ -28,11 +30,12 @@ class FirebaseAuth(object):
                 time.time() - os.path.getmtime(api_key)) > hour:
             email = raw_input(
                 'Firebase token is not found or expired! ' +
-                'You need to re-login. (Or re-run with studio/studio-runner' +
+                'You need to re-login. (Or re-run with studio/studio-runner ' +
                 'with --guest option)'
-                '\nemail:')
+                '\nemail:') if not self.email else self.email
 
-            password = getpass.getpass('password:')
+            password = getpass.getpass('password:') \
+                if not self.password else self.password
             self.user = \
                 self.firebase.auth().sign_in_with_email_and_password(
                     email,
