@@ -3,6 +3,7 @@ import os
 import shutil
 import tempfile
 import uuid
+from collections import namedtuple
 
 from studio import fs_tracker
 from studio.runner import LocalExecutor
@@ -12,7 +13,8 @@ class RunnerTest(unittest.TestCase):
     def test_LocalExecutor_run(self):
         my_path = os.path.dirname(os.path.realpath(__file__))
         os.chdir(my_path)
-        executor = LocalExecutor('test_config.yaml')
+        executor = LocalExecutor(namedtuple('args', 'config guest')
+                                           ('test_config.yaml', None))
 
         test_script = 'tf_hello_world.py'
         experiment_name = 'experimentHelloWorld'
