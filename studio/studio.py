@@ -64,11 +64,16 @@ def main():
         description='TensorFlow Studio WebUI server. \
                      Usage: studio \
                      <arguments>')
+
     parser.add_argument('--config', help='configuration file', default=None)
-    parser.add_argument(
-        '--guest',
-        help='Guest mode (does not require db credentials)',
-        action='store_true')
+    parser.add_argument('--guest',
+                        help='Guest mode (does not require db credentials)',
+                        action='store_true')
+
+    parser.add_argument('--port', 
+                        help='port to run Flask server on',
+                        type=int,
+                        default=5000)
 
     args = parser.parse_args()
     config = model.get_default_config()
@@ -82,7 +87,7 @@ def main():
     global _db_provider
     _db_provider = model.get_db_provider(config)
 
-    app.run(debug=True)
+    app.run(port=args.port, debug=True)
 
 
 if __name__ == "__main__":
