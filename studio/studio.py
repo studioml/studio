@@ -19,7 +19,8 @@ def format_time(timestamp):
 @app.route('/')
 def dashboard():
     experiments = _db_provider.get_user_experiments()
-    return render_template("dashboard.html", experiments=experiments)
+    return render_template("dashboard.html", 
+            experiments=sorted(experiments, key=lambda e:-e.time_added))
 
 
 @app.route('/experiments/<key>')
@@ -60,7 +61,7 @@ def user_experiments(key):
         "user_details.html",
         user=key,
         email=email,
-        experiments=experiments)
+        experiments=sorted(experiments, key=lambda e:-e.time_added))
 
 
 def main():
