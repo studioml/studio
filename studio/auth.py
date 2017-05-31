@@ -15,6 +15,7 @@ class FirebaseAuth(object):
             os.makedirs(token_dir)
 
         self.firebase = firebase
+        self.user = {}
         self._update_user()
         self.sched = BackgroundScheduler()
         self.sched.start()
@@ -23,36 +24,34 @@ class FirebaseAuth(object):
         
     def _update_user(self):
         api_key = os.path.join(token_dir, self.firebase.api_key)
-        self.user = {}
         if not os.path.exists(api_key) or (
                 time.time() - os.path.getmtime(api_key)) > hour:
             email = raw_input(
-                'Firebase token is not found or expired! \
-                You need to re-login. \
-                \nemail:')
+                'Firebase token is not found or expired! ' +
+                'You need to re-login. (Or re-run with studio/studio-runner' +
+                'with --guest option)'
+                '\nemail:')
 
-            if not email == 'guest':
-                password = getpass.getpass('password:')
-                self.user = \
-                    self.firebase.auth().sign_in_with_email_and_password(
-                        email,
-                        password)
+            password = getpass.getpass('password:')
+            self.user = \
+                self.firebase.auth().sign_in_with_email_and_password(
+                    email,
+                    password)
+
+            # TODO check if credentials worked
 
             self.user['email'] = email
         else:
             with open(api_key, 'r') as f:
                 olduser = json.load(f)
-            if not olduser['email']:
-                self.user = self.firebase.auth().refresh(
-                    olduser['refreshToken'])
+            self.user = self.firebase.auth().refresh(
+                olduser['refreshToken'])
             self.user['email'] = olduser['email']
 
         with open(api_key, 'w') as f:
             json.dump(self.user, f)
     
     def get_token(self):
-        if self.user['email'] == 'guest':
-            return None
         return self.user['idToken']
 
     def get_user_id(self):
@@ -61,6 +60,7 @@ class FirebaseAuth(object):
 
         if 'localId' in self.user.keys():
             return self.user['localId']
+
         return self.user['userId']
 
     def get_user_email(self):

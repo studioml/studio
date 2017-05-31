@@ -72,12 +72,7 @@ class FirebaseProvider(object):
         self.logger.setLevel(10)
         self.storage = app.storage()
 
-        if not guest:
-            self.auth = FirebaseAuth(app)
-            if self.auth.get_user_id() == 'guest':
-                self.auth = None
-        else:
-            self.auth = None
+        self.auth = FirebaseAuth(app) if not guest else None
 
         if self.auth:
             self.__setitem__(self._get_user_keybase() + "email",
