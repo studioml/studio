@@ -34,7 +34,7 @@ class FirebaseProviderTest(unittest.TestCase):
         with open(config_file) as f:
             config = yaml.load(f)
 
-        return model.FirebaseProvider(config['database'])
+        return model.get_db_provider(config)
 
     def test_get_set_firebase(self):
         fb = self.get_firebase_provider()

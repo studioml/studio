@@ -395,6 +395,14 @@ def get_db_provider(config=None):
     assert 'database' in config.keys()
     db_config = config['database']
     assert db_config['type'].lower() == 'firebase'.lower()
+
+    if 'projectId' in db_config.keys():
+        projectId = db_config['projectId']
+        db_config['authDomain'] = db_config['authDomain'].format(projectId)
+        db_config['databaseURL'] = db_config['databaseURL'].format(projectId)
+        db_config['storageBucket'] = db_config['storageBucket'].format(
+            projectId)
+
     return FirebaseProvider(db_config)
 
 
