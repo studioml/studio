@@ -20,7 +20,8 @@ def format_time(timestamp):
 @app.route('/')
 def dashboard():
     experiments = _db_provider.get_user_experiments()
-    return render_template("dashboard.html", experiments=experiments)
+    return render_template("dashboard.html", 
+            experiments=sorted(experiments, key=lambda e:-e.time_added))
 
 
 @app.route('/experiments/<key>')
@@ -57,7 +58,12 @@ def user_experiments(key):
     experiments = _db_provider.get_user_experiments(key)
     users = _db_provider.get_users()
     email = users[key]['email'] if 'email' in users[key].keys() else None
-    return render_template("user_details.html", user=key, email=email, experiments=experiments)
+    return render_template(
+        "user_details.html",
+        user=key,
+        email=email,
+        experiments=sorted(experiments, key=lambda e:-e.time_added))
+
 
 def main():
     parser = argparse.ArgumentParser(
