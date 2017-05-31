@@ -40,10 +40,10 @@ To configure tfstudio to work with firebase, do the following:
 6. Go to "Cloud messaging tab", copy Sender ID and paste it in messagingSenderId of database sectio of new_config.yaml 
 7. Add users. By default, firebase (both database and storage) give read and write access to all authenticated users. Go to Authentication in Firebase console (on left-hand pane), tab sign-in methods, and enable email/password method. Then go to users tab, and add users. 
 8. Test run. If you have not modified access rights of the database, a few unit tests won't work (unit tests assume guest access to the database, which is blocked by default). Instead, go to studio/helloworld/ folder, and try running 
-        studio-runner train_mnist_keras.py 10
+        studio-runner --config /path/to/new_config.yaml train_mnist_keras.py 10
 (10 stands for number of training epochs). It should ask for user email and password. Then (or in another terminal) run 
 
-        studio 
+        studio --config /path/to/new_config.yaml
 and go to localhost:5000 in the browser to see the results of the experiment
     
 
