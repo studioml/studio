@@ -1,14 +1,23 @@
 import time
-from flask import Flask, render_template
+from flask import Flask, render_template, request, redirect
 import model
 import argparse
 import yaml
+import logging
+import json
+import time
+ 
+logging.basicConfig()
 
 app = Flask(__name__)
 
 
 _db_provider = None
 
+logger = logging.getLogger('studio')
+logger.setLevel(10)
+
+auth_url = 'http://localhost:5004/index.html'
 
 @app.template_filter('format_time')
 def format_time(timestamp):
@@ -16,8 +25,31 @@ def format_time(timestamp):
         '%Y-%m-%d %H:%M:%S', time.localtime(timestamp))
 
 
+@app.route('/auth_response', methods=['POST'])
+def auth_response():
+    #logger.info(str(request.form['data']))
+    auth_dict = json.loads(request.form['data'])
+    logger.debug(auth_dict.keys())
+    expires = auth_dict['stsTokenManager']['expirationTime'] / 1000
+    logger.debug("Authentication successful. Token duration (s): {}".format(expires - time.time())) 
+    logger.debug("auth_dict = " + str(auth_dict))
+  
+    refresh_token = auth_dict['stsTokenManager']['refreshToken']
+    email = auth_dict['email']
+
+    logger.debug('refresh_token = ' + refresh_token)
+    logger.debug('email = ' + email)
+
+    _db_provider.auth.refresh_token(email, refresh_token)
+    #return redirect("/")
+    
+    return "Authentication successfull with token" + str(request.form['data'])
+
 @app.route('/')
 def dashboard():
+    if _db_provider.auth.expired:
+        return redirect(auth_url)
+
     experiments = _db_provider.get_user_experiments()
     return render_template("dashboard.html", 
             experiments=sorted(experiments, key=lambda e:-e.time_added))
@@ -48,6 +80,9 @@ def project_details(key):
 
 @app.route('/users')
 def users():
+    if _db_provider.auth.expired:
+        return redirect(auth_url)
+
     users = _db_provider.get_users()
     return render_template("users.html", users=users)
 
@@ -71,9 +106,9 @@ def main():
                      <arguments>')
 
     parser.add_argument('--config', help='configuration file', default=None)
-    parser.add_argument('--guest',
-                        help='Guest mode (does not require db credentials)',
-                        action='store_true')
+#    parser.add_argument('--guest',
+#                        help='Guest mode (does not require db credentials)',
+#                        action='store_true')
 
     parser.add_argument('--port', 
                         help='port to run Flask server on',
@@ -86,8 +121,8 @@ def main():
         with open(args.config) as f:
             config.update(yaml.load(f))
 
-    if args.guest:
-        config['database']['guest'] = True
+#    if args.guest:
+#        config['database']['guest'] = True
 
     global _db_provider
     _db_provider = model.get_db_provider(config)

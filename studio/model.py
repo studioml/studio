@@ -11,6 +11,7 @@ import time
 import glob
 import tempfile
 import re
+import StringIO
 from threading import Thread
 import subprocess
 
@@ -18,6 +19,7 @@ from tensorflow.contrib.framework.python.framework import checkpoint_utils
 
 import fs_tracker
 from auth import FirebaseAuth
+from model_util import KerasModelWrapper
 
 logging.basicConfig()
 
@@ -52,6 +54,20 @@ class Experiment(object):
         self.time_finished = time_finished
         self.info = info
 
+    def get_model(self):
+        if self.info.get('type') == 'keras':
+            hdf5_files = [
+                (p, os.path.getmtime(p))
+                for p in glob.glob(os.path.join(self.model_dir, '*.hdf*'))]
+
+            last_checkpoint = max(hdf5_files, key=lambda t: t[1])[0]
+            return KerasModelWrapper(last_checkpoint, self.model_dir)
+
+        if self.info.get('type') == 'tensorflow':
+            raise NotImplementedError
+
+        raise ValueError("Experiment type is unknown!")
+
 
 def create_experiment(filename, args, experiment_name=None, project=None):
     key = str(uuid.uuid4()) if not experiment_name else experiment_name
@@ -83,7 +99,7 @@ class FirebaseProvider(object):
                                  database_config.get("password")) \
             if not guest else None
 
-        if self.auth:
+        if self.auth and not self.auth.expired:
             self.__setitem__(self._get_user_keybase() + "email",
                              self.auth.get_user_email())
 
@@ -128,6 +144,8 @@ class FirebaseProvider(object):
                               .format(local_file_path, key, err))
 
     def _download_file(self, key, local_file_path):
+        self.logger.debug("Downloading file at key {} to local path {}..."
+                          .format(key, local_file_path))
         try:
             storageobj = self.storage.child(key)
 
@@ -135,6 +153,7 @@ class FirebaseProvider(object):
                 storageobj.download(local_file_path, self.auth.get_token())
             else:
                 storageobj.download(local_file_path)
+            self.logger.debug("Done")
         except Exception as err:
             self.logger.error("Downloading file {} to local path {} from storage \
                                raised an exception: {}"
@@ -152,7 +171,7 @@ class FirebaseProvider(object):
             subprocess.call([
                 '/bin/bash',
                 '-c',
-                'cd %s && tar -czf %s . ' % (local_path, tar_filename)])
+                'cd {} && tar -czf {} . '.format(local_path, tar_filename)])
 
             self._upload_file(key, tar_filename)
             os.remove(tar_filename)
@@ -161,17 +180,21 @@ class FirebaseProvider(object):
                                Not uploading anything.' % (local_path))
 
     def _download_dir(self, key, local_path):
+        self.logger.debug("Downloading dir {} to local path {} from storage..."
+                          .format(key, local_path))
         tar_filename = os.path.join(tempfile.gettempdir(), str(uuid.uuid4()))
+        self.logger.debug("tar_filename = {} ".format(tar_filename))
         self._download_file(key, tar_filename)
         if os.path.exists(tar_filename):
+            self.logger.debug("Untarring {}".format(tar_filename))
             subprocess.call([
                 '/bin/bash',
                 '-c',
-                'mkdir -p %s && \
-                tar -xzf %s -C %s --keep-newer-files'
-                % (local_path, tar_filename, local_path)])
+                ('mkdir -p {} &&' +
+                 'tar -xzf {} -C {} --keep-newer-files')
+                .format(local_path, tar_filename, local_path)])
 
-            os.remove(tar_filename)
+            # os.remove(tar_filename)
 
     def _delete(self, key):
         dbobj = self.db.child(key)
@@ -296,7 +319,7 @@ class FirebaseProvider(object):
         self._download_modeldir(key)
         local_modeldir = fs_tracker.get_model_directory(key)
         info = {}
-        hdf5_files = glob.glob(os.path.join(local_modeldir, '*.hdf'))
+        hdf5_files = glob.glob(os.path.join(local_modeldir, '*.hdf*'))
         type_found = False
         if any(hdf5_files):
             info['type'] = 'keras'
@@ -315,14 +338,15 @@ class FirebaseProvider(object):
         if not type_found:
             info['type'] = 'unknown'
 
-        #TODO: get the name of a log file from config
+        # TODO: get the name of a log file from config
         logpath = os.path.join(
             fs_tracker.get_model_directory(key), 'output.log')
 
         if os.path.exists(logpath):
             tailp = subprocess.Popen(
                 ['tail', '-50', logpath], stdout=subprocess.PIPE)
-            logtail = [_remove_backspaces(line) for line in tailp.stdout]
+            stdoutdata = tailp.communicate()[0]
+            logtail = _remove_backspaces(stdoutdata).split('\n')
             info['logtail'] = logtail
 
         return info
@@ -410,6 +434,17 @@ def get_db_provider(config=None):
 
 
 def _remove_backspaces(line):
+    splitline = re.split('(\x08+)', line)
+    buf = StringIO.StringIO()
+    for i in range(0, len(splitline)-1, 2):
+        buf.write(splitline[i][:-len(splitline[i+1])])
+
+    if len(splitline) % 2 == 1:
+        buf.write(splitline[-1])
+
+    return buf.getvalue()
+    '''
     while '\x08' in line:
         line = re.sub('[^\x08]\x08', '', line)
     return line
+    '''
