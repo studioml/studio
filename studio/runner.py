@@ -4,17 +4,14 @@ import sys
 import subprocess
 import argparse
 import yaml
-import hashlib
-import base64
 import logging
-import zlib
-logging.basicConfig()
 
 from apscheduler.schedulers.background import BackgroundScheduler
-from configparser import ConfigParser
 
 import fs_tracker
 import model
+
+logging.basicConfig()
 
 
 class LocalExecutor(object):
@@ -40,7 +37,10 @@ class LocalExecutor(object):
 
     def run(self, filename, args, experiment_name=None, project=None):
         experiment = model.create_experiment(
-            filename=filename, args=args, experiment_name=experiment_name, project=project)
+            filename=filename,
+            args=args,
+            experiment_name=experiment_name,
+            project=project)
         self.logger.info("Experiment name: " + experiment.key)
 
         self.db.add_experiment(experiment)
@@ -55,21 +55,29 @@ class LocalExecutor(object):
         sched.start()
 
         with open(log_path, 'w') as output_file:
-            p = subprocess.Popen(["python", filename] + args, stdout=output_file, stderr=subprocess.STDOUT, env=env)
-            ptail = subprocess.Popen(["tail", "-f", log_path]) # simple hack to show what's in the log file
+            p = subprocess.Popen(["python",
+                                  filename] + args,
+                                 stdout=output_file,
+                                 stderr=subprocess.STDOUT,
+                                 env=env)
+            # simple hack to show what's in the log file
+            ptail = subprocess.Popen(["tail", "-f", log_path])
 
-            sched.add_job(lambda: self.db.checkpoint_experiment(experiment),  'interval', minutes = self.config['saveWorkspaceFrequency'])
-            
+            sched.add_job(
+                lambda: self.db.checkpoint_experiment(experiment),
+                'interval',
+                minutes=self.config['saveWorkspaceFrequency'])
+
             try:
                 p.wait()
             finally:
                 ptail.kill()
                 self.db.finish_experiment(experiment)
                 sched.shutdown()
-                
-       
+
+
 def main(args=sys.argv):
-   parser = argparse.ArgumentParser(
+    parser = argparse.ArgumentParser(
         description='TensorFlow Studio runner. \
                      Usage: studio-runner \
                      script <script_arguments>')
@@ -84,10 +92,11 @@ def main(args=sys.argv):
         '--guest',
         help='Guest mode (does not require db credentials)',
         action='store_true')
-    parsed_args,script_args = parser.parse_known_args(args)
+
+    parsed_args, script_args = parser.parse_known_args(args)
     exec_filename, other_args = script_args[1], script_args[2:]
     # TODO: Queue the job based on arguments and only then execute.
-   LocalExecutor(parsed_args).run(
+    LocalExecutor(parsed_args).run(
         exec_filename,
         other_args,
         experiment_name=parsed_args.experiment,

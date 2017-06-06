@@ -6,7 +6,6 @@ import yaml
 
 app = Flask(__name__)
 
-import model
 
 _db_provider = None
 
@@ -40,7 +39,7 @@ def projects():
 
 @app.route('/project/<key>')
 def project_details(key):
-   projects = _db_provider.get_projects()
+    projects = _db_provider.get_projects()
     return render_template(
         "project_details.html",
         project_name=key,
