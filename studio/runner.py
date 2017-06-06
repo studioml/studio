@@ -4,17 +4,14 @@ import sys
 import subprocess
 import argparse
 import yaml
-import hashlib
-import base64
 import logging
-import zlib
-logging.basicConfig()
 
 from apscheduler.schedulers.background import BackgroundScheduler
-from configparser import ConfigParser
 
 import fs_tracker
 import model
+
+logging.basicConfig()
 
 
 class LocalExecutor(object):
@@ -23,11 +20,14 @@ class LocalExecutor(object):
     TODO: capturing state and results.
     """
 
-    def __init__(self, config_file=None):
+    def __init__(self, args):
         self.config = model.get_default_config()
-        if config_file:
-            with open(config_file) as f:
+        if args.config:
+            with open(args.config) as f:
                 self.config.update(yaml.load(f))
+
+        if args.guest:
+            self.config['database']['guest'] = True
 
         self.db = model.get_db_provider(self.config)
         self.logger = logging.getLogger('LocalExecutor')
@@ -37,7 +37,10 @@ class LocalExecutor(object):
 
     def run(self, filename, args, experiment_name=None, project=None):
         experiment = model.create_experiment(
-            filename=filename, args=args, experiment_name=experiment_name, project=project)
+            filename=filename,
+            args=args,
+            experiment_name=experiment_name,
+            project=project)
         self.logger.info("Experiment name: " + experiment.key)
 
         self.db.add_experiment(experiment)
@@ -52,29 +55,53 @@ class LocalExecutor(object):
         sched.start()
 
         with open(log_path, 'w') as output_file:
-            p = subprocess.Popen(["python", filename] + args, stdout=output_file, stderr=subprocess.STDOUT, env=env)
-            ptail = subprocess.Popen(["tail", "-f", log_path]) # simple hack to show what's in the log file
+            p = subprocess.Popen(["python",
+                                  filename] + args,
+                                 stdout=output_file,
+                                 stderr=subprocess.STDOUT,
+                                 env=env)
+            # simple hack to show what's in the log file
+            ptail = subprocess.Popen(["tail", "-f", log_path])
 
-            sched.add_job(lambda: self.db.checkpoint_experiment(experiment),  'interval', minutes = self.config['saveWorkspaceFrequency'])
-            
+            sched.add_job(
+                lambda: self.db.checkpoint_experiment(experiment),
+                'interval',
+                minutes=self.config['saveWorkspaceFrequency'])
+
             try:
                 p.wait()
             finally:
                 ptail.kill()
                 self.db.finish_experiment(experiment)
                 sched.shutdown()
-                
-       
-def main(args=sys.argv):
-    parser = argparse.ArgumentParser(description='TensorFlow Studio runner. Usage: studio-runner script <script_arguments>')
-    parser.add_argument('--config', help='configuration file')
-    parser.add_argument('--project', help='name of the project', default=None)
-    parser.add_argument('--experiment', help='name of the experiment. If none provided, random uuid will be generated', default=None)
 
-    parsed_args,script_args = parser.parse_known_args(args)
+
+def main(args=sys.argv):
+    parser = argparse.ArgumentParser(
+        description='TensorFlow Studio runner. \
+                     Usage: studio-runner \
+                     script <script_arguments>')
+    parser.add_argument('--config', help='configuration file', default=None)
+    parser.add_argument('--project', help='name of the project', default=None)
+    parser.add_argument(
+        '--experiment',
+        help='name of the experiment. If none provided, ' +
+             'random uuid will be generated',
+        default=None)
+    parser.add_argument(
+        '--guest',
+        help='Guest mode (does not require db credentials)',
+        action='store_true')
+
+    parsed_args, script_args = parser.parse_known_args(args)
     exec_filename, other_args = script_args[1], script_args[2:]
     # TODO: Queue the job based on arguments and only then execute.
-    LocalExecutor(parsed_args.config).run(exec_filename, other_args, experiment_name=parsed_args.experiment, project=parsed_args.project)
-    
+    LocalExecutor(parsed_args).run(
+        exec_filename,
+        other_args,
+        experiment_name=parsed_args.experiment,
+        project=parsed_args.project)
+
+
 if __name__ == "__main__":
     main()
