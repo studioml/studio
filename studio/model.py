@@ -192,6 +192,7 @@ class FirebaseProvider(object):
 
     def _get_experiments_keybase(self, userid=None):
         return "experiments/"
+
     def _get_projects_keybase(self):
         return "projects/"
 
@@ -314,7 +315,7 @@ class FirebaseProvider(object):
         if not type_found:
             info['type'] = 'unknown'
 
-        #TODO: get the name of a log file from config
+        # TODO: get the name of a log file from config
         logpath = os.path.join(
             fs_tracker.get_model_directory(key), 'output.log')
 

@@ -19,8 +19,12 @@ def format_time(timestamp):
 @app.route('/')
 def dashboard():
     experiments = _db_provider.get_user_experiments()
-    return render_template("dashboard.html", 
-            experiments=sorted(experiments, key=lambda e:-e.time_added))
+    return render_template(
+        "dashboard.html",
+        experiments=sorted(
+            experiments,
+            key=lambda e: -
+            e.time_added))
 
 
 @app.route('/experiments/<key>')
@@ -61,7 +65,7 @@ def user_experiments(key):
         "user_details.html",
         user=key,
         email=email,
-        experiments=sorted(experiments, key=lambda e:-e.time_added))
+        experiments=sorted(experiments, key=lambda e: -e.time_added))
 
 
 def main():
@@ -75,7 +79,7 @@ def main():
                         help='Guest mode (does not require db credentials)',
                         action='store_true')
 
-    parser.add_argument('--port', 
+    parser.add_argument('--port',
                         help='port to run Flask server on',
                         type=int,
                         default=5000)

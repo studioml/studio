@@ -56,7 +56,7 @@ class FirebaseAuth(object):
         return self.user['idToken']
 
     def get_user_id(self):
-       if self.user['email'] == 'guest':
+        if self.user['email'] == 'guest':
             return 'guest'
 
         if 'localId' in self.user.keys():
