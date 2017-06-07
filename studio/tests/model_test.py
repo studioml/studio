@@ -39,7 +39,7 @@ class FirebaseProviderTest(unittest.TestCase):
     def test_get_set_firebase(self):
         fb = self.get_firebase_provider()
         response = fb.__getitem__("test/hello")
-        self.assertTrue(response, "world")
+        self.assertEquals(response, "world")
 
         random_str = str(uuid.uuid4())
         key_path = 'test/randomKey'
@@ -47,6 +47,28 @@ class FirebaseProviderTest(unittest.TestCase):
 
         self.assertTrue(fb.__getitem__(key_path) == random_str)
         fb._delete(key_path)
+
+    def test_get_set_auth_firebase(self):
+        fb = self.get_firebase_provider('test_config_auth.yaml')
+        response = fb.__getitem__("authtest/hello")
+        self.assertEquals(response, "world")
+
+        random_str = str(uuid.uuid4())
+        key_path = 'authtest/randomKey'
+        fb.__setitem__(key_path, random_str)
+
+        self.assertTrue(fb.__getitem__(key_path) == random_str)
+        fb._delete(key_path)
+
+    def test_get_set_noauth_firebase(self):
+        fb = self.get_firebase_provider('test_config.yaml')
+        response = fb.__getitem__("authtest/hello")
+        self.assertTrue(response is None)
+
+        random_str = str(uuid.uuid4())
+        key_path = 'authtest/randomKey'
+        fb.__setitem__(key_path, random_str)
+        self.assertTrue(fb.__getitem__(key_path) is None)
 
     def test_get_set_firebase_bad(self):
         # smoke test to make sure access to a database at wrong
@@ -73,6 +95,39 @@ class FirebaseProviderTest(unittest.TestCase):
             line = f.read()
         os.remove(tmp_filename)
         self.assertTrue(line == random_str)
+
+    def test_upload_download_file_auth(self):
+        fb = self.get_firebase_provider('test_config_auth.yaml')
+        tmp_filename = os.path.join(
+            tempfile.gettempdir(),
+            'test_upload_download.txt')
+        random_str = str(uuid.uuid4())
+        with open(tmp_filename, 'w') as f:
+            f.write(random_str)
+
+        fb._upload_file('authtest/test_upload_download.txt', tmp_filename)
+        os.remove(tmp_filename)
+        fb._download_file('authtest/test_upload_download.txt', tmp_filename)
+
+        with open(tmp_filename, 'r') as f:
+            line = f.read()
+        os.remove(tmp_filename)
+        self.assertTrue(line == random_str)
+
+    def test_upload_download_file_noauth(self):
+        fb = self.get_firebase_provider('test_config.yaml')
+        tmp_filename = os.path.join(
+            tempfile.gettempdir(),
+            'test_upload_download.txt')
+        random_str = str(uuid.uuid4())
+        with open(tmp_filename, 'w') as f:
+            f.write(random_str)
+
+        fb._upload_file('authtest/test_upload_download.txt', tmp_filename)
+        os.remove(tmp_filename)
+        fb._download_file('authtest/test_upload_download.txt', tmp_filename)
+
+        self.assertTrue(not os.path.exists(tmp_filename))
 
     def test_upload_download_file_bad(self):
         # smoke test to make sure attempt to access a wrong file
@@ -243,7 +298,6 @@ class ModelTest(unittest.TestCase):
         self.assertTrue(experiment.project == experiment_project)
         self.assertTrue(experiment.pythonenv == packages)
 
-
     def test_remove_backspaces(self):
         testline = 'abcd\x08\x08\x08efg\x08\x08hi\x08'
         removed = model._remove_backspaces(testline)
@@ -260,8 +314,6 @@ class ModelTest(unittest.TestCase):
         testline = 'abcd\n\ndef'
         removed = model._remove_backspaces(testline)
         self.assertTrue(removed == testline)
-
-
 
 
 if __name__ == "__main__":

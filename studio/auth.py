@@ -9,52 +9,75 @@ hour = 3600
 
 
 class FirebaseAuth(object):
-    def __init__(self, firebase, email=None, password=None):
+    def __init__(
+            self,
+            firebase,
+            use_email_auth=False,
+            email=None,
+            password=None,
+            blocking=True):
         if not os.path.exists(token_dir):
             os.makedirs(token_dir)
 
         self.firebase = firebase
         self.user = {}
-        self.email = email
-        self.password = password
+        self.use_email_auth = use_email_auth
+        if use_email_auth:
+            if email and password:
+                self.email = email
+                self.password = password
+            else:
+                self.email = raw_input(
+                    'Firebase token is not found or expired! ' +
+                    'You need to re-login. (Or re-run with ' +
+                    'studio/studio-runner ' +
+                    'with --guest option ) '
+                    '\nemail:')
+                self.password = getpass.getpass('password:')
+
         self.expired = True
         self._update_user()
+
+        if self.expired and blocking:
+            print('Authentication required! Either specify ' +
+                  'use_email_auth in config file, or run '
+                  'studio and go to webui ' +
+                  '(localhost:5000 by default) '
+                  'to authenticate using google credentials')
+            while self.expired:
+                time.sleep(1)
+                self._update_user()
+
         self.sched = BackgroundScheduler()
         self.sched.start()
-        self.sched.add_job(self._update_user, 'interval', minutes=5)
+        self.sched.add_job(self._update_user, 'interval', minutes=15)
 
     def _update_user(self):
         api_key = os.path.join(token_dir, self.firebase.api_key)
         if not os.path.exists(api_key) or \
-               (time.time() - os.path.getmtime(api_key)) > 900:
-            self.sign_in_with_email()
-            self.expired = False
-            #self.expired = True
+                (time.time() - os.path.getmtime(api_key)) > hour:
+            if self.use_email_auth:
+                self.sign_in_with_email()
+                self.expired = False
+            else:
+                self.expired = True
         else:
             with open(api_key, 'r') as f:
                 user = json.load(f)
+
             print(api_key)
             print(user)
-            refresh_token(user['email'], user['refreshToken'])
-
+            self.refresh_token(user['email'], user['refreshToken'])
 
     def sign_in_with_email(self):
-        email = raw_input(
-            'Firebase token is not found or expired! ' +
-            'You need to re-login. (Or re-run with studio/studio-runner ' +
-            'with --guest option ) '
-            '\nemail:') if not self.email else self.email
-
-        password = getpass.getpass('password:') \
-            if not self.password else self.password
         self.user = \
             self.firebase.auth().sign_in_with_email_and_password(
-                email,
-                password)
-           
-            # TODO check if credentials worked
+                self.email,
+                self.password)
 
-        self.user['email'] = email
+        # TODO check if credentials worked
+
+        self.user['email'] = self.email
 
     def refresh_token(self, email, refresh_token):
         api_key = os.path.join(token_dir, self.firebase.api_key)
@@ -62,7 +85,7 @@ class FirebaseAuth(object):
         self.user['email'] = email
         self.expired = False
         with open(api_key, 'w') as f:
-                json.dump(self.user, f)
+            json.dump(self.user, f)
 
     def get_token(self):
         if self.expired:

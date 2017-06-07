@@ -2,15 +2,15 @@ database:
     type: FireBase
 
     apiKey: AIzaSyCLQbp5X2B4SWzBw-sz9rUnGHNSdMl0Yx8
-    projectId: studio-ed756
-    messagingSenderId: 81790704397
-
     authDomain: "{}.firebaseapp.com"
     databaseURL: "https://{}.firebaseio.com"
+    projectId: studio-ed756
     storageBucket: "{}.appspot.com"
+    messagingSenderId: 81790704397
 
-    # guest: true
     use_email_auth: true
+    email: authtest@sentient.ai
+    password: HumptyDumptyS@tOnAWall
                                                                     
 log:
     name: output.log

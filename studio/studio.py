@@ -5,8 +5,7 @@ import argparse
 import yaml
 import logging
 import json
-import time
- 
+
 logging.basicConfig()
 
 app = Flask(__name__)
@@ -17,7 +16,6 @@ _db_provider = None
 logger = logging.getLogger('studio')
 logger.setLevel(10)
 
-auth_url = 'http://localhost:5004/index.html'
 
 @app.template_filter('format_time')
 def format_time(timestamp):
@@ -27,32 +25,34 @@ def format_time(timestamp):
 
 @app.route('/auth_response', methods=['POST'])
 def auth_response():
-    #logger.info(str(request.form['data']))
     auth_dict = json.loads(request.form['data'])
     logger.debug(auth_dict.keys())
     expires = auth_dict['stsTokenManager']['expirationTime'] / 1000
-    logger.debug("Authentication successful. Token duration (s): {}".format(expires - time.time())) 
+    logger.debug("Authentication successful. Token duration (s): {}"
+                 .format(expires - time.time()))
     logger.debug("auth_dict = " + str(auth_dict))
-  
+
     refresh_token = auth_dict['stsTokenManager']['refreshToken']
     email = auth_dict['email']
 
     logger.debug('refresh_token = ' + refresh_token)
     logger.debug('email = ' + email)
 
-    _db_provider.auth.refresh_token(email, refresh_token)
-    #return redirect("/")
-    
-    return "Authentication successfull with token" + str(request.form['data'])
+    _db_provider.refresh_auth_token(email, refresh_token)
+    logger.debug("Authentication successfull, response" + str(request.form))
+    return redirect(request.form['redirect'])
+
 
 @app.route('/')
 def dashboard():
     if _db_provider.auth.expired:
-        return redirect(auth_url)
+        logger.debug(get_auth_url() + '/')
+        return redirect(get_auth_url() + '/')
 
     experiments = _db_provider.get_user_experiments()
-    return render_template("dashboard.html", 
-            experiments=sorted(experiments, key=lambda e:-e.time_added))
+    return render_template(
+        "dashboard.html",
+        experiments=sorted(experiments, key=lambda e: -e.time_added))
 
 
 @app.route('/experiments/<key>')
@@ -81,7 +81,7 @@ def project_details(key):
 @app.route('/users')
 def users():
     if _db_provider.auth.expired:
-        return redirect(auth_url)
+        return redirect(get_auth_url() + '/users')
 
     users = _db_provider.get_users()
     return render_template("users.html", users=users)
@@ -96,7 +96,14 @@ def user_experiments(key):
         "user_details.html",
         user=key,
         email=email,
-        experiments=sorted(experiments, key=lambda e:-e.time_added))
+        experiments=sorted(experiments, key=lambda e: -e.time_added))
+
+
+def get_auth_url():
+    return ("https://{}/index.html?" +
+            "authurl={}auth_response&redirect=").format(
+        _db_provider.get_auth_domain(),
+        request.url)
 
 
 def main():
@@ -110,7 +117,7 @@ def main():
 #                        help='Guest mode (does not require db credentials)',
 #                        action='store_true')
 
-    parser.add_argument('--port', 
+    parser.add_argument('--port',
                         help='port to run Flask server on',
                         type=int,
                         default=5000)
@@ -125,7 +132,7 @@ def main():
 #        config['database']['guest'] = True
 
     global _db_provider
-    _db_provider = model.get_db_provider(config)
+    _db_provider = model.get_db_provider(config, blocking_auth=False)
 
     app.run(port=args.port, debug=True)
 

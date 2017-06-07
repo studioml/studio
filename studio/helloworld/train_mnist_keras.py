@@ -39,13 +39,10 @@ checkpointer = ModelCheckpoint(
 
 # save the model arch to json
 with open(os.path.join(fs_tracker.get_model_directory(),
-    'model.json'), 'w') as f:
+                       'model.json'), 'w') as f:
     f.write(model.to_json())
 
 model.fit(
     x_train, y_train, validation_data=(
         x_test, y_test), epochs=int(
             sys.argv[1]), callbacks=[checkpointer])
-
-
-
