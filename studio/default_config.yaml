@@ -10,7 +10,8 @@ database:
     storageBucket: "{}.appspot.com"
 
     # guest: true
-    use_email_auth: true
+
+    # use_email_auth: true
                                                                     
 log:
     name: output.log
