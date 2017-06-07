@@ -62,7 +62,7 @@ class Experiment(object):
                 for p in glob.glob(os.path.join(self.model_dir, '*.hdf*'))]
 
             last_checkpoint = max(hdf5_files, key=lambda t: t[1])[0]
-            return KerasModelWrapper(last_checkpoint, self.model_dir)
+            return KerasModelWrapper(last_checkpoint)
 
         if self.info.get('type') == 'tensorflow':
             raise NotImplementedError
