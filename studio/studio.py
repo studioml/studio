@@ -54,7 +54,6 @@ def dashboard():
         "dashboard.html",
         experiments=sorted(experiments, key=lambda e: -e.time_added))
 
-
 @app.route('/experiments/<key>')
 def experiment(key):
     experiment = _db_provider.get_experiment(key)
