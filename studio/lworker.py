@@ -45,11 +45,14 @@ class LocalExecutor(object):
         self.logger.info("Experiment key: " + experiment.key)
 
         self.db.start_experiment(experiment)
-
+        
         env = os.environ.copy()
         fs_tracker.setup_model_directory(env, experiment.key)
         model_dir = fs_tracker.get_model_directory(experiment.key)
         log_path = os.path.join(model_dir, self.config['log']['name'])
+
+        self.logger.debug('Child process environment:')
+        self.logger.debug(str(env))
 
         sched = BackgroundScheduler()
         sched.start()
@@ -95,6 +98,8 @@ def main(args=sys.argv):
     executor = LocalExecutor(parsed_args)
 
     queue = glob.glob(fs_tracker.get_queue_directory() + "/*")
+    config = model.get_config(parsed_args.config)
+
     while any(queue):
         first_exp = min([(p, os.path.getmtime(p)) for p in queue],
                         key=lambda t: t[1])[0]
@@ -106,6 +111,8 @@ def main(args=sys.argv):
             os.remove(first_exp)
             executor.run(experiment)
         else:
+            logger.info('Cannot run experiment ' + experiment.key +
+                        ' due lack of resources. Will retry') 
             time.sleep(5)
 
         queue = glob.glob(fs_tracker.get_queue_directory() + "/*")
@@ -114,13 +121,13 @@ def main(args=sys.argv):
                 .format(fs_tracker.get_queue_directory()))
 
 
-def allocate_resources(experiment):
+def allocate_resources(experiment, config=None):
     if not experiment.resources_needed:
+        allocate_gpus(0)
         return True
 
     gpus_needed = experiment.resources_needed.get('gpus')
     ret_val = True
-
     if gpus_needed > 0:
         ret_val = ret_val and allocate_gpus(gpus_needed)
     else:
@@ -129,10 +136,15 @@ def allocate_resources(experiment):
     return ret_val
 
 
-def allocate_gpus(gpus_needed):
-    gpus_available = get_available_gpus()
-    if gpus_available >= gpus_needed:
-        os.environ['CUDA_VISIBLE_DEVICES'] = ','.join(gpus_available)
+def allocate_gpus(gpus_needed, config=None):
+    available_gpus = get_available_gpus()
+    if config and 'cudaDeviceMapping' in config.keys():
+        mapped_gpus = [str(config['cudaDeviceMapping'][g]) for g in available_gpus]
+    else:
+        mapped_gpus = [str(g) for g in available_gpus]
+
+    if len(mapped_gpus) >= gpus_needed:
+        os.environ['CUDA_VISIBLE_DEVICES'] = ','.join(mapped_gpus[:gpus_needed])
         return True
     else:
         return False
@@ -145,9 +157,14 @@ def get_available_gpus():
 
     smi_output, _ = smi_proc.communicate()
     xmlroot = ET.fromstring(smi_output)
-    return [int(gpu.find('minor_version').text) for gpu in xmlroot.find('gpu')
-            if memstr2int(gpu.find('fb_memory_usage').find('used').text) <
-            0.1 * memstr2int(gpu.find('fb_memory_usage').find('total')).text]
+
+    def check_gpu(gpuinfo):
+        return memstr2int(gpu.find('fb_memory_usage').find('used').text) < \
+            0.1 * memstr2int(gpu.find('fb_memory_usage').find('total').text)
+
+    no_gpus = len(xmlroot.findall('gpu'))
+    return [int(gpu.find('minor_number').text) for gpu in xmlroot.findall('gpu') if check_gpu(gpu)]
+            
 
 
 def memstr2int(string):

@@ -67,8 +67,8 @@ def main(args=sys.argv):
     if parsed_args.guest:
         worker_args += '--guest'
 
-    # worker = subprocess.Popen(worker_args)
-    # worker.wait()
+    worker = subprocess.Popen(worker_args)
+    worker.wait()
  
 
 if __name__ == "__main__":

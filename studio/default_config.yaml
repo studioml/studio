@@ -17,3 +17,12 @@ log:
     name: output.log
 
 saveWorkspaceFrequency: 1 #how often is workspace being saved (minutes)
+
+# change it if your mapping between CUDA_VISIBLE_DEVICES
+# and device id's (as reported by nvidia-smi) is non-trivial
+# Common use case is when they are reversed: 0->3, 1->2, etc
+cudaDeviceMapping:
+    0: 0
+    1: 1
+    2: 2
+    3: 3
