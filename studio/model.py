@@ -72,7 +72,12 @@ class Experiment(object):
         raise ValueError("Experiment type is unknown!")
 
 
-def create_experiment(filename, args, experiment_name=None, project=None, resources_needed=None):
+def create_experiment(
+        filename,
+        args,
+        experiment_name=None,
+        project=None,
+        resources_needed=None):
     key = str(uuid.uuid4()) if not experiment_name else experiment_name
     packages = [p._key + '==' + p._version for p in
                 pip.pip.get_installed_distributions(local_only=True)]
@@ -133,7 +138,7 @@ class FirebaseProvider(object):
         except Exception as err:
             self.logger.error(("Putting key {}, value {} into a database " +
                                "raised an exception: {}")
-                               .format(key, value, err))
+                              .format(key, value, err))
 
     def _upload_file(self, key, local_file_path):
         try:
@@ -143,9 +148,9 @@ class FirebaseProvider(object):
             else:
                 storageobj.put(local_file_path)
         except Exception as err:
-            self.logger.error(("Uploading file {} with key {} into storage "+
+            self.logger.error(("Uploading file {} with key {} into storage " +
                                "raised an exception: {}")
-                               .format(local_file_path, key, err))
+                              .format(local_file_path, key, err))
 
     def _download_file(self, key, local_file_path):
         self.logger.debug("Downloading file at key {} to local path {}..."
@@ -157,8 +162,8 @@ class FirebaseProvider(object):
                 # pyrebase download does not work with files that require
                 # authentication...
                 # Need to rewrite
-                #storageobj.download(local_file_path, self.auth.get_token())
-                
+                # storageobj.download(local_file_path, self.auth.get_token())
+
                 headers = {"Authorization": "Firebase " +
                            self.auth.get_token()}
                 escaped_key = key.replace('/', '%2f')
@@ -178,18 +183,25 @@ class FirebaseProvider(object):
                 storageobj.download(local_file_path)
             self.logger.debug("Done")
         except Exception as err:
-            self.logger.error(("Downloading file {} to local path {} from storage " +
-                               "raised an exception: {}")
-                               .format(key, local_file_path, err))
+            self.logger.error(
+                ("Downloading file {} to local path {} from storage " +
+                 "raised an exception: {}") .format(
+                    key,
+                    local_file_path,
+                    err))
 
     def _upload_dir(self, key, local_path):
         if os.path.exists(local_path):
             tar_filename = os.path.join(tempfile.gettempdir(),
                                         str(uuid.uuid4()))
-            self.logger.debug(("Tarring and uploading directrory. " +
-                               "tar_filename = {}, " +
-                               "local_path = {}, " +
-                               "key = {}").format(tar_filename, local_path, key))
+            self.logger.debug(
+                ("Tarring and uploading directrory. " +
+                 "tar_filename = {}, " +
+                 "local_path = {}, " +
+                 "key = {}").format(
+                    tar_filename,
+                    local_path,
+                    key))
 
             subprocess.call([
                 '/bin/bash',
@@ -199,7 +211,7 @@ class FirebaseProvider(object):
             self._upload_file(key, tar_filename)
             os.remove(tar_filename)
         else:
-            self.logger.debug(("Local path {} does not exist. " + 
+            self.logger.debug(("Local path {} does not exist. " +
                                "Not uploading anything.").format(local_path))
 
     def _download_dir(self, key, local_path):
@@ -471,7 +483,7 @@ def get_config(config_file=None):
         "default_config.yaml")
     with open(def_config_file) as f:
         config = yaml.load(f.read())
-    
+
     if config_file:
         with open(config_file) as f:
             config.update(yaml.load(f.read()))

@@ -5,10 +5,9 @@ import tempfile
 import uuid
 from collections import namedtuple
 
-from studio import fs_tracker,model
+from studio import fs_tracker, model
 from studio.lworker import LocalExecutor
 
-from test_util import remove_keys
 
 class RunnerTest(unittest.TestCase):
     def test_LocalExecutor_run(self):

@@ -118,5 +118,4 @@ class FirebaseAuth(object):
 def remove_all_keys():
     keypath = os.path.join(os.path.expanduser('~'), '.tfstudio', 'keys')
     if os.path.exists(keypath):
-         shutil.rmtree(keypath)
-
+        shutil.rmtree(keypath)
