@@ -15,14 +15,16 @@ app = Flask(__name__)
 _db_provider = None
 logger = None
 
+
 def authenticated(redirect_after):
     def auth_decorator(func):
         @wraps(func)
         def auth_wrapper(**kwargs):
             if _db_provider.auth.expired:
                 formatted_redirect = redirect_after
-                for k,v in kwargs.iteritems():
-                    formatted_redirect = formatted_redirect.replace('<' + k + '>', v)
+                for k, v in kwargs.iteritems():
+                    formatted_redirect = formatted_redirect.replace(
+                        '<' + k + '>', v)
                 logger.debug(get_auth_url() + formatted_redirect)
                 return redirect(get_auth_url() + formatted_redirect)
 
@@ -30,7 +32,6 @@ def authenticated(redirect_after):
 
         return auth_wrapper
     return auth_decorator
-    
 
 
 @app.template_filter('format_time')
@@ -66,6 +67,7 @@ def dashboard():
     return render_template(
         "dashboard.html",
         experiments=sorted(experiments, key=lambda e: -e.time_added))
+
 
 @app.route('/experiments/<key>')
 @authenticated('/experiments/<key>')
@@ -118,8 +120,6 @@ def get_auth_url():
             "authurl=http://{}/auth_response&redirect=").format(
         _db_provider.get_auth_domain(),
         request.host)
-
-
 
 
 def main():

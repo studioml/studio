@@ -2,6 +2,7 @@ import os
 import getpass
 import time
 import json
+import shutil
 from apscheduler.schedulers.background import BackgroundScheduler
 
 token_dir = os.path.join(os.path.expanduser('~'), '.tfstudio/keys')
@@ -54,8 +55,10 @@ class FirebaseAuth(object):
 
     def _update_user(self):
         api_key = os.path.join(token_dir, self.firebase.api_key)
-        if not os.path.exists(api_key) or \
-                (time.time() - os.path.getmtime(api_key)) > hour:
+        if not os.path.exists(api_key):
+                # refresh tokens don't expire, hence we can
+                # use them forever once obtained
+                # or (time.time() - os.path.getmtime(api_key)) > hour:
             if self.use_email_auth:
                 self.sign_in_with_email()
                 self.expired = False
@@ -110,3 +113,9 @@ class FirebaseAuth(object):
 
     def __del__(self):
         self.sched.shutdown()
+
+
+def remove_all_keys():
+    keypath = os.path.join(os.path.expanduser('~'), '.tfstudio', 'keys')
+    if os.path.exists(keypath):
+        shutil.rmtree(keypath)

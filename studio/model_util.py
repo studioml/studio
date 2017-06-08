@@ -1,9 +1,5 @@
-import os
 import keras
 import types
-
-import fs_tracker
-
 
 class KerasModelWrapper:
     def __init__(self, checkpoint_name):
