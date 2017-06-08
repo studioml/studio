@@ -5,6 +5,8 @@ import argparse
 import yaml
 import logging
 import glob
+import time
+import xml.etree.ElementTree as ET
 
 from apscheduler.schedulers.background import BackgroundScheduler
 
@@ -33,8 +35,13 @@ class LocalExecutor(object):
         self.logger.debug("Config: ")
         self.logger.debug(self.config)
 
-    def run(self, experiment_key):
-        experiment = self.db.get_experiment(experiment_key)
+    def run(self, experiment):
+        if isinstance(experiment, basestring):
+            experiment = self.db.get_experiment(experiment)
+        elif not isinstance(experiment, model.Experiment):
+            raise ValueError("Unknown type of experiment: " +
+                             str(type(experiment)))
+
         self.logger.info("Experiment key: " + experiment.key)
 
         self.db.start_experiment(experiment)
@@ -49,8 +56,8 @@ class LocalExecutor(object):
 
         with open(log_path, 'w') as output_file:
             p = subprocess.Popen(["python",
-                                  experiment.filename] + 
-                                  experiment.args,
+                                  experiment.filename] +
+                                 experiment.args,
                                  stdout=output_file,
                                  stderr=subprocess.STDOUT,
                                  env=env)
@@ -78,7 +85,7 @@ def main(args=sys.argv):
                      Usage: studio-worker \
                      ')
     parser.add_argument('--config', help='configuration file', default=None)
-    parser.add_argument( 
+    parser.add_argument(
         '--guest',
         help='Guest mode (does not require db credentials)',
         action='store_true')
@@ -89,16 +96,70 @@ def main(args=sys.argv):
 
     queue = glob.glob(fs_tracker.get_queue_directory() + "/*")
     while any(queue):
-        first_exp = min([(p, os.path.getmtime(p)) for p in queue], 
+        first_exp = min([(p, os.path.getmtime(p)) for p in queue],
                         key=lambda t: t[1])[0]
-        
-        os.remove(first_exp)
-        executor.run(os.path.basename(first_exp))
+
+        experiment_key = os.path.basename(first_exp)
+        experiment = executor.db.get_experiment(experiment_key)
+
+        if allocate_resources(experiment):
+            os.remove(first_exp)
+            executor.run(experiment)
+        else:
+            time.sleep(5)
 
         queue = glob.glob(fs_tracker.get_queue_directory() + "/*")
 
     logger.info("Queue in {} is empty, quitting"
                 .format(fs_tracker.get_queue_directory()))
+
+
+def allocate_resources(experiment):
+    if not experiment.resources_needed:
+        return True
+
+    gpus_needed = experiment.resources_needed.get('gpus')
+    ret_val = True
+
+    if gpus_needed > 0:
+        ret_val = ret_val and allocate_gpus(gpus_needed)
+    else:
+        allocate_gpus(0)
+
+    return ret_val
+
+
+def allocate_gpus(gpus_needed):
+    gpus_available = get_available_gpus()
+    if gpus_available >= gpus_needed:
+        os.environ['CUDA_VISIBLE_DEVICES'] = ','.join(gpus_available)
+        return True
+    else:
+        return False
+
+
+def get_available_gpus():
+    smi_proc = subprocess.Popen(['nvidia-smi', '-q', '-x'],
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.STDOUT)
+
+    smi_output, _ = smi_proc.communicate()
+    xmlroot = ET.fromstring(smi_output)
+    return [int(gpu.find('minor_version').text) for gpu in xmlroot.find('gpu')
+            if memstr2int(gpu.find('fb_memory_usage').find('used').text) <
+            0.1 * memstr2int(gpu.find('fb_memory_usage').find('total')).text]
+
+
+def memstr2int(string):
+    conversion_factors = [('Mb', 2**20), ('MiB', 2**20),
+                          ('Gb', 2**30), ('GiB', 2**30),
+                          ('kb', 2**10)]
+
+    for k, f in conversion_factors:
+        if string.endswith(k):
+            return int(string.replace(k, '')) * f
+
+    return int(string)
 
 
 if __name__ == "__main__":

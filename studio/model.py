@@ -72,7 +72,7 @@ class Experiment(object):
         raise ValueError("Experiment type is unknown!")
 
 
-def create_experiment(filename, args, experiment_name=None, project=None):
+def create_experiment(filename, args, experiment_name=None, project=None, resources_needed=None):
     key = str(uuid.uuid4()) if not experiment_name else experiment_name
     packages = [p._key + '==' + p._version for p in
                 pip.pip.get_installed_distributions(local_only=True)]
@@ -82,7 +82,8 @@ def create_experiment(filename, args, experiment_name=None, project=None):
         filename=filename,
         args=args,
         pythonenv=packages,
-        project=project)
+        project=project,
+        resources_needed=resources_needed)
 
 
 class FirebaseProvider(object):
@@ -92,10 +93,8 @@ class FirebaseProvider(object):
         guest = database_config.get('guest')
 
         self.app = pyrebase.initialize_app(database_config)
-        self.db = self.app.database()
         self.logger = logging.getLogger('FirebaseProvider')
         self.logger.setLevel(10)
-        self.storage = self.app.storage()
 
         self.auth = FirebaseAuth(self.app,
                                  database_config.get("use_email_auth"),
@@ -113,12 +112,12 @@ class FirebaseProvider(object):
             splitKey = key.split('/')
             key_path = '/'.join(splitKey[:-1])
             key_name = splitKey[-1]
-            dbobj = self.db.child(key_path).child(key_name)
+            dbobj = self.app.database().child(key_path).child(key_name)
             return dbobj.get(self.auth.get_token()).val() if self.auth \
                 else dbobj.get().val()
         except Exception as err:
-            self.logger.error("Getting key {} from a database \
-                               raised an exception: {}".format(key, err))
+            self.logger.error(("Getting key {} from a database " +
+                               "raised an exception: {}").format(key, err))
             return None
 
     def __setitem__(self, key, value):
@@ -126,45 +125,45 @@ class FirebaseProvider(object):
             splitKey = key.split('/')
             key_path = '/'.join(splitKey[:-1])
             key_name = splitKey[-1]
-            dbobj = self.db.child(key_path)
+            dbobj = self.app.database().child(key_path)
             if self.auth:
                 dbobj.update({key_name: value}, self.auth.get_token())
             else:
                 dbobj.update({key_name: value})
         except Exception as err:
-            self.logger.error("Putting key {}, value {} into a database \
-                               raised an exception: {}"
-                              .format(key, value, err))
+            self.logger.error(("Putting key {}, value {} into a database " +
+                               "raised an exception: {}")
+                               .format(key, value, err))
 
     def _upload_file(self, key, local_file_path):
         try:
-            storageobj = self.storage.child(key)
+            storageobj = self.app.storage().child(key)
             if self.auth:
                 storageobj.put(local_file_path, self.auth.get_token())
             else:
                 storageobj.put(local_file_path)
         except Exception as err:
-            self.logger.error("Uploading file {} with key {} into storage \
-                               raised an exception: {}"
-                              .format(local_file_path, key, err))
+            self.logger.error(("Uploading file {} with key {} into storage "+
+                               "raised an exception: {}")
+                               .format(local_file_path, key, err))
 
     def _download_file(self, key, local_file_path):
         self.logger.debug("Downloading file at key {} to local path {}..."
                           .format(key, local_file_path))
         try:
-            storageobj = self.storage.child(key)
+            storageobj = self.app.storage().child(key)
 
             if self.auth:
                 # pyrebase download does not work with files that require
                 # authentication...
                 # Need to rewrite
-                # storageobj.download(local_file_path, self.auth.get_token())
-
+                #storageobj.download(local_file_path, self.auth.get_token())
+                
                 headers = {"Authorization": "Firebase " +
                            self.auth.get_token()}
                 escaped_key = key.replace('/', '%2f')
                 url = "{}/o/{}?alt=media".format(
-                    self.storage.storage_bucket,
+                    self.app.storage().storage_bucket,
                     escaped_key)
 
                 response = requests.get(url, stream=True, headers=headers)
@@ -175,23 +174,22 @@ class FirebaseProvider(object):
                 else:
                     raise ValueError("Response error with code {}"
                                      .format(response.status_code))
-
             else:
                 storageobj.download(local_file_path)
             self.logger.debug("Done")
         except Exception as err:
-            self.logger.error("Downloading file {} to local path {} from storage \
-                               raised an exception: {}"
-                              .format(key, local_file_path, err))
+            self.logger.error(("Downloading file {} to local path {} from storage " +
+                               "raised an exception: {}")
+                               .format(key, local_file_path, err))
 
     def _upload_dir(self, key, local_path):
         if os.path.exists(local_path):
             tar_filename = os.path.join(tempfile.gettempdir(),
                                         str(uuid.uuid4()))
-            self.logger.debug('Tarring and uploading directrory. \
-                              tar_filename = %s, \
-                              local_path = %s, \
-                              key = %s' % (tar_filename, local_path, key))
+            self.logger.debug(("Tarring and uploading directrory. " +
+                               "tar_filename = {}, " +
+                               "local_path = {}, " +
+                               "key = {}").format(tar_filename, local_path, key))
 
             subprocess.call([
                 '/bin/bash',
@@ -201,8 +199,8 @@ class FirebaseProvider(object):
             self._upload_file(key, tar_filename)
             os.remove(tar_filename)
         else:
-            self.logger.debug('Local path %s does not exist. \
-                               Not uploading anything.' % (local_path))
+            self.logger.debug(("Local path {} does not exist. " + 
+                               "Not uploading anything.").format(local_path))
 
     def _download_dir(self, key, local_path):
         self.logger.debug("Downloading dir {} to local path {} from storage..."
@@ -222,7 +220,7 @@ class FirebaseProvider(object):
             # os.remove(tar_filename)
 
     def _delete(self, key):
-        dbobj = self.db.child(key)
+        dbobj = self.app.database().child(key)
 
         if self.auth:
             dbobj.remove(self.auth.get_token())
@@ -508,8 +506,3 @@ def _remove_backspaces(line):
         buf.write(splitline[-1])
 
     return buf.getvalue()
-    '''
-    while '\x08' in line:
-        line = re.sub('[^\x08]\x08', '', line)
-    return line
-    '''
