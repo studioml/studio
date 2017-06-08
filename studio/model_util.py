@@ -1,8 +1,8 @@
-import os
-import keras
 import types
-
-import fs_tracker
+try:
+    import keras
+except ImportError:
+    keras = None
 
 
 class KerasModelWrapper:

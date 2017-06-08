@@ -11,6 +11,7 @@ import shutil
 from studio import model
 from studio.auth import remove_all_keys
 
+
 def get_methods(cls):
     methods = inspect.getmembers(cls, predicate=inspect.ismethod)
     return set([name for name, _ in methods if not name.startswith('_')])
