@@ -33,6 +33,7 @@ class Experiment(object):
                  workspace_path='.',
                  model_dir=None,
                  status='waiting',
+                 resources_needed=None,
                  time_added=None,
                  time_started=None,
                  time_last_checkpoint=None,
@@ -44,10 +45,11 @@ class Experiment(object):
         self.args = args if args else []
         self.pythonenv = pythonenv
         self.project = project
-        self.workspace_path = workspace_path
+        self.workspace_path = os.path.abspath(workspace_path)
         self.model_dir = model_dir if model_dir \
             else fs_tracker.get_model_directory(key)
 
+        self.resources_needed = resources_needed
         self.status = status
         self.time_added = time_added
         self.time_started = time_started
@@ -289,6 +291,17 @@ class FirebaseProvider(object):
                          experiment.key + "/time_finished",
                          experiment.time_finished)
 
+    def delete_experiment(self, experiment):
+        self._delete(self._get_experiments_keybase() + experiment.key)
+        if experiment.project:
+            self._delete(self._get_projects_keybase() +
+                         experiment.project + "/" +
+                         experiment.key)
+
+        self._delete(self._get_user_keybase() + experiment.key)
+
+        # TODO implement file removal from google storage and remove
+
     def checkpoint_experiment(self, experiment, blocking=False):
         checkpoint_threads = [
             Thread(
@@ -317,17 +330,15 @@ class FirebaseProvider(object):
         return Experiment(
             key=key,
             filename=data['filename'],
-            args=data['args'] if 'args' in data.keys() else None,
+            args=data.get('args'),
             pythonenv=data['pythonenv'],
-            project=data['project'] if 'project' in data.keys() else None,
+            project=data.get('project'),
             status=data['status'],
+            resources_needed=data.get('resources_needed'),
             time_added=data['time_added'],
-            time_started=data['time_started']
-            if 'time_started' in data.keys() else None,
-            time_last_checkpoint=data['time_last_checkpoint']
-            if 'time_last_checkpoint' in data.keys() else None,
-            time_finished=data['time_finished']
-            if 'time_finished' in data.keys() else None,
+            time_started=data.get('time_started'),
+            time_last_checkpoint=data.get('time_last_checkpoint'),
+            time_finished=data.get('time_finished'),
             info=info
         )
 
@@ -422,6 +433,9 @@ class PostgresProvider(object):
     def add_experiment(self, experiment):
         raise NotImplementedError()
 
+    def delete_experiment(self, experiment):
+        raise NotImplementedError()
+
     def start_experiment(self, experiment):
         raise NotImplementedError()
 
@@ -453,17 +467,23 @@ class PostgresProvider(object):
         raise NotImplementedError()
 
 
-def get_default_config():
-    config_file = os.path.join(
+def get_config(config_file=None):
+    def_config_file = os.path.join(
         os.path.dirname(os.path.realpath(__file__)),
         "default_config.yaml")
-    with open(config_file) as f:
-        return yaml.load(f)
+    with open(def_config_file) as f:
+        config = yaml.load(f.read())
+    
+    if config_file:
+        with open(config_file) as f:
+            config.update(yaml.load(f.read()))
+
+    return config
 
 
 def get_db_provider(config=None, blocking_auth=True):
     if not config:
-        config = get_default_config()
+        config = get_config()
     assert 'database' in config.keys()
     db_config = config['database']
     assert db_config['type'].lower() == 'firebase'.lower()

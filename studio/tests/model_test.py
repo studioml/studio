@@ -9,7 +9,7 @@ import tempfile
 import shutil
 
 from studio import model
-
+from studio.auth import remove_all_keys
 
 def get_methods(cls):
     methods = inspect.getmembers(cls, predicate=inspect.ismethod)
@@ -49,6 +49,7 @@ class FirebaseProviderTest(unittest.TestCase):
         fb._delete(key_path)
 
     def test_get_set_auth_firebase(self):
+        remove_all_keys()
         fb = self.get_firebase_provider('test_config_auth.yaml')
         response = fb.__getitem__("authtest/hello")
         self.assertEquals(response, "world")
@@ -59,8 +60,10 @@ class FirebaseProviderTest(unittest.TestCase):
 
         self.assertTrue(fb.__getitem__(key_path) == random_str)
         fb._delete(key_path)
+        remove_all_keys()
 
     def test_get_set_noauth_firebase(self):
+        remove_all_keys()
         fb = self.get_firebase_provider('test_config.yaml')
         response = fb.__getitem__("authtest/hello")
         self.assertTrue(response is None)
@@ -69,6 +72,7 @@ class FirebaseProviderTest(unittest.TestCase):
         key_path = 'authtest/randomKey'
         fb.__setitem__(key_path, random_str)
         self.assertTrue(fb.__getitem__(key_path) is None)
+        remove_all_keys()
 
     def test_get_set_firebase_bad(self):
         # smoke test to make sure access to a database at wrong

@@ -5,21 +5,31 @@ import tempfile
 import uuid
 from collections import namedtuple
 
-from studio import fs_tracker
-from studio.runner import LocalExecutor
+from studio import fs_tracker,model
+from studio.lworker import LocalExecutor
 
+from test_util import remove_keys
 
 class RunnerTest(unittest.TestCase):
     def test_LocalExecutor_run(self):
         my_path = os.path.dirname(os.path.realpath(__file__))
         os.chdir(my_path)
+
         executor = LocalExecutor(namedtuple('args', 'config guest')
                                            ('test_config.yaml', None))
 
         test_script = 'tf_hello_world.py'
         experiment_name = 'experimentHelloWorld'
         keybase = "/experiments/" + experiment_name
-        executor.run(test_script, ['arg0'], experiment_name=experiment_name)
+        experiment = model.create_experiment(
+            experiment_name=experiment_name,
+            filename=test_script,
+            args=['arg0'])
+
+        db = model.get_db_provider(model.get_config('test_config.yaml'))
+        db.add_experiment(experiment)
+
+        executor.run(experiment_name)
 
         # test saved arguments
         saved_args = executor.db[keybase + '/args']

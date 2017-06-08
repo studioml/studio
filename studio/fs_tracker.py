@@ -25,3 +25,12 @@ def setup_model_directory(env, experiment_name):
     if not os.path.exists(path):
         os.makedirs(path)
     env[TFSTUDIO_MODEL_PATH] = path
+
+
+def get_queue_directory():
+    queue_dir = os.path.join(os.path.expanduser('~'),
+                        '.tfstudio/queue')
+    if not os.path.exists(queue_dir):
+        os.makedirs(queue_dir)
+
+    return queue_dir

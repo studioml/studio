@@ -122,7 +122,7 @@ def main():
                         default=5000)
 
     args = parser.parse_args()
-    config = model.get_default_config()
+    config = model.get_config()
     if args.config:
         with open(args.config) as f:
             config.update(yaml.load(f))

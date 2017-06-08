@@ -89,3 +89,5 @@ ENV/
 .ropeproject
 
 studio/.DS_Store
+auth/.firebaserc
+auth/firebase.json

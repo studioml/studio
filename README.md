@@ -43,6 +43,7 @@ You can see results of your job at http://127.0.0.1:5000
 ## Authentication 
 Both studio and studio-runner use same authentication tokens for database backend. The tokens are valid for 1 hour, 
 but if studio / studio-runner is running, it renews tokens automatically. 
+Note that expiration tokens don't expire; this also means that you can use tokens on multiple machines (i.e. when you want to use google account authentication on a remote server and don't want to open extra ports) - simply copy contents of ~/.tfstudio/keys folder to another machine. 
 For now TensorFlow studio supports 2 methods of authentication: email/password and using google account.
 If you don't have a user account set up, and don't have a google account, you can uncomment "guest: true" line
  in the database section of studio/default_config.yaml file to use studio-runner and studio in the guest mode. 

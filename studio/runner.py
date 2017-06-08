@@ -13,70 +13,8 @@ import model
 
 logging.basicConfig()
 
-
-class LocalExecutor(object):
-    """Runs job while capturing environment and logging results.
-
-    TODO: capturing state and results.
-    """
-
-    def __init__(self, args):
-        self.config = model.get_default_config()
-        if args.config:
-            with open(args.config) as f:
-                self.config.update(yaml.load(f))
-
-        if args.guest:
-            self.config['database']['guest'] = True
-
-        self.db = model.get_db_provider(self.config)
-        self.logger = logging.getLogger('LocalExecutor')
-        self.logger.setLevel(10)
-        self.logger.debug("Config: ")
-        self.logger.debug(self.config)
-
-    def run(self, filename, args, experiment_name=None, project=None):
-        experiment = model.create_experiment(
-            filename=filename,
-            args=args,
-            experiment_name=experiment_name,
-            project=project)
-        self.logger.info("Experiment name: " + experiment.key)
-
-        self.db.add_experiment(experiment)
-        self.db.start_experiment(experiment)
-
-        env = os.environ.copy()
-        fs_tracker.setup_model_directory(env, experiment.key)
-        model_dir = fs_tracker.get_model_directory(experiment.key)
-        log_path = os.path.join(model_dir, self.config['log']['name'])
-
-        sched = BackgroundScheduler()
-        sched.start()
-
-        with open(log_path, 'w') as output_file:
-            p = subprocess.Popen(["python",
-                                  filename] + args,
-                                 stdout=output_file,
-                                 stderr=subprocess.STDOUT,
-                                 env=env)
-            # simple hack to show what's in the log file
-            ptail = subprocess.Popen(["tail", "-f", log_path])
-
-            sched.add_job(
-                lambda: self.db.checkpoint_experiment(experiment),
-                'interval',
-                minutes=self.config['saveWorkspaceFrequency'])
-
-            try:
-                p.wait()
-            finally:
-                ptail.kill()
-                self.db.finish_experiment(experiment)
-                sched.shutdown()
-
-
 def main(args=sys.argv):
+    logger = logging.getLogger('studio-runner')
     parser = argparse.ArgumentParser(
         description='TensorFlow Studio runner. \
                      Usage: studio-runner \
@@ -96,12 +34,31 @@ def main(args=sys.argv):
     parsed_args, script_args = parser.parse_known_args(args)
     exec_filename, other_args = script_args[1], script_args[2:]
     # TODO: Queue the job based on arguments and only then execute.
-    LocalExecutor(parsed_args).run(
-        exec_filename,
-        other_args,
-        experiment_name=parsed_args.experiment,
-        project=parsed_args.project)
 
+    experiment = model.create_experiment(
+            filename=exec_filename,
+            args=other_args,
+            experiment_name=parsed_args.experiment,
+            project=parsed_args.project)
+
+    logger.info("Experiment name: " + experiment.key)
+    db = model.get_db_provider(model.get_config(parsed_args.config))
+    db.add_experiment(experiment)
+    
+    with open(os.path.join(
+        fs_tracker.get_queue_directory(),
+        experiment.key), 'w') as f:
+            f.write('queued')
+    worker_args = ['studio-lworker']
+
+    if parsed_args.config:
+        worker_args += '--config=' + parsed_args.config
+    if parsed_args.guest:
+        worker_args += '--guest'
+
+    worker = subprocess.Popen(worker_args)
+    worker.wait()
+ 
 
 if __name__ == "__main__":
     main()
