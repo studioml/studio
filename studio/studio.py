@@ -5,6 +5,7 @@ import argparse
 import yaml
 import logging
 import json
+from functools import wraps
 
 logging.basicConfig()
 
@@ -12,9 +13,24 @@ app = Flask(__name__)
 
 
 _db_provider = None
+logger = None
 
-logger = logging.getLogger('studio')
-logger.setLevel(10)
+def authenticated(redirect_after):
+    def auth_decorator(func):
+        @wraps(func)
+        def auth_wrapper(**kwargs):
+            if _db_provider.auth.expired:
+                formatted_redirect = redirect_after
+                for k,v in kwargs.iteritems():
+                    formatted_redirect = formatted_redirect.replace('<' + k + '>', v)
+                logger.debug(get_auth_url() + formatted_redirect)
+                return redirect(get_auth_url() + formatted_redirect)
+
+            return func(**kwargs)
+
+        return auth_wrapper
+    return auth_decorator
+    
 
 
 @app.template_filter('format_time')
@@ -44,23 +60,22 @@ def auth_response():
 
 
 @app.route('/')
+@authenticated('/')
 def dashboard():
-    if _db_provider.auth.expired:
-        logger.debug(get_auth_url() + '/')
-        return redirect(get_auth_url() + '/')
-
     experiments = _db_provider.get_user_experiments()
     return render_template(
         "dashboard.html",
         experiments=sorted(experiments, key=lambda e: -e.time_added))
 
 @app.route('/experiments/<key>')
+@authenticated('/experiments/<key>')
 def experiment(key):
     experiment = _db_provider.get_experiment(key)
     return render_template("experiment_details.html", experiment=experiment)
 
 
 @app.route('/projects')
+@authenticated('/projects')
 def projects():
     projects = _db_provider.get_projects()
     if not projects:
@@ -69,6 +84,7 @@ def projects():
 
 
 @app.route('/project/<key>')
+@authenticated('/project/<key>')
 def project_details(key):
     projects = _db_provider.get_projects()
     return render_template(
@@ -78,15 +94,14 @@ def project_details(key):
 
 
 @app.route('/users')
+@authenticated('/users')
 def users():
-    if _db_provider.auth.expired:
-        return redirect(get_auth_url() + '/users')
-
     users = _db_provider.get_users()
     return render_template("users.html", users=users)
 
 
 @app.route('/user/<key>')
+@authenticated('/user/<key>')
 def user_experiments(key):
     experiments = _db_provider.get_user_experiments(key)
     users = _db_provider.get_users()
@@ -100,9 +115,11 @@ def user_experiments(key):
 
 def get_auth_url():
     return ("https://{}/index.html?" +
-            "authurl={}auth_response&redirect=").format(
+            "authurl=http://{}/auth_response&redirect=").format(
         _db_provider.get_auth_domain(),
-        request.url)
+        request.host)
+
+
 
 
 def main():
@@ -132,6 +149,10 @@ def main():
 
     global _db_provider
     _db_provider = model.get_db_provider(config, blocking_auth=False)
+
+    global logger
+    logger = logging.getLogger('studio')
+    logger.setLevel(10)
 
     app.run(port=args.port, debug=True)
 
