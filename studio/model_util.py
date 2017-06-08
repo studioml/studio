@@ -1,5 +1,9 @@
-import keras
 import types
+try:
+    import keras
+except ImportError:
+    keras = None
+
 
 class KerasModelWrapper:
     def __init__(self, checkpoint_name):
