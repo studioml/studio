@@ -6,6 +6,11 @@ import yaml
 import logging
 import json
 from functools import wraps
+import socket
+import subprocess
+from urlparse import urlparse
+
+import fs_tracker
 
 logging.basicConfig()
 
@@ -13,6 +18,7 @@ app = Flask(__name__)
 
 
 _db_provider = None
+_tensorboard_dirs = {}
 logger = None
 
 
@@ -77,6 +83,33 @@ def experiment(key):
     return render_template("experiment_details.html",
                            experiment=experiment,
                            artifacts=artifacts_urls)
+
+
+@app.route('/tensorboard/<key>')
+@authenticated('/tensorboard/<key>')
+def tensorboard(key):
+    logdir = fs_tracker.get_tensorboard_dir(key)
+    port = _tensorboard_dirs.get(logdir)
+    if not port:
+
+        sock = socket.socket(socket.AF_INET)
+        sock.bind(('', 0))
+        port = sock.getsockname()[1]
+        sock.close()
+
+        subprocess.Popen([
+            'tensorboard',
+            '--logdir=' + logdir,
+            '--port=' + str(port)])
+        time.sleep(5)  # wait for tensorboard to spin up
+        _tensorboard_dirs[logdir] = port
+
+    redirect_url = 'http://{}:{}'.format(
+        urlparse(request.url).hostname,
+        port)
+
+    logger.debug('Redirecting to ' + redirect_url)
+    return redirect(redirect_url)
 
 
 @app.route('/projects')

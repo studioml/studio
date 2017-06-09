@@ -153,12 +153,15 @@ def allocate_gpus(gpus_needed, config=None):
 
 
 def get_available_gpus():
-    smi_proc = subprocess.Popen(['nvidia-smi', '-q', '-x'],
-                                stdout=subprocess.PIPE,
-                                stderr=subprocess.STDOUT)
+    try:
+        smi_proc = subprocess.Popen(['nvidia-smi', '-q', '-x'],
+                                    stdout=subprocess.PIPE,
+                                    stderr=subprocess.STDOUT)
 
-    smi_output, _ = smi_proc.communicate()
-    xmlroot = ET.fromstring(smi_output)
+        smi_output, _ = smi_proc.communicate()
+        xmlroot = ET.fromstring(smi_output)
+    except Exception:
+        return []
 
     def check_gpu(gpuinfo):
         return memstr2int(gpu.find('fb_memory_usage').find('used').text) < \

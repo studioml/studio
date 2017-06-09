@@ -34,3 +34,8 @@ def get_queue_directory():
         os.makedirs(queue_dir)
 
     return queue_dir
+
+
+def get_tensorboard_dir(experiment_name=None):
+    return os.path.join(get_model_directory(experiment_name),
+                        'tb')

@@ -5,7 +5,7 @@ from keras.layers import Input, Dense
 from keras.models import Model
 from keras.datasets import mnist
 from keras.utils import to_categorical
-from keras.callbacks import ModelCheckpoint
+from keras.callbacks import ModelCheckpoint, TensorBoard
 
 from studio import fs_tracker
 
@@ -37,6 +37,13 @@ checkpointer = ModelCheckpoint(
     fs_tracker.get_model_directory() +
     '/checkpoint.{epoch:02d}-{val_loss:.2f}.hdf')
 
+
+tbcallback = TensorBoard(log_dir=os.path.join(
+    fs_tracker.get_model_directory(), 'tb'),
+    histogram_freq=0,
+    write_graph=True,
+    write_images=False)
+
 # save the model arch to json
 with open(os.path.join(fs_tracker.get_model_directory(),
                        'model.json'), 'w') as f:
@@ -45,4 +52,4 @@ with open(os.path.join(fs_tracker.get_model_directory(),
 model.fit(
     x_train, y_train, validation_data=(
         x_test, y_test), epochs=int(
-            sys.argv[1]), callbacks=[checkpointer])
+            sys.argv[1]), callbacks=[checkpointer, tbcallback])
