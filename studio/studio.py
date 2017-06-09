@@ -73,7 +73,10 @@ def dashboard():
 @authenticated('/experiments/<key>')
 def experiment(key):
     experiment = _db_provider.get_experiment(key)
-    return render_template("experiment_details.html", experiment=experiment)
+    artifacts_urls = _db_provider.get_artifacts(key)
+    return render_template("experiment_details.html",
+                           experiment=experiment,
+                           artifacts=artifacts_urls)
 
 
 @app.route('/projects')

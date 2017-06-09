@@ -7,6 +7,7 @@ import time
 import pip
 import tempfile
 import shutil
+import requests
 
 from studio import model
 from studio.auth import remove_all_keys
@@ -167,6 +168,40 @@ class FirebaseProviderTest(unittest.TestCase):
         fb._upload_file('tests/test_upload_download.txt', tmp_filename)
         fb._download_file('tests/test_upload_download.txt', tmp_filename)
         os.remove(tmp_filename)
+
+    def test_get_file_url(self):
+        remove_all_keys()
+        fb = self.get_firebase_provider('test_config.yaml')
+        tmp_filename = os.path.join(
+            tempfile.gettempdir(),
+            'test_upload_download.txt')
+        random_str = str(uuid.uuid4())
+        with open(tmp_filename, 'w') as f:
+            f.write(random_str)
+
+        fb._upload_file('tests/test_upload_download.txt', tmp_filename)
+
+        url = fb._get_file_url('tests/test_upload_download.txt')
+        response = requests.get(url)
+        self.assertEquals(response.status_code, 200)
+        self.assertEquals(response.content, random_str)
+
+    def test_get_file_url_auth(self):
+        remove_all_keys()
+        fb = self.get_firebase_provider('test_config_auth.yaml')
+        tmp_filename = os.path.join(
+            tempfile.gettempdir(),
+            'test_upload_download.txt')
+        random_str = str(uuid.uuid4())
+        with open(tmp_filename, 'w') as f:
+            f.write(random_str)
+
+        fb._upload_file('authtest/test_upload_download.txt', tmp_filename)
+
+        url = fb._get_file_url('authtest/test_upload_download.txt')
+        response = requests.get(url)
+        self.assertEquals(response.status_code, 200)
+        self.assertEquals(response.content, random_str)
 
     def test_upload_download_dir(self):
         fb = self.get_firebase_provider()

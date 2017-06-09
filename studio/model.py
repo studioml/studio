@@ -15,6 +15,7 @@ import StringIO
 from threading import Thread
 import subprocess
 import requests
+import json
 
 from tensorflow.contrib.framework.python.framework import checkpoint_utils
 
@@ -218,6 +219,39 @@ class FirebaseProvider(object):
         except Exception as err:
             self.logger.error(
                 ("Deleting file {} from storage " +
+                 "raised an exception: {}") .format(key, err))
+
+    def _get_file_url(self, key):
+        self.logger.debug("Getting a download url for a file at key {}"
+                          .format(key))
+        try:
+            if self.auth:
+                # pyrebase download does not work with files that require
+                # authentication...
+                # Need to rewrite
+                # storageobj.download(local_file_path, self.auth.get_token())
+
+                headers = {"Authorization": "Firebase " +
+                           self.auth.get_token()}
+            else:
+                headers = {}
+
+            escaped_key = key.replace('/', '%2f')
+            url = "{}/o/{}".format(
+                self.app.storage().storage_bucket,
+                escaped_key)
+
+            response = requests.get(url, headers=headers)
+            if response.status_code != 200:
+                raise ValueError("Response error with code {}"
+                                 .format(response.status_code))
+
+            self.logger.debug("Done")
+            return url + '?alt=media&token=' \
+                + json.loads(response.content)['downloadTokens']
+        except Exception as err:
+            self.logger.error(
+                ("Getting url of file {} " +
                  "raised an exception: {}") .format(key, err))
 
     def _upload_dir(self, key, local_path):
@@ -446,6 +480,13 @@ class FirebaseProvider(object):
             experiment_keys = {}
         return self._get_valid_experiments(experiment_keys.keys())
 
+    def get_artifacts(self, key):
+        base = self._get_experiments_keybase() + key
+        return {
+            'model dir': self._get_file_url(base + '/modeldir.tgz'),
+            'workspace': self._get_file_url(base + '/workspace_latest.tgz'),
+        }
+
     def _get_valid_experiments(self, experiment_keys):
         experiments = []
         for key in experiment_keys:
@@ -508,6 +549,9 @@ class PostgresProvider(object):
         raise NotImplementedError()
 
     def get_project_experiments(self):
+        raise NotImplementedError()
+
+    def get_artifacts(self):
         raise NotImplementedError()
 
     def get_users(self):
