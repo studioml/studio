@@ -3,6 +3,7 @@
 {% block content %}
     <div class="container">
             <h1>Project {{ project_name }} </h1>
+            <a href=/tensorboard_proj/{{ project_name }}>View in TensorBoard</a>
         <table class="table table-striped">
             {% for experiment in experiments %}
                 <tr>

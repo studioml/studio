@@ -85,10 +85,24 @@ def experiment(key):
                            artifacts=artifacts_urls)
 
 
-@app.route('/tensorboard/<key>')
-@authenticated('/tensorboard/<key>')
-def tensorboard(key):
-    logdir = fs_tracker.get_tensorboard_dir(key)
+@app.route('/tensorboard_exp/<key>')
+@authenticated('/tensorboard_exp/<key>')
+def tensorboard_exp(key):
+    return tensorboard(fs_tracker.get_tensorboard_dir(key))
+
+
+@app.route('/tensorboard_proj/<key>')
+@authenticated('/tensorboard_proj/<key>')
+def tensorboard_proj(key):
+    experiments = _db_provider.get_project_experiments(key)
+    logdir = ','.join(
+        [e.key + ":" + fs_tracker.get_tensorboard_dir(e.key)
+         for e in experiments])
+
+    return tensorboard(logdir)
+
+
+def tensorboard(logdir):
     port = _tensorboard_dirs.get(logdir)
     if not port:
 
