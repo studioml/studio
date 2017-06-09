@@ -12,6 +12,7 @@
     {{ experiment.pythonenv }}
     </pre>
     <dl>
+    <a href='/delete_experiment/{{ experiment.key }}'> DELETE experiment </a>
     <dt> Experiment info: </dt>
     <dd>Status: {{ experiment.status }}</dd>
     <dd>Creation time: {{ experiment.time_added | format_time }}</dd>

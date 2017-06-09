@@ -101,7 +101,12 @@ class FirebaseProviderTest(unittest.TestCase):
         os.remove(tmp_filename)
         self.assertTrue(line == random_str)
 
+        fb._delete_file('tests/test_upload_download.txt')
+        fb._download_file('tests/test_upload_download.txt', tmp_filename)
+        self.assertTrue(not os.path.exists(tmp_filename))
+
     def test_upload_download_file_auth(self):
+        remove_all_keys()
         fb = self.get_firebase_provider('test_config_auth.yaml')
         tmp_filename = os.path.join(
             tempfile.gettempdir(),
@@ -112,6 +117,15 @@ class FirebaseProviderTest(unittest.TestCase):
 
         fb._upload_file('authtest/test_upload_download.txt', tmp_filename)
         os.remove(tmp_filename)
+
+        # test an authorized attempt to delete file
+        remove_all_keys()
+        fb = self.get_firebase_provider('test_config.yaml')
+        fb._delete_file('authtest/test_upload_download.txt')
+        remove_all_keys()
+        fb = self.get_firebase_provider('test_config_auth.yaml')
+        # to make sure file is intact and the same as we uploaded
+
         fb._download_file('authtest/test_upload_download.txt', tmp_filename)
 
         with open(tmp_filename, 'r') as f:
@@ -119,7 +133,12 @@ class FirebaseProviderTest(unittest.TestCase):
         os.remove(tmp_filename)
         self.assertTrue(line == random_str)
 
+        fb._delete_file('authtest/test_upload_download.txt')
+        fb._download_file('authtest/test_upload_download.txt', tmp_filename)
+        self.assertTrue(not os.path.exists(tmp_filename))
+
     def test_upload_download_file_noauth(self):
+        remove_all_keys()
         fb = self.get_firebase_provider('test_config.yaml')
         tmp_filename = os.path.join(
             tempfile.gettempdir(),

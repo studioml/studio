@@ -190,6 +190,36 @@ class FirebaseProvider(object):
                     local_file_path,
                     err))
 
+    def _delete_file(self, key):
+        self.logger.debug("Downloading file at key {}".format(key))
+        try:
+            if self.auth:
+                # pyrebase download does not work with files that require
+                # authentication...
+                # Need to rewrite
+                # storageobj.download(local_file_path, self.auth.get_token())
+
+                headers = {"Authorization": "Firebase " +
+                           self.auth.get_token()}
+            else:
+                headers = {}
+
+            escaped_key = key.replace('/', '%2f')
+            url = "{}/o/{}?alt=media".format(
+                self.app.storage().storage_bucket,
+                escaped_key)
+
+            response = requests.delete(url, headers=headers)
+            if response.status_code != 204:
+                raise ValueError("Response error with code {}"
+                                 .format(response.status_code))
+
+            self.logger.debug("Done")
+        except Exception as err:
+            self.logger.error(
+                ("Deleting file {} from storage " +
+                 "raised an exception: {}") .format(key, err))
+
     def _upload_dir(self, key, local_path):
         if os.path.exists(local_path):
             tar_filename = os.path.join(tempfile.gettempdir(),
@@ -301,16 +331,16 @@ class FirebaseProvider(object):
                          experiment.key + "/time_finished",
                          experiment.time_finished)
 
-    def delete_experiment(self, experiment):
-        self._delete(self._get_experiments_keybase() + experiment.key)
-        if experiment.project:
-            self._delete(self._get_projects_keybase() +
-                         experiment.project + "/" +
-                         experiment.key)
-
-        self._delete(self._get_user_keybase() + experiment.key)
-
-        # TODO implement file removal from google storage and remove
+    def delete_experiment(self, experiment_key):
+        self._delete(self._get_user_keybase() + 'experiments/' +
+                     experiment_key)
+        self._delete_file(self._get_experiments_keybase() +
+                          experiment_key + '/modeldir.tgz')
+        self._delete_file(self._get_experiments_keybase() +
+                          experiment_key + '/workspace.tgz')
+        self._delete_file(self._get_experiments_keybase() +
+                          experiment_key + '/workspace_latest.tgz')
+        self._delete(self._get_experiments_keybase() + experiment_key)
 
     def checkpoint_experiment(self, experiment, blocking=False):
         checkpoint_threads = [
@@ -407,10 +437,26 @@ class FirebaseProvider(object):
             self._get_user_keybase(userid) + "/experiments")
         if not experiment_keys:
             experiment_keys = {}
+        return self._get_valid_experiments(experiment_keys.keys())
 
+    def get_project_experiments(self, project):
+        experiment_keys = self.__getitem__(self._get_projects_keybase()
+                                           + project)
+        if not experiment_keys:
+            experiment_keys = {}
+        return self._get_valid_experiments(experiment_keys.keys())
+
+    def _get_valid_experiments(self, experiment_keys):
         experiments = []
-        for key in experiment_keys.keys() if experiment_keys else []:
-            experiments.append(self.get_experiment(key, getinfo=False))
+        for key in experiment_keys:
+            try:
+                experiment = self.get_experiment(key, getinfo=False)
+                experiments.append(experiment)
+            except AssertionError:
+                self.logger.warn(
+                    ("Experiment {} does not exist " +
+                     "or is corrupted, deleting record").format(key))
+                self.delete_experiment(key)
         return experiments
 
     def get_projects(self):
@@ -459,6 +505,9 @@ class PostgresProvider(object):
         raise NotImplementedError()
 
     def get_projects(self):
+        raise NotImplementedError()
+
+    def get_project_experiments(self):
         raise NotImplementedError()
 
     def get_users(self):

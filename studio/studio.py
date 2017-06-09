@@ -88,11 +88,11 @@ def projects():
 @app.route('/project/<key>')
 @authenticated('/project/<key>')
 def project_details(key):
-    projects = _db_provider.get_projects()
+    experiments = _db_provider.get_project_experiments(key)
     return render_template(
         "project_details.html",
         project_name=key,
-        project_dict=projects[key])
+        experiments=experiments)
 
 
 @app.route('/users')
@@ -113,6 +113,13 @@ def user_experiments(key):
         user=key,
         email=email,
         experiments=sorted(experiments, key=lambda e: -e.time_added))
+
+
+@app.route('/delete_experiment/<key>')
+@authenticated('/delete_experiment/<key>')
+def delete_experiment(key):
+    _db_provider.delete_experiment(key)
+    return redirect('/')
 
 
 def get_auth_url():
