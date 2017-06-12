@@ -1,4 +1,5 @@
 import sys
+import os
 
 from keras.layers import Input, Dense
 from keras.models import Model
@@ -35,6 +36,12 @@ y_test = to_categorical(y_test, 10)
 checkpointer = ModelCheckpoint(
     fs_tracker.get_model_directory() +
     '/checkpoint.{epoch:02d}-{val_loss:.2f}.hdf')
+
+# save the model arch to json
+with open(os.path.join(fs_tracker.get_model_directory(),
+                       'model.json'), 'w') as f:
+    f.write(model.to_json())
+
 model.fit(
     x_train, y_train, validation_data=(
         x_test, y_test), epochs=int(

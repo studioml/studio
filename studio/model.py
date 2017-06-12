@@ -11,13 +11,16 @@ import time
 import glob
 import tempfile
 import re
+import StringIO
 from threading import Thread
 import subprocess
+import requests
 
 from tensorflow.contrib.framework.python.framework import checkpoint_utils
 
 import fs_tracker
 from auth import FirebaseAuth
+from model_util import KerasModelWrapper
 
 logging.basicConfig()
 
@@ -52,6 +55,20 @@ class Experiment(object):
         self.time_finished = time_finished
         self.info = info
 
+    def get_model(self):
+        if self.info.get('type') == 'keras':
+            hdf5_files = [
+                (p, os.path.getmtime(p))
+                for p in glob.glob(os.path.join(self.model_dir, '*.hdf*'))]
+
+            last_checkpoint = max(hdf5_files, key=lambda t: t[1])[0]
+            return KerasModelWrapper(last_checkpoint)
+
+        if self.info.get('type') == 'tensorflow':
+            raise NotImplementedError
+
+        raise ValueError("Experiment type is unknown!")
+
 
 def create_experiment(filename, args, experiment_name=None, project=None):
     key = str(uuid.uuid4()) if not experiment_name else experiment_name
@@ -69,21 +86,23 @@ def create_experiment(filename, args, experiment_name=None, project=None):
 class FirebaseProvider(object):
     """Data provider for Firebase."""
 
-    def __init__(self, database_config):
+    def __init__(self, database_config, blocking_auth=True):
         guest = database_config.get('guest')
 
-        app = pyrebase.initialize_app(database_config)
-        self.db = app.database()
+        self.app = pyrebase.initialize_app(database_config)
+        self.db = self.app.database()
         self.logger = logging.getLogger('FirebaseProvider')
         self.logger.setLevel(10)
-        self.storage = app.storage()
+        self.storage = self.app.storage()
 
-        self.auth = FirebaseAuth(app,
+        self.auth = FirebaseAuth(self.app,
+                                 database_config.get("use_email_auth"),
                                  database_config.get("email"),
-                                 database_config.get("password")) \
+                                 database_config.get("password"),
+                                 blocking_auth) \
             if not guest else None
 
-        if self.auth:
+        if self.auth and not self.auth.expired:
             self.__setitem__(self._get_user_keybase() + "email",
                              self.auth.get_user_email())
 
@@ -128,13 +147,36 @@ class FirebaseProvider(object):
                               .format(local_file_path, key, err))
 
     def _download_file(self, key, local_file_path):
+        self.logger.debug("Downloading file at key {} to local path {}..."
+                          .format(key, local_file_path))
         try:
             storageobj = self.storage.child(key)
 
             if self.auth:
-                storageobj.download(local_file_path, self.auth.get_token())
+                # pyrebase download does not work with files that require
+                # authentication...
+                # Need to rewrite
+                # storageobj.download(local_file_path, self.auth.get_token())
+
+                headers = {"Authorization": "Firebase " +
+                           self.auth.get_token()}
+                escaped_key = key.replace('/', '%2f')
+                url = "{}/o/{}?alt=media".format(
+                    self.storage.storage_bucket,
+                    escaped_key)
+
+                response = requests.get(url, stream=True, headers=headers)
+                if response.status_code == 200:
+                    with open(local_file_path, 'wb') as f:
+                        for chunk in response:
+                            f.write(chunk)
+                else:
+                    raise ValueError("Response error with code {}"
+                                     .format(response.status_code))
+
             else:
                 storageobj.download(local_file_path)
+            self.logger.debug("Done")
         except Exception as err:
             self.logger.error("Downloading file {} to local path {} from storage \
                                raised an exception: {}"
@@ -152,7 +194,7 @@ class FirebaseProvider(object):
             subprocess.call([
                 '/bin/bash',
                 '-c',
-                'cd %s && tar -czf %s . ' % (local_path, tar_filename)])
+                'cd {} && tar -czf {} . '.format(local_path, tar_filename)])
 
             self._upload_file(key, tar_filename)
             os.remove(tar_filename)
@@ -161,17 +203,21 @@ class FirebaseProvider(object):
                                Not uploading anything.' % (local_path))
 
     def _download_dir(self, key, local_path):
+        self.logger.debug("Downloading dir {} to local path {} from storage..."
+                          .format(key, local_path))
         tar_filename = os.path.join(tempfile.gettempdir(), str(uuid.uuid4()))
+        self.logger.debug("tar_filename = {} ".format(tar_filename))
         self._download_file(key, tar_filename)
         if os.path.exists(tar_filename):
+            self.logger.debug("Untarring {}".format(tar_filename))
             subprocess.call([
                 '/bin/bash',
                 '-c',
-                'mkdir -p %s && \
-                tar -xzf %s -C %s --keep-newer-files'
-                % (local_path, tar_filename, local_path)])
+                ('mkdir -p {} &&' +
+                 'tar -xzf {} -C {} --keep-newer-files')
+                .format(local_path, tar_filename, local_path)])
 
-            os.remove(tar_filename)
+            # os.remove(tar_filename)
 
     def _delete(self, key):
         dbobj = self.db.child(key)
@@ -296,7 +342,7 @@ class FirebaseProvider(object):
         self._download_modeldir(key)
         local_modeldir = fs_tracker.get_model_directory(key)
         info = {}
-        hdf5_files = glob.glob(os.path.join(local_modeldir, '*.hdf'))
+        hdf5_files = glob.glob(os.path.join(local_modeldir, '*.hdf*'))
         type_found = False
         if any(hdf5_files):
             info['type'] = 'keras'
@@ -322,7 +368,8 @@ class FirebaseProvider(object):
         if os.path.exists(logpath):
             tailp = subprocess.Popen(
                 ['tail', '-50', logpath], stdout=subprocess.PIPE)
-            logtail = [_remove_backspaces(line) for line in tailp.stdout]
+            stdoutdata = tailp.communicate()[0]
+            logtail = _remove_backspaces(stdoutdata).split('\n')
             info['logtail'] = logtail
 
         return info
@@ -350,6 +397,19 @@ class FirebaseProvider(object):
 
     def get_users(self):
         return self.__getitem__('users/')
+
+    def refresh_auth_token(self, email, refresh_token):
+        if self.auth:
+            self.auth.refresh_token(email, refresh_token)
+
+    def get_auth_domain(self):
+        return self.app.auth_domain
+
+    def is_auth_expired(self):
+        if self.auth:
+            return self.auth.expired
+        else:
+            return False
 
 
 class PostgresProvider(object):
@@ -383,6 +443,15 @@ class PostgresProvider(object):
     def checkpoint_experiment(self, experiment):
         raise NotImplementedError()
 
+    def refresh_auth_token(self, email, refresh_token):
+        raise NotImplementedError()
+
+    def get_auth_domain(self):
+        raise NotImplementedError()
+
+    def is_auth_expired(self):
+        raise NotImplementedError()
+
 
 def get_default_config():
     config_file = os.path.join(
@@ -392,7 +461,7 @@ def get_default_config():
         return yaml.load(f)
 
 
-def get_db_provider(config=None):
+def get_db_provider(config=None, blocking_auth=True):
     if not config:
         config = get_default_config()
     assert 'database' in config.keys()
@@ -406,10 +475,21 @@ def get_db_provider(config=None):
         db_config['storageBucket'] = db_config['storageBucket'].format(
             projectId)
 
-    return FirebaseProvider(db_config)
+    return FirebaseProvider(db_config, blocking_auth)
 
 
 def _remove_backspaces(line):
+    splitline = re.split('(\x08+)', line)
+    buf = StringIO.StringIO()
+    for i in range(0, len(splitline) - 1, 2):
+        buf.write(splitline[i][:-len(splitline[i + 1])])
+
+    if len(splitline) % 2 == 1:
+        buf.write(splitline[-1])
+
+    return buf.getvalue()
+    '''
     while '\x08' in line:
         line = re.sub('[^\x08]\x08', '', line)
     return line
+    '''
