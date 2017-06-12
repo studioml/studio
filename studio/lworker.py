@@ -4,14 +4,15 @@ import subprocess
 import argparse
 import yaml
 import logging
-import glob
 import time
 import xml.etree.ElementTree as ET
+import json
 
 from apscheduler.schedulers.background import BackgroundScheduler
 
 import fs_tracker
 import model
+from local_queue import LocalQueue
 
 logging.basicConfig()
 
@@ -23,8 +24,11 @@ class LocalExecutor(object):
     def __init__(self, args):
         self.config = model.get_config()
         if args.config:
-            with open(args.config) as f:
-                self.config.update(yaml.load(f))
+            if isinstance(args.config, basestring):
+                with open(args.config) as f:
+                    self.config.update(yaml.load(f))
+            else:
+                self.config.update(args.config)
 
         if args.guest:
             self.config['database']['guest'] = True
@@ -78,47 +82,6 @@ class LocalExecutor(object):
                 ptail.kill()
                 self.db.finish_experiment(experiment)
                 sched.shutdown()
-
-
-def main(args=sys.argv):
-    logger = logging.getLogger('studio-lworker')
-    logger.setLevel(10)
-    parser = argparse.ArgumentParser(
-        description='TensorFlow Studio worker. \
-                     Usage: studio-worker \
-                     ')
-    parser.add_argument('--config', help='configuration file', default=None)
-    parser.add_argument(
-        '--guest',
-        help='Guest mode (does not require db credentials)',
-        action='store_true')
-
-    parsed_args, script_args = parser.parse_known_args(args)
-
-    executor = LocalExecutor(parsed_args)
-
-    queue = glob.glob(fs_tracker.get_queue_directory() + "/*")
-    config = model.get_config(parsed_args.config)
-
-    while any(queue):
-        first_exp = min([(p, os.path.getmtime(p)) for p in queue],
-                        key=lambda t: t[1])[0]
-
-        experiment_key = os.path.basename(first_exp)
-        experiment = executor.db.get_experiment(experiment_key)
-
-        if allocate_resources(experiment, config):
-            os.remove(first_exp)
-            executor.run(experiment)
-        else:
-            logger.info('Cannot run experiment ' + experiment.key +
-                        ' due lack of resources. Will retry')
-            time.sleep(5)
-
-        queue = glob.glob(fs_tracker.get_queue_directory() + "/*")
-
-    logger.info("Queue in {} is empty, quitting"
-                .format(fs_tracker.get_queue_directory()))
 
 
 def allocate_resources(experiment, config=None):
@@ -181,6 +144,50 @@ def memstr2int(string):
             return int(string.replace(k, '')) * f
 
     return int(string)
+
+
+def main(args=sys.argv):
+    logger = logging.getLogger('studio-lworker')
+    logger.setLevel(10)
+    parser = argparse.ArgumentParser(
+        description='TensorFlow Studio worker. \
+                     Usage: studio-worker \
+                     ')
+    parser.add_argument('--config', help='configuration file', default=None)
+    parser.add_argument(
+        '--guest',
+        help='Guest mode (does not require db credentials)',
+        action='store_true')
+
+    parsed_args, script_args = parser.parse_known_args(args)
+
+    queue = LocalQueue()
+    # queue = glob.glob(fs_tracker.get_queue_directory() + "/*")
+    config = model.get_config(parsed_args.config)
+
+    while queue.has_next():
+        first_exp, ack_key = queue.dequeue(acknowledge=False)
+        # first_exp = min([(p, os.path.getmtime(p)) for p in queue],
+        #                key=lambda t: t[1])[0]
+
+        experiment_key = json.loads(first_exp)['experiment']
+
+        executor = LocalExecutor(parsed_args)
+        experiment = executor.db.get_experiment(experiment_key)
+
+        if allocate_resources(experiment, config):
+            # os.remove(first_exp)
+            queue.acknowledge(ack_key)
+            executor.run(experiment)
+        else:
+            logger.info('Cannot run experiment ' + experiment.key +
+                        ' due lack of resources. Will retry')
+            time.sleep(5)
+
+        # queue = glob.glob(fs_tracker.get_queue_directory() + "/*")
+
+    logger.info("Queue in {} is empty, quitting"
+                .format(fs_tracker.get_queue_directory()))
 
 
 if __name__ == "__main__":

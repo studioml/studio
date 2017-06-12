@@ -9,9 +9,14 @@ jinja2
 
 pyyaml
 
-oauth2client==3.0.0
-google-gax==0.12.5
-pyrebase
 apscheduler
+pycryptodome
+requests
+requests_toolbelt
+python_jwt
+sseclient
+
+google-cloud-pubsub
+
 
 

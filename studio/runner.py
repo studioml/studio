@@ -1,11 +1,11 @@
-import os
 import sys
 import subprocess
 import argparse
 import logging
 
-import fs_tracker
 import model
+from local_queue import LocalQueue
+import json
 
 logging.basicConfig()
 
@@ -50,13 +50,15 @@ def main(args=sys.argv):
         resources_needed=resources_needed)
 
     logger.info("Experiment name: " + experiment.key)
-    db = model.get_db_provider(model.get_config(parsed_args.config))
+    config = model.get_config(parsed_args.config)
+    db = model.get_db_provider(config)
     db.add_experiment(experiment)
 
-    with open(os.path.join(
-            fs_tracker.get_queue_directory(),
-            experiment.key), 'w') as f:
-        f.write('queued')
+    queue = LocalQueue()
+    queue.enqueue(json.dumps({
+        'experiment': experiment.key,
+        'config': config}))
+
     worker_args = ['studio-lworker']
 
     if parsed_args.config:
