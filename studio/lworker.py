@@ -7,6 +7,7 @@ import logging
 import time
 import xml.etree.ElementTree as ET
 import json
+import pip
 
 from apscheduler.schedulers.background import BackgroundScheduler
 
@@ -165,6 +166,12 @@ def main(args=sys.argv):
     queue = LocalQueue()
     # queue = glob.glob(fs_tracker.get_queue_directory() + "/*")
 
+    worker_loop(queue, parsed_args)
+    
+def worker_loop(queue, parsed_args, 
+        setup_pyenv=False, 
+        single_experiment=False,
+        fetch_artifacts=False):
     while queue.has_next():
         first_exp, ack_key = queue.dequeue(acknowledge=False)
         # first_exp = min([(p, os.path.getmtime(p)) for p in queue],
@@ -180,7 +187,23 @@ def main(args=sys.argv):
         if allocate_resources(experiment, config):
             # os.remove(first_exp)
             queue.acknowledge(ack_key)
+            if setup_pyenv:
+                logger.info('Setting up python packages for experiment')
+                pip.main(['install'] + experiment.pythonenv)
+                
+            if fetch_artifacts:
+                logger.info('Fetching artifacts')
+                # TODO rewrite with better artifact management
+                executor.db._download_dir(
+                        exectuor.db._get_experiemnts_keybase() + 
+                        experiment.key + '/modeldir.tgz',
+                        '.')
+                pass
+
             executor.run(experiment)
+            if single_experiment:
+                logger.info('single_experiment is True, quitting')
+                return; 
         else:
             logger.info('Cannot run experiment ' + experiment.key +
                         ' due lack of resources. Will retry')
