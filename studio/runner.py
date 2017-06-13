@@ -66,6 +66,7 @@ def main(args=sys.argv):
     if parsed_args.guest:
         worker_args += '--guest'
 
+    logger.info('worker args: {}'.format(worker_args))
     worker = subprocess.Popen(worker_args)
     worker.wait()
 

@@ -151,19 +151,14 @@ def main(args=sys.argv):
     logger.setLevel(10)
     parser = argparse.ArgumentParser(
         description='TensorFlow Studio worker. \
-                     Usage: studio-worker \
+                     Usage: studio-lworker \
                      ')
+ 
     parser.add_argument('--config', help='configuration file', default=None)
-    parser.add_argument(
-        '--guest',
-        help='Guest mode (does not require db credentials)',
-        action='store_true')
-
     parsed_args, script_args = parser.parse_known_args(args)
 
     queue = LocalQueue()
     # queue = glob.glob(fs_tracker.get_queue_directory() + "/*")
-    config = model.get_config(parsed_args.config)
 
     while queue.has_next():
         first_exp, ack_key = queue.dequeue(acknowledge=False)
@@ -171,6 +166,8 @@ def main(args=sys.argv):
         #                key=lambda t: t[1])[0]
 
         experiment_key = json.loads(first_exp)['experiment']
+        config = json.loads(first_exp)['config']
+        parsed_args.config = config
 
         executor = LocalExecutor(parsed_args)
         experiment = executor.db.get_experiment(experiment_key)
