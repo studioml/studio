@@ -1,11 +1,13 @@
 from google.cloud import pubsub
 import logging
 from google.gax.errors import RetryError
+import os
 logging.basicConfig()
 
 
 class PubsubQueue(object):
     def __init__(self, queue_name, sub_name='sub'):
+        assert 'GOOGLE_APPLICATION_CREDENTIALS' in os.environ.keys()
         self.client = pubsub.Client()
         self.topic = self.client.topic(queue_name)
         self.logger = logging.getLogger(self.__class__.__name__)

@@ -1,4 +1,15 @@
 from lworker import LocalExecutor, worker_loop
+import sys
+import logging
+import time
+
+
+from pubsub_queue import PubsubQueue
+
+import argparse
+logging.basicConfig()
+
+
 
 
 
@@ -18,15 +29,16 @@ def main(args=sys.argv):
 
     parsed_args, script_args = parser.parse_known_args(args)
 
-    queue = PubsubQueue()
+    queue = PubsubQueue(parsed_args.queue)
+    logger.info('Waiting for the work in the queue...')
     while not queue.has_next():
         time.sleep(5)
-
+    logger.info('Starting working')
     worker_loop(queue, parsed_args, 
-            install_pyenv=True, 
+            setup_pyenv=True, 
             single_experiment=True,
             fetch_artifacts=True)
 
 
-if __name__ == "__main__"
+if __name__ == "__main__":
     main()

@@ -2,6 +2,7 @@
 
 docker_cmd=nvidia-docker
 docker_img=tfstudio/base:0.0
+docker_img=19c1d33a5747
 
 queue_name=$1
 
@@ -17,17 +18,21 @@ gac_name=${GOOGLE_APPLICATION_CREDENTIALS##*/}
 repo="https://github.com/ilblackdragon/studio"
 branch="queueing2"
 
-$docker 
-$docker_cmd run --rm -it \
-            -v $HOME/.tfstudio:/root/home $docker_img \
-            -v $gac_path:/creds
-            -e GOOGLE_APPLICATION_CREDENTIALS="/creds/$gac_name"
-        /bin/bash -c \
-            "git clone $repo && \
+bash_cmd="git clone $repo && \
             cd studio && \
             git checkout $branch && \
             sudo pip install --upgrade pip && \
             sudo pip install -e . --upgrade && \
             mkdir /workspace && cd /workspace && \
-            studio-lworker --queue=$queue_name"
+            studio-rworker --queue=$queue_name"
+
+
+echo $bash_cmd
+
+$docker_cmd run --rm -it \
+            -v $HOME/.tfstudio:/root/.tfstudio \
+            -v $gac_path:/creds \
+            -e GOOGLE_APPLICATION_CREDENTIALS="/creds/$gac_name" \
+            $docker_img \
+        /bin/bash -c "$bash_cmd"
 

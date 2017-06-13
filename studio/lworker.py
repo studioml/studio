@@ -172,6 +172,9 @@ def worker_loop(queue, parsed_args,
         setup_pyenv=False, 
         single_experiment=False,
         fetch_artifacts=False):
+
+    logger = logging.getLogger('worker_loop')
+    logger.setLevel(10)
     while queue.has_next():
         first_exp, ack_key = queue.dequeue(acknowledge=False)
         # first_exp = min([(p, os.path.getmtime(p)) for p in queue],
@@ -195,8 +198,8 @@ def worker_loop(queue, parsed_args,
                 logger.info('Fetching artifacts')
                 # TODO rewrite with better artifact management
                 executor.db._download_dir(
-                        exectuor.db._get_experiemnts_keybase() + 
-                        experiment.key + '/modeldir.tgz',
+                        executor.db._get_experiments_keybase() + 
+                        experiment.key + '/workspace.tgz',
                         '.')
                 pass
 
