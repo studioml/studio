@@ -153,7 +153,7 @@ def main(args=sys.argv):
         description='TensorFlow Studio worker. \
                      Usage: studio-lworker \
                      ')
- 
+
     parser.add_argument('--config', help='configuration file', default=None)
     parser.add_argument(
         '--guest',
