@@ -3,6 +3,7 @@ configparser
 numpy
 tensorflow
 keras
+h5py
 
 flask
 jinja2

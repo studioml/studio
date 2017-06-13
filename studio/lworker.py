@@ -130,7 +130,7 @@ def get_available_gpus():
         return memstr2int(gpu.find('fb_memory_usage').find('used').text) < \
             0.1 * memstr2int(gpu.find('fb_memory_usage').find('total').text)
 
-    return [int(gpu.find('minor_number').text)
+    return [gpu.find('minor_number').text
             for gpu in xmlroot.findall('gpu') if check_gpu(gpu)]
 
 
@@ -155,6 +155,11 @@ def main(args=sys.argv):
                      ')
  
     parser.add_argument('--config', help='configuration file', default=None)
+    parser.add_argument(
+        '--guest',
+        help='Guest mode (does not require db credentials)',
+        action='store_true')
+
     parsed_args, script_args = parser.parse_known_args(args)
 
     queue = LocalQueue()
