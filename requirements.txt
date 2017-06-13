@@ -18,6 +18,7 @@ python_jwt
 sseclient
 
 google-cloud-pubsub
+google-cloud-storage
 
 
 
