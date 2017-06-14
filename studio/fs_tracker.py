@@ -23,7 +23,7 @@ def get_model_directory(experiment_name=None):
 
 def setup_model_directory(env, experiment_name, clean=False):
     path = get_model_directory(experiment_name)
-    if clean:
+    if clean and os.path.exists(path):
         shutil.rmtree(path)
 
     if not os.path.exists(path):
