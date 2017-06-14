@@ -52,7 +52,7 @@ class LocalExecutor(object):
         self.db.start_experiment(experiment)
 
         env = os.environ.copy()
-        fs_tracker.setup_model_directory(env, experiment.key)
+        fs_tracker.setup_model_directory(env, experiment.key, clean=True)
         model_dir = fs_tracker.get_model_directory(experiment.key)
         log_path = os.path.join(model_dir, self.config['log']['name'])
 
@@ -167,11 +167,12 @@ def main(args=sys.argv):
     # queue = glob.glob(fs_tracker.get_queue_directory() + "/*")
 
     worker_loop(queue, parsed_args)
-    
-def worker_loop(queue, parsed_args, 
-        setup_pyenv=False, 
-        single_experiment=False,
-        fetch_artifacts=False):
+
+
+def worker_loop(queue, parsed_args,
+                setup_pyenv=False,
+                single_experiment=False,
+                fetch_artifacts=False):
 
     logger = logging.getLogger('worker_loop')
     logger.setLevel(10)
@@ -193,20 +194,20 @@ def worker_loop(queue, parsed_args,
             if setup_pyenv:
                 logger.info('Setting up python packages for experiment')
                 pip.main(['install'] + experiment.pythonenv)
-                
+
             if fetch_artifacts:
                 logger.info('Fetching artifacts')
                 # TODO rewrite with better artifact management
                 executor.db._download_dir(
-                        executor.db._get_experiments_keybase() + 
-                        experiment.key + '/workspace.tgz',
-                        '.')
+                    executor.db._get_experiments_keybase() +
+                    experiment.key + '/workspace.tgz',
+                    '.')
                 pass
 
             executor.run(experiment)
             if single_experiment:
                 logger.info('single_experiment is True, quitting')
-                return; 
+                return
         else:
             logger.info('Cannot run experiment ' + experiment.key +
                         ' due lack of resources. Will retry')

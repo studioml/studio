@@ -2,6 +2,7 @@
 
 import os
 import uuid
+import shutil
 
 TFSTUDIO_MODEL_PATH = 'TFSTUDIO_MODEL_PATH'
 
@@ -20,8 +21,11 @@ def get_model_directory(experiment_name=None):
         return os.environ[TFSTUDIO_MODEL_PATH]
 
 
-def setup_model_directory(env, experiment_name):
+def setup_model_directory(env, experiment_name, clean=False):
     path = get_model_directory(experiment_name)
+    if clean:
+        shutil.rmtree(path)
+
     if not os.path.exists(path):
         os.makedirs(path)
     env[TFSTUDIO_MODEL_PATH] = path

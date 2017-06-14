@@ -1,0 +1,69 @@
+#!/bin/bash
+
+docker_cmd=docker
+docker_img=tfstudio/base:0.0
+
+queue_name=$1
+single_run=$2
+
+eval $docker_cmd
+if [ $? != 0 ]; then
+   echo "Docker not installed! Install docker."
+   exit 1
+fi
+
+eval nvidia-smi
+if [ $? == 0 ]; then
+    eval nvidia-docker
+    if [ $? == 0 ]; then
+        docker_cmd=nvidia-docker
+    else
+        echo "Warning! nvidia-docker is not installed correctly, won't be able to use gpus"
+    fi
+fi
+
+
+: "${GOOGLE_APPLICATION_CREDENTIALS?Need to point GOOGLE_APPLICATION_CREDENTIALS to the google credentials file}"
+: "${queue_name?Queue name is not specified (pass as a script argument}"
+
+gac_path=${GOOGLE_APPLICATION_CREDENTIALS%/*}
+gac_name=${GOOGLE_APPLICATION_CREDENTIALS##*/}
+repo="https://github.com/ilblackdragon/studio"
+branch="queueing2"
+
+#bash_cmd="git clone $repo && \
+#            cd studio && \
+#            git checkout $branch && \
+#            sudo pip install --upgrade pip && \
+#            sudo pip install -e . --upgrade && \
+#            mkdir /workspace && cd /workspace && \
+#            studio-rworker --queue=$queue_name"
+
+code_url_base="https://storage.googleapis.com/studio-ed756.appspot.com/src"
+code_ver="tfstudio-queueing2-2017-06-04_2.tgz"
+
+bash_cmd="apt-get install -y wget && \
+            wget $code_url_base/$code_ver && \
+            tar -xzf $code_ver && \
+            cd studio && \
+            sudo pip install --upgrade pip && \
+            sudo pip install -e . --upgrade && \
+            mkdir /workspace && cd /workspace && 
+            studio-rworker --queue=$queue_name"
+
+# loop until killed
+while True
+do
+    echo $bash_cmd
+    $docker_cmd run --rm -it \
+            -v $HOME/.tfstudio:/root/.tfstudio \
+            -v $gac_path:/creds \
+            -e GOOGLE_APPLICATION_CREDENTIALS="/creds/$gac_name" \
+            $docker_img \
+        /bin/bash -c "$bash_cmd"
+   if [ $single_run ];
+   then
+           exit 0
+   fi
+done
+

@@ -3,48 +3,88 @@ import os
 import shutil
 import tempfile
 import uuid
-from collections import namedtuple
+import subprocess
 
 from studio import fs_tracker, model
-from studio.lworker import LocalExecutor
 
 
 class RunnerTest(unittest.TestCase):
-    def test_LocalExecutor_run(self):
+    def test_runner_local(self):
         my_path = os.path.dirname(os.path.realpath(__file__))
         os.chdir(my_path)
 
-        executor = LocalExecutor(namedtuple('args', 'config guest')
-                                           ('test_config.yaml', None))
-
-        test_script = 'tf_hello_world.py'
         experiment_name = 'experimentHelloWorld'
-        keybase = "/experiments/" + experiment_name
-        experiment = model.create_experiment(
-            experiment_name=experiment_name,
-            filename=test_script,
-            args=['arg0'])
-
+        test_script = 'tf_hello_world.py'
         db = model.get_db_provider(model.get_config('test_config.yaml'))
-        db.add_experiment(experiment)
+        db.delete_experiment(experiment_name)
 
-        executor.run(experiment_name)
+        p = subprocess.Popen(['studio-runner',
+                              '--config=test_config.yaml',
+                              '--experiment=' + experiment_name,
+                              test_script, 'arg0'])
+
+        p.wait()
 
         # test saved arguments
-        saved_args = executor.db[keybase + '/args']
+        keybase = "/experiments/" + experiment_name
+        saved_args = db[keybase + '/args']
         self.assertTrue(len(saved_args) == 1)
         self.assertTrue(saved_args[0] == 'arg0')
-        self.assertTrue(executor.db[keybase + '/filename'] == test_script)
+        self.assertTrue(db[keybase + '/filename'] == test_script)
 
-        executor.db._download_modeldir(experiment_name)
+        db._download_modeldir(experiment_name)
         with open(os.path.join(fs_tracker.get_model_directory(experiment_name),
                                'output.log'), 'r') as f:
             data = f.read()
             split_data = data.strip().split('\n')
             self.assertEquals(split_data[-1], '[ 2.  6.]')
 
-        self.check_workspace(executor.db, keybase + '/workspace.tgz')
-        self.check_workspace(executor.db, keybase + '/workspace_latest.tgz')
+        self.check_workspace(db, keybase + '/workspace.tgz')
+        self.check_workspace(db, keybase + '/workspace_latest.tgz')
+
+    @unittest.skipIf(
+        'GOOGLE_APPLICATION_CREDENTIALS' not in
+        os.environ.keys(),
+        'GOOGLE_APPLICATION_CREDENTIALS environment ' +
+        'variable not set, won'' be able to use google ' +
+        'PubSub')
+    def test_runner_remote(self):
+        my_path = os.path.dirname(os.path.realpath(__file__))
+        os.chdir(my_path)
+
+        experiment_name = 'experimentHelloWorld'
+        test_script = 'tf_hello_world.py'
+        queue_name = 'test_queue'
+        db = model.get_db_provider(model.get_config('test_config.yaml'))
+        db.delete_experiment(experiment_name)
+
+        pw = subprocess.Popen(['studio-start-rworker', queue_name, "1"])
+
+        p = subprocess.Popen(['studio-runner',
+                              '--config=test_config.yaml',
+                              '--experiment=' + experiment_name,
+                              '--queue=' + queue_name,
+                              test_script, 'arg0'])
+
+        p.wait()
+        pw.wait()
+
+        # test saved arguments
+        keybase = "/experiments/" + experiment_name
+        saved_args = db[keybase + '/args']
+        self.assertTrue(len(saved_args) == 1)
+        self.assertTrue(saved_args[0] == 'arg0')
+        self.assertTrue(db[keybase + '/filename'] == test_script)
+
+        db._download_modeldir(experiment_name)
+        with open(os.path.join(fs_tracker.get_model_directory(experiment_name),
+                               'output.log'), 'r') as f:
+            data = f.read()
+            split_data = data.strip().split('\n')
+            self.assertEquals(split_data[-1], '[ 2.  6.]')
+
+        self.check_workspace(db, keybase + '/workspace.tgz')
+        self.check_workspace(db, keybase + '/workspace_latest.tgz')
 
     def check_workspace(self, db, keybase):
 
