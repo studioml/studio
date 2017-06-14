@@ -6,12 +6,16 @@ logging.basicConfig()
 
 
 class PubsubQueue(object):
-    def __init__(self, queue_name, sub_name='sub'):
+    def __init__(self, queue_name, sub_name=None):
         assert 'GOOGLE_APPLICATION_CREDENTIALS' in os.environ.keys()
+        print(dir(pubsub))
         self.client = pubsub.Client()
         self.topic = self.client.topic(queue_name)
         self.logger = logging.getLogger(self.__class__.__name__)
         self.logger.setLevel(10)
+        sub_name = sub_name if sub_name else queue_name + "_sub"
+        self.logger.info("Topic name = {}".format(queue_name))
+        self.logger.info("Subscription name = {}".format(queue_name))
         if queue_name not in [t.name for t in self.client.list_topics()]:
             self.topic.create()
             self.logger.info('topic {} created'.format(queue_name))

@@ -61,13 +61,13 @@ def main(args=sys.argv):
     db.add_experiment(experiment)
 
     queue = LocalQueue() if not parsed_args.queue else \
-                PubsubQueue(parsed_args.queue)
+        PubsubQueue(parsed_args.queue)
 
     queue.enqueue(json.dumps({
         'experiment': experiment.key,
         'config': config}))
 
-    if not parsed_args.queue:  
+    if not parsed_args.queue:
         worker_args = ['studio-lworker']
 
         if parsed_args.config:
@@ -78,6 +78,8 @@ def main(args=sys.argv):
         logger.info('worker args: {}'.format(worker_args))
         worker = subprocess.Popen(worker_args)
         worker.wait()
+
+    db = None
 
 
 if __name__ == "__main__":

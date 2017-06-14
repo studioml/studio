@@ -1,4 +1,4 @@
-from lworker import LocalExecutor, worker_loop
+from lworker import worker_loop
 import sys
 import logging
 import time
@@ -8,9 +8,6 @@ from pubsub_queue import PubsubQueue
 
 import argparse
 logging.basicConfig()
-
-
-
 
 
 def main(args=sys.argv):
@@ -34,10 +31,10 @@ def main(args=sys.argv):
     while not queue.has_next():
         time.sleep(5)
     logger.info('Starting working')
-    worker_loop(queue, parsed_args, 
-            setup_pyenv=True, 
-            single_experiment=True,
-            fetch_artifacts=True)
+    worker_loop(queue, parsed_args,
+                setup_pyenv=True,
+                single_experiment=True,
+                fetch_artifacts=True)
 
 
 if __name__ == "__main__":
