@@ -52,11 +52,11 @@ bash_cmd="apt-get install -y wget && \
             studio-rworker --queue=$queue_name"
 
 # loop until killed
-while True
+while true
 do
     echo $bash_cmd
     $docker_cmd run --rm -it \
-            -v $HOME/.tfstudio:/root/.tfstudio \
+            -v $HOME/.tfstudio/keys:/root/.tfstudio/keys \
             -v $gac_path:/creds \
             -e GOOGLE_APPLICATION_CREDENTIALS="/creds/$gac_name" \
             $docker_img \
