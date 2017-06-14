@@ -5,7 +5,6 @@ import argparse
 import yaml
 import logging
 import time
-import xml.etree.ElementTree as ET
 import json
 import pip
 
@@ -14,6 +13,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 import fs_tracker
 import model
 from local_queue import LocalQueue
+from gpu_util import get_available_gpus, get_gpu_mapping
 
 logging.basicConfig()
 
@@ -102,8 +102,9 @@ def allocate_resources(experiment, config=None):
 
 def allocate_gpus(gpus_needed, config=None):
     available_gpus = get_available_gpus()
-    if config and 'cudaDeviceMapping' in config.keys():
-        mapped_gpus = [str(config['cudaDeviceMapping'][g])
+    gpu_mapping = get_gpu_mapping()
+    if config and any(gpu_mapping):
+        mapped_gpus = [str(gpu_mapping[g])
                        for g in available_gpus]
     else:
         mapped_gpus = [str(g) for g in available_gpus]
@@ -114,37 +115,6 @@ def allocate_gpus(gpus_needed, config=None):
         return True
     else:
         return False
-
-
-def get_available_gpus():
-    try:
-        smi_proc = subprocess.Popen(['nvidia-smi', '-q', '-x'],
-                                    stdout=subprocess.PIPE,
-                                    stderr=subprocess.STDOUT)
-
-        smi_output, _ = smi_proc.communicate()
-        xmlroot = ET.fromstring(smi_output)
-    except Exception:
-        return []
-
-    def check_gpu(gpuinfo):
-        return memstr2int(gpu.find('fb_memory_usage').find('used').text) < \
-            0.1 * memstr2int(gpu.find('fb_memory_usage').find('total').text)
-
-    return [gpu.find('minor_number').text
-            for gpu in xmlroot.findall('gpu') if check_gpu(gpu)]
-
-
-def memstr2int(string):
-    conversion_factors = [('Mb', 2**20), ('MiB', 2**20),
-                          ('Gb', 2**30), ('GiB', 2**30),
-                          ('kb', 2**10)]
-
-    for k, f in conversion_factors:
-        if string.endswith(k):
-            return int(string.replace(k, '')) * f
-
-    return int(string)
 
 
 def main(args=sys.argv):
