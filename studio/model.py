@@ -16,6 +16,8 @@ from threading import Thread
 import subprocess
 import requests
 import json
+import hashlib
+import shutil
 
 from tensorflow.contrib.framework.python.framework import checkpoint_utils
 
@@ -31,8 +33,7 @@ class Experiment(object):
 
     def __init__(self, key, filename, args, pythonenv,
                  project=None,
-                 workspace_path='.',
-                 model_dir=None,
+                 artifacts=None,
                  status='waiting',
                  resources_needed=None,
                  time_added=None,
@@ -46,9 +47,29 @@ class Experiment(object):
         self.args = args if args else []
         self.pythonenv = pythonenv
         self.project = project
-        self.workspace_path = os.path.abspath(workspace_path)
-        self.model_dir = model_dir if model_dir \
-            else fs_tracker.get_model_directory(key)
+        workspace_path = '.'
+        model_dir = fs_tracker.get_model_directory(key)
+
+        self.artifacts = {
+            'workspace': {
+                'local': workspace_path,
+                'mutable': True
+            },
+            'modeldir': {
+                'local': model_dir,
+                'mutable': True
+            },
+            'output': {
+                'local': model_dir + "/output.log",
+                'mutable': True
+            },
+            'tb': {
+                'local': fs_tracker.get_tensorboard_dir(key),
+                'mutable': True
+            }
+        }
+        if artifacts is not None:
+            self.artifacts.update(artifacts)
 
         self.resources_needed = resources_needed
         self.status = status
@@ -62,7 +83,9 @@ class Experiment(object):
         if self.info.get('type') == 'keras':
             hdf5_files = [
                 (p, os.path.getmtime(p))
-                for p in glob.glob(os.path.join(self.model_dir, '*.hdf*'))]
+                for p in
+                glob.glob(self.artifacts['modeldir'] + '/*.hdf*') +
+                glob.glob(self.artifacts['modeldir'] + '/*.h5')]
 
             last_checkpoint = max(hdf5_files, key=lambda t: t[1])[0]
             return KerasModelWrapper(last_checkpoint)
@@ -78,6 +101,7 @@ def create_experiment(
         args,
         experiment_name=None,
         project=None,
+        artifacts={},
         resources_needed=None):
     key = str(uuid.uuid4()) if not experiment_name else experiment_name
     packages = [p._key + '==' + p._version for p in
@@ -89,6 +113,7 @@ def create_experiment(
         args=args,
         pythonenv=packages,
         project=project,
+        artifacts=artifacts,
         resources_needed=resources_needed)
 
 
@@ -254,10 +279,27 @@ class FirebaseProvider(object):
                 ("Getting url of file {} " +
                  "raised an exception: {}") .format(key, err))
 
-    def _upload_dir(self, key, local_path):
+    def _upload_dir(self, local_path, key=None, background=False, cache=True):
         if os.path.exists(local_path):
             tar_filename = os.path.join(tempfile.gettempdir(),
                                         str(uuid.uuid4()))
+
+            local_path = re.sub('/\Z', '', local_path)
+            local_nameonly = re.sub('.*/', '', local_path)
+            local_basepath = re.sub('/[^/]*\Z', '', local_path)
+
+            if cache and key:
+                cache_dir = fs_tracker.get_artifact_cache(key)
+                if cache_dir != local_path:
+                    self.logger.debug(
+                        "Copying local path {} to cache {}"
+                        .format(local_path, cache_dir))
+
+                    if os.path.exists(cache_dir) and os.path.isdir(cache_dir):
+                        shutil.rmtree(cache_dir)
+
+                    subprocess.call(['cp', '-pR', local_path, cache_dir])
+
             self.logger.debug(
                 ("Tarring and uploading directrory. " +
                  "tar_filename = {}, " +
@@ -267,33 +309,89 @@ class FirebaseProvider(object):
                     local_path,
                     key))
 
-            subprocess.call([
-                '/bin/bash',
-                '-c',
-                'cd {} && tar -czf {} . '.format(local_path, tar_filename)])
+            tarcmd = 'tar -czf {} -C {} {}'.format(
+                tar_filename,
+                local_basepath,
+                local_nameonly)
 
-            self._upload_file(key, tar_filename)
-            os.remove(tar_filename)
+            self.logger.debug("Tar cmd = {}".format(tarcmd))
+
+            subprocess.call(['/bin/bash', '-c', tarcmd])
+
+            if key is None:
+                key = 'blobstore/' + sha256_checksum(tar_filename) + '.tgz'
+
+            def finish_upload():
+                self._upload_file(key, tar_filename)
+                os.remove(tar_filename)
+
+            t = Thread(target=finish_upload)
+            t.start()
+
+            if background:
+                return (key, t)
+            else:
+                t.join()
+                return key
         else:
             self.logger.debug(("Local path {} does not exist. " +
                                "Not uploading anything.").format(local_path))
 
-    def _download_dir(self, key, local_path):
+    def _download_dir(self, local_path, key, background=False):
+        local_path = re.sub('\/\Z', '', local_path)
+        local_basepath = re.sub('\/[^\/]*\Z', '', local_path)
+
+        # TODO add a check if download is required (if the directory is newer
+        # than remote, we can skip the download )
+
         self.logger.debug("Downloading dir {} to local path {} from storage..."
                           .format(key, local_path))
         tar_filename = os.path.join(tempfile.gettempdir(), str(uuid.uuid4()))
         self.logger.debug("tar_filename = {} ".format(tar_filename))
-        self._download_file(key, tar_filename)
-        if os.path.exists(tar_filename):
-            self.logger.debug("Untarring {}".format(tar_filename))
-            subprocess.call([
-                '/bin/bash',
-                '-c',
-                ('mkdir -p {} &&' +
-                 'tar -xzf {} -C {} --keep-newer-files')
-                .format(local_path, tar_filename, local_path)])
 
-            # os.remove(tar_filename)
+        def finish_download():
+            self._download_file(key, tar_filename)
+            if os.path.exists(tar_filename):
+                # first, figure out if the tar file has a base path of .
+                # or not
+                self.logger.debug("Untarring {}".format(tar_filename))
+                listtar, _ = subprocess.Popen(['tar', '-tzf', tar_filename],
+                                              stdout=subprocess.PIPE
+                                              ).communicate()
+                listtar = listtar.strip().split('\n')
+                self.logger.debug('List of files in the tar: ' + str(listtar))
+                if listtar[0].startswith('./'):
+                    # Files are archived into tar from .; adjust path
+                    # accordingly
+                    basepath = local_path
+                else:
+                    basepath = local_basepath
+
+                subprocess.call([
+                    '/bin/bash',
+                    '-c',
+                    ('mkdir -p {} &&' +
+                     'tar -xzf {} -C {} --keep-newer-files')
+                    .format(basepath, tar_filename, basepath)])
+
+                if len(listtar) == 1:
+                    actual_path = os.path.join(basepath, listtar[0])
+                    self.logger.info(
+                        'Renaming {} into {}'.format(
+                            actual_path, local_path))
+                    os.rename(actual_path, local_path)
+            else:
+                self.logger.error(
+                    'file {} download failed'.format(tar_filename))
+
+        t = Thread(target=finish_download)
+        t.start()
+        if background:
+            return t
+        else:
+            t.join()
+
+        # os.remove(tar_filename)
 
     def _delete(self, key):
         dbobj = self.app.database().child(key)
@@ -322,13 +420,19 @@ class FirebaseProvider(object):
         self._delete(self._get_experiments_keybase() + experiment.key)
         experiment.time_added = time.time()
         experiment.status = 'waiting'
+
+        for tag, art in experiment.artifacts.iteritems():
+            if art['mutable']:
+                art['key'] = self._get_experiments_keybase() + \
+                    experiment.key + '/' + tag + '.tgz'
+            else:
+                if art['local'] is not None:
+                    # upload immutable artifacts
+                    blobkey = self._upload_dir(art['local'])
+                    art['key'] = blobkey
+
         self.__setitem__(self._get_experiments_keybase() + experiment.key,
                          experiment.__dict__)
-        Thread(target=self._upload_dir,
-               args=(self._get_experiments_keybase() +
-                     experiment.key + "/workspace.tgz",
-                     experiment.workspace_path)
-               ).start()
 
         self.__setitem__(self._get_user_keybase() + "experiments/" +
                          experiment.key,
@@ -339,6 +443,8 @@ class FirebaseProvider(object):
                              experiment.project + "/" +
                              experiment.key + "/userId",
                              self.auth.get_user_id())
+
+        self.checkpoint_experiment(experiment, blocking=True)
 
     def start_experiment(self, experiment):
         experiment.time_started = time.time()
@@ -354,7 +460,7 @@ class FirebaseProvider(object):
         self.checkpoint_experiment(experiment)
 
     def finish_experiment(self, experiment):
-        self.checkpoint_experiment(experiment)
+        self.checkpoint_experiment(experiment, blocking=True)
         experiment.status = 'finished'
         experiment.time_finished = time.time()
         self.__setitem__(self._get_experiments_keybase() +
@@ -366,39 +472,37 @@ class FirebaseProvider(object):
                          experiment.time_finished)
 
     def delete_experiment(self, experiment_key):
+        experiment = self.get_experiment(experiment_key, getinfo=False)
         self._delete(self._get_user_keybase() + 'experiments/' +
                      experiment_key)
-        self._delete_file(self._get_experiments_keybase() +
-                          experiment_key + '/modeldir.tgz')
-        self._delete_file(self._get_experiments_keybase() +
-                          experiment_key + '/workspace.tgz')
-        self._delete_file(self._get_experiments_keybase() +
-                          experiment_key + '/workspace_latest.tgz')
+
+        for key in experiment.artifacts.keys():
+            self._delete_file(self._get_experiments_keybase() +
+                              experiment_key + '/' + key + '.tgz')
+
         self._delete(self._get_experiments_keybase() + experiment_key)
 
     def checkpoint_experiment(self, experiment, blocking=False):
         checkpoint_threads = [
             Thread(
                 target=self._upload_dir,
-                args=(self._get_experiments_keybase() +
-                      experiment.key + "/workspace_latest.tgz",
-                      experiment.workspace_path)
-            ),
-
-            Thread(
-                target=self._upload_dir,
-                args=(self._get_experiments_keybase() +
-                      experiment.key + "/modeldir.tgz",
-                      experiment.model_dir)
-            )
-        ]
+                args=(art['local'], art['key']))
+            for _, art in experiment.artifacts.iteritems()
+            if art['mutable']]
 
         for t in checkpoint_threads:
             t.start()
+            t.join()
+
         self.__setitem__(self._get_experiments_keybase() +
                          experiment.key + "/time_last_checkpoint",
                          time.time())
-        return checkpoint_threads
+        if blocking:
+            for t in checkpoint_threads:
+                pass
+                # t.join()
+        else:
+            return checkpoint_threads
 
     def _experiment(self, key, data, info={}):
         return Experiment(
@@ -408,6 +512,7 @@ class FirebaseProvider(object):
             pythonenv=data['pythonenv'],
             project=data.get('project'),
             status=data['status'],
+            artifacts=data.get('artifacts'),
             resources_needed=data.get('resources_needed'),
             time_added=data['time_added'],
             time_started=data.get('time_started'),
@@ -418,9 +523,9 @@ class FirebaseProvider(object):
 
     def _download_modeldir(self, key):
         self.logger.info("Downloading model directory...")
-        self._download_dir(self._get_experiments_keybase() +
-                           key + '/modeldir.tgz',
-                           fs_tracker.get_model_directory(key))
+        self._download_dir(fs_tracker.get_model_directory(key),
+                           self._get_experiments_keybase() +
+                           key + '/modeldir.tgz')
         self.logger.info("Done")
 
     def _get_experiment_info(self, key):
@@ -481,10 +586,11 @@ class FirebaseProvider(object):
         return self._get_valid_experiments(experiment_keys.keys())
 
     def get_artifacts(self, key):
+        experiment = self.get_experiment(key, getinfo=False)
         base = self._get_experiments_keybase() + key
         return {
-            'model dir': self._get_file_url(base + '/modeldir.tgz'),
-            'workspace': self._get_file_url(base + '/workspace_latest.tgz'),
+            key: self._get_file_url(base + '/' + key + '.tgz') for
+            key in experiment.artifacts.keys()
         }
 
     def _get_valid_experiments(self, experiment_keys):
@@ -497,7 +603,10 @@ class FirebaseProvider(object):
                 self.logger.warn(
                     ("Experiment {} does not exist " +
                      "or is corrupted, deleting record").format(key))
-                self.delete_experiment(key)
+                try:
+                    self.delete_experiment(key)
+                except BaseException:
+                    pass
         return experiments
 
     def get_projects(self):
@@ -611,3 +720,11 @@ def _remove_backspaces(line):
         buf.write(splitline[-1])
 
     return buf.getvalue()
+
+
+def sha256_checksum(filename, block_size=65536):
+    sha256 = hashlib.sha256()
+    with open(filename, 'rb') as f:
+        for block in iter(lambda: f.read(block_size), b''):
+            sha256.update(block)
+    return sha256.hexdigest()

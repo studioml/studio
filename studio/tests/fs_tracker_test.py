@@ -12,23 +12,17 @@ class StudioLoggingTest(unittest.TestCase):
         self.assertTrue(
             modelDir == os.path.join(
                 os.path.expanduser('~'),
-                '.tfstudio/models/testExperiment'))
+                '.tfstudio/experiments/testExperiment/modeldir'))
 
     def test_get_model_directory_noargs(self):
-        testPath = 'testPath'
-        os.environ['TFSTUDIO_MODEL_PATH'] = testPath
-        self.assertTrue(testPath == fs_tracker.get_model_directory())
-
-    def test_set_model_directory(self):
-        experimentName = 'testExperiment'
-        env = {}
-        fs_tracker.setup_model_directory(env, experimentName)
-
-        expectedPath = os.path.join(
+        testExperiment = 'testExperiment'
+        testPath = os.path.join(
             os.path.expanduser('~'),
-            '.tfstudio/models/testExperiment')
-        self.assertTrue(expectedPath == env['TFSTUDIO_MODEL_PATH'])
-        self.assertTrue(os.path.isdir(expectedPath))
+            '.tfstudio/experiments',
+            testExperiment, 'modeldir')
+
+        os.environ['TFSTUDIO_EXPERIMENT'] = testExperiment
+        self.assertTrue(testPath == fs_tracker.get_model_directory())
 
 
 if __name__ == "__main__":

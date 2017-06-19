@@ -52,7 +52,7 @@ class LocalExecutor(object):
         self.db.start_experiment(experiment)
 
         env = os.environ.copy()
-        fs_tracker.setup_model_directory(env, experiment.key, clean=True)
+        fs_tracker.setup_experiment(env, experiment, clean=True)
         model_dir = fs_tracker.get_model_directory(experiment.key)
         log_path = os.path.join(model_dir, self.config['log']['name'])
 
@@ -166,13 +166,22 @@ def worker_loop(queue, parsed_args,
                 pip.main(['install'] + experiment.pythonenv)
 
             if fetch_artifacts:
-                logger.info('Fetching artifacts')
-                # TODO rewrite with better artifact management
-                executor.db._download_dir(
-                    executor.db._get_experiments_keybase() +
-                    experiment.key + '/workspace.tgz',
-                    '.')
-                pass
+                logger.info('Fetching artifacts...')
+                for tag, art in experiment.artifacts.iteritems():
+                    if tag == 'workspace':
+                        new_local_path = '.'
+                    else:
+                        if art['mutable']:
+                            new_local_path = fs_tracker.get_artifact_cache(
+                                tag,
+                                experiment.key,
+                            )
+                        else:
+                            new_local_path = fs_tracker.get_blob_cache(
+                                art['key'])
+
+                    art['local'] = new_local_path
+                    executor.db._download_dir(art['local'], art['key'])
 
             executor.run(experiment)
             if single_experiment:

@@ -1,5 +1,5 @@
 import unittest
-from studio.lworker import memstr2int
+from studio.gpu_util import memstr2int
 
 
 class LocalWorker(unittest.TestCase):

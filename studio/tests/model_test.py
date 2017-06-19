@@ -214,9 +214,12 @@ class FirebaseProviderTest(unittest.TestCase):
         with open(tmp_filename, 'w') as f:
             f.write(random_str)
 
-        fb._upload_dir('tests/test_upload_download_dir.tgz', tmp_dir)
+        fb._upload_dir(
+            tmp_dir,
+            'tests/test_upload_download_dir.tgz',
+            cache=False)
         shutil.rmtree(tmp_dir)
-        fb._download_dir('tests/test_upload_download_dir.tgz', tmp_dir)
+        fb._download_dir(tmp_dir, 'tests/test_upload_download_dir.tgz')
 
         with open(tmp_filename, 'r') as f:
             line = f.read()
@@ -300,16 +303,16 @@ class FirebaseProviderTest(unittest.TestCase):
         fb = self.get_firebase_provider()
         experiment, experiment_name, _, _, = get_test_experiment()
 
-        if os.path.exists(experiment.model_dir):
-            shutil.rmtree(experiment.model_dir)
+        modeldir = experiment.artifacts['modeldir']['local']
+        if os.path.exists(modeldir):
+            shutil.rmtree(modeldir)
 
-        os.makedirs(experiment.model_dir)
+        os.makedirs(modeldir)
         fb._delete(fb._get_experiments_keybase() + '/' + experiment_name)
         fb.add_experiment(experiment)
         fb.start_experiment(experiment)
 
-        file_in_modeldir = os.path.join(
-            experiment.model_dir, str(uuid.uuid4()))
+        file_in_modeldir = os.path.join(modeldir, str(uuid.uuid4()))
         random_str = str(uuid.uuid4())
         with open(file_in_modeldir, 'w') as f:
             f.write(random_str)
@@ -318,7 +321,7 @@ class FirebaseProviderTest(unittest.TestCase):
         for t in checkpoint_threads:
             t.join()
 
-        shutil.rmtree(experiment.model_dir)
+        shutil.rmtree(modeldir)
         fb._download_modeldir(experiment_name)
 
         with open(file_in_modeldir, 'r') as f:
