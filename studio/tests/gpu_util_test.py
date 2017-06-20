@@ -2,7 +2,7 @@ import unittest
 from studio.gpu_util import memstr2int
 
 
-class LocalWorker(unittest.TestCase):
+class GpuUtilTest(unittest.TestCase):
 
     def test_memstr2int(self):
         self.assertEquals(memstr2int('123 Mb'), 123 * (2**20))

@@ -12,7 +12,7 @@ TFSTUDIO_EXPERIMENT = 'TFSTUDIO_EXPERIMENT'
 def get_experiment_key():
     if TFSTUDIO_EXPERIMENT not in os.environ.keys():
         key = str(uuid.uuid4())
-        setup_experiment_key(os.environ, key)
+        setup_experiment(os.environ, key)
     return os.environ[TFSTUDIO_EXPERIMENT]
 
 

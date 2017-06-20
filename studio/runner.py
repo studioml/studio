@@ -52,6 +52,11 @@ def main(args=sys.argv):
         help='Name of the mutable artifact to be captured continously',
         default=[], action='append')
 
+    parser.add_argument(
+        '--arte',
+        help='Name of the artifact from another experiment to use',
+        default=[], action='append')
+
     parsed_args, script_args = parser.parse_known_args(args)
 
     exec_filename, other_args = script_args[1], script_args[2:]
@@ -62,20 +67,23 @@ def main(args=sys.argv):
         resources_needed = {}
         resources_needed['gpus'] = parsed_args.gpus
 
+    config = model.get_config(parsed_args.config)
+    db = model.get_db_provider(config)
+
+    artifacts = {}
+    artifacts.update(parse_artifacts(parsed_args.art, mutable=True))
+    artifacts.update(parse_artifacts(parsed_args.arti, mutable=False))
+    artifacts.update(parse_external_artifacts(parsed_args.arte, db))
+
     experiment = model.create_experiment(
         filename=exec_filename,
         args=other_args,
         experiment_name=parsed_args.experiment,
         project=parsed_args.project,
-        artifacts=parse_artifacts(
-            parsed_args.art,
-            parsed_args.arti,
-            {}),
+        artifacts=artifacts,
         resources_needed=resources_needed)
 
     logger.info("Experiment name: " + experiment.key)
-    config = model.get_config(parsed_args.config)
-    db = model.get_db_provider(config)
     db.add_experiment(experiment)
 
     queue = LocalQueue() if not parsed_args.queue else \
@@ -100,32 +108,32 @@ def main(args=sys.argv):
     db = None
 
 
-def parse_artifacts(art_list, arti_list, arte_list):
+def parse_artifacts(art_list, mutable):
     retval = {}
     for entry in art_list:
         path = re.sub(':.*', '', entry)
         tag = re.sub('.*:', '', entry)
         retval[tag] = {
             'local': path,
-            'mutable': True
+            'mutable': mutable
         }
+    return retval
 
-    for entry in arti_list:
-        path = re.sub(':.*', '', entry)
+
+def parse_external_artifacts(art_list, db):
+    retval = {}
+    for entry in art_list:
+        external = re.sub(':.*', '', entry)
         tag = re.sub('.*:', '', entry)
+
+        experiment_key = re.sub('/.*', '', external)
+        external_tag = re.sub('.*/', '', external)
+        experiment = db.get_experiment(experiment_key, getinfo=False)
+
         retval[tag] = {
-            'local': path,
+            'key': experiment.artifacts[external_tag]['key'],
             'mutable': False
         }
-
-    for entry in arte_list:
-        tag = re.sub(':.*', '', entry)
-        key = re.sub('.*:', '', entry)
-        retval[tag] = {
-            'key': key,
-            'mutable': True
-        }
-
     return retval
 
 

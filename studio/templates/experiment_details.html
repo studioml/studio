@@ -27,20 +27,21 @@
     {% if experiment.status == 'finished' %}
         <dd>Finish time: {{ experiment.time_finished | format_time }}</dd>
     {% endif %}
-    {% if experiment.info %}
-        {% if 'type' in experiment.info.keys() %}
-            {% for infokey, infovalue in experiment.info.iteritems() %}
+    {% if info %}
+        {% if 'type' in info.keys() %}
+            {% for infokey, infovalue in info.iteritems() %}
                 {% if not infokey == 'logtail' %}
                     <dd>{{ infokey }} : {{ infovalue }}</dd>
                 {% endif %}
             {% endfor %}
         {% endif %}
-        {% if 'logtail' in experiment.info.keys() %}
-            <dt> Tail of the log: </dt>
-            {% for line in experiment.info['logtail'] %}
-                <dd>{{ line }}</dd>
-            {% endfor %}
-        {% endif %}
+    {% endif %}
+
+    {% if logtail %}
+        <dt> Tail of the log: </dt>
+        {% for line in logtail %}
+            <dd>{{ line }}</dd>
+        {% endfor %}
     {% endif %}
     </dl>
 {% endblock %}

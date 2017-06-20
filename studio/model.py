@@ -60,7 +60,7 @@ class Experiment(object):
                 'mutable': True
             },
             'output': {
-                'local': model_dir + "/output.log",
+                'local': fs_tracker.get_artifact_cache('output', key),
                 'mutable': True
             },
             'tb': {
@@ -246,8 +246,8 @@ class FirebaseProvider(object):
                 ("Deleting file {} from storage " +
                  "raised an exception: {}") .format(key, err))
 
-    def _get_file_url(self, key):
-        self.logger.debug("Getting a download url for a file at key {}"
+    def _get_file_meta(self, key):
+        self.logger.debug("Getting metainformation for a file at key {}"
                           .format(key))
         try:
             if self.auth:
@@ -271,13 +271,30 @@ class FirebaseProvider(object):
                 raise ValueError("Response error with code {}"
                                  .format(response.status_code))
 
-            self.logger.debug("Done")
-            return url + '?alt=media&token=' \
-                + json.loads(response.content)['downloadTokens']
+            return (json.loads(response.content), url)
+
         except Exception as err:
             self.logger.error(
-                ("Getting url of file {} " +
+                ("Getting metainfo of file {} " +
                  "raised an exception: {}") .format(key, err))
+
+    def _get_file_url(self, key):
+        self.logger.debug("Getting a download url for a file at key {}"
+                          .format(key))
+
+        response_dict, url = self._get_file_meta(key)
+
+        self.logger.debug("Done")
+        return url + '?alt=media&token=' \
+            + response_dict['downloadTokens']
+
+    def _get_file_timestamp(self, key):
+        response, _ = self._get_file_meta(key)
+        timestamp = time.mktime(
+            time.strptime(
+                response['updated'],
+                "%Y-%m-%dT%H:%M:%S.%fZ"))
+        return timestamp
 
     def _upload_dir(self, local_path, key=None, background=False, cache=True):
         if os.path.exists(local_path):
@@ -337,15 +354,28 @@ class FirebaseProvider(object):
             self.logger.debug(("Local path {} does not exist. " +
                                "Not uploading anything.").format(local_path))
 
-    def _download_dir(self, local_path, key, background=False):
+    def _download_dir(
+            self,
+            local_path,
+            key,
+            background=False,
+            only_newer=False):
         local_path = re.sub('\/\Z', '', local_path)
         local_basepath = re.sub('\/[^\/]*\Z', '', local_path)
 
-        # TODO add a check if download is required (if the directory is newer
-        # than remote, we can skip the download )
-
         self.logger.debug("Downloading dir {} to local path {} from storage..."
                           .format(key, local_path))
+
+        if only_newer and os.path.exists(local_path):
+            self.logger.debug(
+                'Comparing date of the artifact in storage with local')
+            storage_time = self._get_file_timestamp(key)
+            local_time = time.mktime(time.gmtime(os.path.getmtime(local_path)))
+            if local_time > storage_time:
+                self.logger.info(
+                    "Local path is younger than stored, skipping the download")
+                return
+
         tar_filename = os.path.join(tempfile.gettempdir(), str(uuid.uuid4()))
         self.logger.debug("tar_filename = {} ".format(tar_filename))
 
@@ -426,7 +456,7 @@ class FirebaseProvider(object):
                 art['key'] = self._get_experiments_keybase() + \
                     experiment.key + '/' + tag + '.tgz'
             else:
-                if art['local'] is not None:
+                if 'local' in art.keys():
                     # upload immutable artifacts
                     blobkey = self._upload_dir(art['local'])
                     art['key'] = blobkey
@@ -525,7 +555,7 @@ class FirebaseProvider(object):
         self.logger.info("Downloading model directory...")
         self._download_dir(fs_tracker.get_model_directory(key),
                            self._get_experiments_keybase() +
-                           key + '/modeldir.tgz')
+                           key + '/modeldir.tgz', only_newer=True)
         self.logger.info("Done")
 
     def _get_experiment_info(self, key):
@@ -551,18 +581,22 @@ class FirebaseProvider(object):
         if not type_found:
             info['type'] = 'unknown'
 
-        # TODO: get the name of a log file from config
-        logpath = os.path.join(
-            fs_tracker.get_model_directory(key), 'output.log')
+        info['logtail'] = self.get_experiment_logtail(key)
+
+        return info
+
+    def get_experiment_logtail(self, key):
+        logpath = fs_tracker.get_artifact_cache('output', key)
 
         if os.path.exists(logpath):
             tailp = subprocess.Popen(
                 ['tail', '-50', logpath], stdout=subprocess.PIPE)
             stdoutdata = tailp.communicate()[0]
             logtail = _remove_backspaces(stdoutdata).split('\n')
-            info['logtail'] = logtail
 
-        return info
+            return logtail
+        else:
+            return None
 
     def get_experiment(self, key, getinfo=True):
         data = self.__getitem__(self._get_experiments_keybase() + key)
@@ -587,10 +621,12 @@ class FirebaseProvider(object):
 
     def get_artifacts(self, key):
         experiment = self.get_experiment(key, getinfo=False)
-        base = self._get_experiments_keybase() + key
+        if experiment.artifacts is None:
+            return {}
+
         return {
-            key: self._get_file_url(base + '/' + key + '.tgz') for
-            key in experiment.artifacts.keys()
+            tag: self._get_file_url(art['key']) for
+            tag, art in experiment.artifacts.iteritems()
         }
 
     def _get_valid_experiments(self, experiment_keys):
@@ -649,6 +685,9 @@ class PostgresProvider(object):
         raise NotImplementedError()
 
     def get_experiment(self, key):
+        raise NotImplementedError()
+
+    def get_experiment_logtail(self, key):
         raise NotImplementedError()
 
     def get_user_experiments(self, user):

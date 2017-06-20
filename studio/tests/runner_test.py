@@ -47,6 +47,15 @@ class RunnerTest(unittest.TestCase):
             self.assertTrue(f.read() == random_str2)
         os.remove(tmppath)
 
+        self.stub_runner_local(
+            experiment_name='test_runner_local_arte',
+            runner_args=['--arte=test_runner_local_art/f:f'],
+            config_name='test_config.yaml',
+            test_script='art_hello_world.py',
+            script_args=[],
+            expected_output=random_str2
+        )
+
     def test_runner_local_arti(self):
 
         tmpfile = os.path.join(tempfile.gettempdir(),
@@ -104,8 +113,8 @@ class RunnerTest(unittest.TestCase):
             self.assertTrue(script_args is None or len(script_args) == 0)
 
         db._download_modeldir(experiment_name)
-        with open(os.path.join(fs_tracker.get_model_directory(experiment_name),
-                               'output.log'), 'r') as f:
+        with open(fs_tracker.get_artifact_cache("output", experiment_name),
+                  'r') as f:
             data = f.read()
             split_data = data.strip().split('\n')
             self.assertEquals(split_data[-1], expected_output)
@@ -231,8 +240,8 @@ class RunnerTest(unittest.TestCase):
         self.assertTrue(db[keybase + '/filename'] == test_script)
 
         db._download_modeldir(experiment_name)
-        with open(os.path.join(fs_tracker.get_model_directory(experiment_name),
-                               'output.log'), 'r') as f:
+        with open(fs_tracker.get_artifact_cache("output", experiment_name),
+                  'r') as f:
             data = f.read()
             split_data = data.strip().split('\n')
             self.assertEquals(split_data[-1], expected_output)

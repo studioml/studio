@@ -40,7 +40,7 @@ branch="queueing2"
 #            studio-rworker --queue=$queue_name"
 
 code_url_base="https://storage.googleapis.com/studio-ed756.appspot.com/src"
-code_ver="tfstudio-queueing2-2017-06-19_4.tgz"
+code_ver="tfstudio-queueing2-2017-06-19_5.tgz"
 
 bash_cmd="apt-get install -y wget && \
             wget $code_url_base/$code_ver && \

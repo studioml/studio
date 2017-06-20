@@ -227,6 +227,45 @@ class FirebaseProviderTest(unittest.TestCase):
         shutil.rmtree(tmp_dir)
         self.assertTrue(line == random_str)
 
+    def test_upload_download_cache(self):
+        fb = self.get_firebase_provider()
+        tmp_dir = os.path.join(tempfile.gettempdir(), str(uuid.uuid4()))
+        strlen = 10000000
+        random_str = os.urandom(strlen)
+
+        os.makedirs(os.path.join(tmp_dir, 'test_dir'))
+        tmp_filename = os.path.join(
+            tmp_dir, 'test_dir', 'test_upload_download.txt')
+
+        with open(tmp_filename, 'w') as f:
+            f.write(random_str)
+
+        fb._upload_dir(
+            tmp_dir,
+            'tests/test_upload_download_dir.tgz',
+            cache=False)
+        shutil.rmtree(tmp_dir)
+
+        tic1 = time.clock()
+        fb._download_dir(
+            tmp_dir,
+            'tests/test_upload_download_dir.tgz',
+            only_newer=True)
+        tic2 = time.clock()
+        fb._download_dir(
+            tmp_dir,
+            'tests/test_upload_download_dir.tgz',
+            only_newer=True)
+        tic3 = time.clock()
+
+        with open(tmp_filename, 'r') as f:
+            line = f.read()
+
+        shutil.rmtree(tmp_dir)
+        self.assertTrue(line == random_str)
+
+        self.assertTrue(tic3 - tic2 < 0.1 * (tic2 - tic1))
+
     def test_get_user_keybase(self):
         fb = self.get_firebase_provider()
         keybase = fb._get_user_keybase()

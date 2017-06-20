@@ -53,8 +53,9 @@ class LocalExecutor(object):
 
         env = os.environ.copy()
         fs_tracker.setup_experiment(env, experiment, clean=True)
-        model_dir = fs_tracker.get_model_directory(experiment.key)
-        log_path = os.path.join(model_dir, self.config['log']['name'])
+        log_path = fs_tracker.get_artifact_cache('output', experiment.key)
+
+        # log_path = os.path.join(model_dir, self.config['log']['name'])
 
         self.logger.debug('Child process environment:')
         self.logger.debug(str(env))
@@ -165,9 +166,9 @@ def worker_loop(queue, parsed_args,
                 logger.info('Setting up python packages for experiment')
                 pip.main(['install'] + experiment.pythonenv)
 
-            if fetch_artifacts:
-                logger.info('Fetching artifacts...')
-                for tag, art in experiment.artifacts.iteritems():
+            for tag, art in experiment.artifacts.iteritems():
+                if fetch_artifacts or 'local' not in art.keys():
+                    logger.info('Fetching artifact ' + tag)
                     if tag == 'workspace':
                         new_local_path = '.'
                     else:
