@@ -6,7 +6,7 @@ For now, artifact storage is backed by google cloud storage.
 ## Basic usage
 The idea behind artifact management is three-fold:
 1. With no coding overhead capture the data that experiment depends on (e.g. dataset)
-2. With minimal coding overhead save and visualize the results of the experiment (neural network weights, etc).
+2. With no coding overhead save and with minimal overhead visualize the results of the experiment (neural network weights, etc).
 3. With minimal coding overhead make experiments reproducible on any machine (without manual data download, path correction etc).
 
 Below we provide the examples of each use case. 
@@ -25,16 +25,29 @@ keras or tensorflow built-in checkpointers, but we'll leave that as an exercise 
 Consider the following contents of file `train_linreg.py`:
     
     import numpy as np
+    import pickle
     
     no_samples = 100
     dim_samples = 5
+
+    learning_rate = 0.01
+    no_steps = 10
 
     X = np.random.random((no_samples, dim_samples))
     y = np.random.random((no_samples, 1))
 
     w = np.random.random((1, dim_samples))
 
-    for 
+    for step in range(no_steps):
+       dw = (X * w - y)
+       w -= learning_rate * dw  
+       loss = 0.5 * (X * w - y) * (X * w - y)
+        
+       with open('~/weights/w_{}_{}.pck'.format(epoch, loss), 'w'):
+           f.write(pickle.dumps(w))
+       
+
+The reader can immediately see that we are solving a linear regression problem by gradient descent method; saving weights at each step. 
 
 
 ## Default artifacts
