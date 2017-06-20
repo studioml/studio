@@ -30,9 +30,10 @@ class RunnerTest(unittest.TestCase):
             f.write(random_str1)
 
         random_str2 = str(uuid.uuid4())
+        experiment_name = 'test_runner_local_art' + str(uuid.uuid4())
 
         self.stub_runner_local(
-            experiment_name='test_runner_local_art',
+            experiment_name=experiment_name,
             runner_args=['--art=' + tmpfile + ':f'],
             config_name='test_config.yaml',
             test_script='art_hello_world.py',
@@ -42,19 +43,21 @@ class RunnerTest(unittest.TestCase):
 
         db = model.get_db_provider(model.get_config('test_config.yaml'))
         tmppath = os.path.join(tempfile.gettempdir(), str(uuid.uuid4()))
-        db._download_dir(tmppath, 'experiments/test_runner_local_art/f.tgz')
+        db._download_dir(tmppath, 'experiments/{}/f.tgz'.format(experiment_name))
         with open(tmppath, 'r') as f:
             self.assertTrue(f.read() == random_str2)
         os.remove(tmppath)
 
         self.stub_runner_local(
             experiment_name='test_runner_local_arte',
-            runner_args=['--arte=test_runner_local_art/f:f'],
+            runner_args=['--arte={}/f:f'.format(experiment_name)],
             config_name='test_config.yaml',
             test_script='art_hello_world.py',
             script_args=[],
             expected_output=random_str2
         )
+
+        db.delete_experiment(experiment_name)
 
     def test_runner_local_arti(self):
 
@@ -112,8 +115,6 @@ class RunnerTest(unittest.TestCase):
         else:
             self.assertTrue(script_args is None or len(script_args) == 0)
 
-        import pdb
-        pdb.set_trace()
         experiment = db.get_experiment(experiment_name)
         db._download_modeldir(experiment_name)
         db._download_dir(
