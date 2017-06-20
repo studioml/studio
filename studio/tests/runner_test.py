@@ -112,7 +112,15 @@ class RunnerTest(unittest.TestCase):
         else:
             self.assertTrue(script_args is None or len(script_args) == 0)
 
+        import pdb
+        pdb.set_trace()
+        experiment = db.get_experiment(experiment_name)
         db._download_modeldir(experiment_name)
+        db._download_dir(
+                fs_tracker.get_artifact_cache("output", experiment_name), 
+                experiment.artifacts["output"]["key"]
+        )
+
         with open(fs_tracker.get_artifact_cache("output", experiment_name),
                   'r') as f:
             data = f.read()
@@ -157,7 +165,7 @@ class RunnerTest(unittest.TestCase):
             experiment_name='test_runner_remote_art',
             runner_args=['--art=' + tmpfile + ':f'],
             config_name='test_config.yaml',
-            queue_name='test_runner_remote_art',
+            queue_name='test_runner_remote',
             test_script='art_hello_world.py',
             script_args=[random_str2],
             expected_output=random_str1
@@ -188,7 +196,7 @@ class RunnerTest(unittest.TestCase):
             experiment_name='test_runner_remote_arti',
             runner_args=['--arti=' + tmpfile + ':f'],
             config_name='test_config.yaml',
-            queue_name='test_runner_remote_arti',
+            queue_name='test_runner_remote',
             test_script='art_hello_world.py',
             script_args=[],
             expected_output=random_str
@@ -242,7 +250,13 @@ class RunnerTest(unittest.TestCase):
 
         self.assertTrue(db[keybase + '/filename'] == test_script)
 
+        experiment = db.get_experiment(experiment_name)
         db._download_modeldir(experiment_name)
+        db._download_dir(
+                fs_tracker.get_artifact_cache("output", experiment_name), 
+                experiment.artifacts["output"]["key"]
+        )
+
         with open(fs_tracker.get_artifact_cache("output", experiment_name),
                   'r') as f:
             data = f.read()

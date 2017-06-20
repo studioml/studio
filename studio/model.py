@@ -506,9 +506,10 @@ class FirebaseProvider(object):
         self._delete(self._get_user_keybase() + 'experiments/' +
                      experiment_key)
 
-        for key in experiment.artifacts.keys():
-            self._delete_file(self._get_experiments_keybase() +
-                              experiment_key + '/' + key + '.tgz')
+        for tag,art in experiment.artifacts.iteritems():
+            self.logger.debug("Deleting artifact with tag {} at key {}"
+                    .format(tag, art['key']))
+            self._delete_file(art['key'])
 
         self._delete(self._get_experiments_keybase() + experiment_key)
 
