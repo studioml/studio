@@ -43,6 +43,7 @@ You can see results of your job at http://127.0.0.1:5000
 ## Authentication 
 Both studio and studio-runner use same authentication tokens for database backend. The tokens are valid for 1 hour, 
 but if studio / studio-runner is running, it renews tokens automatically. 
+Note that expiration tokens don't expire; this also means that you can use tokens on multiple machines (i.e. when you want to use google account authentication on a remote server and don't want to open extra ports) - simply copy contents of ~/.tfstudio/keys folder to another machine. 
 For now TensorFlow studio supports 2 methods of authentication: email/password and using google account.
 If you don't have a user account set up, and don't have a google account, you can uncomment "guest: true" line
  in the database section of studio/default_config.yaml file to use studio-runner and studio in the guest mode. 
@@ -104,6 +105,33 @@ Go to studio/helloworld/ folder, and try running
         studio --config /path/to/new_config.yaml
 and go to http://localhost:5000 in the browser to see the results of the experiment
     
+## Setting up a remote worker
+### Getting credentials 
+1. Remote workers work by listening to distributed queue. Right now the distributed queue is backed by Google PubSub; so to access it, you'll need application credentials from Google. (in the future, it may be implemented via firebase itself, in which case this step should become obsolete). If you made it this far, you are likely to have a google cloud compute account set up; but even if not, go to http://cloud.google.com and either set up an account or sign in. 
+2. Next, create a project if you don't have a project corresponding to studio just yet. 
+3. Then go to API Manager -> Credentials, and click "Create credentials" -> "Service account key"
+4. Choose "New service account" from the "Select accout" dropdown,  and keep key type as JSON
+5. Enter a name of your liking for account (google will convert it to a uniqie name), and choose "PubSub Editor" for a role (technically, you can create 2 keys, and keep publisher on a machine that submits work, and subscriber key on a machine that implements the work)
+6. Save a json credentials file
+7. Add GOOGLE_APPLICATION_CREDENTIALS variable to the environment that points to the saved json credentials file both on work submitter and work implementer. 
 
+### Setting up remote worker
+1. Install docker, and nvidia-docker to use gpus
+2. Clone the repo
 
+    git clone https://github.com/ilblackdragon/studio && cd studio && pip install -e .
 
+3. Generate the docker image:
+
+    cd docker && docker build -t tfstudio/base:0.0 . 
+
+4. Start worker (queue name is a name of the queue that will definte where submit work to)
+    
+    studio-start-rworker <queue-name>
+
+### Submitting work
+On a submitting machine (usually local):
+
+    studio-runner --queue <queue-name> script.py <script_args>
+
+This script should quit promptly, but you'll be able to see experiment progress in studio web ui 

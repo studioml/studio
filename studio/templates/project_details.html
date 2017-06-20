@@ -3,10 +3,13 @@
 {% block content %}
     <div class="container">
             <h1>Project {{ project_name }} </h1>
+            <a href=/tensorboard_proj/{{ project_name }}>View in TensorBoard</a>
         <table class="table table-striped">
-            {% for experiment in project_dict.keys() %}
+            {% for experiment in experiments %}
                 <tr>
-                        <td><a href="/experiments/{{ experiment }}">{{ experiment }}</a></td>
+                    <td><a href="/experiments/{{ experiment.key }}">{{ experiment.key }}</a></td>
+                    <td>{{ experiment.filename }}</td>
+                    <td>{{ experiment.status  }}</td>
                 </tr>
             {% endfor %}
         </table>

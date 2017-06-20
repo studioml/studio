@@ -2,6 +2,7 @@
 
 import os
 import uuid
+import shutil
 
 TFSTUDIO_MODEL_PATH = 'TFSTUDIO_MODEL_PATH'
 
@@ -20,8 +21,25 @@ def get_model_directory(experiment_name=None):
         return os.environ[TFSTUDIO_MODEL_PATH]
 
 
-def setup_model_directory(env, experiment_name):
+def setup_model_directory(env, experiment_name, clean=False):
     path = get_model_directory(experiment_name)
+    if clean and os.path.exists(path):
+        shutil.rmtree(path)
+
     if not os.path.exists(path):
         os.makedirs(path)
     env[TFSTUDIO_MODEL_PATH] = path
+
+
+def get_queue_directory():
+    queue_dir = os.path.join(os.path.expanduser('~'),
+                             '.tfstudio/queue')
+    if not os.path.exists(queue_dir):
+        os.makedirs(queue_dir)
+
+    return queue_dir
+
+
+def get_tensorboard_dir(experiment_name=None):
+    return os.path.join(get_model_directory(experiment_name),
+                        'tb')

@@ -5,9 +5,13 @@ from keras.layers import Input, Dense
 from keras.models import Model
 from keras.datasets import mnist
 from keras.utils import to_categorical
-from keras.callbacks import ModelCheckpoint
+from keras.callbacks import ModelCheckpoint, TensorBoard
 
 from studio import fs_tracker
+
+
+print('Environment:')
+print(os.environ)
 
 # this placeholder will contain our input digits, as flat vectors
 img = Input((784,))
@@ -16,6 +20,7 @@ x = Dense(128, activation='relu')(img)
 x = Dense(128, activation='relu')(x)
 # output layer with 10 units and a softmax activation
 preds = Dense(10, activation='softmax')(x)
+
 
 model = Model(img, preds)
 model.compile(loss='categorical_crossentropy', optimizer='adam')
@@ -37,6 +42,12 @@ checkpointer = ModelCheckpoint(
     fs_tracker.get_model_directory() +
     '/checkpoint.{epoch:02d}-{val_loss:.2f}.hdf')
 
+
+tbcallback = TensorBoard(log_dir=fs_tracker.get_tensorboard_dir(),
+                         histogram_freq=0,
+                         write_graph=True,
+                         write_images=False)
+
 # save the model arch to json
 with open(os.path.join(fs_tracker.get_model_directory(),
                        'model.json'), 'w') as f:
@@ -45,4 +56,4 @@ with open(os.path.join(fs_tracker.get_model_directory(),
 model.fit(
     x_train, y_train, validation_data=(
         x_test, y_test), epochs=int(
-            sys.argv[1]), callbacks=[checkpointer])
+            sys.argv[1]), callbacks=[checkpointer, tbcallback])

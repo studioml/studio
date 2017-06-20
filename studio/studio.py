@@ -6,6 +6,11 @@ import yaml
 import logging
 import json
 from functools import wraps
+import socket
+import subprocess
+from urlparse import urlparse
+
+import fs_tracker
 
 logging.basicConfig()
 
@@ -13,6 +18,7 @@ app = Flask(__name__)
 
 
 _db_provider = None
+_tensorboard_dirs = {}
 logger = None
 
 
@@ -73,7 +79,51 @@ def dashboard():
 @authenticated('/experiments/<key>')
 def experiment(key):
     experiment = _db_provider.get_experiment(key)
-    return render_template("experiment_details.html", experiment=experiment)
+    artifacts_urls = _db_provider.get_artifacts(key)
+    return render_template("experiment_details.html",
+                           experiment=experiment,
+                           artifacts=artifacts_urls)
+
+
+@app.route('/tensorboard_exp/<key>')
+@authenticated('/tensorboard_exp/<key>')
+def tensorboard_exp(key):
+    return tensorboard(fs_tracker.get_tensorboard_dir(key))
+
+
+@app.route('/tensorboard_proj/<key>')
+@authenticated('/tensorboard_proj/<key>')
+def tensorboard_proj(key):
+    experiments = _db_provider.get_project_experiments(key)
+    logdir = ','.join(
+        [e.key + ":" + fs_tracker.get_tensorboard_dir(e.key)
+         for e in experiments])
+
+    return tensorboard(logdir)
+
+
+def tensorboard(logdir):
+    port = _tensorboard_dirs.get(logdir)
+    if not port:
+
+        sock = socket.socket(socket.AF_INET)
+        sock.bind(('', 0))
+        port = sock.getsockname()[1]
+        sock.close()
+
+        subprocess.Popen([
+            'tensorboard',
+            '--logdir=' + logdir,
+            '--port=' + str(port)])
+        time.sleep(5)  # wait for tensorboard to spin up
+        _tensorboard_dirs[logdir] = port
+
+    redirect_url = 'http://{}:{}'.format(
+        urlparse(request.url).hostname,
+        port)
+
+    logger.debug('Redirecting to ' + redirect_url)
+    return redirect(redirect_url)
 
 
 @app.route('/projects')
@@ -88,11 +138,11 @@ def projects():
 @app.route('/project/<key>')
 @authenticated('/project/<key>')
 def project_details(key):
-    projects = _db_provider.get_projects()
+    experiments = _db_provider.get_project_experiments(key)
     return render_template(
         "project_details.html",
         project_name=key,
-        project_dict=projects[key])
+        experiments=experiments)
 
 
 @app.route('/users')
@@ -113,6 +163,13 @@ def user_experiments(key):
         user=key,
         email=email,
         experiments=sorted(experiments, key=lambda e: -e.time_added))
+
+
+@app.route('/delete_experiment/<key>')
+@authenticated('/delete_experiment/<key>')
+def delete_experiment(key):
+    _db_provider.delete_experiment(key)
+    return redirect('/')
 
 
 def get_auth_url():
@@ -139,7 +196,7 @@ def main():
                         default=5000)
 
     args = parser.parse_args()
-    config = model.get_default_config()
+    config = model.get_config()
     if args.config:
         with open(args.config) as f:
             config.update(yaml.load(f))
