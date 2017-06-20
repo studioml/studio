@@ -132,6 +132,7 @@ class RunnerTest(unittest.TestCase):
             experiment_name='test_runner_remote',
             runner_args=[],
             config_name='test_config.yaml',
+            queue_name='test_runner_remote',
             test_script='tf_hello_world.py',
             script_args=['arg0'],
             expected_output='[ 2.  6.]')
@@ -156,6 +157,7 @@ class RunnerTest(unittest.TestCase):
             experiment_name='test_runner_remote_art',
             runner_args=['--art=' + tmpfile + ':f'],
             config_name='test_config.yaml',
+            queue_name='test_runner_remote_art',
             test_script='art_hello_world.py',
             script_args=[random_str2],
             expected_output=random_str1
@@ -186,6 +188,7 @@ class RunnerTest(unittest.TestCase):
             experiment_name='test_runner_remote_arti',
             runner_args=['--arti=' + tmpfile + ':f'],
             config_name='test_config.yaml',
+            queue_name='test_runner_remote_arti',
             test_script='art_hello_world.py',
             script_args=[],
             expected_output=random_str
@@ -196,13 +199,13 @@ class RunnerTest(unittest.TestCase):
             experiment_name,
             runner_args,
             config_name,
+            queue_name,
             test_script,
             script_args,
             expected_output):
         my_path = os.path.dirname(os.path.realpath(__file__))
         os.chdir(my_path)
 
-        queue_name = 'test_queue'
 
         PubsubQueue(queue_name).clean()
 
