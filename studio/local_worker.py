@@ -119,11 +119,11 @@ def allocate_gpus(gpus_needed, config=None):
 
 
 def main(args=sys.argv):
-    logger = logging.getLogger('studio-lworker')
+    logger = logging.getLogger('studio-local-worker')
     logger.setLevel(10)
     parser = argparse.ArgumentParser(
         description='TensorFlow Studio worker. \
-                     Usage: studio-lworker \
+                     Usage: studio-local-worker \
                      ')
 
     parser.add_argument('--config', help='configuration file', default=None)

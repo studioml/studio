@@ -1,4 +1,4 @@
-from lworker import worker_loop
+from local_worker import worker_loop
 import sys
 import logging
 import time

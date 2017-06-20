@@ -40,7 +40,7 @@ branch="queueing2"
 #            studio-rworker --queue=$queue_name"
 
 code_url_base="https://storage.googleapis.com/studio-ed756.appspot.com/src"
-code_ver="tfstudio-queueing2-2017-06-19_5.tgz"
+code_ver="tfstudio-artifacts-2017-06-20_1.tgz"
 
 bash_cmd="wget $code_url_base/$code_ver && \
             tar -xzf $code_ver && \
@@ -48,7 +48,7 @@ bash_cmd="wget $code_url_base/$code_ver && \
             sudo pip install --upgrade pip && \
             sudo pip install -e . --upgrade && \
             mkdir /workspace && cd /workspace && 
-            studio-rworker --queue=$queue_name"
+            studio-remote-worker --queue=$queue_name"
 
 # loop until killed
 while true

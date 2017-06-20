@@ -94,7 +94,7 @@ def main(args=sys.argv):
         'config': config}))
 
     if not parsed_args.queue:
-        worker_args = ['studio-lworker']
+        worker_args = ['studio-local-worker']
 
         if parsed_args.config:
             worker_args += '--config=' + parsed_args.config

@@ -225,7 +225,7 @@ class RunnerTest(unittest.TestCase):
         except BaseException:
             pass
 
-        pw = subprocess.Popen(['studio-start-rworker', queue_name, "1"])
+        pw = subprocess.Popen(['studio-start-remote-worker', queue_name, "1"])
 
         p = subprocess.Popen(['studio-runner',
                               '--config=' + config_name,
