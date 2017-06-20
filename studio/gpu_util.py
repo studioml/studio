@@ -55,8 +55,8 @@ def get_gpu_mapping():
 def _find_my_gpus(prop='minor_number'):
     gpu_info = _get_gpu_info()
     my_gpus = [g.find(prop).text for g in gpu_info if os.getpid() in [int(
-        p.find('pid').text) for p in 
-            g.find('processes').findall('process_info')]]
+        p.find('pid').text) for p in
+        g.find('processes').findall('process_info')]]
 
     return my_gpus
 

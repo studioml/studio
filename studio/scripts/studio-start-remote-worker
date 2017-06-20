@@ -49,7 +49,7 @@ bash_cmd="apt-get install -y wget && \
             sudo pip install --upgrade pip && \
             sudo pip install -e . --upgrade && \
             mkdir /workspace && cd /workspace && 
-            studio-rworker --queue=$queue_name"
+            studio-remote-worker --queue=$queue_name"
 
 # loop until killed
 while true

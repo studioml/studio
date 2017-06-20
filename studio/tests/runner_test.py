@@ -40,7 +40,6 @@ class RunnerTest(unittest.TestCase):
             self.assertEquals(split_data[-1], '[ 2.  6.]')
 
         self.check_workspace(db, keybase + '/workspace.tgz')
-        self.check_workspace(db, keybase + '/workspace_latest.tgz')
 
     @unittest.skipIf(
         'GOOGLE_APPLICATION_CREDENTIALS' not in
@@ -58,7 +57,7 @@ class RunnerTest(unittest.TestCase):
         db = model.get_db_provider(model.get_config('test_config.yaml'))
         db.delete_experiment(experiment_name)
 
-        pw = subprocess.Popen(['studio-start-rworker', queue_name, "1"])
+        pw = subprocess.Popen(['studio-start-remote-worker', queue_name, "1"])
 
         p = subprocess.Popen(['studio-runner',
                               '--config=test_config.yaml',
@@ -84,7 +83,6 @@ class RunnerTest(unittest.TestCase):
             self.assertEquals(split_data[-1], '[ 2.  6.]')
 
         self.check_workspace(db, keybase + '/workspace.tgz')
-        self.check_workspace(db, keybase + '/workspace_latest.tgz')
 
     def check_workspace(self, db, keybase):
 

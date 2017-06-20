@@ -8,7 +8,6 @@ logging.basicConfig()
 class PubsubQueue(object):
     def __init__(self, queue_name, sub_name=None):
         assert 'GOOGLE_APPLICATION_CREDENTIALS' in os.environ.keys()
-        print(dir(pubsub))
         self.client = pubsub.Client()
         self.topic = self.client.topic(queue_name)
         self.logger = logging.getLogger(self.__class__.__name__)
