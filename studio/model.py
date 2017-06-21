@@ -510,9 +510,9 @@ class FirebaseProvider(object):
         self._delete(self._get_user_keybase() + 'experiments/' +
                      experiment_key)
 
-        for tag,art in experiment.artifacts.iteritems():
+        for tag, art in experiment.artifacts.iteritems():
             self.logger.debug("Deleting artifact with tag {} at key {}"
-                    .format(tag, art['key']))
+                              .format(tag, art['key']))
             self._delete_file(art['key'])
 
         self._delete(self._get_experiments_keybase() + experiment_key)
@@ -626,15 +626,14 @@ class FirebaseProvider(object):
 
     def get_artifacts(self, key):
         experiment = self.get_experiment(key, getinfo=False)
-        retval = {} 
+        retval = {}
         if experiment.artifacts is not None:
             for tag, art in experiment.artifacts.iteritems():
                 url = self._get_file_url(art['key'])
                 if url is not None:
                     retval[tag] = url
 
-        return retval 
-
+        return retval
 
     def _get_valid_experiments(self, experiment_keys):
         experiments = []

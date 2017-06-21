@@ -72,7 +72,7 @@ def get_artifact_cache(tag, experiment_name=None):
 
 
 def get_blob_cache(blobkey):
-    blobkey = re.sub('.tgz\Z','', blobkey)
+    blobkey = re.sub('.tgz\Z', '', blobkey)
     if blobkey.startswith('blobstore/'):
         blobkey = re.sub('.*/', '', blobkey)
 

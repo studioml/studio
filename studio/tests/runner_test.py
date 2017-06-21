@@ -43,7 +43,9 @@ class RunnerTest(unittest.TestCase):
 
         db = model.get_db_provider(model.get_config('test_config.yaml'))
         tmppath = os.path.join(tempfile.gettempdir(), str(uuid.uuid4()))
-        db._download_dir(tmppath, 'experiments/{}/f.tgz'.format(experiment_name))
+        db._download_dir(
+            tmppath,
+            'experiments/{}/f.tgz'.format(experiment_name))
         with open(tmppath, 'r') as f:
             self.assertTrue(f.read() == random_str2)
         os.remove(tmppath)
@@ -118,8 +120,8 @@ class RunnerTest(unittest.TestCase):
         experiment = db.get_experiment(experiment_name)
         db._download_modeldir(experiment_name)
         db._download_dir(
-                fs_tracker.get_artifact_cache("output", experiment_name), 
-                experiment.artifacts["output"]["key"]
+            fs_tracker.get_artifact_cache("output", experiment_name),
+            experiment.artifacts["output"]["key"]
         )
 
         with open(fs_tracker.get_artifact_cache("output", experiment_name),
@@ -215,7 +217,6 @@ class RunnerTest(unittest.TestCase):
         my_path = os.path.dirname(os.path.realpath(__file__))
         os.chdir(my_path)
 
-
         PubsubQueue(queue_name).clean()
 
         db = model.get_db_provider(model.get_config(config_name))
@@ -254,8 +255,8 @@ class RunnerTest(unittest.TestCase):
         experiment = db.get_experiment(experiment_name)
         db._download_modeldir(experiment_name)
         db._download_dir(
-                fs_tracker.get_artifact_cache("output", experiment_name), 
-                experiment.artifacts["output"]["key"]
+            fs_tracker.get_artifact_cache("output", experiment_name),
+            experiment.artifacts["output"]["key"]
         )
 
         with open(fs_tracker.get_artifact_cache("output", experiment_name),
