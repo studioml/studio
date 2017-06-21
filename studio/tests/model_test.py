@@ -399,23 +399,6 @@ class ModelTest(unittest.TestCase):
         self.assertTrue(experiment.project == experiment_project)
         self.assertTrue(experiment.pythonenv == packages)
 
-    def test_remove_backspaces(self):
-        testline = 'abcd\x08\x08\x08efg\x08\x08hi\x08'
-        removed = model._remove_backspaces(testline)
-        self.assertTrue(removed == 'aeh')
-
-        testline = 'abcd\x08\x08\x08efg\x08\x08hi'
-        removed = model._remove_backspaces(testline)
-        self.assertTrue(removed == 'aehi')
-
-        testline = 'abcd'
-        removed = model._remove_backspaces(testline)
-        self.assertTrue(removed == 'abcd')
-
-        testline = 'abcd\n\ndef'
-        removed = model._remove_backspaces(testline)
-        self.assertTrue(removed == testline)
-
 
 if __name__ == "__main__":
     unittest.main()

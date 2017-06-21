@@ -8,7 +8,7 @@ and go to the next section.
 
 Create new virtual environment:
     
-    virtualenv tfstudio
+    virtualenv --python=python2.7 tfstudio
 
 Activate it. On Mac OS X:
     
@@ -36,7 +36,7 @@ Start visualizer:
 
 Run your jobs:
 
-    stuido-runner myfile.py --some-arg=value --learning_rate=0.3
+    studio-runner myfile.py --some-arg=value --learning_rate=0.3
 
 You can see results of your job at http://127.0.0.1:5000
 

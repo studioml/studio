@@ -20,7 +20,7 @@ class RunnerTest(unittest.TestCase):
             expected_output='[ 2.  6.]'
         )
 
-    def test_runner_local_art(self):
+    def test_runner_local_ce(self):
 
         tmpfile = os.path.join(tempfile.gettempdir(),
                                'tmpfile.txt')
@@ -30,11 +30,11 @@ class RunnerTest(unittest.TestCase):
             f.write(random_str1)
 
         random_str2 = str(uuid.uuid4())
-        experiment_name = 'test_runner_local_art' + str(uuid.uuid4())
+        experiment_name = 'test_runner_local_c' + str(uuid.uuid4())
 
         self.stub_runner_local(
             experiment_name=experiment_name,
-            runner_args=['--art=' + tmpfile + ':f'],
+            runner_args=['--capture=' + tmpfile + ':f'],
             config_name='test_config.yaml',
             test_script='art_hello_world.py',
             script_args=[random_str2],
@@ -51,8 +51,8 @@ class RunnerTest(unittest.TestCase):
         os.remove(tmppath)
 
         self.stub_runner_local(
-            experiment_name='test_runner_local_arte',
-            runner_args=['--arte={}/f:f'.format(experiment_name)],
+            experiment_name='test_runner_local_e',
+            runner_args=['--reuse={}/f:f'.format(experiment_name)],
             config_name='test_config.yaml',
             test_script='art_hello_world.py',
             script_args=[],
@@ -61,7 +61,7 @@ class RunnerTest(unittest.TestCase):
 
         db.delete_experiment(experiment_name)
 
-    def test_runner_local_arti(self):
+    def test_runner_local_co(self):
 
         tmpfile = os.path.join(tempfile.gettempdir(),
                                'tmpfile.txt')
@@ -71,8 +71,8 @@ class RunnerTest(unittest.TestCase):
             f.write(random_str)
 
         self.stub_runner_local(
-            experiment_name='test_runner_local_arti',
-            runner_args=['--arti=' + tmpfile + ':f'],
+            experiment_name='test_runner_local_co',
+            runner_args=['--capture-once=' + tmpfile + ':f'],
             config_name='test_config.yaml',
             test_script='art_hello_world.py',
             script_args=[],
@@ -154,7 +154,7 @@ class RunnerTest(unittest.TestCase):
         'GOOGLE_APPLICATION_CREDENTIALS environment ' +
         'variable not set, won'' be able to use google ' +
         'PubSub')
-    def test_runner_remote_art(self):
+    def test_runner_remote_c(self):
         tmpfile = os.path.join(tempfile.gettempdir(),
                                'tmpfile.txt')
 
@@ -165,8 +165,8 @@ class RunnerTest(unittest.TestCase):
         random_str2 = str(uuid.uuid4())
 
         self.stub_runner_remote(
-            experiment_name='test_runner_remote_art',
-            runner_args=['--art=' + tmpfile + ':f'],
+            experiment_name='test_runner_remote_c',
+            runner_args=['--capture=' + tmpfile + ':f'],
             config_name='test_config.yaml',
             queue_name='test_runner_remote',
             test_script='art_hello_world.py',
@@ -176,7 +176,7 @@ class RunnerTest(unittest.TestCase):
 
         db = model.get_db_provider(model.get_config('test_config.yaml'))
         tmppath = os.path.join(tempfile.gettempdir(), str(uuid.uuid4()))
-        db._download_dir(tmppath, 'experiments/test_runner_remote_art/f.tgz')
+        db._download_dir(tmppath, 'experiments/test_runner_remote_c/f.tgz')
         with open(tmppath, 'r') as f:
             self.assertTrue(f.read() == random_str2)
         os.remove(tmppath)
@@ -187,7 +187,7 @@ class RunnerTest(unittest.TestCase):
         'GOOGLE_APPLICATION_CREDENTIALS environment ' +
         'variable not set, won'' be able to use google ' +
         'PubSub')
-    def test_runner_remote_arti(self):
+    def test_runner_remote_co(self):
         tmpfile = os.path.join(tempfile.gettempdir(),
                                'tmpfile.txt')
 
@@ -196,8 +196,8 @@ class RunnerTest(unittest.TestCase):
             f.write(random_str)
 
         self.stub_runner_remote(
-            experiment_name='test_runner_remote_arti',
-            runner_args=['--arti=' + tmpfile + ':f'],
+            experiment_name='test_runner_remote_co',
+            runner_args=['--capture-once=' + tmpfile + ':f'],
             config_name='test_config.yaml',
             queue_name='test_runner_remote',
             test_script='art_hello_world.py',

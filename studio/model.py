@@ -11,17 +11,16 @@ import time
 import glob
 import tempfile
 import re
-import StringIO
 from threading import Thread
 import subprocess
 import requests
 import json
-import hashlib
 import shutil
 
 from tensorflow.contrib.framework.python.framework import checkpoint_utils
 
 import fs_tracker
+import util
 from auth import FirebaseAuth
 from model_util import KerasModelWrapper
 
@@ -340,7 +339,8 @@ class FirebaseProvider(object):
             subprocess.call(['/bin/bash', '-c', tarcmd])
 
             if key is None:
-                key = 'blobstore/' + sha256_checksum(tar_filename) + '.tgz'
+                key = 'blobstore/' + util.sha256_checksum(tar_filename) \
+                      + '.tgz'
 
             def finish_upload():
                 self._upload_file(key, tar_filename)
@@ -597,7 +597,7 @@ class FirebaseProvider(object):
             tailp = subprocess.Popen(
                 ['tail', '-50', logpath], stdout=subprocess.PIPE)
             stdoutdata = tailp.communicate()[0]
-            logtail = _remove_backspaces(stdoutdata).split('\n')
+            logtail = util.remove_backspaces(stdoutdata).split('\n')
 
             return logtail
         else:
@@ -753,23 +753,3 @@ def get_db_provider(config=None, blocking_auth=True):
             projectId)
 
     return FirebaseProvider(db_config, blocking_auth)
-
-
-def _remove_backspaces(line):
-    splitline = re.split('(\x08+)', line)
-    buf = StringIO.StringIO()
-    for i in range(0, len(splitline) - 1, 2):
-        buf.write(splitline[i][:-len(splitline[i + 1])])
-
-    if len(splitline) % 2 == 1:
-        buf.write(splitline[-1])
-
-    return buf.getvalue()
-
-
-def sha256_checksum(filename, block_size=65536):
-    sha256 = hashlib.sha256()
-    with open(filename, 'rb') as f:
-        for block in iter(lambda: f.read(block_size), b''):
-            sha256.update(block)
-    return sha256.hexdigest()
