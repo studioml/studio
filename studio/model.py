@@ -459,7 +459,7 @@ class FirebaseProvider(object):
         experiment.status = 'waiting'
 
         experiment.git = git_util.get_git_info(
-                experiment.artifacts['workspace']['local'])
+            experiment.artifacts['workspace']['local'])
 
         for tag, art in experiment.artifacts.iteritems():
             if art['mutable']:
