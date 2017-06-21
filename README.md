@@ -49,7 +49,7 @@ If you don't have a user account set up, and don't have a google account, you ca
  in the database section of studio/default_config.yaml file to use studio-runner and studio in the guest mode. 
 
 Alternatively, you can set up your own database (with blackjack and hook... let's not get distracted here) and configure 
-tfstudio to use it. See [a relative link](docs/setup_database.md). This is also a preferred option if you don't want to
+tfstudio to use it. See [setting up database](docs/setup_database.md). This is also a preferred option if you don't want to
 share the models / artifacts with everyone. 
 
 
@@ -63,4 +63,10 @@ that's why it keeps asking for password if inactive for more than an hour.
 If you don't have an email/password account set up, don't despair! Any user with a google account can use TensorFlow studio as a 
 first-class citizen. If token not found when you run studio, Web UI will redirect you to the authentication app which will
 ask to sign in with your google account, and issues an authentication token. Then studio / studio-runner can use that token. 
+
+## Further reading and cool features
+TensorFlow studio allows one to run experiments remotely. The process of setting up a server is described [here](docs/remote_worker.md)
+
+Another very important aspect of model management is management of artifacts (data, resulting weights etc). The facilities that tfstudio
+provides in that regard are described [here](docs/artifacts.md)
 

@@ -1,4 +1,5 @@
-# Setting up a database 
+# Setting up a database
+This page describes a process of setting up your own database / storage for the models. This puts you in full control of who has access to the experiment data. 
 For the moment, tfstudio only supports FireBase (https://firebase.google.com/) as a database/storage backend. 
 To configure tfstudio to work with firebase, do the following:
 
