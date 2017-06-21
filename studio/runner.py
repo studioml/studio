@@ -4,6 +4,7 @@ import argparse
 import logging
 import json
 import re
+import os
 
 import model
 from local_queue import LocalQueue
@@ -114,7 +115,7 @@ def parse_artifacts(art_list, mutable):
         path = re.sub(':.*', '', entry)
         tag = re.sub('.*:', '', entry)
         retval[tag] = {
-            'local': path,
+            'local': os.path.expanduser(path),
             'mutable': mutable
         }
     return retval

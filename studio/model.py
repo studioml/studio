@@ -277,12 +277,16 @@ class FirebaseProvider(object):
             self.logger.error(
                 ("Getting metainfo of file {} " +
                  "raised an exception: {}") .format(key, err))
+            return (None, None)
 
     def _get_file_url(self, key):
         self.logger.debug("Getting a download url for a file at key {}"
                           .format(key))
 
         response_dict, url = self._get_file_meta(key)
+        if response_dict is None:
+            self.logger.debug("Getting file metainfo failed")
+            return None
 
         self.logger.debug("Done")
         return url + '?alt=media&token=' \
@@ -622,13 +626,15 @@ class FirebaseProvider(object):
 
     def get_artifacts(self, key):
         experiment = self.get_experiment(key, getinfo=False)
-        if experiment.artifacts is None:
-            return {}
+        retval = {} 
+        if experiment.artifacts is not None:
+            for tag, art in experiment.artifacts.iteritems():
+                url = self._get_file_url(art['key'])
+                if url is not None:
+                    retval[tag] = url
 
-        return {
-            tag: self._get_file_url(art['key']) for
-            tag, art in experiment.artifacts.iteritems()
-        }
+        return retval 
+
 
     def _get_valid_experiments(self, experiment_keys):
         experiments = []
