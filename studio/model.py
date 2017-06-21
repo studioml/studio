@@ -636,9 +636,10 @@ class FirebaseProvider(object):
         retval = {}
         if experiment.artifacts is not None:
             for tag, art in experiment.artifacts.iteritems():
-                url = self._get_file_url(art['key'])
-                if url is not None:
-                    retval[tag] = url
+                if 'key' in art.keys():
+                    url = self._get_file_url(art['key'])
+                    if url is not None:
+                        retval[tag] = url
 
         return retval
 
