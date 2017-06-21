@@ -1,3 +1,3 @@
 #!python
-from studio import rworker
-rworker.main()
+from studio import remote_worker
+remote_worker.main()

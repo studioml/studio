@@ -1,5 +1,16 @@
 {% extends "base.html" %}
 
+{% block head %}
+    {% if experiment.status == 'running' %}
+        <meta http-equiv="refresh" content="5">
+    {% endif %}
+    {% if experiment.status == 'waiting' %}
+        <meta http-equiv="refresh" content="60">
+    {% endif %}
+    
+
+{% endblock %}
+
 {% block content %}
     <h1>Experiment {{ experiment.key }}</h1>
     {% if experiment.project %}
@@ -27,6 +38,12 @@
     {% if experiment.status == 'finished' %}
         <dd>Finish time: {{ experiment.time_finished | format_time }}</dd>
     {% endif %}
+    {% if experiment.git %}
+        <dd>
+            Git repo: {{ experiment.git['url'] }}, commit {{ experiment.git['commit'] }}
+        </dd>
+    {% endif %} 
+
     {% if info %}
         {% if 'type' in info.keys() %}
             {% for infokey, infovalue in info.iteritems() %}

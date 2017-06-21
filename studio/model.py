@@ -22,6 +22,7 @@ import shutil
 from tensorflow.contrib.framework.python.framework import checkpoint_utils
 
 import fs_tracker
+import git_util
 from auth import FirebaseAuth
 from model_util import KerasModelWrapper
 
@@ -40,7 +41,8 @@ class Experiment(object):
                  time_started=None,
                  time_last_checkpoint=None,
                  time_finished=None,
-                 info={}):
+                 info={},
+                 git=None):
 
         self.key = key
         self.filename = filename
@@ -78,6 +80,7 @@ class Experiment(object):
         self.time_last_checkpoint = time_last_checkpoint
         self.time_finished = time_finished
         self.info = info
+        self.git = git
 
     def get_model(self):
         if self.info.get('type') == 'keras':
@@ -455,6 +458,9 @@ class FirebaseProvider(object):
         experiment.time_added = time.time()
         experiment.status = 'waiting'
 
+        experiment.git = git_util.get_git_info(
+                experiment.artifacts['workspace']['local'])
+
         for tag, art in experiment.artifacts.iteritems():
             if art['mutable']:
                 art['key'] = self._get_experiments_keybase() + \
@@ -553,7 +559,8 @@ class FirebaseProvider(object):
             time_started=data.get('time_started'),
             time_last_checkpoint=data.get('time_last_checkpoint'),
             time_finished=data.get('time_finished'),
-            info=info
+            info=info,
+            git=data.get('git')
         )
 
     def _download_modeldir(self, key):

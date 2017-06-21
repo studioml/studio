@@ -9,10 +9,6 @@ from keras.callbacks import ModelCheckpoint, TensorBoard
 
 from studio import fs_tracker
 
-
-print('Environment:')
-print(os.environ)
-
 # this placeholder will contain our input digits, as flat vectors
 img = Input((784,))
 # fully-connected layer with 128 units and ReLU activation
