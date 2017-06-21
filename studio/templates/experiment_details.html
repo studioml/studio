@@ -38,9 +38,17 @@
     {% if experiment.status == 'finished' %}
         <dd>Finish time: {{ experiment.time_finished | format_time }}</dd>
     {% endif %}
+    
     {% if experiment.git %}
         <dd>
-            Git repo: {{ experiment.git['url'] }}, commit {{ experiment.git['commit'] }}
+            Git repo: {{ experiment.git['url'] }}, 
+            {% if experiment.git['url'].startswith('https://github.com') %}
+                <a href={{ experiment.git['url']+'/commit/'+ experiment.git['commit'] }}>
+                    commit {{ experiment.git['commit'] }}
+                </a>
+            {% else %}
+                    commit {{ experiment.git['commit'] }}
+            {% endif %}
         </dd>
     {% endif %} 
 
