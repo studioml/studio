@@ -8,6 +8,7 @@ from keras.utils import to_categorical
 from keras.callbacks import ModelCheckpoint, TensorBoard
 
 from studio import fs_tracker
+from studio.multi_gpu import make_parallel
 
 # this placeholder will contain our input digits, as flat vectors
 img = Input((784,))
@@ -16,9 +17,11 @@ x = Dense(128, activation='relu')(img)
 x = Dense(128, activation='relu')(x)
 # output layer with 10 units and a softmax activation
 preds = Dense(10, activation='softmax')(x)
-
+no_gpus = 2
+batch_size = 128
 
 model = Model(img, preds)
+model = make_parallel(model, no_gpus)
 model.compile(loss='categorical_crossentropy', optimizer='adam')
 
 (x_train, y_train), (x_test, y_test) = mnist.load_data()
@@ -34,6 +37,7 @@ x_test /= 255
 y_train = to_categorical(y_train, 10)
 y_test = to_categorical(y_test, 10)
 
+
 checkpointer = ModelCheckpoint(
     fs_tracker.get_model_directory() +
     '/checkpoint.{epoch:02d}-{val_loss:.2f}.hdf')
@@ -44,12 +48,17 @@ tbcallback = TensorBoard(log_dir=fs_tracker.get_tensorboard_dir(),
                          write_graph=True,
                          write_images=False)
 
+
 # save the model arch to json
 with open(os.path.join(fs_tracker.get_model_directory(),
                        'model.json'), 'w') as f:
     f.write(model.to_json())
 
+
 model.fit(
-    x_train, y_train, validation_data=(
-        x_test, y_test), epochs=int(
-            sys.argv[1]), callbacks=[checkpointer, tbcallback])
+    x_train, 
+    y_train, 
+    validation_data=(x_test, y_test), 
+    epochs=int(sys.argv[1]),
+    batch_size=batch_size * no_gpus,
+    callbacks=[checkpointer, tbcallback])
