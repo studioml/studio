@@ -598,7 +598,9 @@ class FirebaseProvider(object):
         return info
 
     def get_experiment_logtail(self, key):
+        experiment = self.get_experiment(key, getinfo=False)
         logpath = fs_tracker.get_artifact_cache('output', key)
+        self._download_dir(logpath, experiment.artifacts['output']['key'])
 
         if os.path.exists(logpath):
             tailp = subprocess.Popen(
