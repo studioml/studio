@@ -22,7 +22,7 @@ def main(args=sys.argv):
     parser.add_argument('--config', help='configuration file', default=None)
     parser.add_argument('--project', help='name of the project', default=None)
     parser.add_argument(
-        '--experiment','-e',
+        '--experiment', '-e',
         help='name of the experiment. If none provided, ' +
              'random uuid will be generated',
         default=None)
@@ -33,28 +33,28 @@ def main(args=sys.argv):
         action='store_true')
 
     parser.add_argument(
-        '--gpus','-g',
+        '--gpus', '-g',
         help='Number of gpus needed to run the experiment',
         type=int, default=0)
 
     parser.add_argument(
-        '--queue','-q',
+        '--queue', '-q',
         help='Name of the remote execution queue',
         default=None)
 
     parser.add_argument(
-        '--capture-once','-co',
+        '--capture-once', '-co',
         help='Name of the immutable artifact to be captured. ' +
         'It will be captured once before the experiment is run',
         default=[], action='append')
 
     parser.add_argument(
-        '--capture','-c',
+        '--capture', '-c',
         help='Name of the mutable artifact to be captured continously',
         default=[], action='append')
 
     parser.add_argument(
-        '--reuse','-r',
+        '--reuse', '-r',
         help='Name of the artifact from another experiment to use',
         default=[], action='append')
 

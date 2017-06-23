@@ -56,9 +56,9 @@ with open(os.path.join(fs_tracker.get_model_directory(),
 
 
 model.fit(
-    x_train, 
-    y_train, 
-    validation_data=(x_test, y_test), 
+    x_train,
+    y_train,
+    validation_data=(x_test, y_test),
     epochs=int(sys.argv[1]),
     batch_size=batch_size * no_gpus,
     callbacks=[checkpointer, tbcallback])

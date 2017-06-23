@@ -1,12 +1,8 @@
 import os
-import pip
 import uuid
 
-import yaml
-import pyrebase
 import logging
 import time
-import glob
 import tempfile
 import re
 from threading import Thread
@@ -15,28 +11,30 @@ import requests
 import json
 import shutil
 
-from tensorflow.contrib.framework.python.framework import checkpoint_utils
-
 import fs_tracker
 import util
-from auth import FirebaseAuth
-from model_util import KerasModelWrapper
 
 logging.basicConfig()
 
+
 class FirebaseArtifactStore(object):
- 
+
     def __init__(self, pyrebase_app, auth):
         self.app = pyrebase_app
         self.auth = auth
         self.logger = logging.getLogger('FirebaseArtifactStore')
         self.logger.setLevel(10)
 
-    def put_artifact(self, artifact, local_path=None, cache=True, background=False):
+    def put_artifact(
+            self,
+            artifact,
+            local_path=None,
+            cache=True,
+            background=False):
         if local_path is None:
             local_path = artifact['local']
 
-        key = artifact['key']
+        key = artifact.get('key')
         if os.path.exists(local_path):
             tar_filename = os.path.join(tempfile.gettempdir(),
                                         str(uuid.uuid4()))
@@ -95,15 +93,14 @@ class FirebaseArtifactStore(object):
             self.logger.debug(("Local path {} does not exist. " +
                                "Not uploading anything.").format(local_path))
 
-
     def get_artifact(
             self,
-            artifact, 
+            artifact,
             local_path=None,
             only_newer=True,
             background=False):
 
-        key = artifact['key'] 
+        key = artifact['key']
 
         if local_path is None:
             if 'local' in artifact.keys() and \
@@ -237,7 +234,6 @@ class FirebaseArtifactStore(object):
                     local_file_path,
                     err))
 
-
     def _delete_file(self, key):
         self.logger.debug("Downloading file at key {}".format(key))
         try:
@@ -289,7 +285,6 @@ class FirebaseArtifactStore(object):
                 "%Y-%m-%dT%H:%M:%S.%fZ"))
         return timestamp
 
-
     def _get_file_meta(self, key):
         self.logger.debug("Getting metainformation for a file at key {}"
                           .format(key))
@@ -322,6 +317,3 @@ class FirebaseArtifactStore(object):
                 ("Getting metainfo of file {} " +
                  "raised an exception: {}") .format(key, err))
             return (None, None)
-
-
-

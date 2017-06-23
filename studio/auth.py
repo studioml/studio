@@ -113,6 +113,7 @@ class FirebaseAuth(object):
         # print self.firebase.auth().get_account_info(self.get_token())
         return self.user['email']
 
+
 def remove_all_keys():
     keypath = os.path.join(os.path.expanduser('~'), '.tfstudio', 'keys')
     if os.path.exists(keypath):

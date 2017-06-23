@@ -9,13 +9,8 @@ import pyrebase
 import logging
 import time
 import glob
-import tempfile
-import re
 from threading import Thread
 import subprocess
-import requests
-import json
-import shutil
 
 from tensorflow.contrib.framework.python.framework import checkpoint_utils
 
@@ -25,6 +20,7 @@ import git_util
 from auth import FirebaseAuth
 from artifact_store import FirebaseArtifactStore
 from model_util import KerasModelWrapper
+
 
 logging.basicConfig()
 
@@ -171,268 +167,6 @@ class FirebaseProvider(object):
                                "raised an exception: {}")
                               .format(key, value, err))
 
-    def _upload_file(self, key, local_file_path):
-        try:
-            storageobj = self.app.storage().child(key)
-            if self.auth:
-                storageobj.put(local_file_path, self.auth.get_token())
-            else:
-                storageobj.put(local_file_path)
-        except Exception as err:
-            self.logger.error(("Uploading file {} with key {} into storage " +
-                               "raised an exception: {}")
-                              .format(local_file_path, key, err))
-
-    def _download_file(self, key, local_file_path):
-        self.logger.debug("Downloading file at key {} to local path {}..."
-                          .format(key, local_file_path))
-        try:
-            storageobj = self.app.storage().child(key)
-
-            if self.auth:
-                # pyrebase download does not work with files that require
-                # authentication...
-                # Need to rewrite
-                # storageobj.download(local_file_path, self.auth.get_token())
-
-                headers = {"Authorization": "Firebase " +
-                           self.auth.get_token()}
-                escaped_key = key.replace('/', '%2f')
-                url = "{}/o/{}?alt=media".format(
-                    self.app.storage().storage_bucket,
-                    escaped_key)
-
-                response = requests.get(url, stream=True, headers=headers)
-                if response.status_code == 200:
-                    with open(local_file_path, 'wb') as f:
-                        for chunk in response:
-                            f.write(chunk)
-                else:
-                    raise ValueError("Response error with code {}"
-                                     .format(response.status_code))
-            else:
-                storageobj.download(local_file_path)
-            self.logger.debug("Done")
-        except Exception as err:
-            self.logger.error(
-                ("Downloading file {} to local path {} from storage " +
-                 "raised an exception: {}") .format(
-                    key,
-                    local_file_path,
-                    err))
-
-    def _delete_file(self, key):
-        self.logger.debug("Downloading file at key {}".format(key))
-        try:
-            if self.auth:
-                # pyrebase download does not work with files that require
-                # authentication...
-                # Need to rewrite
-                # storageobj.download(local_file_path, self.auth.get_token())
-
-                headers = {"Authorization": "Firebase " +
-                           self.auth.get_token()}
-            else:
-                headers = {}
-
-            escaped_key = key.replace('/', '%2f')
-            url = "{}/o/{}?alt=media".format(
-                self.app.storage().storage_bucket,
-                escaped_key)
-
-            response = requests.delete(url, headers=headers)
-            if response.status_code != 204:
-                raise ValueError("Response error with code {}"
-                                 .format(response.status_code))
-
-            self.logger.debug("Done")
-        except Exception as err:
-            self.logger.error(
-                ("Deleting file {} from storage " +
-                 "raised an exception: {}") .format(key, err))
-
-    def _get_file_meta(self, key):
-        self.logger.debug("Getting metainformation for a file at key {}"
-                          .format(key))
-        try:
-            if self.auth:
-                # pyrebase download does not work with files that require
-                # authentication...
-                # Need to rewrite
-                # storageobj.download(local_file_path, self.auth.get_token())
-
-                headers = {"Authorization": "Firebase " +
-                           self.auth.get_token()}
-            else:
-                headers = {}
-
-            escaped_key = key.replace('/', '%2f')
-            url = "{}/o/{}".format(
-                self.app.storage().storage_bucket,
-                escaped_key)
-
-            response = requests.get(url, headers=headers)
-            if response.status_code != 200:
-                raise ValueError("Response error with code {}"
-                                 .format(response.status_code))
-
-            return (json.loads(response.content), url)
-
-        except Exception as err:
-            self.logger.error(
-                ("Getting metainfo of file {} " +
-                 "raised an exception: {}") .format(key, err))
-            return (None, None)
-
-    def _get_file_url(self, key):
-        self.logger.debug("Getting a download url for a file at key {}"
-                          .format(key))
-
-        response_dict, url = self._get_file_meta(key)
-        if response_dict is None:
-            self.logger.debug("Getting file metainfo failed")
-            return None
-
-        self.logger.debug("Done")
-        return url + '?alt=media&token=' \
-            + response_dict['downloadTokens']
-
-    def _get_file_timestamp(self, key):
-        response, _ = self._get_file_meta(key)
-        timestamp = time.mktime(
-            time.strptime(
-                response['updated'],
-                "%Y-%m-%dT%H:%M:%S.%fZ"))
-        return timestamp
-
-    def _upload_dir(self, local_path, key=None, background=False, cache=True):
-        if os.path.exists(local_path):
-            tar_filename = os.path.join(tempfile.gettempdir(),
-                                        str(uuid.uuid4()))
-
-            local_path = re.sub('/\Z', '', local_path)
-            local_nameonly = re.sub('.*/', '', local_path)
-            local_basepath = re.sub('/[^/]*\Z', '', local_path)
-
-            if cache and key:
-                cache_dir = fs_tracker.get_artifact_cache(key)
-                if cache_dir != local_path:
-                    self.logger.debug(
-                        "Copying local path {} to cache {}"
-                        .format(local_path, cache_dir))
-
-                    if os.path.exists(cache_dir) and os.path.isdir(cache_dir):
-                        shutil.rmtree(cache_dir)
-
-                    subprocess.call(['cp', '-pR', local_path, cache_dir])
-
-            self.logger.debug(
-                ("Tarring and uploading directrory. " +
-                 "tar_filename = {}, " +
-                 "local_path = {}, " +
-                 "key = {}").format(
-                    tar_filename,
-                    local_path,
-                    key))
-
-            tarcmd = 'tar -czf {} -C {} {}'.format(
-                tar_filename,
-                local_basepath,
-                local_nameonly)
-
-            self.logger.debug("Tar cmd = {}".format(tarcmd))
-
-            subprocess.call(['/bin/bash', '-c', tarcmd])
-
-            if key is None:
-                key = 'blobstore/' + util.sha256_checksum(tar_filename) \
-                      + '.tgz'
-
-            def finish_upload():
-                self._upload_file(key, tar_filename)
-                os.remove(tar_filename)
-
-            t = Thread(target=finish_upload)
-            t.start()
-
-            if background:
-                return (key, t)
-            else:
-                t.join()
-                return key
-        else:
-            self.logger.debug(("Local path {} does not exist. " +
-                               "Not uploading anything.").format(local_path))
-
-    def _download_dir(
-            self,
-            local_path,
-            key,
-            background=False,
-            only_newer=False):
-        local_path = re.sub('\/\Z', '', local_path)
-        local_basepath = re.sub('\/[^\/]*\Z', '', local_path)
-
-        self.logger.debug("Downloading dir {} to local path {} from storage..."
-                          .format(key, local_path))
-
-        if only_newer and os.path.exists(local_path):
-            self.logger.debug(
-                'Comparing date of the artifact in storage with local')
-            storage_time = self._get_file_timestamp(key)
-            local_time = time.mktime(time.gmtime(os.path.getmtime(local_path)))
-            if local_time > storage_time:
-                self.logger.info(
-                    "Local path is younger than stored, skipping the download")
-                return
-
-        tar_filename = os.path.join(tempfile.gettempdir(), str(uuid.uuid4()))
-        self.logger.debug("tar_filename = {} ".format(tar_filename))
-
-        def finish_download():
-            self._download_file(key, tar_filename)
-            if os.path.exists(tar_filename):
-                # first, figure out if the tar file has a base path of .
-                # or not
-                self.logger.debug("Untarring {}".format(tar_filename))
-                listtar, _ = subprocess.Popen(['tar', '-tzf', tar_filename],
-                                              stdout=subprocess.PIPE
-                                              ).communicate()
-                listtar = listtar.strip().split('\n')
-                self.logger.debug('List of files in the tar: ' + str(listtar))
-                if listtar[0].startswith('./'):
-                    # Files are archived into tar from .; adjust path
-                    # accordingly
-                    basepath = local_path
-                else:
-                    basepath = local_basepath
-
-                subprocess.call([
-                    '/bin/bash',
-                    '-c',
-                    ('mkdir -p {} &&' +
-                     'tar -xzf {} -C {} --keep-newer-files')
-                    .format(basepath, tar_filename, basepath)])
-
-                if len(listtar) == 1:
-                    actual_path = os.path.join(basepath, listtar[0])
-                    self.logger.info(
-                        'Renaming {} into {}'.format(
-                            actual_path, local_path))
-                    os.rename(actual_path, local_path)
-            else:
-                self.logger.error(
-                    'file {} download failed'.format(tar_filename))
-
-        t = Thread(target=finish_download)
-        t.start()
-        if background:
-            return t
-        else:
-            t.join()
-
-        # os.remove(tar_filename)
-
     def _delete(self, key):
         dbobj = self.app.database().child(key)
 
@@ -471,8 +205,7 @@ class FirebaseProvider(object):
             else:
                 if 'local' in art.keys():
                     # upload immutable artifacts
-                    blobkey = self._upload_dir(art['local'])
-                    art['key'] = blobkey
+                    art['key'] = self.store.put_artifact(art)
 
         self.__setitem__(self._get_experiments_keybase() + experiment.key,
                          experiment.__dict__)
@@ -520,17 +253,17 @@ class FirebaseProvider(object):
                      experiment_key)
 
         for tag, art in experiment.artifacts.iteritems():
-            self.logger.debug("Deleting artifact with tag {} at key {}"
-                              .format(tag, art['key']))
-            self._delete_file(art['key'])
+            self.logger.debug('Deleting artifact {} from the store, ' +
+                              'artifact key {}'.format(tag, art['key']))
+            self.store.delete_artifact(art)
 
         self._delete(self._get_experiments_keybase() + experiment_key)
 
     def checkpoint_experiment(self, experiment, blocking=False):
         checkpoint_threads = [
             Thread(
-                target=self._upload_dir,
-                args=(art['local'], art['key']))
+                target=self.store.put_artifact,
+                args=(art,))
             for _, art in experiment.artifacts.iteritems()
             if art['mutable']]
 
@@ -566,23 +299,10 @@ class FirebaseProvider(object):
             git=data.get('git')
         )
 
-    '''
-    def _download_modeldir(self, key):
-        self.logger.info("Downloading model directory...")
-        self._download_dir(fs_tracker.get_model_directory(key),
-                           self._get_experiments_keybase() +
-                           key + '/modeldir.tgz', only_newer=True)
-        self.logger.info("Done")
-    '''
-
     def _get_experiment_info(self, key):
         experiment = self.get_experiment(key, getinfo=False)
-        '''
-        self._download_modeldir(key)
-        self.store.get_artifact(
-        local_modeldir = fs_tracker.get_model_directory(key)
-        '''
-        local_modeldir = self.store.get_artifact(experiment.artifacts['modeldir'])
+        local_modeldir = self.store.get_artifact(
+            experiment.artifacts['modeldir'])
         info = {}
         hdf5_files = glob.glob(os.path.join(local_modeldir, '*.hdf*'))
         type_found = False
@@ -609,8 +329,7 @@ class FirebaseProvider(object):
 
     def get_experiment_logtail(self, key):
         experiment = self.get_experiment(key, getinfo=False)
-        logpath = fs_tracker.get_artifact_cache('output', key)
-        self._download_dir(logpath, experiment.artifacts['output']['key'])
+        logpath = self.store.get_artifact(experiment.artifacts['output'])
 
         if os.path.exists(logpath):
             tailp = subprocess.Popen(
@@ -648,9 +367,9 @@ class FirebaseProvider(object):
         retval = {}
         if experiment.artifacts is not None:
             for tag, art in experiment.artifacts.iteritems():
-                    url = self.store.get_artifact_url(art)
-                    if url is not None:
-                        retval[tag] = url
+                url = self.store.get_artifact_url(art)
+                if url is not None:
+                    retval[tag] = url
 
         return retval
 

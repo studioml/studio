@@ -164,7 +164,7 @@ class FirebaseProviderTest(unittest.TestCase):
             shutil.rmtree(modeldir)
 
         os.makedirs(modeldir)
-        fb._delete(fb._get_experiments_keybase() + '/' + experiment_name)
+        fb.delete_experiment(experiment_name)
         fb.add_experiment(experiment)
         fb.start_experiment(experiment)
 
@@ -178,7 +178,10 @@ class FirebaseProviderTest(unittest.TestCase):
             t.join()
 
         shutil.rmtree(modeldir)
-        fb._download_modeldir(experiment_name)
+        fb.store.get_artifact(
+            fb.get_experiment(
+                experiment_name,
+                getinfo=False).artifacts['modeldir'])
 
         with open(file_in_modeldir, 'r') as f:
             line = f.read()
