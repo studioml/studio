@@ -171,7 +171,7 @@ def worker_loop(queue, parsed_args,
                     logger.info('Fetching artifact ' + tag)
                     if tag == 'workspace':
                         art['local'] = executor.db.store.get_artifact(
-                                art, '.', only_newer=False)
+                            art, '.', only_newer=False)
                     else:
                         art['local'] = executor.db.store.get_artifact(art)
 

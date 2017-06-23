@@ -282,11 +282,14 @@ class FirebaseArtifactStore(object):
 
     def _get_file_timestamp(self, key):
         response, _ = self._get_file_meta(key)
-        timestamp = calendar.timegm(
-            time.strptime(
-                response['updated'],
-                "%Y-%m-%dT%H:%M:%S.%fZ"))
-        return timestamp
+        if response is not None and 'updated' in response.keys():
+            timestamp = calendar.timegm(
+                time.strptime(
+                    response['updated'],
+                    "%Y-%m-%dT%H:%M:%S.%fZ"))
+            return timestamp
+        else:
+            return None
 
     def _get_file_meta(self, key):
         self.logger.debug("Getting metainformation for a file at key {}"

@@ -363,9 +363,13 @@ class FirebaseProvider(object):
             self._get_experiment_logtail(experiment)
 
         def download_info():
-            self._experiment_info_cache[key].update(
-                self._get_experiment_info(experiment)
-            )
+            try:
+                self._experiment_info_cache[key].update(
+                    self._get_experiment_info(experiment)
+                )
+            except Exception:
+                pass
+
         if not (experiment.status == 'finished' and
                 any(self._experiment_info_cache[key])):
             Thread(target=download_info)
