@@ -170,7 +170,8 @@ def worker_loop(queue, parsed_args,
                 if fetch_artifacts or 'local' not in art.keys():
                     logger.info('Fetching artifact ' + tag)
                     if tag == 'workspace':
-                        art['local'] = executor.db.store.get_artifact(art, '.')
+                        art['local'] = executor.db.store.get_artifact(
+                                art, '.', only_newer=False)
                     else:
                         art['local'] = executor.db.store.get_artifact(art)
 

@@ -134,6 +134,7 @@ class FirebaseProvider(object):
             if not guest else None
 
         self.store = FirebaseArtifactStore(self.app, self.auth)
+        self._experiment_info_cache = {}
 
         if self.auth and not self.auth.expired:
             self.__setitem__(self._get_user_keybase() + "email",
@@ -248,7 +249,7 @@ class FirebaseProvider(object):
                          experiment.time_finished)
 
     def delete_experiment(self, experiment_key):
-        experiment = self.get_experiment(experiment_key, getinfo=False)
+        experiment = self.get_experiment(experiment_key)
         self._delete(self._get_user_keybase() + 'experiments/' +
                      experiment_key)
 
@@ -299,8 +300,7 @@ class FirebaseProvider(object):
             git=data.get('git')
         )
 
-    def _get_experiment_info(self, key):
-        experiment = self.get_experiment(key, getinfo=False)
+    def _get_experiment_info(self, experiment):
         local_modeldir = self.store.get_artifact(
             experiment.artifacts['modeldir'])
         info = {}
@@ -323,12 +323,11 @@ class FirebaseProvider(object):
         if not type_found:
             info['type'] = 'unknown'
 
-        info['logtail'] = self.get_experiment_logtail(key)
+        info['logtail'] = self.get_experiment_logtail(experiment.key)
 
         return info
 
-    def get_experiment_logtail(self, key):
-        experiment = self.get_experiment(key, getinfo=False)
+    def _get_experiment_logtail(self, experiment):
         logpath = self.store.get_artifact(experiment.artifacts['output'])
 
         if os.path.exists(logpath):
@@ -343,10 +342,33 @@ class FirebaseProvider(object):
 
     def get_experiment(self, key, getinfo=True):
         data = self.__getitem__(self._get_experiments_keybase() + key)
-        info = self._get_experiment_info(key) if getinfo else {}
         assert data, "data at path %s not found! " % (
             self._get_experiments_keybase() + key)
+
+        experiment_stub = self._experiment(key, data, {})
+
+        if getinfo:
+            self._start_info_download(experiment_stub)
+
+        info = self._experiment_info_cache.get(key)
+
         return self._experiment(key, data, info)
+
+    def _start_info_download(self, experiment):
+        key = experiment.key
+        if key not in self._experiment_info_cache.keys():
+            self._experiment_info_cache[key] = {}
+
+        self._experiment_info_cache[key]['logtail'] = \
+            self._get_experiment_logtail(experiment)
+
+        def download_info():
+            self._experiment_info_cache[key].update(
+                self._get_experiment_info(experiment)
+            )
+        if not (experiment.status == 'finished' and
+                any(self._experiment_info_cache[key])):
+            Thread(target=download_info)
 
     def get_user_experiments(self, userid=None):
         experiment_keys = self.__getitem__(
@@ -429,9 +451,6 @@ class PostgresProvider(object):
         raise NotImplementedError()
 
     def get_experiment(self, key):
-        raise NotImplementedError()
-
-    def get_experiment_logtail(self, key):
         raise NotImplementedError()
 
     def get_user_experiments(self, user):

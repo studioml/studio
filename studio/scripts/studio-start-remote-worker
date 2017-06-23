@@ -40,7 +40,7 @@ branch="queueing2"
 #            studio-rworker --queue=$queue_name"
 
 code_url_base="https://storage.googleapis.com/studio-ed756.appspot.com/src"
-code_ver="tfstudio-artifacts-2017-06-23_1.tgz"
+code_ver="tfstudio-artifacts-2017-06-23_4.tgz"
 
 bash_cmd="wget $code_url_base/$code_ver && \
             tar -xzf $code_ver && \

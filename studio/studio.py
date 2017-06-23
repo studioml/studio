@@ -9,7 +9,6 @@ from functools import wraps
 import socket
 import subprocess
 from urlparse import urlparse
-from threading import Thread
 
 import fs_tracker
 
@@ -80,24 +79,10 @@ def dashboard():
 @app.route('/experiments/<key>')
 @authenticated('/experiments/<key>')
 def experiment(key):
-    experiment = _db_provider.get_experiment(key, getinfo=False)
+    experiment = _db_provider.get_experiment(key)
     artifacts_urls = _db_provider.get_artifacts(key)
-    logtail = _db_provider.get_experiment_logtail(key)
-
-    info = {}
-
-    def get_experiment_info():
-        if key in _experiment_info_cache.keys():
-            info.update(_experiment_info_cache[key])
-
-        new_info = _db_provider._get_experiment_info(key)
-        if new_info:
-            info.update(new_info)
-            _experiment_info_cache[key] = info
-
-    t = Thread(target=get_experiment_info)
-    t.start()
-
+    logtail = experiment.info['logtail']
+    info = experiment.info
     return render_template("experiment_details.html",
                            experiment=experiment,
                            artifacts=artifacts_urls,
