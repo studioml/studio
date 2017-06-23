@@ -254,9 +254,10 @@ class FirebaseProvider(object):
                      experiment_key)
 
         for tag, art in experiment.artifacts.iteritems():
-            self.logger.debug('Deleting artifact {} from the store, ' +
-                              'artifact key {}'.format(tag, art['key']))
-            self.store.delete_artifact(art)
+            if 'key' in art.keys():
+                self.logger.debug('Deleting artifact {} from the store, ' +
+                                  'artifact key {}'.format(tag, art['key']))
+                self.store.delete_artifact(art)
 
         self._delete(self._get_experiments_keybase() + experiment_key)
 
