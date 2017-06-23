@@ -170,19 +170,9 @@ def worker_loop(queue, parsed_args,
                 if fetch_artifacts or 'local' not in art.keys():
                     logger.info('Fetching artifact ' + tag)
                     if tag == 'workspace':
-                        new_local_path = '.'
+                        art['local'] = executor.db.store.get_artifact(art, '.')
                     else:
-                        if art['mutable']:
-                            new_local_path = fs_tracker.get_artifact_cache(
-                                tag,
-                                experiment.key,
-                            )
-                        else:
-                            new_local_path = fs_tracker.get_blob_cache(
-                                art['key'])
-
-                    art['local'] = new_local_path
-                    executor.db._download_dir(art['local'], art['key'])
+                        art['local'] = executor.db.store.get_artifact(art)
 
             executor.run(experiment)
             if single_experiment:

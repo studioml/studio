@@ -22,17 +22,21 @@ import util
 from auth import FirebaseAuth
 from model_util import KerasModelWrapper
 
-logging.baseConfig()
+logging.basicConfig()
 
 class FirebaseArtifactStore(object):
  
     def __init__(self, pyrebase_app, auth):
-        self.app = pyrebase.app
+        self.app = pyrebase_app
         self.auth = auth
         self.logger = logging.getLogger('FirebaseArtifactStore')
         self.logger.setLevel(10)
 
-    def put_artifact(self, local_path, key=None, background=False, cache=True):
+    def put_artifact(self, artifact, local_path=None, cache=True, background=False):
+        if local_path is None:
+            local_path = artifact['local']
+
+        key = artifact['key']
         if os.path.exists(local_path):
             tar_filename = os.path.join(tempfile.gettempdir(),
                                         str(uuid.uuid4()))
@@ -92,17 +96,27 @@ class FirebaseArtifactStore(object):
                                "Not uploading anything.").format(local_path))
 
 
-
-
-    def get_artifact(self):
+    def get_artifact(
             self,
-            local_path,
-            key,
-            background=False,
-            only_newer=False):
+            artifact, 
+            local_path=None,
+            only_newer=True,
+            background=False):
+
+        key = artifact['key'] 
+
+        if local_path is None:
+            if 'local' in artifact.keys() and \
+                    os.path.exists(artifact['local']):
+                local_path = artifact['local']
+            else:
+                if artifact['mutable']:
+                    local_path = fs_tracker.get_artifact_cache(key)
+                else:
+                    local_path = fs_tracker.get_blob_cache(key)
 
         local_path = re.sub('\/\Z', '', local_path)
-        local_basepath = re.sub('\/[^\/]*\Z', '', local_path)
+        local_basepath = os.path.dirname(local_path)
 
         self.logger.debug("Downloading dir {} to local path {} from storage..."
                           .format(key, local_path))
@@ -115,7 +129,7 @@ class FirebaseArtifactStore(object):
             if local_time > storage_time:
                 self.logger.info(
                     "Local path is younger than stored, skipping the download")
-                return
+                return local_path
 
         tar_filename = os.path.join(tempfile.gettempdir(), str(uuid.uuid4()))
         self.logger.debug("tar_filename = {} ".format(tar_filename))
@@ -151,6 +165,7 @@ class FirebaseArtifactStore(object):
                         'Renaming {} into {}'.format(
                             actual_path, local_path))
                     os.rename(actual_path, local_path)
+                os.remove(tar_filename)
             else:
                 self.logger.error(
                     'file {} download failed'.format(tar_filename))
@@ -158,12 +173,19 @@ class FirebaseArtifactStore(object):
         t = Thread(target=finish_download)
         t.start()
         if background:
-            return t
+            return (local_path, t)
         else:
             t.join()
+            return local_path
 
-        os.remove(tar_filename)
+    def get_artifact_url(self, artifact):
+        if 'key' in artifact.keys():
+            return self._get_file_url(artifact['key'])
+        return None
 
+    def delete_artifact(self, artifact):
+        if 'key' in artifact.keys():
+            self._delete_file(artifact['key'])
 
     def _upload_file(self, key, local_file_path):
         try:

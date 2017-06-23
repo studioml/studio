@@ -43,9 +43,11 @@ class RunnerTest(unittest.TestCase):
 
         db = model.get_db_provider(model.get_config('test_config.yaml'))
         tmppath = os.path.join(tempfile.gettempdir(), str(uuid.uuid4()))
-        db._download_dir(
-            tmppath,
-            'experiments/{}/f.tgz'.format(experiment_name))
+
+        db.store.get_artifact(
+            db.get_experiment(experiment_name).artifacts['f'],
+            tmppath)
+
         with open(tmppath, 'r') as f:
             self.assertTrue(f.read() == random_str2)
         os.remove(tmppath)
@@ -118,19 +120,16 @@ class RunnerTest(unittest.TestCase):
             self.assertTrue(script_args is None or len(script_args) == 0)
 
         experiment = db.get_experiment(experiment_name)
-        db._download_modeldir(experiment_name)
-        db._download_dir(
-            fs_tracker.get_artifact_cache("output", experiment_name),
-            experiment.artifacts["output"]["key"]
-        )
+        # db.store.get_artifact(experiment.artifacts['modeldir'])
+        # db.store.get_artifact(experiment.artifacts['output'])
 
-        with open(fs_tracker.get_artifact_cache("output", experiment_name),
+        with open(db.store.get_artifact(experiment.artifacts['output']),
                   'r') as f:
             data = f.read()
             split_data = data.strip().split('\n')
             self.assertEquals(split_data[-1], expected_output)
 
-        self.check_workspace(db, keybase + '/workspace.tgz')
+        self.check_workspace(db, experiment_name)
 
     @unittest.skipIf(
         'GOOGLE_APPLICATION_CREDENTIALS' not in
@@ -271,7 +270,8 @@ class RunnerTest(unittest.TestCase):
 
         tmpdir = os.path.join(tempfile.gettempdir(), str(uuid.uuid4()))
         os.mkdir(tmpdir)
-        db._download_dir(tmpdir, key)
+        db.store.get_artifact(db.get_experiment(key).artifacts['workspace'],
+                              tmpdir, only_newer=False)
 
         for _, _, files in os.walk('.', topdown=False):
             for filename in files:

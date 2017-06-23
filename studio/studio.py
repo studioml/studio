@@ -108,9 +108,10 @@ def experiment(key):
 @app.route('/tensorboard_exp/<key>')
 @authenticated('/tensorboard_exp/<key>')
 def tensorboard_exp(key):
-    tb_path = fs_tracker.get_tensorboard_dir(key)
     experiment = _db_provider.get_experiment(key, getinfo=False)
-    _db_provider._download_dir(tb_path, experiment.artifacts['tb']['key'])
+    import pdb
+    pdb.set_trace()
+    tb_path = _db_provider.store.get_artifact(experiment.artifacts['tb'])
 
     return tensorboard(tb_path)
 

@@ -43,18 +43,18 @@ def main(args=sys.argv):
         default=None)
 
     parser.add_argument(
-        '--capture-once','-co'
+        '--capture-once','-co',
         help='Name of the immutable artifact to be captured. ' +
         'It will be captured once before the experiment is run',
         default=[], action='append')
 
     parser.add_argument(
-        '--capture-once','-c'
+        '--capture','-c',
         help='Name of the mutable artifact to be captured continously',
         default=[], action='append')
 
     parser.add_argument(
-        '--reuse','-r'
+        '--reuse','-r',
         help='Name of the artifact from another experiment to use',
         default=[], action='append')
 

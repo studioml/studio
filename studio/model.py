@@ -23,6 +23,7 @@ import fs_tracker
 import util
 import git_util
 from auth import FirebaseAuth
+from artifact_store import FirebaseArtifactStore
 from model_util import KerasModelWrapper
 
 logging.basicConfig()
@@ -135,6 +136,8 @@ class FirebaseProvider(object):
                                  database_config.get("password"),
                                  blocking_auth) \
             if not guest else None
+
+        self.store = FirebaseArtifactStore(self.app, self.auth)
 
         if self.auth and not self.auth.expired:
             self.__setitem__(self._get_user_keybase() + "email",
@@ -563,16 +566,23 @@ class FirebaseProvider(object):
             git=data.get('git')
         )
 
+    '''
     def _download_modeldir(self, key):
         self.logger.info("Downloading model directory...")
         self._download_dir(fs_tracker.get_model_directory(key),
                            self._get_experiments_keybase() +
                            key + '/modeldir.tgz', only_newer=True)
         self.logger.info("Done")
+    '''
 
     def _get_experiment_info(self, key):
+        experiment = self.get_experiment(key, getinfo=False)
+        '''
         self._download_modeldir(key)
+        self.store.get_artifact(
         local_modeldir = fs_tracker.get_model_directory(key)
+        '''
+        local_modeldir = self.store.get_artifact(experiment.artifacts['modeldir'])
         info = {}
         hdf5_files = glob.glob(os.path.join(local_modeldir, '*.hdf*'))
         type_found = False
@@ -638,8 +648,7 @@ class FirebaseProvider(object):
         retval = {}
         if experiment.artifacts is not None:
             for tag, art in experiment.artifacts.iteritems():
-                if 'key' in art.keys():
-                    url = self._get_file_url(art['key'])
+                    url = self.store.get_artifact_url(art)
                     if url is not None:
                         retval[tag] = url
 
