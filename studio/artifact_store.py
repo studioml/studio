@@ -126,10 +126,16 @@ class FirebaseArtifactStore(object):
                 'Comparing date of the artifact in storage with local')
             storage_time = self._get_file_timestamp(key)
             local_time = os.path.getmtime(local_path)
+            if storage_time is None:
+                self.logger.info("Unable to get storage timestamp, storage is either " + 
+                        "corrupted and has not finished uploading")
+                return local_path
+
             if local_time > (storage_time - timestamp_tolerance):
                 self.logger.info(
                     "Local path is younger than stored, skipping the download")
                 return local_path
+
 
         tar_filename = os.path.join(tempfile.gettempdir(), str(uuid.uuid4()))
         self.logger.debug("tar_filename = {} ".format(tar_filename))

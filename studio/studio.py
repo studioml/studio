@@ -94,8 +94,6 @@ def experiment(key):
 @authenticated('/tensorboard_exp/<key>')
 def tensorboard_exp(key):
     experiment = _db_provider.get_experiment(key, getinfo=False)
-    import pdb
-    pdb.set_trace()
     tb_path = _db_provider.store.get_artifact(experiment.artifacts['tb'])
 
     return tensorboard(tb_path)
