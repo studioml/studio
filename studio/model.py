@@ -359,8 +359,11 @@ class FirebaseProvider(object):
         if key not in self._experiment_info_cache.keys():
             self._experiment_info_cache[key] = {}
 
-        self._experiment_info_cache[key]['logtail'] = \
-            self._get_experiment_logtail(experiment)
+        try:
+            self._experiment_info_cache[key]['logtail'] = \
+                self._get_experiment_logtail(experiment)
+        except Exception:
+            pass
 
         def download_info():
             try:
