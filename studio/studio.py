@@ -81,7 +81,7 @@ def dashboard():
 def experiment(key):
     experiment = _db_provider.get_experiment(key)
     artifacts_urls = _db_provider.get_artifacts(key)
-    logtail = experiment.info['logtail']
+    logtail = experiment.info.get('logtail')
     info = experiment.info
     return render_template("experiment_details.html",
                            experiment=experiment,
