@@ -4,12 +4,12 @@ import tempfile
 import uuid
 import subprocess
 
-from studio import fs_tracker, model
+from studio import model
 from studio.pubsub_queue import PubsubQueue
 from local_worker_test import check_workspace
 
 
-class RunnerTest(unittest.TestCase):
+class RemoteWorkerTest(unittest.TestCase):
 
     @unittest.skipIf(
         'GOOGLE_APPLICATION_CREDENTIALS' not in
@@ -47,7 +47,7 @@ class RunnerTest(unittest.TestCase):
         random_str2 = str(uuid.uuid4())
 
         self.stub_runner_remote(
-            experiment_name=experiment_name, 
+            experiment_name=experiment_name,
             runner_args=['--capture=' + tmpfile + ':f'],
             config_name='test_config.yaml',
             queue_name='test_runner_remote',
@@ -57,16 +57,18 @@ class RunnerTest(unittest.TestCase):
         )
 
         tmppath = os.path.join(tempfile.gettempdir(), str(uuid.uuid4()))
+        if os.path.exists(tmppath):
+            os.remove(tmppath)
+
         db.store.get_artifact(
-                {'key':'experiments/test_runner_remote_c/f.tgz'},
-                tmppath,
-                only_newer=False
-            )
+            db.get_experiment(experiment_name).artifacts['f'],
+            tmppath,
+            only_newer=False
+        )
 
         with open(tmppath, 'r') as f:
             self.assertTrue(f.read() == random_str2)
         os.remove(tmppath)
-
 
     @unittest.skipIf(
         'GOOGLE_APPLICATION_CREDENTIALS' not in

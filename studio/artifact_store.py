@@ -3,6 +3,7 @@ import uuid
 
 import logging
 import time
+import calendar
 import tempfile
 import re
 from threading import Thread
@@ -102,6 +103,8 @@ class FirebaseArtifactStore(object):
 
         key = artifact['key']
 
+        timestamp_tolerance = 3
+
         if local_path is None:
             if 'local' in artifact.keys() and \
                     os.path.exists(artifact['local']):
@@ -122,8 +125,8 @@ class FirebaseArtifactStore(object):
             self.logger.debug(
                 'Comparing date of the artifact in storage with local')
             storage_time = self._get_file_timestamp(key)
-            local_time = time.mktime(time.gmtime(os.path.getmtime(local_path)))
-            if local_time > storage_time:
+            local_time = os.path.getmtime(local_path)
+            if local_time > (storage_time - timestamp_tolerance):
                 self.logger.info(
                     "Local path is younger than stored, skipping the download")
                 return local_path
@@ -279,7 +282,7 @@ class FirebaseArtifactStore(object):
 
     def _get_file_timestamp(self, key):
         response, _ = self._get_file_meta(key)
-        timestamp = time.mktime(
+        timestamp = calendar.timegm(
             time.strptime(
                 response['updated'],
                 "%Y-%m-%dT%H:%M:%S.%fZ"))
