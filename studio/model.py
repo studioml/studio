@@ -9,19 +9,18 @@ import pyrebase
 import logging
 import time
 import glob
-import tempfile
-import re
-import StringIO
 from threading import Thread
 import subprocess
-import requests
-import json
 
 from tensorflow.contrib.framework.python.framework import checkpoint_utils
 
 import fs_tracker
+import util
+import git_util
 from auth import FirebaseAuth
+from artifact_store import FirebaseArtifactStore
 from model_util import KerasModelWrapper
+
 
 logging.basicConfig()
 
@@ -31,24 +30,44 @@ class Experiment(object):
 
     def __init__(self, key, filename, args, pythonenv,
                  project=None,
-                 workspace_path='.',
-                 model_dir=None,
+                 artifacts=None,
                  status='waiting',
                  resources_needed=None,
                  time_added=None,
                  time_started=None,
                  time_last_checkpoint=None,
                  time_finished=None,
-                 info={}):
+                 info={},
+                 git=None):
 
         self.key = key
         self.filename = filename
         self.args = args if args else []
         self.pythonenv = pythonenv
         self.project = project
-        self.workspace_path = os.path.abspath(workspace_path)
-        self.model_dir = model_dir if model_dir \
-            else fs_tracker.get_model_directory(key)
+        workspace_path = '.'
+        model_dir = fs_tracker.get_model_directory(key)
+
+        self.artifacts = {
+            'workspace': {
+                'local': workspace_path,
+                'mutable': True
+            },
+            'modeldir': {
+                'local': model_dir,
+                'mutable': True
+            },
+            'output': {
+                'local': fs_tracker.get_artifact_cache('output', key),
+                'mutable': True
+            },
+            'tb': {
+                'local': fs_tracker.get_tensorboard_dir(key),
+                'mutable': True
+            }
+        }
+        if artifacts is not None:
+            self.artifacts.update(artifacts)
 
         self.resources_needed = resources_needed
         self.status = status
@@ -57,12 +76,15 @@ class Experiment(object):
         self.time_last_checkpoint = time_last_checkpoint
         self.time_finished = time_finished
         self.info = info
+        self.git = git
 
     def get_model(self):
         if self.info.get('type') == 'keras':
             hdf5_files = [
                 (p, os.path.getmtime(p))
-                for p in glob.glob(os.path.join(self.model_dir, '*.hdf*'))]
+                for p in
+                glob.glob(self.artifacts['modeldir'] + '/*.hdf*') +
+                glob.glob(self.artifacts['modeldir'] + '/*.h5')]
 
             last_checkpoint = max(hdf5_files, key=lambda t: t[1])[0]
             return KerasModelWrapper(last_checkpoint)
@@ -78,6 +100,7 @@ def create_experiment(
         args,
         experiment_name=None,
         project=None,
+        artifacts={},
         resources_needed=None):
     key = str(uuid.uuid4()) if not experiment_name else experiment_name
     packages = [p._key + '==' + p._version for p in
@@ -89,6 +112,7 @@ def create_experiment(
         args=args,
         pythonenv=packages,
         project=project,
+        artifacts=artifacts,
         resources_needed=resources_needed)
 
 
@@ -108,6 +132,9 @@ class FirebaseProvider(object):
                                  database_config.get("password"),
                                  blocking_auth) \
             if not guest else None
+
+        self.store = FirebaseArtifactStore(self.app, self.auth)
+        self._experiment_info_cache = {}
 
         if self.auth and not self.auth.expired:
             self.__setitem__(self._get_user_keybase() + "email",
@@ -141,160 +168,6 @@ class FirebaseProvider(object):
                                "raised an exception: {}")
                               .format(key, value, err))
 
-    def _upload_file(self, key, local_file_path):
-        try:
-            storageobj = self.app.storage().child(key)
-            if self.auth:
-                storageobj.put(local_file_path, self.auth.get_token())
-            else:
-                storageobj.put(local_file_path)
-        except Exception as err:
-            self.logger.error(("Uploading file {} with key {} into storage " +
-                               "raised an exception: {}")
-                              .format(local_file_path, key, err))
-
-    def _download_file(self, key, local_file_path):
-        self.logger.debug("Downloading file at key {} to local path {}..."
-                          .format(key, local_file_path))
-        try:
-            storageobj = self.app.storage().child(key)
-
-            if self.auth:
-                # pyrebase download does not work with files that require
-                # authentication...
-                # Need to rewrite
-                # storageobj.download(local_file_path, self.auth.get_token())
-
-                headers = {"Authorization": "Firebase " +
-                           self.auth.get_token()}
-                escaped_key = key.replace('/', '%2f')
-                url = "{}/o/{}?alt=media".format(
-                    self.app.storage().storage_bucket,
-                    escaped_key)
-
-                response = requests.get(url, stream=True, headers=headers)
-                if response.status_code == 200:
-                    with open(local_file_path, 'wb') as f:
-                        for chunk in response:
-                            f.write(chunk)
-                else:
-                    raise ValueError("Response error with code {}"
-                                     .format(response.status_code))
-            else:
-                storageobj.download(local_file_path)
-            self.logger.debug("Done")
-        except Exception as err:
-            self.logger.error(
-                ("Downloading file {} to local path {} from storage " +
-                 "raised an exception: {}") .format(
-                    key,
-                    local_file_path,
-                    err))
-
-    def _delete_file(self, key):
-        self.logger.debug("Downloading file at key {}".format(key))
-        try:
-            if self.auth:
-                # pyrebase download does not work with files that require
-                # authentication...
-                # Need to rewrite
-                # storageobj.download(local_file_path, self.auth.get_token())
-
-                headers = {"Authorization": "Firebase " +
-                           self.auth.get_token()}
-            else:
-                headers = {}
-
-            escaped_key = key.replace('/', '%2f')
-            url = "{}/o/{}?alt=media".format(
-                self.app.storage().storage_bucket,
-                escaped_key)
-
-            response = requests.delete(url, headers=headers)
-            if response.status_code != 204:
-                raise ValueError("Response error with code {}"
-                                 .format(response.status_code))
-
-            self.logger.debug("Done")
-        except Exception as err:
-            self.logger.error(
-                ("Deleting file {} from storage " +
-                 "raised an exception: {}") .format(key, err))
-
-    def _get_file_url(self, key):
-        self.logger.debug("Getting a download url for a file at key {}"
-                          .format(key))
-        try:
-            if self.auth:
-                # pyrebase download does not work with files that require
-                # authentication...
-                # Need to rewrite
-                # storageobj.download(local_file_path, self.auth.get_token())
-
-                headers = {"Authorization": "Firebase " +
-                           self.auth.get_token()}
-            else:
-                headers = {}
-
-            escaped_key = key.replace('/', '%2f')
-            url = "{}/o/{}".format(
-                self.app.storage().storage_bucket,
-                escaped_key)
-
-            response = requests.get(url, headers=headers)
-            if response.status_code != 200:
-                raise ValueError("Response error with code {}"
-                                 .format(response.status_code))
-
-            self.logger.debug("Done")
-            return url + '?alt=media&token=' \
-                + json.loads(response.content)['downloadTokens']
-        except Exception as err:
-            self.logger.error(
-                ("Getting url of file {} " +
-                 "raised an exception: {}") .format(key, err))
-
-    def _upload_dir(self, key, local_path):
-        if os.path.exists(local_path):
-            tar_filename = os.path.join(tempfile.gettempdir(),
-                                        str(uuid.uuid4()))
-            self.logger.debug(
-                ("Tarring and uploading directrory. " +
-                 "tar_filename = {}, " +
-                 "local_path = {}, " +
-                 "key = {}").format(
-                    tar_filename,
-                    local_path,
-                    key))
-
-            subprocess.call([
-                '/bin/bash',
-                '-c',
-                'cd {} && tar -czf {} . '.format(local_path, tar_filename)])
-
-            self._upload_file(key, tar_filename)
-            os.remove(tar_filename)
-        else:
-            self.logger.debug(("Local path {} does not exist. " +
-                               "Not uploading anything.").format(local_path))
-
-    def _download_dir(self, key, local_path):
-        self.logger.debug("Downloading dir {} to local path {} from storage..."
-                          .format(key, local_path))
-        tar_filename = os.path.join(tempfile.gettempdir(), str(uuid.uuid4()))
-        self.logger.debug("tar_filename = {} ".format(tar_filename))
-        self._download_file(key, tar_filename)
-        if os.path.exists(tar_filename):
-            self.logger.debug("Untarring {}".format(tar_filename))
-            subprocess.call([
-                '/bin/bash',
-                '-c',
-                ('mkdir -p {} &&' +
-                 'tar -xzf {} -C {} --keep-newer-files')
-                .format(local_path, tar_filename, local_path)])
-
-            # os.remove(tar_filename)
-
     def _delete(self, key):
         dbobj = self.app.database().child(key)
 
@@ -322,13 +195,21 @@ class FirebaseProvider(object):
         self._delete(self._get_experiments_keybase() + experiment.key)
         experiment.time_added = time.time()
         experiment.status = 'waiting'
+
+        experiment.git = git_util.get_git_info(
+            experiment.artifacts['workspace']['local'])
+
+        for tag, art in experiment.artifacts.iteritems():
+            if art['mutable']:
+                art['key'] = self._get_experiments_keybase() + \
+                    experiment.key + '/' + tag + '.tgz'
+            else:
+                if 'local' in art.keys():
+                    # upload immutable artifacts
+                    art['key'] = self.store.put_artifact(art)
+
         self.__setitem__(self._get_experiments_keybase() + experiment.key,
                          experiment.__dict__)
-        Thread(target=self._upload_dir,
-               args=(self._get_experiments_keybase() +
-                     experiment.key + "/workspace.tgz",
-                     experiment.workspace_path)
-               ).start()
 
         self.__setitem__(self._get_user_keybase() + "experiments/" +
                          experiment.key,
@@ -339,6 +220,8 @@ class FirebaseProvider(object):
                              experiment.project + "/" +
                              experiment.key + "/userId",
                              self.auth.get_user_id())
+
+        self.checkpoint_experiment(experiment, blocking=True)
 
     def start_experiment(self, experiment):
         experiment.time_started = time.time()
@@ -354,7 +237,7 @@ class FirebaseProvider(object):
         self.checkpoint_experiment(experiment)
 
     def finish_experiment(self, experiment):
-        self.checkpoint_experiment(experiment)
+        self.checkpoint_experiment(experiment, blocking=True)
         experiment.status = 'finished'
         experiment.time_finished = time.time()
         self.__setitem__(self._get_experiments_keybase() +
@@ -366,39 +249,39 @@ class FirebaseProvider(object):
                          experiment.time_finished)
 
     def delete_experiment(self, experiment_key):
+        experiment = self.get_experiment(experiment_key)
         self._delete(self._get_user_keybase() + 'experiments/' +
                      experiment_key)
-        self._delete_file(self._get_experiments_keybase() +
-                          experiment_key + '/modeldir.tgz')
-        self._delete_file(self._get_experiments_keybase() +
-                          experiment_key + '/workspace.tgz')
-        self._delete_file(self._get_experiments_keybase() +
-                          experiment_key + '/workspace_latest.tgz')
+
+        for tag, art in experiment.artifacts.iteritems():
+            if 'key' in art.keys():
+                self.logger.debug('Deleting artifact {} from the store, ' +
+                                  'artifact key {}'.format(tag, art['key']))
+                self.store.delete_artifact(art)
+
         self._delete(self._get_experiments_keybase() + experiment_key)
 
     def checkpoint_experiment(self, experiment, blocking=False):
         checkpoint_threads = [
             Thread(
-                target=self._upload_dir,
-                args=(self._get_experiments_keybase() +
-                      experiment.key + "/workspace_latest.tgz",
-                      experiment.workspace_path)
-            ),
-
-            Thread(
-                target=self._upload_dir,
-                args=(self._get_experiments_keybase() +
-                      experiment.key + "/modeldir.tgz",
-                      experiment.model_dir)
-            )
-        ]
+                target=self.store.put_artifact,
+                args=(art,))
+            for _, art in experiment.artifacts.iteritems()
+            if art['mutable']]
 
         for t in checkpoint_threads:
             t.start()
+            t.join()
+
         self.__setitem__(self._get_experiments_keybase() +
                          experiment.key + "/time_last_checkpoint",
                          time.time())
-        return checkpoint_threads
+        if blocking:
+            for t in checkpoint_threads:
+                pass
+                # t.join()
+        else:
+            return checkpoint_threads
 
     def _experiment(self, key, data, info={}):
         return Experiment(
@@ -408,24 +291,19 @@ class FirebaseProvider(object):
             pythonenv=data['pythonenv'],
             project=data.get('project'),
             status=data['status'],
+            artifacts=data.get('artifacts'),
             resources_needed=data.get('resources_needed'),
             time_added=data['time_added'],
             time_started=data.get('time_started'),
             time_last_checkpoint=data.get('time_last_checkpoint'),
             time_finished=data.get('time_finished'),
-            info=info
+            info=info,
+            git=data.get('git')
         )
 
-    def _download_modeldir(self, key):
-        self.logger.info("Downloading model directory...")
-        self._download_dir(self._get_experiments_keybase() +
-                           key + '/modeldir.tgz',
-                           fs_tracker.get_model_directory(key))
-        self.logger.info("Done")
-
-    def _get_experiment_info(self, key):
-        self._download_modeldir(key)
-        local_modeldir = fs_tracker.get_model_directory(key)
+    def _get_experiment_info(self, experiment):
+        local_modeldir = self.store.get_artifact(
+            experiment.artifacts['modeldir'])
         info = {}
         hdf5_files = glob.glob(os.path.join(local_modeldir, '*.hdf*'))
         type_found = False
@@ -446,25 +324,59 @@ class FirebaseProvider(object):
         if not type_found:
             info['type'] = 'unknown'
 
-        # TODO: get the name of a log file from config
-        logpath = os.path.join(
-            fs_tracker.get_model_directory(key), 'output.log')
+        info['logtail'] = self.get_experiment_logtail(experiment.key)
+
+        return info
+
+    def _get_experiment_logtail(self, experiment):
+        logpath = self.store.get_artifact(experiment.artifacts['output'])
 
         if os.path.exists(logpath):
             tailp = subprocess.Popen(
                 ['tail', '-50', logpath], stdout=subprocess.PIPE)
             stdoutdata = tailp.communicate()[0]
-            logtail = _remove_backspaces(stdoutdata).split('\n')
-            info['logtail'] = logtail
+            logtail = util.remove_backspaces(stdoutdata).split('\n')
 
-        return info
+            return logtail
+        else:
+            return None
 
     def get_experiment(self, key, getinfo=True):
         data = self.__getitem__(self._get_experiments_keybase() + key)
-        info = self._get_experiment_info(key) if getinfo else {}
         assert data, "data at path %s not found! " % (
             self._get_experiments_keybase() + key)
+
+        experiment_stub = self._experiment(key, data, {})
+
+        if getinfo:
+            self._start_info_download(experiment_stub)
+
+        info = self._experiment_info_cache.get(key)
+
         return self._experiment(key, data, info)
+
+    def _start_info_download(self, experiment):
+        key = experiment.key
+        if key not in self._experiment_info_cache.keys():
+            self._experiment_info_cache[key] = {}
+
+        try:
+            self._experiment_info_cache[key]['logtail'] = \
+                self._get_experiment_logtail(experiment)
+        except Exception:
+            pass
+
+        def download_info():
+            try:
+                self._experiment_info_cache[key].update(
+                    self._get_experiment_info(experiment)
+                )
+            except Exception:
+                pass
+
+        if not (experiment.status == 'finished' and
+                any(self._experiment_info_cache[key])):
+            Thread(target=download_info)
 
     def get_user_experiments(self, userid=None):
         experiment_keys = self.__getitem__(
@@ -481,11 +393,15 @@ class FirebaseProvider(object):
         return self._get_valid_experiments(experiment_keys.keys())
 
     def get_artifacts(self, key):
-        base = self._get_experiments_keybase() + key
-        return {
-            'model dir': self._get_file_url(base + '/modeldir.tgz'),
-            'workspace': self._get_file_url(base + '/workspace_latest.tgz'),
-        }
+        experiment = self.get_experiment(key, getinfo=False)
+        retval = {}
+        if experiment.artifacts is not None:
+            for tag, art in experiment.artifacts.iteritems():
+                url = self.store.get_artifact_url(art)
+                if url is not None:
+                    retval[tag] = url
+
+        return retval
 
     def _get_valid_experiments(self, experiment_keys):
         experiments = []
@@ -497,7 +413,10 @@ class FirebaseProvider(object):
                 self.logger.warn(
                     ("Experiment {} does not exist " +
                      "or is corrupted, deleting record").format(key))
-                self.delete_experiment(key)
+                try:
+                    self.delete_experiment(key)
+                except BaseException:
+                    pass
         return experiments
 
     def get_projects(self):
@@ -599,15 +518,3 @@ def get_db_provider(config=None, blocking_auth=True):
             projectId)
 
     return FirebaseProvider(db_config, blocking_auth)
-
-
-def _remove_backspaces(line):
-    splitline = re.split('(\x08+)', line)
-    buf = StringIO.StringIO()
-    for i in range(0, len(splitline) - 1, 2):
-        buf.write(splitline[i][:-len(splitline[i + 1])])
-
-    if len(splitline) % 2 == 1:
-        buf.write(splitline[-1])
-
-    return buf.getvalue()

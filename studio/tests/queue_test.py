@@ -63,7 +63,7 @@ class LocalQueueTest(QueueTest, unittest.TestCase):
     'PubSub')
 class PubSubQueueTest(QueueTest, unittest.TestCase):
     def get_queue(self):
-        return PubsubQueue('test_queue')
+        return PubsubQueue('pubsub_queue_test')
 
 
 if __name__ == '__main__':

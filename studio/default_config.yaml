@@ -13,8 +13,5 @@ database:
 
     # use_email_auth: true
                                                                     
-log:
-    name: output.log
-
 saveWorkspaceFrequency: 1 #how often is workspace being saved (minutes)
 

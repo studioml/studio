@@ -5,9 +5,7 @@ import uuid
 import os
 import time
 import pip
-import tempfile
 import shutil
-import requests
 
 from studio import model
 from studio.auth import remove_all_keys
@@ -85,145 +83,6 @@ class FirebaseProviderTest(unittest.TestCase):
 
         fb.__setitem__("test/hello", "bla")
 
-    def test_upload_download_file(self):
-        fb = self.get_firebase_provider()
-        tmp_filename = os.path.join(
-            tempfile.gettempdir(),
-            'test_upload_download.txt')
-        random_str = str(uuid.uuid4())
-        with open(tmp_filename, 'w') as f:
-            f.write(random_str)
-
-        fb._upload_file('tests/test_upload_download.txt', tmp_filename)
-        os.remove(tmp_filename)
-        fb._download_file('tests/test_upload_download.txt', tmp_filename)
-        with open(tmp_filename, 'r') as f:
-            line = f.read()
-        os.remove(tmp_filename)
-        self.assertTrue(line == random_str)
-
-        fb._delete_file('tests/test_upload_download.txt')
-        fb._download_file('tests/test_upload_download.txt', tmp_filename)
-        self.assertTrue(not os.path.exists(tmp_filename))
-
-    def test_upload_download_file_auth(self):
-        remove_all_keys()
-        fb = self.get_firebase_provider('test_config_auth.yaml')
-        tmp_filename = os.path.join(
-            tempfile.gettempdir(),
-            'test_upload_download.txt')
-        random_str = str(uuid.uuid4())
-        with open(tmp_filename, 'w') as f:
-            f.write(random_str)
-
-        fb._upload_file('authtest/test_upload_download.txt', tmp_filename)
-        os.remove(tmp_filename)
-
-        # test an authorized attempt to delete file
-        remove_all_keys()
-        fb = self.get_firebase_provider('test_config.yaml')
-        fb._delete_file('authtest/test_upload_download.txt')
-        remove_all_keys()
-        fb = self.get_firebase_provider('test_config_auth.yaml')
-        # to make sure file is intact and the same as we uploaded
-
-        fb._download_file('authtest/test_upload_download.txt', tmp_filename)
-
-        with open(tmp_filename, 'r') as f:
-            line = f.read()
-        os.remove(tmp_filename)
-        self.assertTrue(line == random_str)
-
-        fb._delete_file('authtest/test_upload_download.txt')
-        fb._download_file('authtest/test_upload_download.txt', tmp_filename)
-        self.assertTrue(not os.path.exists(tmp_filename))
-
-    def test_upload_download_file_noauth(self):
-        remove_all_keys()
-        fb = self.get_firebase_provider('test_config.yaml')
-        tmp_filename = os.path.join(
-            tempfile.gettempdir(),
-            'test_upload_download.txt')
-        random_str = str(uuid.uuid4())
-        with open(tmp_filename, 'w') as f:
-            f.write(random_str)
-
-        fb._upload_file('authtest/test_upload_download.txt', tmp_filename)
-        os.remove(tmp_filename)
-        fb._download_file('authtest/test_upload_download.txt', tmp_filename)
-
-        self.assertTrue(not os.path.exists(tmp_filename))
-
-    def test_upload_download_file_bad(self):
-        # smoke test to make sure attempt to access a wrong file
-        # in the database is wrapped and does not crash the system
-        fb = self.get_firebase_provider('test_bad_config.yaml')
-        tmp_filename = os.path.join(
-            tempfile.gettempdir(),
-            'test_upload_download.txt')
-        random_str = str(uuid.uuid4())
-        with open(tmp_filename, 'w') as f:
-            f.write(random_str)
-
-        fb._upload_file('tests/test_upload_download.txt', tmp_filename)
-        fb._download_file('tests/test_upload_download.txt', tmp_filename)
-        os.remove(tmp_filename)
-
-    def test_get_file_url(self):
-        remove_all_keys()
-        fb = self.get_firebase_provider('test_config.yaml')
-        tmp_filename = os.path.join(
-            tempfile.gettempdir(),
-            'test_upload_download.txt')
-        random_str = str(uuid.uuid4())
-        with open(tmp_filename, 'w') as f:
-            f.write(random_str)
-
-        fb._upload_file('tests/test_upload_download.txt', tmp_filename)
-
-        url = fb._get_file_url('tests/test_upload_download.txt')
-        response = requests.get(url)
-        self.assertEquals(response.status_code, 200)
-        self.assertEquals(response.content, random_str)
-
-    def test_get_file_url_auth(self):
-        remove_all_keys()
-        fb = self.get_firebase_provider('test_config_auth.yaml')
-        tmp_filename = os.path.join(
-            tempfile.gettempdir(),
-            'test_upload_download.txt')
-        random_str = str(uuid.uuid4())
-        with open(tmp_filename, 'w') as f:
-            f.write(random_str)
-
-        fb._upload_file('authtest/test_upload_download.txt', tmp_filename)
-
-        url = fb._get_file_url('authtest/test_upload_download.txt')
-        response = requests.get(url)
-        self.assertEquals(response.status_code, 200)
-        self.assertEquals(response.content, random_str)
-
-    def test_upload_download_dir(self):
-        fb = self.get_firebase_provider()
-        tmp_dir = os.path.join(tempfile.gettempdir(), str(uuid.uuid4()))
-        random_str = str(uuid.uuid4())
-
-        os.makedirs(os.path.join(tmp_dir, 'test_dir'))
-        tmp_filename = os.path.join(
-            tmp_dir, 'test_dir', 'test_upload_download.txt')
-        with open(tmp_filename, 'w') as f:
-            f.write(random_str)
-
-        fb._upload_dir('tests/test_upload_download_dir.tgz', tmp_dir)
-        shutil.rmtree(tmp_dir)
-        fb._download_dir('tests/test_upload_download_dir.tgz', tmp_dir)
-
-        with open(tmp_filename, 'r') as f:
-            line = f.read()
-
-        shutil.rmtree(tmp_dir)
-        self.assertTrue(line == random_str)
-
     def test_get_user_keybase(self):
         fb = self.get_firebase_provider()
         keybase = fb._get_user_keybase()
@@ -300,16 +159,16 @@ class FirebaseProviderTest(unittest.TestCase):
         fb = self.get_firebase_provider()
         experiment, experiment_name, _, _, = get_test_experiment()
 
-        if os.path.exists(experiment.model_dir):
-            shutil.rmtree(experiment.model_dir)
+        modeldir = experiment.artifacts['modeldir']['local']
+        if os.path.exists(modeldir):
+            shutil.rmtree(modeldir)
 
-        os.makedirs(experiment.model_dir)
-        fb._delete(fb._get_experiments_keybase() + '/' + experiment_name)
+        os.makedirs(modeldir)
+        fb.delete_experiment(experiment_name)
         fb.add_experiment(experiment)
         fb.start_experiment(experiment)
 
-        file_in_modeldir = os.path.join(
-            experiment.model_dir, str(uuid.uuid4()))
+        file_in_modeldir = os.path.join(modeldir, str(uuid.uuid4()))
         random_str = str(uuid.uuid4())
         with open(file_in_modeldir, 'w') as f:
             f.write(random_str)
@@ -318,8 +177,11 @@ class FirebaseProviderTest(unittest.TestCase):
         for t in checkpoint_threads:
             t.join()
 
-        shutil.rmtree(experiment.model_dir)
-        fb._download_modeldir(experiment_name)
+        shutil.rmtree(modeldir)
+        fb.store.get_artifact(
+            fb.get_experiment(
+                experiment_name,
+                getinfo=False).artifacts['modeldir'])
 
         with open(file_in_modeldir, 'r') as f:
             line = f.read()
@@ -356,23 +218,6 @@ class ModelTest(unittest.TestCase):
         self.assertTrue(experiment.args == args)
         self.assertTrue(experiment.project == experiment_project)
         self.assertTrue(experiment.pythonenv == packages)
-
-    def test_remove_backspaces(self):
-        testline = 'abcd\x08\x08\x08efg\x08\x08hi\x08'
-        removed = model._remove_backspaces(testline)
-        self.assertTrue(removed == 'aeh')
-
-        testline = 'abcd\x08\x08\x08efg\x08\x08hi'
-        removed = model._remove_backspaces(testline)
-        self.assertTrue(removed == 'aehi')
-
-        testline = 'abcd'
-        removed = model._remove_backspaces(testline)
-        self.assertTrue(removed == 'abcd')
-
-        testline = 'abcd\n\ndef'
-        removed = model._remove_backspaces(testline)
-        self.assertTrue(removed == testline)
 
 
 if __name__ == "__main__":

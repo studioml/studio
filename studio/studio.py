@@ -19,6 +19,7 @@ app = Flask(__name__)
 
 _db_provider = None
 _tensorboard_dirs = {}
+_experiment_info_cache = {}
 logger = None
 
 
@@ -80,15 +81,22 @@ def dashboard():
 def experiment(key):
     experiment = _db_provider.get_experiment(key)
     artifacts_urls = _db_provider.get_artifacts(key)
+    logtail = experiment.info.get('logtail')
+    info = experiment.info
     return render_template("experiment_details.html",
                            experiment=experiment,
-                           artifacts=artifacts_urls)
+                           artifacts=artifacts_urls,
+                           logtail=logtail,
+                           info=info)
 
 
 @app.route('/tensorboard_exp/<key>')
 @authenticated('/tensorboard_exp/<key>')
 def tensorboard_exp(key):
-    return tensorboard(fs_tracker.get_tensorboard_dir(key))
+    experiment = _db_provider.get_experiment(key, getinfo=False)
+    tb_path = _db_provider.store.get_artifact(experiment.artifacts['tb'])
+
+    return tensorboard(tb_path)
 
 
 @app.route('/tensorboard_proj/<key>')

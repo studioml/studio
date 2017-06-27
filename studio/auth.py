@@ -3,6 +3,7 @@ import getpass
 import time
 import json
 import shutil
+import atexit
 from apscheduler.schedulers.background import BackgroundScheduler
 
 token_dir = os.path.join(os.path.expanduser('~'), '.tfstudio/keys')
@@ -52,6 +53,7 @@ class FirebaseAuth(object):
         self.sched = BackgroundScheduler()
         self.sched.start()
         self.sched.add_job(self._update_user, 'interval', minutes=15)
+        atexit.register(self.sched.shutdown)
 
     def _update_user(self):
         api_key = os.path.join(token_dir, self.firebase.api_key)
@@ -110,9 +112,6 @@ class FirebaseAuth(object):
         # we could also use the get_account_info
         # print self.firebase.auth().get_account_info(self.get_token())
         return self.user['email']
-
-    def __del__(self):
-        self.sched.shutdown()
 
 
 def remove_all_keys():

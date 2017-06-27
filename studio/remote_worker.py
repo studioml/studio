@@ -11,11 +11,11 @@ logging.basicConfig()
 
 
 def main(args=sys.argv):
-    logger = logging.getLogger('studio-rworker')
+    logger = logging.getLogger('studio-remote-worker')
     logger.setLevel(10)
     parser = argparse.ArgumentParser(
         description='TensorFlow Studio remote worker. \
-                     Usage: studio-rworker \
+                     Usage: studio-remote-worker \
                      ')
     parser.add_argument('--config', help='configuration file', default=None)
     parser.add_argument(
