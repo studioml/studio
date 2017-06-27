@@ -7,8 +7,11 @@ import re
 import os
 
 import model
+import auth
 from local_queue import LocalQueue
 from pubsub_queue import PubsubQueue
+from cloud_worker import GCloudWorkerManager
+
 
 logging.basicConfig()
 
@@ -40,6 +43,11 @@ def main(args=sys.argv):
     parser.add_argument(
         '--queue', '-q',
         help='Name of the remote execution queue',
+        default=None)
+
+    parser.add_argument(
+        '--cloud',
+        help='Cloud execution mode',
         default=None)
 
     parser.add_argument(
@@ -105,6 +113,18 @@ def main(args=sys.argv):
         logger.info('worker args: {}'.format(worker_args))
         worker = subprocess.Popen(worker_args)
         worker.wait()
+    elif parsed_args.queue.startswith('gc_'):
+        import pdb
+        pdb.set_trace()
+        worker_manager = GCloudWorkerManager(
+            config['database']['projectId'],
+            auth_cookie=os.path.join(
+                         auth.token_dir, 
+                         config['database']['apiKey']
+                        )
+        )
+        worker_manager.start_worker(parsed_args.queue)
+
 
     db = None
 

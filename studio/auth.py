@@ -6,7 +6,7 @@ import shutil
 import atexit
 from apscheduler.schedulers.background import BackgroundScheduler
 
-token_dir = os.path.join(os.path.expanduser('~'), '.tfstudio/keys')
+token_dir = os.path.expanduser('~/.tfstudio/keys')
 hour = 3600
 
 
