@@ -17,8 +17,8 @@ class GCloudWorkerManager(object):
     def __init__(self, zone='us-central1-f', auth_cookie=None):
         assert 'GOOGLE_APPLICATION_CREDENTIALS' in os.environ.keys()
         with open(os.environ['GOOGLE_APPLICATION_CREDENTIALS'], 'r') as f:
-            credentials_dict  = json.loads(f.read())
-        
+            credentials_dict = json.loads(f.read())
+
         self.compute = googleapiclient.discovery.build('compute', 'v1')
         self.startup_script_file = os.path.join(
             os.path.dirname(__file__),
@@ -29,7 +29,6 @@ class GCloudWorkerManager(object):
         self.logger = logging.getLogger("GCloudWorkerManager")
         self.logger.setLevel(10)
         self.auth_cookie = auth_cookie
-
 
     def start_worker(self, queue_name, resources_needed={}, blocking=True):
         if resources_needed is None:

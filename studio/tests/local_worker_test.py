@@ -6,7 +6,7 @@ import uuid
 import subprocess
 import time
 
-from studio import fs_tracker, model
+from studio import model
 from studio.local_queue import LocalQueue
 
 
@@ -86,6 +86,7 @@ class LocalWorkerTest(unittest.TestCase):
             expected_output=random_str
         )
 
+
 def stubtest_worker(
         testclass,
         experiment_name,
@@ -93,7 +94,7 @@ def stubtest_worker(
         config_name,
         test_script,
         script_args,
-        expected_output, 
+        expected_output,
         queue=LocalQueue(),
         wait_for_experiment=True):
 
@@ -101,8 +102,7 @@ def stubtest_worker(
     os.chdir(my_path)
 
     queue.clean()
-    queue_name = queue.get_name()
-    
+
     db = model.get_db_provider(model.get_config(config_name))
     try:
         db.delete_experiment(experiment_name)
@@ -110,9 +110,9 @@ def stubtest_worker(
         pass
 
     p = subprocess.Popen(['studio-runner'] + runner_args +
-                             ['--config=' + config_name,
-                              '--experiment=' + experiment_name,
-                              test_script] + script_args)
+                         ['--config=' + config_name,
+                          '--experiment=' + experiment_name,
+                          test_script] + script_args)
 
     p.wait()
 

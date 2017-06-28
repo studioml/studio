@@ -18,13 +18,13 @@ class RemoteWorkerTest(unittest.TestCase):
         'variable not set, won'' be able to use google ' +
         'PubSub')
     def test_remote_worker(self):
-        queue_name='test_remote_worker'
+        queue_name = 'test_remote_worker'
         pw = subprocess.Popen(['studio-start-remote-worker', queue_name, "1"])
-        
+
         stubtest_worker(
             self,
             experiment_name='test_remote_worker',
-            runner_args=['--queue='+queue_name],
+            runner_args=['--queue=' + queue_name],
             config_name='test_config.yaml',
             test_script='tf_hello_world.py',
             script_args=['arg0'],
@@ -52,19 +52,20 @@ class RemoteWorkerTest(unittest.TestCase):
 
         random_str2 = str(uuid.uuid4())
 
-        queue_name='test_remote_worker'
+        queue_name = 'test_remote_worker'
         pw = subprocess.Popen(['studio-start-remote-worker', queue_name, "1"])
-        
+
         stubtest_worker(
             self,
             experiment_name=experiment_name,
-            runner_args=['--capture=' + tmpfile + ':f', '--queue='+queue_name],
+            runner_args=[
+                '--capture=' + tmpfile + ':f',
+                '--queue=' + queue_name],
             config_name='test_config.yaml',
             test_script='art_hello_world.py',
             script_args=[random_str2],
             expected_output=random_str1,
-            queue=PubsubQueue(queue_name)
-        )
+            queue=PubsubQueue(queue_name))
 
         pw.wait()
 
@@ -103,13 +104,14 @@ class RemoteWorkerTest(unittest.TestCase):
         stubtest_worker(
             self,
             experiment_name='test_remote_worker_co',
-            runner_args=['--capture-once=' + tmpfile + ':f', '--queue='+queue_name],
+            runner_args=[
+                '--capture-once=' + tmpfile + ':f',
+                '--queue=' + queue_name],
             config_name='test_config.yaml',
             test_script='art_hello_world.py',
             script_args=[],
             expected_output=random_str,
-            queue=PubsubQueue(queue_name)
-        )
+            queue=PubsubQueue(queue_name))
 
         pw.wait()
 

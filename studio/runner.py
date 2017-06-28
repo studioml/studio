@@ -39,7 +39,8 @@ def main(args=sys.argv):
 
     parser.add_argument(
         '--force-git',
-        help='If run in a git directory, force running the experiment even if changes are not commited',
+        help='If run in a git directory, force running the experiment ' +
+             'even if changes are not commited',
         action='store_true')
 
     parser.add_argument(
@@ -102,7 +103,8 @@ def main(args=sys.argv):
     if git_util.is_git() and not git_util.is_clean():
         logger.warn('Running from dirty git repo')
         if not parsed_args.force_git:
-            logger.error('Specify --force-git to run experiment from dirty git repo')
+            logger.error(
+                'Specify --force-git to run experiment from dirty git repo')
             sys.exit(1)
 
     resources_needed = parse_hardware(parsed_args, config['cloud'])
@@ -127,7 +129,7 @@ def main(args=sys.argv):
 
     if parsed_args.cloud is not None:
         assert parsed_args.cloud == 'gcloud', \
-                'Only gcloud is supported for now'
+            'Only gcloud is supported for now'
         if parsed_args.queue is None:
             parsed_args.queue = 'gcloud_' + str(uuid.uuid4())
 
@@ -155,10 +157,10 @@ def main(args=sys.argv):
     elif parsed_args.queue.startswith('gcloud_'):
 
         auth_cookie = None if config['database'].get('guest') \
-                      else os.path.join(
-                auth.token_dir,
-                config['database']['apiKey']
-            )
+            else os.path.join(
+            auth.token_dir,
+            config['database']['apiKey']
+        )
 
         worker_manager = GCloudWorkerManager(
             auth_cookie=auth_cookie,
