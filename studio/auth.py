@@ -70,8 +70,6 @@ class FirebaseAuth(object):
             with open(api_key, 'r') as f:
                 user = json.load(f)
 
-            print(api_key)
-            print(user)
             self.refresh_token(user['email'], user['refreshToken'])
 
     def sign_in_with_email(self):

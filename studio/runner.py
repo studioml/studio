@@ -12,6 +12,7 @@ import uuid
 from local_queue import LocalQueue
 from pubsub_queue import PubsubQueue
 from cloud_worker import GCloudWorkerManager
+import git_util
 
 
 logging.basicConfig()
@@ -34,6 +35,11 @@ def main(args=sys.argv):
     parser.add_argument(
         '--guest',
         help='Guest mode (does not require db credentials)',
+        action='store_true')
+
+    parser.add_argument(
+        '--force-git',
+        help='If run in a git directory, force running the experiment even if changes are not commited',
         action='store_true')
 
     parser.add_argument(
@@ -92,6 +98,12 @@ def main(args=sys.argv):
 
     config = model.get_config(parsed_args.config)
     db = model.get_db_provider(config)
+
+    if git_util.is_git() and not git_util.is_clean():
+        logger.warn('Running from dirty git repo')
+        if not parsed_args.force_git:
+            logger.error('Specify --force-git to run experiment from dirty git repo')
+            sys.exit(1)
 
     resources_needed = parse_hardware(parsed_args, config['cloud'])
     logger.debug('resources requested: ')
