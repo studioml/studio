@@ -112,7 +112,7 @@ def allocate_gpus(gpus_needed, config=None):
 
     if len(mapped_gpus) >= gpus_needed:
         os.environ['CUDA_VISIBLE_DEVICES'] = ','.join(
-            mapped_gpus[:gpus_needed])
+            mapped_gpus[:int(gpus_needed)])
         return True
     else:
         return False

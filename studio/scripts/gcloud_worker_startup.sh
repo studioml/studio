@@ -8,10 +8,10 @@ key_name=$(curl "${metadata_url}/attributes/auth_key" -H  "Metadata-Flavor: Goog
 zone=$(curl "${metadata_url}/zone" -H  "Metadata-Flavor: Google")
 instance_name=$(curl "${metadata_url}/name" -H  "Metadata-Flavor: Google")
 
-echo home directory is $HOME
+cd ~
 
-mkdir -p $HOME/.tfstudio/keys
-curl "${metadata_url}/attributes/auth_data" -H  "Metadata-Flavor: Google" > $HOME/.tfstudio/keys/${key_name}
+mkdir -p .tfstudio/keys
+curl "${metadata_url}/attributes/auth_data" -H  "Metadata-Flavor: Google" > .tfstudio/keys/${key_name}
 curl "${metadata_url}/attributes/credentials" -H  "Metadata-Flavor: Google" > /credentials.json
 export GOOGLE_APPLICATION_CREDENTIALS=/credentials.json
 
@@ -22,7 +22,7 @@ export GOOGLE_APPLICATION_CREDENTIALS=/credentials.json
 gac_path=${GOOGLE_APPLICATION_CREDENTIALS%/*}
 gac_name=${GOOGLE_APPLICATION_CREDENTIALS##*/}
 repo="https://github.com/ilblackdragon/studio"
-branch="queueing2"
+branch="master"
 
 #bash_cmd="git clone $repo && \
 #            cd studio && \
@@ -36,7 +36,7 @@ code_url_base="https://storage.googleapis.com/studio-ed756.appspot.com/src"
 code_ver="tfstudio-artifacts-2017-06-23_4.tgz"
 
 sudo apt -y update 
-sudo apt install -y wget python-pip git
+sudo apt install -y wget python-pip git python-dev
 
 wget $code_url_base/$code_ver 
 tar -xzf $code_ver 
@@ -46,4 +46,5 @@ sudo pip install -e . --upgrade
 mkdir /workspace && cd /workspace 
 studio-remote-worker --queue=$queue_name 
 
-# gcloud compute instances delete $instance_name --zone $zone --quiet
+# shutdown the instance
+gcloud compute instances delete $instance_name --zone $zone --quiet

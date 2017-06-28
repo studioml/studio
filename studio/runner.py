@@ -8,6 +8,7 @@ import os
 
 import model
 import auth
+import uuid
 from local_queue import LocalQueue
 from pubsub_queue import PubsubQueue
 from cloud_worker import GCloudWorkerManager
@@ -36,9 +37,27 @@ def main(args=sys.argv):
         action='store_true')
 
     parser.add_argument(
-        '--gpus', '-g',
+        '--gpus',
         help='Number of gpus needed to run the experiment',
-        type=int, default=0)
+        default=None)
+
+    parser.add_argument(
+        '--cpus',
+        help='Number of cpus needed to run the experiment' +
+             ' (used to configure cloud instance)',
+        default=None)
+
+    parser.add_argument(
+        '--ram',
+        help='Amount of RAM needed to run the experiment' +
+             ' (used to configure cloud instance)',
+        default=None)
+
+    parser.add_argument(
+        '--hdd',
+        help='Amount of hard drive space needed to run the experiment' +
+             ' (used to configure cloud instance)',
+        default=None)
 
     parser.add_argument(
         '--queue', '-q',
@@ -71,13 +90,12 @@ def main(args=sys.argv):
     exec_filename, other_args = script_args[1], script_args[2:]
     # TODO: Queue the job based on arguments and only then execute.
 
-    resources_needed = None
-    if parsed_args.gpus > 0:
-        resources_needed = {}
-        resources_needed['gpus'] = parsed_args.gpus
-
     config = model.get_config(parsed_args.config)
     db = model.get_db_provider(config)
+
+    resources_needed = parse_hardware(parsed_args, config['cloud'])
+    logger.debug('resources requested: ')
+    logger.debug(str(resources_needed))
 
     artifacts = {}
     artifacts.update(parse_artifacts(parsed_args.capture, mutable=True))
@@ -94,6 +112,15 @@ def main(args=sys.argv):
 
     logger.info("Experiment name: " + experiment.key)
     db.add_experiment(experiment)
+
+    if parsed_args.cloud is not None:
+        assert parsed_args.cloud == 'gcloud', \
+                'Only gcloud is supported for now'
+        if parsed_args.queue is None:
+            parsed_args.queue = 'gcloud_' + str(uuid.uuid4())
+
+        if not parsed_args.queue.startswith('gcloud_'):
+            parsed_args.queue = 'gcloud_' + parsed_args.queue
 
     queue = LocalQueue() if not parsed_args.queue else \
         PubsubQueue(parsed_args.queue)
@@ -113,18 +140,19 @@ def main(args=sys.argv):
         logger.info('worker args: {}'.format(worker_args))
         worker = subprocess.Popen(worker_args)
         worker.wait()
-    elif parsed_args.queue.startswith('gc_'):
-        import pdb
-        pdb.set_trace()
-        worker_manager = GCloudWorkerManager(
-            config['database']['projectId'],
-            auth_cookie=os.path.join(
-                         auth.token_dir, 
-                         config['database']['apiKey']
-                        )
-        )
-        worker_manager.start_worker(parsed_args.queue)
+    elif parsed_args.queue.startswith('gcloud_'):
 
+        auth_cookie = None if config['database']['guest'] \
+                      else os.path.join(
+                auth.token_dir,
+                config['database']['apiKey']
+            )
+
+        worker_manager = GCloudWorkerManager(
+            auth_cookie=auth_cookie,
+            zone=config['cloud']['zone']
+        )
+        worker_manager.start_worker(parsed_args.queue, resources_needed)
 
     db = None
 
@@ -156,6 +184,20 @@ def parse_external_artifacts(art_list, db):
             'mutable': False
         }
     return retval
+
+
+def parse_hardware(parsed_args, config={}):
+    resources_needed = {}
+    parse_list = ['gpus', 'cpus', 'ram', 'hdd']
+    for key in parse_list:
+        from_args = parsed_args.__dict__.get(key)
+        from_config = config.get(key)
+        if from_args is not None:
+            resources_needed[key] = from_args
+        elif from_config is not None:
+            resources_needed[key] = from_config
+
+    return resources_needed
 
 
 if __name__ == "__main__":

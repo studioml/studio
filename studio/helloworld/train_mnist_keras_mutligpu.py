@@ -1,6 +1,4 @@
 import sys
-import os
-
 from keras.layers import Input, Dense
 from keras.models import Model
 from keras.datasets import mnist

@@ -1,6 +1,4 @@
 import sys
-import os
-
 from keras.layers import Input, Dense
 from keras.models import Model
 from keras.datasets import mnist
@@ -34,19 +32,19 @@ x_test /= 255
 y_train = to_categorical(y_train, 10)
 y_test = to_categorical(y_test, 10)
 
-#checkpointer = ModelCheckpoint(
-#    fs_tracker.get_model_directory() +
-#    '/checkpoint.{epoch:02d}-{val_loss:.2f}.hdf')
+checkpointer = ModelCheckpoint(
+    fs_tracker.get_model_directory() +
+    '/checkpoint.{epoch:02d}-{val_loss:.2f}.hdf')
 
 
-# tbcallback = TensorBoard(log_dir=fs_tracker.get_tensorboard_dir(),
-#                         histogram_freq=0,
-#                         write_graph=True,
-#                         write_images=False)
+tbcallback = TensorBoard(log_dir=fs_tracker.get_tensorboard_dir(),
+                         histogram_freq=0,
+                         write_graph=True,
+                         write_images=False)
 
 model.fit(
     x_train, y_train, validation_data=(
-        x_test, 
-        y_test), 
-    epochs=int(sys.argv[1]))
-#    callbacks=[checkpointer, tbcallback])
+        x_test,
+        y_test),
+    epochs=int(sys.argv[1]),
+    callbacks=[checkpointer, tbcallback])

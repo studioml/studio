@@ -1,225 +1,47 @@
 #!/usr/bin/env python
-
-# Copyright 2015 Google Inc. All Rights Reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#    http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
-"""Example of using the Compute Engine API to create and delete instances.
-
-Creates a new compute engine instance and uses it to apply a caption to
-an image.
-
-    https://cloud.google.com/compute/docs/tutorials/python-guide
-
-For more information, see the README.md under /compute.
-"""
-
-import argparse
 import os
 import time
 
 import googleapiclient.discovery
 import uuid
 import logging
+import math
+import json
+
+from gpu_util import memstr2int
 
 logging.basicConfig()
 
 
-# [START list_instances]
-def list_instances(compute, project, zone):
-    result = compute.instances().list(project=project, zone=zone).execute()
-    return result['items']
-# [END list_instances]
-
-
-# [START create_instance]
-def create_instance(compute, project, zone, name, bucket):
-    # Get the latest Debian Jessie image.
-    image_response = compute.images().getFromFamily(
-        project='debian-cloud', family='debian-8').execute()
-    source_disk_image = image_response['selfLink']
-
-    # Configure the machine
-    machine_type = "zones/%s/machineTypes/n1-standard-1" % zone
-    startup_script = open(
-        os.path.join(
-            os.path.dirname(__file__), 'startup-script.sh'), 'r').read()
-    image_url = "http://storage.googleapis.com/gce-demo-input/photo.jpg"
-    image_caption = "Ready for dessert?"
-
-    config = {
-        'name': name,
-        'machineType': machine_type,
-
-        # Specify the boot disk and the image to use as a source.
-        'disks': [
-            {
-                'boot': True,
-                'autoDelete': True,
-                'initializeParams': {
-                    'sourceImage': source_disk_image,
-                }
-            }
-        ],
-
-        # Specify a network interface with NAT to access the public
-        # internet.
-        'networkInterfaces': [{
-            'network': 'global/networks/default',
-            'accessConfigs': [
-                {'type': 'ONE_TO_ONE_NAT', 'name': 'External NAT'}
-            ]
-        }],
-
-        # Allow the instance to access cloud storage and logging.
-        'serviceAccounts': [{
-            'email': 'default',
-            'scopes': [
-                'https://www.googleapis.com/auth/devstorage.read_write',
-                'https://www.googleapis.com/auth/logging.write'
-            ]
-        }],
-
-        # Metadata is readable from the instance and allows you to
-        # pass configuration from deployment scripts to instances.
-        'metadata': {
-            'items': [{
-                # Startup script is automatically executed by the
-                # instance upon startup.
-                'key': 'startup-script',
-                'value': startup_script
-            }, {
-                'key': 'url',
-                'value': image_url
-            }, {
-                'key': 'text',
-                'value': image_caption
-            }, {
-                'key': 'bucket',
-                'value': bucket
-            }]
-        }
-    }
-
-    return compute.instances().insert(
-        project=project,
-        zone=zone,
-        body=config).execute()
-# [END create_instance]
-
-
-# [START delete_instance]
-def delete_instance(compute, project, zone, name):
-    return compute.instances().delete(
-        project=project,
-        zone=zone,
-        instance=name).execute()
-# [END delete_instance]
-
-
-# [START wait_for_operation]
-def wait_for_operation(compute, project, zone, operation):
-    print('Waiting for operation to finish...')
-    while True:
-        result = compute.zoneOperations().get(
-            project=project,
-            zone=zone,
-            operation=operation).execute()
-
-        if result['status'] == 'DONE':
-            print("done.")
-            if 'error' in result:
-                raise Exception(result['error'])
-            return result
-
-        time.sleep(1)
-# [END wait_for_operation]
-
-
-# [START run]
-def main(project, bucket, zone, instance_name, wait=True):
-    compute = googleapiclient.discovery.build('compute', 'v1')
-
-    print('Creating instance.')
-
-    operation = create_instance(compute, project, zone, instance_name, bucket)
-    wait_for_operation(compute, project, zone, operation['name'])
-
-    instances = list_instances(compute, project, zone)
-
-    print('Instances in project %s and zone %s:' % (project, zone))
-    for instance in instances:
-        print(' - ' + instance['name'])
-
-    print("""
-Instance created.
-It will take a minute or two for the instance to complete work.
-Check this URL: http://storage.googleapis.com/{}/output.png
-Once the image is uploaded press enter to delete the instance.
-""".format(bucket))
-
-
-    print('Deleting instance.')
-
-    operation = delete_instance(compute, project, zone, instance_name)
-    wait_for_operation(compute, project, zone, operation['name'])
-
-
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(
-        description=__doc__,
-        formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument('project_id', help='Your Google Cloud project ID.')
-    parser.add_argument(
-        'bucket_name', help='Your Google Cloud Storage bucket name.')
-    parser.add_argument(
-        '--zone',
-        default='us-central1-f',
-        help='Compute Engine zone to deploy to.')
-    parser.add_argument(
-        '--name', default='demo-instance', help='New instance name.')
-
-    args = parser.parse_args()
-
-    main(args.project_id, args.bucket_name, args.zone, args.name)
-# [END run]
-
-
-
 class GCloudWorkerManager(object):
-    def __init__(self, projectid, zone='us-central1-f', auth_cookie=None):
+    def __init__(self, zone='us-central1-f', auth_cookie=None):
+        assert 'GOOGLE_APPLICATION_CREDENTIALS' in os.environ.keys()
+        with open(os.environ['GOOGLE_APPLICATION_CREDENTIALS'], 'r') as f:
+            credentials_dict  = json.loads(f.read())
+        
         self.compute = googleapiclient.discovery.build('compute', 'v1')
         self.startup_script_file = os.path.join(
-                                    os.path.dirname(__file__),
-                                    'scripts/gcloud_worker_startup.sh')
+            os.path.dirname(__file__),
+            'scripts/gcloud_worker_startup.sh')
 
         self.zone = zone
-        self.projectid = projectid
+        self.projectid = credentials_dict['project_id']
         self.logger = logging.getLogger("GCloudWorkerManager")
         self.logger.setLevel(10)
         self.auth_cookie = auth_cookie
 
-        assert 'GOOGLE_APPLICATION_CREDENTIALS' in os.environ.keys()
 
+    def start_worker(self, queue_name, resources_needed={}, blocking=True):
+        if resources_needed is None:
+            resources_needed = {}
 
-
-    def start_worker(self, queue_name, blocking=True):
         image_response = self.compute.images().getFromFamily(
             project='debian-cloud', family='debian-8').execute()
         source_disk_image = image_response['selfLink']
 
         # Configure the machine
-        machine_type = "zones/{}/machineTypes/n1-standard-1".format(self.zone)
+        machine_type = self._generate_machine_type(resources_needed)
+        self.logger.debug('Machine type = {}'.format(machine_type))
         with open(self.startup_script_file, 'r') as f:
             startup_script = f.read()
 
@@ -232,6 +54,9 @@ class GCloudWorkerManager(object):
             auth_key = os.path.basename(self.auth_cookie)
             with open(self.auth_cookie, 'r') as f:
                 auth_data = f.read()
+        else:
+            auth_key = None
+            auth_data = None
 
         config = {
             'name': name,
@@ -279,13 +104,17 @@ class GCloudWorkerManager(object):
                     'value': queue_name
                 }, {
                     'key': 'auth_key',
-                    'value':auth_key
+                    'value': auth_key
                 }, {
                     'key': 'auth_data',
-                    'value':auth_data
-                }] 
+                    'value': auth_data
+                }]
             }
         }
+
+        if 'hdd' in resources_needed.keys():
+            config['disks'][0]['initializeParams']['diskSizeGb'] = \
+                memstr2int(resources_needed['hdd']) / memstr2int('1Gb')
 
         op = self.compute.instances().insert(
             project=self.projectid,
@@ -298,7 +127,6 @@ class GCloudWorkerManager(object):
             return name
         else:
             return (name, op['name'])
-    
 
     def _stop_worker(self, worker_id, blocking=True):
         op = self.compute.instances().delete(
@@ -311,14 +139,34 @@ class GCloudWorkerManager(object):
         else:
             return op['name']
 
-
     def _generate_instance_name(self):
         return "worker-" + str(uuid.uuid4())
-        
+
+    def _generate_machine_type(self, resources_needed={}):
+        if not any(resources_needed):
+            machine_type = "zones/{}/machineTypes/n1-standard-1".format(
+                self.zone)
+        else:
+            cpus = int(resources_needed['cpus'])
+            default_ram_per_cpu = 4096
+            ram = default_ram_per_cpu * cpus
+
+            if 'ram' in resources_needed.keys():
+                ram = memstr2int(resources_needed['ram']) / memstr2int('1Mb')
+                ram = int(math.ceil(ram / 256.0) * 256)
+
+            ram_per_cpu = ram / cpus
+            assert 1024 <= ram_per_cpu and ram_per_cpu <= 6192, \
+                "RAM per cpu should be between 0.9 and 6.5 Gb"
+
+            machine_type = "zones/{}/machineTypes/custom-{}-{}".format(
+                self.zone, cpus, ram)
+
+        return machine_type
 
     def _wait_for_operation(self, operation):
         self.logger.debug('Waiting for operation {} to finish...'.
-                format(operation))
+                          format(operation))
         while True:
             result = self.compute.zoneOperations().get(
                 project=self.projectid,
@@ -332,4 +180,3 @@ class GCloudWorkerManager(object):
                 return result
 
             time.sleep(1)
-

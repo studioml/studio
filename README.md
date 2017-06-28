@@ -36,14 +36,15 @@ Start visualizer:
 
 Run your jobs:
 
-    studio-runner myfile.py --some-arg=value --learning_rate=0.3
+    studio-runner myfile.py
 
-You can see results of your job at http://127.0.0.1:5000
+You can see results of your job at http://127.0.0.1:5000. 
+Run `studio-runner --help` for a full list of options. 
 
 ## Authentication 
 Both studio and studio-runner use same authentication tokens for database backend. The tokens are valid for 1 hour, 
 but if studio / studio-runner is running, it renews tokens automatically. 
-Note that expiration tokens don't expire; this also means that you can use tokens on multiple machines (i.e. when you want to use google account authentication on a remote server and don't want to open extra ports) - simply copy contents of ~/.tfstudio/keys folder to another machine. 
+Note that refresh tokens don't expire; this also means that you can use tokens on multiple machines (i.e. when you want to use google account authentication on a remote server and don't want to open extra ports) - simply copy contents of ~/.tfstudio/keys folder to another machine. 
 For now TensorFlow studio supports 2 methods of authentication: email/password and using google account.
 If you don't have a user account set up, and don't have a google account, you can uncomment "guest: true" line
  in the database section of studio/default_config.yaml file to use studio-runner and studio in the guest mode. 
@@ -65,8 +66,13 @@ first-class citizen. If token not found when you run studio, Web UI will redirec
 ask to sign in with your google account, and issues an authentication token. Then studio / studio-runner can use that token. 
 
 ## Further reading and cool features
-TensorFlow studio allows one to run experiments remotely. The process of setting up a server is described [here](docs/remote_worker.md)
+TensorFlow studio allows one to run experiments remotely. The process of setting up a server is described [here](docs/remote_worker.md). 
+
+The experiments can also be run using google cloud compute with configurable instances. The user manual is [here](docs/cloud.md), and 
+the setup instructions are [here](docs/gcloud_setup.md)
 
 Another very important aspect of model management is management of artifacts (data, resulting weights etc). The facilities that tfstudio
 provides in that regard are described [here](docs/artifacts.md)
+
+
 

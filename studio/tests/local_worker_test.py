@@ -4,13 +4,16 @@ import shutil
 import tempfile
 import uuid
 import subprocess
+import time
 
 from studio import fs_tracker, model
+from studio.local_queue import LocalQueue
 
 
 class LocalWorkerTest(unittest.TestCase):
     def test_runner_local(self):
-        self.stubtest_local_worker(
+        stubtest_worker(
+            self,
             experiment_name='test_runner_local',
             runner_args=[],
             config_name='test_config.yaml',
@@ -31,7 +34,8 @@ class LocalWorkerTest(unittest.TestCase):
         random_str2 = str(uuid.uuid4())
         experiment_name = 'test_local_worker_c' + str(uuid.uuid4())
 
-        self.stubtest_local_worker(
+        stubtest_worker(
+            self,
             experiment_name=experiment_name,
             runner_args=['--capture=' + tmpfile + ':f'],
             config_name='test_config.yaml',
@@ -51,7 +55,8 @@ class LocalWorkerTest(unittest.TestCase):
             self.assertTrue(f.read() == random_str2)
         os.remove(tmppath)
 
-        self.stubtest_local_worker(
+        stubtest_worker(
+            self,
             experiment_name='test_local_worker_e',
             runner_args=['--reuse={}/f:f'.format(experiment_name)],
             config_name='test_config.yaml',
@@ -71,7 +76,8 @@ class LocalWorkerTest(unittest.TestCase):
         with open(tmpfile, 'w') as f:
             f.write(random_str)
 
-        self.stubtest_local_worker(
+        stubtest_worker(
+            self,
             experiment_name='test_local_worker_co',
             runner_args=['--capture-once=' + tmpfile + ':f'],
             config_name='test_config.yaml',
@@ -80,55 +86,59 @@ class LocalWorkerTest(unittest.TestCase):
             expected_output=random_str
         )
 
-    def stubtest_local_worker(
-            self,
-            experiment_name,
-            runner_args,
-            config_name,
-            test_script,
-            script_args,
-            expected_output):
-        my_path = os.path.dirname(os.path.realpath(__file__))
-        os.chdir(my_path)
+def stubtest_worker(
+        testclass,
+        experiment_name,
+        runner_args,
+        config_name,
+        test_script,
+        script_args,
+        expected_output, 
+        queue=LocalQueue(),
+        wait_for_experiment=True):
 
-        if os.path.exists(fs_tracker.get_queue_directory()):
-            shutil.rmtree(fs_tracker.get_queue_directory())
+    my_path = os.path.dirname(os.path.realpath(__file__))
+    os.chdir(my_path)
 
-        db = model.get_db_provider(model.get_config(config_name))
-        try:
-            db.delete_experiment(experiment_name)
-        except Exception:
-            pass
+    queue.clean()
+    queue_name = queue.get_name()
+    
+    db = model.get_db_provider(model.get_config(config_name))
+    try:
+        db.delete_experiment(experiment_name)
+    except Exception:
+        pass
 
-        p = subprocess.Popen(['studio-runner'] + runner_args +
+    p = subprocess.Popen(['studio-runner'] + runner_args +
                              ['--config=' + config_name,
                               '--experiment=' + experiment_name,
                               test_script] + script_args)
 
-        p.wait()
+    p.wait()
 
-        # test saved arguments
-        keybase = "/experiments/" + experiment_name
-        saved_args = db[keybase + '/args']
-        if saved_args is not None:
-            self.assertTrue(len(saved_args) == len(script_args))
-            for i in range(len(saved_args)):
-                self.assertTrue(saved_args[i] == script_args[i])
-            self.assertTrue(db[keybase + '/filename'] == test_script)
-        else:
-            self.assertTrue(script_args is None or len(script_args) == 0)
+    # test saved arguments
+    keybase = "/experiments/" + experiment_name
+    saved_args = db[keybase + '/args']
+    if saved_args is not None:
+        testclass.assertTrue(len(saved_args) == len(script_args))
+        for i in range(len(saved_args)):
+            testclass.assertTrue(saved_args[i] == script_args[i])
+        testclass.assertTrue(db[keybase + '/filename'] == test_script)
+    else:
+        testclass.assertTrue(script_args is None or len(script_args) == 0)
 
-        experiment = db.get_experiment(experiment_name)
-        # db.store.get_artifact(experiment.artifacts['modeldir'])
-        # db.store.get_artifact(experiment.artifacts['output'])
+    experiment = db.get_experiment(experiment_name)
+    if wait_for_experiment:
+        while not experiment.status == 'finished':
+            time.sleep(1)
+            experiment = db.get_experiment(experiment_name)
 
-        with open(db.store.get_artifact(experiment.artifacts['output']),
-                  'r') as f:
-            data = f.read()
-            split_data = data.strip().split('\n')
-            self.assertEquals(split_data[-1], expected_output)
+    with open(db.store.get_artifact(experiment.artifacts['output']), 'r') as f:
+        data = f.read()
+        split_data = data.strip().split('\n')
+        testclass.assertEquals(split_data[-1], expected_output)
 
-        check_workspace(self, db, experiment_name)
+    check_workspace(testclass, db, experiment_name)
 
 
 def check_workspace(testclass, db, key):
