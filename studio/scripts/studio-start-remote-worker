@@ -57,6 +57,7 @@ do
     $docker_cmd run --rm -it \
             -v $HOME/.tfstudio/keys:/root/.tfstudio/keys \
             -v $gac_path:/creds \
+            --pid=host \
             -e GOOGLE_APPLICATION_CREDENTIALS="/creds/$gac_name" \
             $docker_img \
         /bin/bash -c "$bash_cmd"
