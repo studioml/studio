@@ -154,7 +154,7 @@ def main(args=sys.argv):
         worker.wait()
     elif parsed_args.queue.startswith('gcloud_'):
 
-        auth_cookie = None if config['database']['guest'] \
+        auth_cookie = None if config['database'].get('guest') \
                       else os.path.join(
                 auth.token_dir,
                 config['database']['apiKey']
