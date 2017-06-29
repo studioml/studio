@@ -103,8 +103,6 @@ class FirebaseArtifactStore(object):
 
         key = artifact['key']
 
-        timestamp_tolerance = 3
-
         if local_path is None:
             if 'local' in artifact.keys() and \
                     os.path.exists(artifact['local']):
@@ -132,7 +130,7 @@ class FirebaseArtifactStore(object):
                     "corrupted and has not finished uploading")
                 return local_path
 
-            if local_time > (storage_time - timestamp_tolerance):
+            if local_time > storage_time:
                 self.logger.info(
                     "Local path is younger than stored, skipping the download")
                 return local_path

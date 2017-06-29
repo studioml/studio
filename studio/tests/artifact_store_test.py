@@ -70,9 +70,8 @@ class ArtifactStoreTest(object):
             {'key': 'tests/test_upload_download_dir.tgz'},
             tmp_dir
         )
+        os.utime(tmp_dir, None)
         tic2 = time.clock()
-        # import pdb
-        # pdb.set_trace()
         fb.get_artifact(
             {'key': 'tests/test_upload_download_dir.tgz'},
             tmp_dir
