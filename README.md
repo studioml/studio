@@ -27,6 +27,14 @@ Once open, we'll publish package to PyPI. For now, pip install it from the git p
 
     git clone https://github.com/ilblackdragon/studio && cd studio && pip install -e . 
 
+## Running tests
+To run the unit and regression tests (for now, we have little difference - some tests take longer than others, but that's about it), run 
+
+    python $(which nosetests)
+
+Note that simply `nosetests` tends not to use virtualenv correctly (hence a more extended version of the call). If you have application credentials configured 
+to work with distributed queues and cloud workers, those will be tested as well, otherwise, respective tests will be skipped. Total test runtime should be no more 
+than 10 min.
 
 ## Example usage
 

@@ -176,12 +176,15 @@ class FirebaseProvider(object):
         else:
             dbobj.remove()
 
+    def _get_userid(self):
+        if not self.auth:
+            userid = 'guest'
+        else:
+            userid = self.auth.get_user_id()
+
     def _get_user_keybase(self, userid=None):
-        if not userid:
-            if not self.auth:
-                userid = 'guest'
-            else:
-                userid = self.auth.get_user_id()
+        if userid is None:
+            userid = self._get_userid()
 
         return "users/" + userid + "/"
 
@@ -210,6 +213,8 @@ class FirebaseProvider(object):
 
         self.__setitem__(self._get_experiments_keybase() + experiment.key,
                          experiment.__dict__)
+        self.__setitm__(self._get_experiments_keybase() + experiment.key + 
+                        '/userId', self._get_userid())
 
         self.__setitem__(self._get_user_keybase() + "experiments/" +
                          experiment.key,
@@ -390,7 +395,13 @@ class FirebaseProvider(object):
                                            + project)
         if not experiment_keys:
             experiment_keys = {}
-        return self._get_valid_experiments(experiment_keys.keys())
+        valid_experiments = self._get_valid_experiments(experiment_keys.keys())
+        
+        # remove invalid experiment from project (or try to do so)
+        for e in experiment_keys.keys().difference(valid_experiments):
+            self._delete(self._get_projects_keybase() + project + "/" + e)
+
+
 
     def get_artifacts(self, key):
         experiment = self.get_experiment(key, getinfo=False)
