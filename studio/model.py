@@ -181,6 +181,8 @@ class FirebaseProvider(object):
             userid = 'guest'
         else:
             userid = self.auth.get_user_id()
+        return userid
+
 
     def _get_user_keybase(self, userid=None):
         if userid is None:
@@ -211,10 +213,11 @@ class FirebaseProvider(object):
                     # upload immutable artifacts
                     art['key'] = self.store.put_artifact(art)
 
+        self.__setitem__(self._get_experiments_keybase() + experiment.key + 
+                        '/userId', self._get_userid())
+
         self.__setitem__(self._get_experiments_keybase() + experiment.key,
                          experiment.__dict__)
-        self.__setitm__(self._get_experiments_keybase() + experiment.key + 
-                        '/userId', self._get_userid())
 
         self.__setitem__(self._get_user_keybase() + "experiments/" +
                          experiment.key,
