@@ -310,12 +310,14 @@ class FirebaseArtifactStore(object):
             else:
                 headers = {}
 
+            headers['Host'] = 'studio-ed756.appspot.com.storage.googleapis.com'
+
             escaped_key = key.replace('/', '%2f')
-            url = "{}/o/{}".format(
+            url = "{}/o/{}?alt=media".format(
                 self.app.storage().storage_bucket,
                 escaped_key)
 
-            response = requests.get(url, headers=headers)
+            response = requests.head(url, headers=headers)
             if response.status_code != 200:
                 raise ValueError("Response error with code {}"
                                  .format(response.status_code))
