@@ -183,7 +183,6 @@ class FirebaseProvider(object):
             userid = self.auth.get_user_id()
         return userid
 
-
     def _get_user_keybase(self, userid=None):
         if userid is None:
             userid = self._get_userid()
@@ -264,7 +263,7 @@ class FirebaseProvider(object):
         for tag, art in experiment.artifacts.iteritems():
             if art.get('key') is not None:
                 self.logger.debug(('Deleting artifact {} from the store, ' +
-                                  'artifact key {}').format(tag, art['key']))
+                                   'artifact key {}').format(tag, art['key']))
                 self.store.delete_artifact(art)
 
         self._delete(self._get_experiments_keybase() + experiment_key)
@@ -399,12 +398,10 @@ class FirebaseProvider(object):
         if not experiment_keys:
             experiment_keys = {}
         valid_experiments = self._get_valid_experiments(experiment_keys.keys())
-        
+
         # remove invalid experiment from project (or try to do so)
         for e in experiment_keys.keys().difference(valid_experiments):
             self._delete(self._get_projects_keybase() + project + "/" + e)
-
-
 
     def get_artifacts(self, key):
         experiment = self.get_experiment(key, getinfo=False)

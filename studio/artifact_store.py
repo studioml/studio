@@ -196,8 +196,8 @@ class FirebaseArtifactStore(object):
         try:
             storageobj = self.app.storage().child(key)
             if self.auth:
-                storageobj.put(local_file_path, 
-                               self.auth.get_token(), 
+                storageobj.put(local_file_path,
+                               self.auth.get_token(),
                                self.auth.get_user_id())
             else:
                 storageobj.put(local_file_path)

@@ -45,7 +45,6 @@ def authenticated(redirect_after):
     return auth_decorator
 
 
-
 @app.template_filter('format_time')
 def format_time(timestamp):
     return time.strftime(

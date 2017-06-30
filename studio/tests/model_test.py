@@ -101,7 +101,7 @@ class FirebaseProviderTest(unittest.TestCase):
     def test_add_experiment(self):
         fb = self.get_firebase_provider()
         experiment, experiment_name, _, _ = get_test_experiment()
-    
+
         fb._delete(fb._get_experiments_keybase() + '/' + experiment_name)
         fb.add_experiment(experiment)
 
