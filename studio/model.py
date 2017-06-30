@@ -214,7 +214,7 @@ class FirebaseProvider(object):
                     art['key'] = self.store.put_artifact(art)
 
         experiment_dict = experiment.__dict__.copy()
-        experiment_dict['userId'] = self._get_userid()
+        experiment_dict['owner'] = self._get_userid()
 
         self.__setitem__(self._get_experiments_keybase() + experiment.key,
                          experiment_dict)

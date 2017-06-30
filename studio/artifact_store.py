@@ -80,6 +80,7 @@ class FirebaseArtifactStore(object):
 
             def finish_upload():
                 self._upload_file(key, tar_filename)
+
                 os.remove(tar_filename)
 
             t = Thread(target=finish_upload)
@@ -195,7 +196,9 @@ class FirebaseArtifactStore(object):
         try:
             storageobj = self.app.storage().child(key)
             if self.auth:
-                storageobj.put(local_file_path, self.auth.get_token())
+                storageobj.put(local_file_path, 
+                               self.auth.get_token(), 
+                               self.auth.get_user_id())
             else:
                 storageobj.put(local_file_path)
         except Exception as err:
@@ -242,13 +245,9 @@ class FirebaseArtifactStore(object):
                     err))
 
     def _delete_file(self, key):
-        self.logger.debug("Downloading file at key {}".format(key))
+        self.logger.debug("Deleting file at key {}".format(key))
         try:
             if self.auth:
-                # pyrebase download does not work with files that require
-                # authentication...
-                # Need to rewrite
-                # storageobj.download(local_file_path, self.auth.get_token())
 
                 headers = {"Authorization": "Firebase " +
                            self.auth.get_token()}
@@ -262,8 +261,8 @@ class FirebaseArtifactStore(object):
 
             response = requests.delete(url, headers=headers)
             if response.status_code != 204:
-                raise ValueError("Response error with code {}"
-                                 .format(response.status_code))
+                raise ValueError("Response error with code {}, text {}"
+                                 .format(response.status_code, response.text))
 
             self.logger.debug("Done")
         except Exception as err:

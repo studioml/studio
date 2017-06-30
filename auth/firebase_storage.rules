@@ -1,0 +1,22 @@
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /experiments/{allPaths=**} {
+      allow read
+      // allow to write in the experiments if either the resource does not exist, 
+      // or it's owner is not defined, or it's owner is user who accesses it
+      allow write: if resource == null || resource.metadata == null || resource.metadata.owner == null || resource.metadata.owner == 'guest' || request.auth.uid == resource.metadata.owner
+    }
+    match /blobstore/{allPaths=**} {
+      
+      allow read
+      // only allow to write in the blobstore if resource with such hash does not exist
+      allow write: if resource == null
+    }
+    match /tests/{allPaths=**} {
+      allow read, write
+    }
+    match /authtest/{allPaths=**} {
+      allow read, write: if request.auth != null && request.auth.token.email == 'authtest@sentient.ai'
+    }
+  }
+}

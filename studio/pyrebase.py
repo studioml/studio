@@ -442,7 +442,7 @@ class Storage:
                 patch_request = self.requests.patch(
                     request_ref,
                     headers=headers,
-                    data=json.dumps({'metadata':{'userId':userid}})
+                    data=json.dumps({'metadata':{'owner':userid}})
                 )
                 raise_detailed_error(patch_request)
 

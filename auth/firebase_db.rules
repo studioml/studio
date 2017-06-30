@@ -2,8 +2,8 @@
     "experiments": {
       "$eid":{
         ".read":"true",
-        ".write":"!data.hasChildren(['userId']) || data.child('userId').val() == 'guest' || data.child('userId').val() == auth.uid",
-        // ".validate":"newData.hasChildren(['userId']) && (newData.child('userId').val() == 'guest' || newData.child('userId').val() == auth.uid)"
+        ".write":"!data.hasChildren(['owner']) || data.child('owner').val() == 'guest' || data.child('owner').val() == auth.uid",
+        // ".validate":"newData.hasChildren(['owner']) && (newData.child('owner').val() == 'guest' || newData.child('owner').val() == auth.uid)"
       }
     },
       
