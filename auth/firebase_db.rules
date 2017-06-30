@@ -1,0 +1,41 @@
+{ "rules": {
+    "experiments": {
+      "$eid":{
+        ".read":"true",
+        ".write":"!data.hasChildren(['userId']) || data.child('userId').val() == 'guest' || data.child('userId').val() == auth.uid",
+        // ".validate":"newData.hasChildren(['userId']) && (newData.child('userId').val() == 'guest' || newData.child('userId').val() == auth.uid)"
+      }
+    },
+      
+    "users": {
+      ".read": "true", 
+      "$uid": { 
+    		".write":"$uid == 'guest' || $uid == auth.uid"  
+      }  
+    },
+      
+    "projects": {
+      "$pid": {
+        "$eid": {
+        	".read":"true",
+          ".validate":"newData.child('userId').val() == auth.uid",
+          // not secure! User can add an experiment with his own uid
+          ".write":"data.child('userId').val() == auth.uid"  
+          // ideally, should also check whether uid saved in the experiment is the same, like below 
+          // but this will hinder ability to add projects if software does not add userId in the experiment
+
+      		// ".write":"root.child('experiments').child($eid).child('userId').val() == auth.uid"  
+        }
+      }
+    }, 
+        
+    "test": {
+     ".read":"true", ".write":"true"  
+    },
+  	
+  	"authtest" : {
+    	".read" : "auth.token.email == 'authtest@sentient.ai'",
+      ".write" : "auth.token.email == 'authtest@sentient.ai'"
+    }
+  }
+}
