@@ -37,7 +37,7 @@ gac_name=${GOOGLE_APPLICATION_CREDENTIALS##*/}
 #            mkdir /workspace && cd /workspace && \
 #            studio-rworker --queue=$queue_name"
 
-bash_cmd="studio-remote-worker --queue=$queue_name"
+bash_cmd="mkdir /workspace && cd workspace && studio-remote-worker --queue=$queue_name"
 
 # loop until killed
 while true
@@ -49,7 +49,7 @@ do
             --pid=host \
             -e GOOGLE_APPLICATION_CREDENTIALS="/creds/$gac_name" \
             $docker_img \
-        /bin/bash #-c "$bash_cmd"
+        /bin/bash -c "$bash_cmd"
    if [ $single_run ];
    then
            exit 0
