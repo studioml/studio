@@ -48,7 +48,7 @@ class FirebaseArtifactStore(object):
                     "Timestamp difference is more than 60 seconds. You'll need to " + \
                     "adjust local clock for caching to work correctly"
     
-                if now_remote_diff < 0
+                if now_remote_diff < 0:
                     self.timestamp_shift = -now_remote_diff
 
     def put_artifact(
