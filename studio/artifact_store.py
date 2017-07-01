@@ -26,6 +26,8 @@ class FirebaseArtifactStore(object):
         self.logger = logging.getLogger('FirebaseArtifactStore')
         self.logger.setLevel(10)
        
+        self.timestamp_shift = 0
+
         if measure_timestamp_diff:
             max_diff = 60
             tmpfile = os.path.join(tempfile.gettempdir(), 'time_test.txt')
@@ -36,20 +38,18 @@ class FirebaseArtifactStore(object):
             self._upload_file(key, tmpfile)
             remote_timestamp = self._get_file_timestamp(key)
 
-            now_remote_diff = time.time() - remote_timestamp
-            self._delete_file(key)
-            os.remove(tmpfile)
+            if remote_timestamp is not None:
+
+                now_remote_diff = time.time() - remote_timestamp
+                self._delete_file(key)
+                os.remove(tmpfile)
  
-            assert -max_diff < now_remote_diff and now_remote_diff < max_diff, \
-                "Timestamp difference is more than 60 seconds. You'll need to " + \
-                "adjust local clock for caching to work correctly"
+                assert -max_diff < now_remote_diff and now_remote_diff < max_diff, \
+                    "Timestamp difference is more than 60 seconds. You'll need to " + \
+                    "adjust local clock for caching to work correctly"
     
-            if now_remote_diff > 0:
-                self.timestamp_shift = 0
-            else:
-                self.timestamp_shift = -now_remote_diff
-        else:
-            self.timestamp_shift = 0
+                if now_remote_diff < 0
+                    self.timestamp_shift = -now_remote_diff
 
     def put_artifact(
             self,
