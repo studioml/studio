@@ -9,7 +9,7 @@ RUN apt-get update && \
 
 COPY . /studio
 RUN cd studio && \
-    pip install -e . 
+    pip install -e . --upgrade
 
     
 
