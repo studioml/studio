@@ -17,11 +17,18 @@ if [ $? == 0 ]; then
     eval nvidia-docker
     if [ $? == 0 ]; then
         docker_cmd=nvidia-docker
+        bash_cmd=""
     else
         echo "Warning! nvidia-docker is not installed correctly, won't be able to use gpus"
     fi
 fi
 
+echo "docker_cmd = $docker_cmd"
+if [ $docker_cmd == 'docker' ]; then
+    bash_cmd="pip uninstall -y tensorflow-gpu tensorflow && pip install tensorflow &&"
+fi
+
+bash_cmd="$bash_cmd mkdir /workspace && cd workspace && studio-remote-worker --queue=$queue_name"
 
 : "${GOOGLE_APPLICATION_CREDENTIALS?Need to point GOOGLE_APPLICATION_CREDENTIALS to the google credentials file}"
 : "${queue_name?Queue name is not specified (pass as a script argument}"
@@ -37,12 +44,12 @@ gac_name=${GOOGLE_APPLICATION_CREDENTIALS##*/}
 #            mkdir /workspace && cd /workspace && \
 #            studio-rworker --queue=$queue_name"
 
-bash_cmd="mkdir /workspace && cd workspace && studio-remote-worker --queue=$queue_name"
 
 # loop until killed
 while true
 do
     echo $bash_cmd
+    $docker_cmd pull $docker_img
     $docker_cmd run --rm -it \
             -v $HOME/.tfstudio/keys:/root/.tfstudio/keys \
             -v $gac_path:/creds \
