@@ -46,6 +46,10 @@
                 <a href={{ experiment.git['url']+'/commit/'+ experiment.git['commit'] }}>
                     commit {{ experiment.git['commit'] }}
                 </a>
+            {% elif experiment.git['url'].startswith('http://github.com') %}
+                <a href={{ experiment.git['url']+'/commit/'+ experiment.git['commit'] }}>
+                    commit {{ experiment.git['commit'] }}
+                </a>
             {% elif experiment.git['url'].startswith('http://stash.') %}
                 <a href={{ experiment.git['url']+'/commits/'+ experiment.git['commit'] }}>
                     commit {{ experiment.git['commit'] }}

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 docker_cmd=docker
-docker_img=tfstudio/base:0.0
+docker_img=peterzhokhoff/tfstudio
 
 queue_name=$1
 single_run=$2
@@ -28,8 +28,6 @@ fi
 
 gac_path=${GOOGLE_APPLICATION_CREDENTIALS%/*}
 gac_name=${GOOGLE_APPLICATION_CREDENTIALS##*/}
-repo="https://github.com/ilblackdragon/studio"
-branch="queueing2"
 
 #bash_cmd="git clone $repo && \
 #            cd studio && \
@@ -39,16 +37,7 @@ branch="queueing2"
 #            mkdir /workspace && cd /workspace && \
 #            studio-rworker --queue=$queue_name"
 
-code_url_base="https://storage.googleapis.com/studio-ed756.appspot.com/src"
-code_ver="tfstudio-artifacts-2017-06-23_4.tgz"
-
-bash_cmd="wget $code_url_base/$code_ver && \
-            tar -xzf $code_ver && \
-            cd studio && \
-            sudo pip install --upgrade pip && \
-            sudo pip install -e . --upgrade && \
-            mkdir /workspace && cd /workspace && 
-            studio-remote-worker --queue=$queue_name"
+bash_cmd="mkdir /workspace && cd workspace && studio-remote-worker --queue=$queue_name"
 
 # loop until killed
 while true
