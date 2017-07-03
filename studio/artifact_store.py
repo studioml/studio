@@ -20,12 +20,12 @@ logging.basicConfig()
 
 class FirebaseArtifactStore(object):
 
-    def __init__(self, pyrebase_app, auth, measure_timestamp_diff = True):
+    def __init__(self, pyrebase_app, auth, measure_timestamp_diff=True):
         self.app = pyrebase_app
         self.auth = auth
         self.logger = logging.getLogger('FirebaseArtifactStore')
         self.logger.setLevel(10)
-       
+
         self.timestamp_shift = 0
 
         if measure_timestamp_diff:
@@ -33,8 +33,7 @@ class FirebaseArtifactStore(object):
             tmpfile = os.path.join(tempfile.gettempdir(), 'time_test.txt')
             with open(tmpfile, 'w') as f:
                 f.write('timestamp_diff_test')
-            key = 'tests/'+str(uuid.uuid4())
-            local_timestamp = os.path.getmtime(tmpfile)
+            key = 'tests/' + str(uuid.uuid4())
             self._upload_file(key, tmpfile)
             remote_timestamp = self._get_file_timestamp(key)
 
@@ -43,11 +42,13 @@ class FirebaseArtifactStore(object):
                 now_remote_diff = time.time() - remote_timestamp
                 self._delete_file(key)
                 os.remove(tmpfile)
- 
-                assert -max_diff < now_remote_diff and now_remote_diff < max_diff, \
-                    "Timestamp difference is more than 60 seconds. You'll need to " + \
-                    "adjust local clock for caching to work correctly"
-    
+
+                assert -max_diff < now_remote_diff and \
+                    now_remote_diff < max_diff, \
+                    "Timestamp difference is more than 60 seconds. " + \
+                    "You'll need to adjust local clock for caching " + \
+                    "to work correctly"
+
                 if now_remote_diff < 0:
                     self.timestamp_shift = -now_remote_diff
 
