@@ -243,6 +243,17 @@ class FirebaseProvider(object):
 
         self.checkpoint_experiment(experiment)
 
+    def stop_experiment(self, key):
+        # can be called remotely (the assumption is
+        # that remote worker checks experiments status periodically,
+        # and if it is 'stopped', kills the experiment.
+        if isinstance(key, Experiment):
+            key = key.key
+
+        self.__setitem__(self._get_experiments_keybase() +
+                         key + "/status",
+                         "stopped")
+
     def finish_experiment(self, experiment):
         self.checkpoint_experiment(experiment, blocking=True)
         experiment.status = 'finished'
@@ -464,6 +475,9 @@ class PostgresProvider(object):
         raise NotImplementedError()
 
     def start_experiment(self, experiment):
+        raise NotImplementedError()
+
+    def stop_experiment(self, experiment):
         raise NotImplementedError()
 
     def finish_experiment(self, experiment):

@@ -78,6 +78,14 @@ class LocalExecutor(object):
                 'interval',
                 minutes=self.config['saveWorkspaceFrequency'])
 
+            def kill_if_stopped():
+                if self.db.get_experiment(
+                        experiment.key,
+                        getinfo=False).status == 'stopped':
+                    p.kill()
+
+            sched.add_job(kill_if_stopped, 'interval', seconds=10)
+
             try:
                 p.wait()
             finally:

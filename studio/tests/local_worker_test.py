@@ -9,8 +9,14 @@ import time
 from studio import model
 from studio.local_queue import LocalQueue
 
+from timeout_decorator import timeout
+import logging
+
+logging.basicConfig()
+
 
 class LocalWorkerTest(unittest.TestCase):
+
     def test_runner_local(self):
         stubtest_worker(
             self,
@@ -85,6 +91,34 @@ class LocalWorkerTest(unittest.TestCase):
             script_args=[],
             expected_output=random_str
         )
+
+    @timeout(60)
+    def test_stop_experiment(self):
+        my_path = os.path.dirname(os.path.realpath(__file__))
+        os.chdir(my_path)
+
+        logger = logging.getLogger('test_stop_experiment')
+        logger.setLevel(10)
+
+        config_name = 'test_config.yaml'
+        key = 'test_stop_experiment'
+
+        db = model.get_db_provider(model.get_config(config_name))
+        try:
+            db.delete_experiment(key)
+        except Exception:
+            pass
+
+        p = subprocess.Popen(['studio-runner',
+                              '--config=' + config_name,
+                              '--experiment=' + key,
+                              'stop_experiment.py'])
+
+        # give experiment time to spin up
+        time.sleep(20)
+        logger.info('Stopping experiment')
+        db.stop_experiment(key)
+        p.wait()
 
 
 def stubtest_worker(
