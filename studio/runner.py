@@ -11,7 +11,8 @@ import auth
 import uuid
 from local_queue import LocalQueue
 from pubsub_queue import PubsubQueue
-from cloud_worker import GCloudWorkerManager
+from gcloud_worker import GCloudWorkerManager
+from ec2cloud_worker import EC2WorkerManager
 import git_util
 
 
@@ -128,13 +129,22 @@ def main(args=sys.argv):
     db.add_experiment(experiment)
 
     if parsed_args.cloud is not None:
-        assert parsed_args.cloud == 'gcloud', \
-            'Only gcloud is supported for now'
-        if parsed_args.queue is None:
-            parsed_args.queue = 'gcloud_' + str(uuid.uuid4())
+        assert parsed_args.cloud == 'gcloud' or 'ec2', \
+            'Only gcloud or ec2 are supported for now'
+        if parsed_args.cloud == 'gcloud':
+            if parsed_args.queue is None:
+                parsed_args.queue = 'gcloud_' + str(uuid.uuid4())
 
-        if not parsed_args.queue.startswith('gcloud_'):
-            parsed_args.queue = 'gcloud_' + parsed_args.queue
+            if not parsed_args.queue.startswith('gcloud_'):
+                parsed_args.queue = 'gcloud_' + parsed_args.queue
+
+        if parsed_args.cloud == 'ec2':
+            if parsed_args.queue is None:
+                parsed_args.queue = 'ec2_' + str(uuid.uuid4())
+
+            if not parsed_args.queue.startswith('ec2_'):
+                parsed_args.queue = 'ec2_' + parsed_args.queue
+
 
     queue = LocalQueue() if not parsed_args.queue else \
         PubsubQueue(parsed_args.queue)
@@ -154,7 +164,7 @@ def main(args=sys.argv):
         logger.info('worker args: {}'.format(worker_args))
         worker = subprocess.Popen(worker_args)
         worker.wait()
-    elif parsed_args.queue.startswith('gcloud_'):
+    elif parsed_args.queue.startswith('gcloud_') or parsed_args.queue.startswith('ec2_'):
 
         auth_cookie = None if config['database'].get('guest') \
             else os.path.join(
@@ -162,10 +172,15 @@ def main(args=sys.argv):
             config['database']['apiKey']
         )
 
-        worker_manager = GCloudWorkerManager(
-            auth_cookie=auth_cookie,
-            zone=config['cloud']['zone']
-        )
+        if parsed_args.queue.startswith('gcloud_'):
+            worker_manager = GCloudWorkerManager(
+                auth_cookie=auth_cookie,
+                zone=config['cloud']['zone']
+            )
+        else:
+            worker_manager = EC2WorkerManager(
+                auth_cookie=auth_cookie
+            )
         worker_manager.start_worker(parsed_args.queue, resources_needed)
 
     db = None
