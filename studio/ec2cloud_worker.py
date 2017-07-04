@@ -9,15 +9,11 @@ logging.basicConfig()
 
 class EC2WorkerManager(object):
 
-    def __init__(self, zone='us-east-1a', auth_cookie=None):
+    def __init__(self, auth_cookie=None):
         self.client = boto3.client('ec2')
         self.logger = logging.getLogger('EC2WorkerManager')
         self.logger.setLevel(10)
         self.auth_cookie = auth_cookie
-        self.startup_script_file = os.path.join(
-            os.path.dirname(__file__),
-            'scripts/ec2_worker_startup.sh')
-        self.zone = zone #check if manual specification if necessary
 
     def start_worker(self, queue_name, resources_needed={}, blocking=True, ssh_keypair=None):
         imageid = 'ami-d15a75c7'
@@ -30,13 +26,12 @@ class EC2WorkerManager(object):
             auth_key = None
             auth_data = None
 
-        with open(self.startup_script_file, 'r') as f:
-            startup_script = f.read()
-
         with open(os.environ['GOOGLE_APPLICATION_CREDENTIALS'], 'r') as f:
             credentials = f.read()
 
         name = self._generate_instance_name()
+
+        instance_type,startup_script = self._select_instance_type(resources_needed)
 
         startup_script = startup_script.format(
                 auth_key if auth_key else "", 
@@ -71,7 +66,6 @@ class EC2WorkerManager(object):
             )
 
 
-        instance_type = 'g2.2xlarge'
 
         self.logger.info('Starting EC2 instance of type {}'.format(instance_type))
         kwargs = {
@@ -90,10 +84,6 @@ class EC2WorkerManager(object):
                 'InstanceType':instance_type,
                 'MaxCount':1,
                 'MinCount':1,
-#                'Placement':{
-#                    'AvailabilityZone': self.zone,
-#                    'Tenancy': 'default',
-#                },
                 'UserData':startup_script,
                 'InstanceInitiatedShutdownBehavior':'terminate',
                 'TagSpecifications':[{
@@ -116,6 +106,19 @@ class EC2WorkerManager(object):
         response = self.client.run_instances(**kwargs)
         self.logger.info('Staring instance {}'.format(response['Instances'][0]['InstanceId']))
  
+
+    def _select_instance_type(self, resources_needed):
+        startup_script_filename = 'scripts/ec2_worker_startup.sh' \
+                if resources_needed.get('gpu') > 0 else \
+                                  'scripts/ec2_gpuworker_startup.sh'
+                                  
+        with open(os.path.join(
+                    os.path.dirname(__file__), 
+                    startup_script_filename), 
+                  'r') as f:
+            startup_scipt = f.read()
+
+        return 'g2.2xlarge', startup_script
 
 
     def _generate_instance_name(self):
