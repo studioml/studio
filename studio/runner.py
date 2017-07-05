@@ -14,6 +14,7 @@ from pubsub_queue import PubsubQueue
 from gcloud_worker import GCloudWorkerManager
 from ec2cloud_worker import EC2WorkerManager
 import git_util
+import local_worker
 
 
 logging.basicConfig()
@@ -161,7 +162,7 @@ def main(args=sys.argv):
             worker_args += '--guest'
 
         logger.info('worker args: {}'.format(worker_args))
-        worker = subprocess.Popen(worker_args)
+        worker = local_worker.main(worker_args)
         worker.wait()
     elif parsed_args.queue.startswith('gcloud_') or \
             parsed_args.queue.startswith('ec2_'):
