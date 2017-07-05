@@ -7,6 +7,7 @@ h5py
 
 flask
 jinja2
+nose
 
 pyyaml
 
@@ -17,8 +18,11 @@ requests_toolbelt
 python_jwt
 sseclient
 
-google-cloud-pubsub
+google-api-python-client
 google-cloud-storage
+google-cloud-pubsub
+
+oauth2client==3.0.0
 
 
 

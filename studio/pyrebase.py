@@ -421,7 +421,7 @@ class Storage:
             self.path = new_path
         return self
 
-    def put(self, file, token=None):
+    def put(self, file, token=None, userid='guest'):
         # reset path
         path = self.path
         self.path = None
@@ -432,9 +432,20 @@ class Storage:
         request_ref = self.storage_bucket + "/o?name={0}".format(path)
         if token:
             headers = {"Authorization": "Firebase " + token}
+
             request_object = self.requests.post(
                 request_ref, headers=headers, data=file_object)
             raise_detailed_error(request_object)
+
+            if userid:
+                headers['Content-Type'] = 'application/json'
+                patch_request = self.requests.patch(
+                    request_ref,
+                    headers=headers,
+                    data=json.dumps({'metadata': {'owner': userid}})
+                )
+                raise_detailed_error(patch_request)
+
             return request_object.json()
         elif self.credentials:
             blob = self.bucket.blob(path)

@@ -1,6 +1,4 @@
 import sys
-import os
-
 from keras.layers import Input, Dense
 from keras.models import Model
 from keras.datasets import mnist
@@ -44,12 +42,9 @@ tbcallback = TensorBoard(log_dir=fs_tracker.get_tensorboard_dir(),
                          write_graph=True,
                          write_images=False)
 
-# save the model arch to json
-with open(os.path.join(fs_tracker.get_model_directory(),
-                       'model.json'), 'w') as f:
-    f.write(model.to_json())
-
 model.fit(
     x_train, y_train, validation_data=(
-        x_test, y_test), epochs=int(
-            sys.argv[1]), callbacks=[checkpointer, tbcallback])
+        x_test,
+        y_test),
+    epochs=int(sys.argv[1]),
+    callbacks=[checkpointer, tbcallback])

@@ -80,6 +80,7 @@ class FirebaseArtifactStore(object):
 
             def finish_upload():
                 self._upload_file(key, tar_filename)
+
                 os.remove(tar_filename)
 
             t = Thread(target=finish_upload)
@@ -103,8 +104,6 @@ class FirebaseArtifactStore(object):
 
         key = artifact['key']
 
-        timestamp_tolerance = 3
-
         if local_path is None:
             if 'local' in artifact.keys() and \
                     os.path.exists(artifact['local']):
@@ -127,15 +126,15 @@ class FirebaseArtifactStore(object):
             storage_time = self._get_file_timestamp(key)
             local_time = os.path.getmtime(local_path)
             if storage_time is None:
-                self.logger.info("Unable to get storage timestamp, storage is either " + 
-                        "corrupted and has not finished uploading")
+                self.logger.info(
+                    "Unable to get storage timestamp, storage is either " +
+                    "corrupted and has not finished uploading")
                 return local_path
 
-            if local_time > (storage_time - timestamp_tolerance):
+            if local_time > storage_time:
                 self.logger.info(
                     "Local path is younger than stored, skipping the download")
                 return local_path
-
 
         tar_filename = os.path.join(tempfile.gettempdir(), str(uuid.uuid4()))
         self.logger.debug("tar_filename = {} ".format(tar_filename))
@@ -197,7 +196,9 @@ class FirebaseArtifactStore(object):
         try:
             storageobj = self.app.storage().child(key)
             if self.auth:
-                storageobj.put(local_file_path, self.auth.get_token())
+                storageobj.put(local_file_path,
+                               self.auth.get_token(),
+                               self.auth.get_user_id())
             else:
                 storageobj.put(local_file_path)
         except Exception as err:
@@ -244,13 +245,9 @@ class FirebaseArtifactStore(object):
                     err))
 
     def _delete_file(self, key):
-        self.logger.debug("Downloading file at key {}".format(key))
+        self.logger.debug("Deleting file at key {}".format(key))
         try:
             if self.auth:
-                # pyrebase download does not work with files that require
-                # authentication...
-                # Need to rewrite
-                # storageobj.download(local_file_path, self.auth.get_token())
 
                 headers = {"Authorization": "Firebase " +
                            self.auth.get_token()}
@@ -264,8 +261,8 @@ class FirebaseArtifactStore(object):
 
             response = requests.delete(url, headers=headers)
             if response.status_code != 204:
-                raise ValueError("Response error with code {}"
-                                 .format(response.status_code))
+                raise ValueError("Response error with code {}, text {}"
+                                 .format(response.status_code, response.text))
 
             self.logger.debug("Done")
         except Exception as err:

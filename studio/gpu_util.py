@@ -68,9 +68,9 @@ def _load_gpu():
 
 
 def memstr2int(string):
-    conversion_factors = [('Mb', 2**20), ('MiB', 2**20),
-                          ('Gb', 2**30), ('GiB', 2**30),
-                          ('kb', 2**10)]
+    conversion_factors = [('Mb', 2**20), ('MiB', 2**20), ('m', 2**20),
+                          ('Gb', 2**30), ('GiB', 2**30), ('g', 2**30),
+                          ('kb', 2**10), ('k', 2**10)]
 
     for k, f in conversion_factors:
         if string.endswith(k):

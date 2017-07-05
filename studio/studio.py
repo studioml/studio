@@ -9,6 +9,7 @@ from functools import wraps
 import socket
 import subprocess
 from urlparse import urlparse
+from requests.exceptions import HTTPError
 
 import fs_tracker
 
@@ -35,7 +36,10 @@ def authenticated(redirect_after):
                 logger.debug(get_auth_url() + formatted_redirect)
                 return redirect(get_auth_url() + formatted_redirect)
 
-            return func(**kwargs)
+            try:
+                return func(**kwargs)
+            except HTTPError as e:
+                return render_template('error.html', errormsg=str(e))
 
         return auth_wrapper
     return auth_decorator

@@ -1,6 +1,4 @@
 import sys
-import os
-
 from keras.layers import Input, Dense
 from keras.models import Model
 from keras.datasets import mnist
@@ -17,6 +15,8 @@ x = Dense(128, activation='relu')(img)
 x = Dense(128, activation='relu')(x)
 # output layer with 10 units and a softmax activation
 preds = Dense(10, activation='softmax')(x)
+
+
 no_gpus = 2
 batch_size = 128
 
@@ -47,12 +47,6 @@ tbcallback = TensorBoard(log_dir=fs_tracker.get_tensorboard_dir(),
                          histogram_freq=0,
                          write_graph=True,
                          write_images=False)
-
-
-# save the model arch to json
-with open(os.path.join(fs_tracker.get_model_directory(),
-                       'model.json'), 'w') as f:
-    f.write(model.to_json())
 
 
 model.fit(

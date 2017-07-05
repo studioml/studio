@@ -11,10 +11,12 @@ To configure tfstudio to work with firebase, do the following:
 5. Copy project ID and paste it in projectId of database section of new_config.yaml 
 6. Go to "Cloud messaging tab", copy Sender ID and paste it in messagingSenderId of database sectio of new_config.yaml 
 
-## Configuring users for email / password authentication
-Add users. By default, firebase (both database and storage) give read and write access to all authenticated users. 
-Go to Authentication in Firebase console (on left-hand pane), tab sign-in methods, and enable email/password method. Then go to users tab, and add users. 
+## Configuring users 
+Add users. By default, firebase (both database and storage) give read and write access to all authenticated us
+Go to Authentication in Firebase console (on left-hand pane), tab sign-in methods, and enable methods that you would like to use. For now, studio supports google account authentication, and email/password authentication. 
 Further, you can customize the database / storage access rules (good read for that is https://firebase.google.com/docs/database/security/ and https://firebase.google.com/docs/storage/security/start)
+The default rules allow read and write access to all authenticated users, to both storage and database. This might not be quite the behaviour that you would want, because then users can freely delete / modify experiments of each other. 
+To make experiments readable by everyone, but writeable only by creator, a bit more involved rules are needed. The examples of such rules (that are used at the default studio firebase app) are given in `auth/firebase_db.rules` and `auth/firebase_storage.rules` for database and storage. 
 
 ## Setting up an authentication app for google account authentication
 1. Install Firebase CLI (https://firebase.google.com/docs/cli/)

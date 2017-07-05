@@ -6,7 +6,7 @@ import shutil
 import atexit
 from apscheduler.schedulers.background import BackgroundScheduler
 
-token_dir = os.path.join(os.path.expanduser('~'), '.tfstudio/keys')
+token_dir = os.path.expanduser('~/.tfstudio/keys')
 hour = 3600
 
 
@@ -70,8 +70,6 @@ class FirebaseAuth(object):
             with open(api_key, 'r') as f:
                 user = json.load(f)
 
-            print(api_key)
-            print(user)
             self.refresh_token(user['email'], user['refreshToken'])
 
     def sign_in_with_email(self):
