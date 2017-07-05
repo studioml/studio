@@ -162,8 +162,7 @@ def main(args=sys.argv):
             worker_args += '--guest'
 
         logger.info('worker args: {}'.format(worker_args))
-        worker = local_worker.main(worker_args)
-        worker.wait()
+        local_worker.main(worker_args)
     elif parsed_args.queue.startswith('gcloud_') or \
             parsed_args.queue.startswith('ec2_'):
 
