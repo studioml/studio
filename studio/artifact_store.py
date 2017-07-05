@@ -31,7 +31,9 @@ class FirebaseArtifactStore(object):
         if measure_timestamp_diff:
             max_diff = 60
 
-            tmpfile = os.path.join(tempfile.gettempdir(), str(uuid.uuid4()) + '.txt')
+            tmpfile = os.path.join(
+                tempfile.gettempdir(), str(
+                    uuid.uuid4()) + '.txt')
             with open(tmpfile, 'w') as f:
                 f.write('timestamp_diff_test')
             key = 'tests/' + str(uuid.uuid4())
@@ -52,7 +54,6 @@ class FirebaseArtifactStore(object):
 
                 if now_remote_diff < 0:
                     self.timestamp_shift = -now_remote_diff
-
 
     def put_artifact(
             self,
@@ -83,12 +84,13 @@ class FirebaseArtifactStore(object):
                         shutil.rmtree(cache_dir)
 
                     pcp = subprocess.Popen(
-                            ['cp', '-pR', local_path, cache_dir],
-                            stdout=subprocess.PIPE,
-                            stderr=subprocess.STDOUT)
+                        ['cp', '-pR', local_path, cache_dir],
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.STDOUT)
                     cpout, _ = pcp.communicate()
                     if pcp.returncode != 0:
-                        self.logger.info('cp returned non-zero exit code. Output:')
+                        self.logger.info(
+                            'cp returned non-zero exit code. Output:')
                         self.logger.info(cpout)
 
             self.logger.debug(
@@ -107,8 +109,9 @@ class FirebaseArtifactStore(object):
 
             self.logger.debug("Tar cmd = {}".format(tarcmd))
 
-            tarp = subprocess.Popen(['/bin/bash', '-c', tarcmd], 
-                                    stdout=subprocess.PIPE)
+            tarp = subprocess.Popen(['/bin/bash', '-c', tarcmd],
+                                    stdout=subprocess.PIPE,
+                                    stderr=subprocess.STDOUT)
 
             tarout, _ = tarp.communicate()
             if tarp.returncode != 0:
@@ -205,7 +208,8 @@ class FirebaseArtifactStore(object):
                     ('mkdir -p {} &&' +
                      'tar -xzf {} -C {} --keep-newer-files')
                     .format(basepath, tar_filename, basepath)],
-                    stdout=subprocess.PIPE)
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.STDOUT)
 
                 tarout, _ = tarp.communicate()
                 if tarp.returncode != 0:

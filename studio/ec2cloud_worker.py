@@ -170,7 +170,7 @@ class EC2WorkerManager(object):
     def _select_instance_type(self, resources_needed):
         startup_script_filename = 'scripts/ec2_worker_startup.sh' \
             if int(resources_needed['gpus']) == 0 else \
-                                  'scripts/ec2_gpuworker_startup.sh'
+            'scripts/ec2_gpuworker_startup.sh'
 
         with open(os.path.join(
                 os.path.dirname(__file__),
