@@ -12,7 +12,7 @@ from local_worker_test import stubtest_worker
 class RemoteWorkerTest(unittest.TestCase):
     _multiprocess_can_split_ = True
 
-    @unittest.skipIf(True or
+    @unittest.skipIf(
         'GOOGLE_APPLICATION_CREDENTIALS' not in
         os.environ.keys(),
         'GOOGLE_APPLICATION_CREDENTIALS environment ' +
