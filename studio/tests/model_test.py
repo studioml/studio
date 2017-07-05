@@ -26,6 +26,8 @@ class ProvidersTest(unittest.TestCase):
 
 
 class FirebaseProviderTest(unittest.TestCase):
+    _multiprocess_can_split_ = True
+
     def get_firebase_provider(self, config_name='test_config.yaml'):
         config_file = os.path.join(
             os.path.dirname(
@@ -114,6 +116,7 @@ class FirebaseProviderTest(unittest.TestCase):
                 self.assertTrue(actual_experiment_dict[key] == value)
 
         fb.finish_experiment(experiment)
+        fb.delete_experiment(experiment)
 
     def test_start_experiment(self):
         fb = self.get_firebase_provider()
@@ -134,6 +137,7 @@ class FirebaseProviderTest(unittest.TestCase):
                 self.assertTrue(actual_experiment_dict[key] == value)
 
         fb.finish_experiment(experiment)
+        fb.delete_experiment(experiment)
 
     def test_finish_experiment(self):
         fb = self.get_firebase_provider()
@@ -155,6 +159,8 @@ class FirebaseProviderTest(unittest.TestCase):
             if value:
                 self.assertTrue(actual_experiment_dict[key] == value)
 
+        fb.delete_experiment(experiment)
+
     def test_checkpoint_experiment(self):
         fb = self.get_firebase_provider()
         experiment, experiment_name, _, _, = get_test_experiment()
@@ -164,7 +170,11 @@ class FirebaseProviderTest(unittest.TestCase):
             shutil.rmtree(modeldir)
 
         os.makedirs(modeldir)
-        fb.delete_experiment(experiment_name)
+        try:
+            fb.delete_experiment(experiment_name)
+        except:
+            pass
+
         fb.add_experiment(experiment)
         fb.start_experiment(experiment)
 
@@ -187,6 +197,7 @@ class FirebaseProviderTest(unittest.TestCase):
             line = f.read()
 
         self.assertTrue(line == random_str)
+        fb.delete_experiment(experiment)
 
     def test_get_model_info(self):
         # TODO implement _get_model_info test
@@ -196,7 +207,7 @@ class FirebaseProviderTest(unittest.TestCase):
 def get_test_experiment():
     filename = 'test.py'
     args = ['a', 'b', 'c']
-    experiment_name = 'test_experiment'
+    experiment_name = 'test_experiment_' + str(uuid.uuid4())
     experiment = model.create_experiment(filename, args, experiment_name)
     return experiment, experiment_name, filename, args
 

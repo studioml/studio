@@ -30,7 +30,8 @@ class FirebaseArtifactStore(object):
 
         if measure_timestamp_diff:
             max_diff = 60
-            tmpfile = os.path.join(tempfile.gettempdir(), 'time_test.txt')
+
+            tmpfile = os.path.join(tempfile.gettempdir(), str(uuid.uuid4()) + '.txt')
             with open(tmpfile, 'w') as f:
                 f.write('timestamp_diff_test')
             key = 'tests/' + str(uuid.uuid4())
@@ -51,6 +52,7 @@ class FirebaseArtifactStore(object):
 
                 if now_remote_diff < 0:
                     self.timestamp_shift = -now_remote_diff
+
 
     def put_artifact(
             self,

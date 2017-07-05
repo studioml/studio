@@ -16,6 +16,7 @@ logging.basicConfig()
 
 
 class LocalWorkerTest(unittest.TestCase):
+    _multiprocess_can_split_ = True
 
     def test_runner_local(self):
         stubtest_worker(

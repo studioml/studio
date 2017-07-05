@@ -266,10 +266,12 @@ class FirebaseProvider(object):
                          experiment.key + "/time_finished",
                          experiment.time_finished)
 
-    def delete_experiment(self, experiment_key):
-        experiment = self.get_experiment(experiment_key)
+    def delete_experiment(self, experiment):
+        if isinstance(experiment, basestring):
+            experiment = self.get_experiment(experiment)
+
         self._delete(self._get_user_keybase() + 'experiments/' +
-                     experiment_key)
+                     experiment.key)
 
         for tag, art in experiment.artifacts.iteritems():
             if art.get('key') is not None:
@@ -277,7 +279,7 @@ class FirebaseProvider(object):
                                    'artifact key {}').format(tag, art['key']))
                 self.store.delete_artifact(art)
 
-        self._delete(self._get_experiments_keybase() + experiment_key)
+        self._delete(self._get_experiments_keybase() + experiment.key)
 
     def checkpoint_experiment(self, experiment, blocking=False):
         checkpoint_threads = [
