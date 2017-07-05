@@ -146,33 +146,40 @@ def stubtest_worker(
     p = subprocess.Popen(['studio-runner'] + runner_args +
                          ['--config=' + config_name,
                           '--experiment=' + experiment_name,
-                          test_script] + script_args)
+                          test_script] + script_args,
+                         stdout=subprocess.PIPE,
+                         stderr=subprocess.STDOUT)
 
-    p.wait()
+    pout,_ = p.communicate()
 
-    # test saved arguments
-    keybase = "/experiments/" + experiment_name
-    saved_args = db[keybase + '/args']
-    if saved_args is not None:
-        testclass.assertTrue(len(saved_args) == len(script_args))
-        for i in range(len(saved_args)):
-            testclass.assertTrue(saved_args[i] == script_args[i])
-        testclass.assertTrue(db[keybase + '/filename'] == test_script)
-    else:
-        testclass.assertTrue(script_args is None or len(script_args) == 0)
+    try:
+        # test saved arguments
+        keybase = "/experiments/" + experiment_name
+        saved_args = db[keybase + '/args']
+        if saved_args is not None:
+            testclass.assertTrue(len(saved_args) == len(script_args))
+            for i in range(len(saved_args)):
+                testclass.assertTrue(saved_args[i] == script_args[i])
+            testclass.assertTrue(db[keybase + '/filename'] == test_script)
+        else:
+            testclass.assertTrue(script_args is None or len(script_args) == 0)
 
-    experiment = db.get_experiment(experiment_name)
-    if wait_for_experiment:
-        while not experiment.status == 'finished':
-            time.sleep(1)
-            experiment = db.get_experiment(experiment_name)
+        experiment = db.get_experiment(experiment_name)
+        if wait_for_experiment:
+            while not experiment.status == 'finished':
+                time.sleep(1)
+                experiment = db.get_experiment(experiment_name)
 
-    with open(db.store.get_artifact(experiment.artifacts['output']), 'r') as f:
-        data = f.read()
-        split_data = data.strip().split('\n')
-        testclass.assertEquals(split_data[-1], expected_output)
+        with open(db.store.get_artifact(experiment.artifacts['output']), 'r') as f:
+            data = f.read()
+            split_data = data.strip().split('\n')
+            testclass.assertEquals(split_data[-1], expected_output)
 
-    check_workspace(testclass, db, experiment_name)
+        check_workspace(testclass, db, experiment_name)
+    except Exception as e:
+        print("Exception {} raised during test!".format(e))
+        print("worker output: \n {}".format(plog))
+        raise e
 
 
 def check_workspace(testclass, db, key):
