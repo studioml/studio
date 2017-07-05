@@ -82,7 +82,14 @@ class FirebaseArtifactStore(object):
                     if os.path.exists(cache_dir) and os.path.isdir(cache_dir):
                         shutil.rmtree(cache_dir)
 
-                    subprocess.call(['cp', '-pR', local_path, cache_dir])
+                    pcp = subprocess.Popen(
+                            ['cp', '-pR', local_path, cache_dir],
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.STDOUT)
+                    cpout, _ = pcp.communicate()
+                    if pcp.returncode != 0:
+                        self.logger.info('cp returned non-zero exit code. Output:')
+                        self.logger.info(cpout)
 
             self.logger.debug(
                 ("Tarring and uploading directrory. " +
@@ -192,12 +199,12 @@ class FirebaseArtifactStore(object):
                     ('mkdir -p {} &&' +
                      'tar -xzf {} -C {} --keep-newer-files')
                     .format(basepath, tar_filename, basepath)],
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.STDOUT)
+                    stdout=subprocess.PIPE)
+
                 tarout, _ = tarp.communicate()
                 if tarp.returncode != 0:
-                    self.logger.error('Tar had a non-zero return code!')
-                    self.logger.error('tar output: \n ' + tarout)
+                    self.logger.info('tar had a non-zero return code!')
+                    self.logger.info('tar output: \n ' + tarout)
 
                 if len(listtar) == 1:
                     actual_path = os.path.join(basepath, listtar[0])
