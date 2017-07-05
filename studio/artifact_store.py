@@ -107,7 +107,13 @@ class FirebaseArtifactStore(object):
 
             self.logger.debug("Tar cmd = {}".format(tarcmd))
 
-            subprocess.call(['/bin/bash', '-c', tarcmd])
+            tarp = subprocess.Popen(['/bin/bash', '-c', tarcmd], 
+                                    stdout=subprocess.PIPE)
+
+            tarout, _ = tarp.communicate()
+            if tarp.returncode != 0:
+                self.logger.info('tar had a non-zero return code!')
+                self.logger.info('tar output: \n ' + tarout)
 
             if key is None:
                 key = 'blobstore/' + util.sha256_checksum(tar_filename) \
