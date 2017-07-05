@@ -47,7 +47,7 @@ class LocalWorkerTest(unittest.TestCase):
             config_name='test_config.yaml',
             test_script='art_hello_world.py',
             script_args=[random_str2],
-            expected_output=random_str1
+            expected_output=random_str1,
             delete_when_done=False
         )
 
