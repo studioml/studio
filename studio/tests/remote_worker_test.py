@@ -49,6 +49,8 @@ class RemoteWorkerTest(unittest.TestCase):
         'variable not set, won'' be able to use google ' +
         'PubSub')
     def test_remote_worker_c(self):
+        my_path = os.path.dirname(os.path.realpath(__file__))
+        os.chdir(my_path)
         tmpfile = os.path.join(tempfile.gettempdir(),
                                str(uuid.uuid4()))
 
