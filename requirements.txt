@@ -17,6 +17,7 @@ requests
 requests_toolbelt
 python_jwt
 sseclient
+timeout_decorator
 
 google-api-python-client
 google-cloud-storage

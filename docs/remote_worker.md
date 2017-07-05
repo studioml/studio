@@ -15,14 +15,12 @@ This page describes a procedure for setting up a remote worker for studio. Remot
 2. Clone the repo
 
     git clone https://github.com/ilblackdragon/studio && cd studio && pip install -e .
+ 
+   To check success of installation, you can run `python $(which nosetests)` to run the tests (may take about 10 min to finish)
 
-3. Generate the docker image:
-
-    cd docker && docker build -t tfstudio/base:0.0 . 
-
-4. Start worker (queue name is a name of the queue that will definte where submit work to)
+3. Start worker (queue name is a name of the queue that will definte where submit work to)
     
-    studio-start-rworker <queue-name>
+    studio-start-remote-worker <queue-name>
 
 ## III. Submitting work
 On a submitting machine (usually local):
