@@ -25,9 +25,9 @@ class RemoteWorkerTest(unittest.TestCase):
         experiment_name = 'test_remote_worker_' + str(uuid.uuid4())
         queue_name = experiment_name
         pw = subprocess.Popen(
-                ['/bin/bash','-c','studio-start-remote-worker ' + queue_name + ' 1'],
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT)
+            ['studio-start-remote-worker', queue_name, '1'],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT)
 
         stubtest_worker(
             self,
@@ -40,8 +40,8 @@ class RemoteWorkerTest(unittest.TestCase):
             queue=PubsubQueue(queue_name))
 
         pw.wait()
-        model.get_db_provider(
-                model.get_config('test_config.yaml')).delete_experiment(experiment_name)
+        model.get_db_provider(model.get_config(
+            'test_config.yaml')).delete_experiment(experiment_name)
 
     @timeout(300)
     @unittest.skipIf(
@@ -65,9 +65,9 @@ class RemoteWorkerTest(unittest.TestCase):
 
         queue_name = experiment_name
         pw = subprocess.Popen(
-                ['studio-start-remote-worker', queue_name, "1"],
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT)
+            ['studio-start-remote-worker', queue_name, "1"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT)
 
         stubtest_worker(
             self,
@@ -99,8 +99,8 @@ class RemoteWorkerTest(unittest.TestCase):
             self.assertTrue(f.read() == random_str2)
         os.remove(tmppath)
 
-        model.get_db_provider(
-            model.get_config('test_config.yaml')).delete_experiment(experiment_name)
+        model.get_db_provider(model.get_config(
+            'test_config.yaml')).delete_experiment(experiment_name)
 
     @timeout(300)
     @unittest.skipIf(
@@ -117,7 +117,7 @@ class RemoteWorkerTest(unittest.TestCase):
         random_str = str(uuid.uuid4())
         with open(tmpfile, 'w') as f:
             f.write(random_str)
-        
+
         experiment_name = 'test_remote_worker_co_' + str(uuid.uuid4())
         queue_name = experiment_name
         pw = subprocess.Popen(['studio-start-remote-worker', queue_name, "1"])
@@ -137,9 +137,8 @@ class RemoteWorkerTest(unittest.TestCase):
 
         pw.wait()
         os.remove(tmpfile)
-        model.get_db_provider(
-            model.get_config('test_config.yaml')).delete_experiment(experiment_name)
-
+        model.get_db_provider(model.get_config(
+            'test_config.yaml')).delete_experiment(experiment_name)
 
 
 if __name__ == "__main__":

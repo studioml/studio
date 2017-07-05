@@ -150,7 +150,7 @@ def stubtest_worker(
                          stdout=subprocess.PIPE,
                          stderr=subprocess.STDOUT)
 
-    pout,_ = p.communicate()
+    pout, _ = p.communicate()
 
     try:
         # test saved arguments
@@ -170,7 +170,8 @@ def stubtest_worker(
                 time.sleep(1)
                 experiment = db.get_experiment(experiment_name)
 
-        with open(db.store.get_artifact(experiment.artifacts['output']), 'r') as f:
+        with open(db.store.get_artifact(experiment.artifacts['output']), 'r') \
+                as f:
             data = f.read()
             split_data = data.strip().split('\n')
             testclass.assertEquals(split_data[-1], expected_output)

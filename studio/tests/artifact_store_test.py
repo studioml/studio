@@ -26,12 +26,11 @@ class ArtifactStoreTest(object):
         os.makedirs(os.path.join(tmp_dir, 'test_dir'))
 
         tmp_filename = os.path.join(
-            tmp_dir, 'test_dir', str(uuid.uuid4())+'.txt')
+            tmp_dir, 'test_dir', str(uuid.uuid4()) + '.txt')
         with open(tmp_filename, 'w') as f:
             f.write(random_str)
 
-            
-        artifact = {'key' : 'tests/' + str(uuid.uuid4()) + '.tgz'}
+        artifact = {'key': 'tests/' + str(uuid.uuid4()) + '.tgz'}
         fb.put_artifact(artifact, tmp_dir, cache=False)
         shutil.rmtree(tmp_dir)
         fb.get_artifact(artifact, tmp_dir)
@@ -51,12 +50,12 @@ class ArtifactStoreTest(object):
 
         os.makedirs(os.path.join(tmp_dir, 'test_dir'))
         tmp_filename = os.path.join(
-            tmp_dir, 'test_dir', str(uuid.uuid4())+'.txt')
+            tmp_dir, 'test_dir', str(uuid.uuid4()) + '.txt')
 
         with open(tmp_filename, 'w') as f:
             f.write(random_str)
 
-        artifact = {'key' : 'tests/' + str(uuid.uuid4()) + '.tgz'}
+        artifact = {'key': 'tests/' + str(uuid.uuid4()) + '.tgz'}
 
         fb.put_artifact(artifact, tmp_dir, cache=False)
         shutil.rmtree(tmp_dir)
@@ -82,7 +81,7 @@ class ArtifactStoreTest(object):
         fb = self.get_store('test_config.yaml')
         tmp_filename = os.path.join(
             tempfile.gettempdir(),
-            str(uuid.uuid4())+'.txt')
+            str(uuid.uuid4()) + '.txt')
 
         random_str = str(uuid.uuid4())
         with open(tmp_filename, 'w') as f:
@@ -96,12 +95,14 @@ class ArtifactStoreTest(object):
         response = requests.get(url)
         self.assertEquals(response.status_code, 200)
         tar_filename = os.path.join(tempfile.gettempdir(),
-                                    str(uuid.uuid4())+'.tgz')
+                                    str(uuid.uuid4()) + '.tgz')
         with open(tar_filename, 'wb') as f:
             f.write(response.content)
 
-        subprocess.call(['tar', '-xzf', tar_filename],
-                        cwd=tempfile.gettempdir())
+        ptar = subprocess.Popen(['tar', '-xzf', tar_filename],
+                                cwd=tempfile.gettempdir())
+
+        tarout, _ = ptar.communicate()
 
         with open(tmp_filename, 'r') as f:
             self.assertEquals(f.read(), random_str)
@@ -110,7 +111,6 @@ class ArtifactStoreTest(object):
         os.remove(tar_filename)
         fb.delete_artifact(artifact)
 
-
     def test_delete_file(self):
         fb = self.get_store()
         tmp_dir = os.path.join(tempfile.gettempdir(), str(uuid.uuid4()))
@@ -118,7 +118,7 @@ class ArtifactStoreTest(object):
 
         os.makedirs(os.path.join(tmp_dir, 'test_dir'))
         tmp_filename = os.path.join(
-            tmp_dir, 'test_dir', str(uuid.uuid4())+'.txt')
+            tmp_dir, 'test_dir', str(uuid.uuid4()) + '.txt')
         with open(tmp_filename, 'w') as f:
             f.write(random_str)
 
@@ -179,7 +179,7 @@ class FirebaseArtifactStoreTest(ArtifactStoreTest, unittest.TestCase):
         fb = self.get_store('test_config_auth.yaml')
         tmp_filename = os.path.join(
             tempfile.gettempdir(),
-            str(uuid.uuid4())+'.txt')
+            str(uuid.uuid4()) + '.txt')
         random_str = str(uuid.uuid4())
         with open(tmp_filename, 'w') as f:
             f.write(random_str)

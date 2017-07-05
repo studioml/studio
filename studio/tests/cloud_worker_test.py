@@ -29,8 +29,7 @@ class GCloudWorkerTest(unittest.TestCase):
             expected_output='[ 2.  6.]',
         )
         get_db_provider(get_config('test_config.yaml')) \
-                .delete_experiment(experiment_name)
-
+            .delete_experiment(experiment_name)
 
 
 @unittest.skipIf(
@@ -54,7 +53,7 @@ class EC2WorkerTest(unittest.TestCase):
         )
 
         get_db_provider(get_config('test_config.yaml')) \
-                .delete_experiment(experiment_name)
+            .delete_experiment(experiment_name)
 
 
 if __name__ == '__main__':

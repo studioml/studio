@@ -62,8 +62,9 @@ class LocalQueueTest(QueueTest, unittest.TestCase):
     'variable not set, won'' be able to use google ' +
     'PubSub')
 class PubSubQueueTest(QueueTest, unittest.TestCase):
-   _multiprocess_can_split_ = True
-   def get_queue(self):
+    _multiprocess_can_split_ = True
+
+    def get_queue(self):
         return PubsubQueue('pubsub_queue_test_' + str(uuid.uuid4()))
 
 

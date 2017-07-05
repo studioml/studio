@@ -172,7 +172,7 @@ class FirebaseProviderTest(unittest.TestCase):
         os.makedirs(modeldir)
         try:
             fb.delete_experiment(experiment_name)
-        except:
+        except BaseException:
             pass
 
         fb.add_experiment(experiment)
