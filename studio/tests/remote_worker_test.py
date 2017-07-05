@@ -24,7 +24,7 @@ class RemoteWorkerTest(unittest.TestCase):
         pw = subprocess.Popen(
                 ['studio-start-remote-worker', queue_name, "1"],
                 stdout=subprocess.PIPE,
-                stdout=subprocess.STDOUT)
+                stderr=subprocess.STDOUT)
 
         stubtest_worker(
             self,
@@ -63,7 +63,7 @@ class RemoteWorkerTest(unittest.TestCase):
         pw = subprocess.Popen(
                 ['studio-start-remote-worker', queue_name, "1"],
                 stdout=subprocess.PIPE,
-                stdout=subprocess.STDOUT)
+                stderr=subprocess.STDOUT)
 
         stubtest_worker(
             self,
