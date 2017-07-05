@@ -181,7 +181,7 @@ def main(args=sys.argv):
             worker_manager = EC2WorkerManager(
                 auth_cookie=auth_cookie
             )
-        worker_manager.start_worker(parsed_args.queue, resources_needed, ssh_keypair='peterz-key')
+        worker_manager.start_worker(parsed_args.queue, resources_needed)
 
     db = None
 

@@ -3,9 +3,63 @@ import uuid
 import logging
 import os
 import base64
+from gpu_util import memstr2int
 
 
 logging.basicConfig()
+
+# list of instance types sorted by price 
+_instance_specs = [
+        {
+            'name':'c4.large',
+            'cpus':2,
+            'ram':'3.75g',
+            'gpus':0
+        },
+        {
+            'name':'c4.xlarge',
+            'cpus':4,
+            'ram':'7.5g',
+            'gpus':0
+        },
+        {
+            'name':'c4.2xlarge',
+            'cpus':8,
+            'ram':'15g',
+            'gpus':0
+        },
+        {
+            'name':'c4.4xlarge',
+            'cpus':16,
+            'ram':'30g',
+            'gpus':0
+        },
+        {
+            'name':'p2.xlarge',
+            'cpus':4,
+            'ram':'61g',
+            'gpus':1
+        },
+        {
+            'name':'c4.8xlarge',
+            'cpus':36,
+            'ram':'60g',
+            'gpus':0
+        },
+        {
+            'name':'p2.8xlarge',
+            'cpus':32,
+            'ram':'488g',
+            'gpus':8
+        },
+        {
+            'name':'p2.16xlarge',
+            'cpus':64,
+            'ram':'732g',
+            'gpus':16
+        }
+]
+
 
 class EC2WorkerManager(object):
 
@@ -75,7 +129,7 @@ class EC2WorkerManager(object):
                     'Ebs': {
                         'Encrypted': False,
                         'DeleteOnTermination': True,
-                        'VolumeSize': 256,
+                        'VolumeSize': memstr2int(resources_needed['hdd']) / memstr2int('1g'),
                         'VolumeType': 'standard'
                     },
                     'NoDevice': ''
@@ -116,12 +170,24 @@ class EC2WorkerManager(object):
                     os.path.dirname(__file__), 
                     startup_script_filename), 
                   'r') as f:
-            startup_scipt = f.read()
+            startup_script = f.read()
 
-        return 'g2.2xlarge', startup_script
+        for instance in _instance_specs:
+            if int(instance['cpus']) >= int(resources_needed['cpus']) and \
+               memstr2int(instance['ram'])  >= memstr2int(resources_needed['ram']) and \
+               int(instance['gpus']) >= int(resources_needed['gpus']):
+                   return instance['name'], startup_script
+        
+        raise ValueError('No instances that satisfy requirements {} can be found'
+                .format(resources_needed))
+
 
 
     def _generate_instance_name(self):
         return 'ec2worker_' + str(uuid.uuid4())
+
+
+
+    
 
 

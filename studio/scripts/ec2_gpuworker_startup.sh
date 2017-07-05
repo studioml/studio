@@ -12,7 +12,7 @@ export GOOGLE_APPLICATION_CREDENTIALS=/credentials.json
 
 
 code_url_base="https://storage.googleapis.com/studio-ed756.appspot.com/src"
-code_ver="tfstudio-dockerize-2017-07-01_1.tgz"
+code_ver="tfstudio-ec2worker-2017-07-04_2.tgz"
 
 cudnn="libcudnn5_5.1.10-1_cuda8.0_amd64.deb"
 
@@ -24,7 +24,7 @@ sudo apt install -y wget python-pip git python-dev
 
 # install cuda
 wget $cuda_base/$cuda_ver
-sudo dpkg -i cuda-repo-ubuntu1604_8.0.61-1_amd64.deb
+sudo dpkg -i $cuda_ver
 sudo apt -y update
 sudo apt install -y cuda
 
@@ -43,4 +43,4 @@ mkdir /workspace && cd /workspace
 studio-remote-worker --queue=$queue_name 
 
 # shutdown the instance
-# sudo shutdown now
+sudo shutdown now
