@@ -10,21 +10,23 @@ from local_worker_test import stubtest_worker
 
 
 class RemoteWorkerTest(unittest.TestCase):
+    _multiprocess_can_split_ = True
 
-    @unittest.skipIf(True or
+    @unittest.skipIf(
         'GOOGLE_APPLICATION_CREDENTIALS' not in
         os.environ.keys(),
         'GOOGLE_APPLICATION_CREDENTIALS environment ' +
         'variable not set, won'' be able to use google ' +
         'PubSub')
     def test_remote_worker(self):
-        queue_name = 'test_remote_worker'
+        experiment_name = 'test_remote_worker_' + str(uuid.uuid4())
+        queue_name = experiment_name
         pw = subprocess.Popen(['studio-start-remote-worker', queue_name, "1"])
 
         stubtest_worker(
             self,
-            experiment_name='test_remote_worker',
-            runner_args=['--queue=' + queue_name],
+            experiment_name=experiment_name,
+            runner_args=['--queue=' + queue_name, '--force-git'],
             config_name='test_config.yaml',
             test_script='tf_hello_world.py',
             script_args=['arg0'],
@@ -32,8 +34,10 @@ class RemoteWorkerTest(unittest.TestCase):
             queue=PubsubQueue(queue_name))
 
         pw.wait()
+        model.get_db_provider(
+                model.get_config('test_config.yaml')).delete_experiment(experiment_name)
 
-    @unittest.skipIf(True or
+    @unittest.skipIf(
         'GOOGLE_APPLICATION_CREDENTIALS' not in
         os.environ.keys(),
         'GOOGLE_APPLICATION_CREDENTIALS environment ' +
@@ -43,7 +47,7 @@ class RemoteWorkerTest(unittest.TestCase):
         tmpfile = os.path.join(tempfile.gettempdir(),
                                'tmpfile.txt')
 
-        experiment_name = "test_remote_worker_c"
+        experiment_name = "test_remote_worker_c_" + str(uuid.uuid4())
         db = model.get_db_provider(model.get_config('test_config.yaml'))
 
         random_str1 = str(uuid.uuid4())
@@ -52,7 +56,7 @@ class RemoteWorkerTest(unittest.TestCase):
 
         random_str2 = str(uuid.uuid4())
 
-        queue_name = 'test_remote_worker'
+        queue_name = experiment_name
         pw = subprocess.Popen(['studio-start-remote-worker', queue_name, "1"])
 
         stubtest_worker(
@@ -60,7 +64,8 @@ class RemoteWorkerTest(unittest.TestCase):
             experiment_name=experiment_name,
             runner_args=[
                 '--capture=' + tmpfile + ':f',
-                '--queue=' + queue_name],
+                '--queue=' + queue_name,
+                '--force-git'],
             config_name='test_config.yaml',
             test_script='art_hello_world.py',
             script_args=[random_str2],
@@ -83,7 +88,10 @@ class RemoteWorkerTest(unittest.TestCase):
             self.assertTrue(f.read() == random_str2)
         os.remove(tmppath)
 
-    @unittest.skipIf(True or
+        model.get_db_provider(
+            model.get_config('test_config.yaml')).delete_experiment(experiment_name)
+
+    @unittest.skipIf(
         'GOOGLE_APPLICATION_CREDENTIALS' not in
         os.environ.keys(),
         'GOOGLE_APPLICATION_CREDENTIALS environment ' +
@@ -92,21 +100,23 @@ class RemoteWorkerTest(unittest.TestCase):
     def test_remote_worker_co(self):
         return
         tmpfile = os.path.join(tempfile.gettempdir(),
-                               'tmpfile.txt')
+                               str(uuid.uuid4()))
 
         random_str = str(uuid.uuid4())
         with open(tmpfile, 'w') as f:
             f.write(random_str)
-
-        queue_name = 'test_remote_worker'
+        
+        experiment_name = 'test_remote_worker_co_' + str(uuid.uuid4())
+        queue_name = experiment_name
         pw = subprocess.Popen(['studio-start-remote-worker', queue_name, "1"])
 
         stubtest_worker(
             self,
-            experiment_name='test_remote_worker_co',
+            experiment_name=experiment_name,
             runner_args=[
                 '--capture-once=' + tmpfile + ':f',
-                '--queue=' + queue_name],
+                '--queue=' + queue_name,
+                '--force-git'],
             config_name='test_config.yaml',
             test_script='art_hello_world.py',
             script_args=[],
@@ -114,6 +124,10 @@ class RemoteWorkerTest(unittest.TestCase):
             queue=PubsubQueue(queue_name))
 
         pw.wait()
+        os.remove(tmpfile)
+        model.get_db_provider(
+            model.get_config('test_config.yaml')).delete_experiment(experiment_name)
+
 
 
 if __name__ == "__main__":
