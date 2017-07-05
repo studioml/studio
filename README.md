@@ -30,11 +30,12 @@ Once open, we'll publish package to PyPI. For now, pip install it from the git p
 ## Running tests
 To run the unit and regression tests (for now, we have little difference - some tests take longer than others, but that's about it), run 
 
-    python $(which nosetests)
+    python $(which nosetests) --processes=8 --process-timeout=600
 
 Note that simply `nosetests` tends not to use virtualenv correctly (hence a more extended version of the call). If you have application credentials configured 
-to work with distributed queues and cloud workers, those will be tested as well, otherwise, respective tests will be skipped. Total test runtime should be no more 
-than 10 min.
+to work with distributed queues and cloud workers, those will be tested as well, otherwise, respective tests will be skipped. Total test runtime (when run in parallel 
+as in command line above) should be no more than 10 minutes. Most of the tests are I/O limited, so parallel execution speeds up things quite a bit. The longest test is
+gpu cloud worker test in EC2 cloud (takes about 500 seconds due to installation of the drivers / CUDA on the EC2 instance).
 
 ## Example usage
 
