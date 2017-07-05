@@ -12,7 +12,7 @@ from local_worker_test import stubtest_worker
 class RemoteWorkerTest(unittest.TestCase):
     _multiprocess_can_split_ = True
 
-    @unittest.skipIf(
+    @unittest.skipIf(True or
         'GOOGLE_APPLICATION_CREDENTIALS' not in
         os.environ.keys(),
         'GOOGLE_APPLICATION_CREDENTIALS environment ' +
@@ -37,7 +37,7 @@ class RemoteWorkerTest(unittest.TestCase):
         model.get_db_provider(
                 model.get_config('test_config.yaml')).delete_experiment(experiment_name)
 
-    @unittest.skipIf(
+    @unittest.skipIf(True or
         'GOOGLE_APPLICATION_CREDENTIALS' not in
         os.environ.keys(),
         'GOOGLE_APPLICATION_CREDENTIALS environment ' +
@@ -91,7 +91,7 @@ class RemoteWorkerTest(unittest.TestCase):
         model.get_db_provider(
             model.get_config('test_config.yaml')).delete_experiment(experiment_name)
 
-    @unittest.skipIf(
+    @unittest.skipIf(True or
         'GOOGLE_APPLICATION_CREDENTIALS' not in
         os.environ.keys(),
         'GOOGLE_APPLICATION_CREDENTIALS environment ' +
