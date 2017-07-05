@@ -40,8 +40,6 @@ class RemoteWorkerTest(unittest.TestCase):
             queue=PubsubQueue(queue_name))
 
         pw.wait()
-        model.get_db_provider(model.get_config(
-            'test_config.yaml')).delete_experiment(experiment_name)
 
     @timeout(300)
     @unittest.skipIf(
@@ -99,9 +97,6 @@ class RemoteWorkerTest(unittest.TestCase):
             self.assertTrue(f.read() == random_str2)
         os.remove(tmppath)
 
-        model.get_db_provider(model.get_config(
-            'test_config.yaml')).delete_experiment(experiment_name)
-
     @timeout(300)
     @unittest.skipIf(
         'GOOGLE_APPLICATION_CREDENTIALS' not in
@@ -137,8 +132,6 @@ class RemoteWorkerTest(unittest.TestCase):
 
         pw.wait()
         os.remove(tmpfile)
-        model.get_db_provider(model.get_config(
-            'test_config.yaml')).delete_experiment(experiment_name)
 
 
 if __name__ == "__main__":

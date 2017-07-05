@@ -5,7 +5,6 @@ import uuid
 from studio.gcloud_worker import GCloudWorkerManager
 from studio.ec2cloud_worker import EC2WorkerManager
 from local_worker_test import stubtest_worker
-from studio.model import get_db_provider, get_config
 
 
 @unittest.skipIf(
@@ -28,8 +27,6 @@ class GCloudWorkerTest(unittest.TestCase):
             script_args=['arg0'],
             expected_output='[ 2.  6.]',
         )
-        get_db_provider(get_config('test_config.yaml')) \
-            .delete_experiment(experiment_name)
 
 
 @unittest.skipIf(
@@ -51,9 +48,6 @@ class EC2WorkerTest(unittest.TestCase):
             script_args=['arg0'],
             expected_output='[ 2.  6.]',
         )
-
-        get_db_provider(get_config('test_config.yaml')) \
-            .delete_experiment(experiment_name)
 
 
 if __name__ == '__main__':

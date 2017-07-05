@@ -71,8 +71,6 @@ class LocalWorkerTest(unittest.TestCase):
             expected_output=random_str2
         )
 
-        db.delete_experiment(experiment_name)
-
     def test_local_worker_co(self):
 
         tmpfile = os.path.join(tempfile.gettempdir(),
@@ -130,7 +128,8 @@ def stubtest_worker(
         script_args,
         expected_output,
         queue=LocalQueue(),
-        wait_for_experiment=True):
+        wait_for_experiment=True,
+        delete_when_done=True):
 
     my_path = os.path.dirname(os.path.realpath(__file__))
     os.chdir(my_path)
@@ -177,6 +176,10 @@ def stubtest_worker(
             testclass.assertEquals(split_data[-1], expected_output)
 
         check_workspace(testclass, db, experiment_name)
+
+        if delete_when_done:
+            db.delete_experiment(experiment_name)
+
     except Exception as e:
         print("Exception {} raised during test".format(e))
         print("worker output: \n {}".format(pout))
