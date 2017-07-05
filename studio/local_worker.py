@@ -78,6 +78,14 @@ class LocalExecutor(object):
                 'interval',
                 minutes=self.config['saveWorkspaceFrequency'])
 
+            def kill_if_stopped():
+                if self.db.get_experiment(
+                        experiment.key,
+                        getinfo=False).status == 'stopped':
+                    p.kill()
+
+            sched.add_job(kill_if_stopped, 'interval', seconds=10)
+
             try:
                 p.wait()
             finally:
@@ -87,22 +95,26 @@ class LocalExecutor(object):
 
 
 def allocate_resources(experiment, config=None):
-    if not experiment.resources_needed:
-        allocate_gpus(0, config)
-        return True
-
-    gpus_needed = experiment.resources_needed.get('gpus')
     ret_val = True
+    gpus_needed = experiment.resources_needed.get('gpus') \
+        if experiment.resources_needed else 0
+
     if gpus_needed > 0:
         ret_val = ret_val and allocate_gpus(gpus_needed, config)
     else:
         allocate_gpus(0, config)
+        # experiments without GPUs should not have
+        # tensorflow-gpu package in the evironment, because it won't
+        # work on the machines that do not have cuda installed
+        experiment.pythonenv = [pkg for pkg in experiment.pythonenv
+                                if not pkg.startswith('tensorflow-gpu')]
 
     return ret_val
 
 
 def allocate_gpus(gpus_needed, config=None):
     if gpus_needed <= 0:
+        os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
         return True
 
     available_gpus = get_available_gpus()

@@ -184,6 +184,13 @@ def delete_experiment(key):
     return redirect('/')
 
 
+@app.route('/stop_experiment/<key>')
+@authenticated('/stop_experiment/<key>')
+def stop_experiment(key):
+    _db_provider.stop_experiment(key)
+    return redirect('/experiments/' + key)
+
+
 def get_auth_url():
     return ("https://{}/index.html?" +
             "authurl=http://{}/auth_response&redirect=").format(

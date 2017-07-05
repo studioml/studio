@@ -27,7 +27,12 @@
     {% for key,value in artifacts.iteritems() %}
         <dd><a href={{ value }}> {{ key }} </a></dd>
     {% endfor %} 
-    <dt><a href='/delete_experiment/{{ experiment.key }}'> DELETE experiment</a></dt>
+    {% if experiment.status == 'running' %}
+        <dt><a href='/stop_experiment/{{ experiment.key }}'> STOP experiment</a></dt>
+    {% else %}
+        <dt><a href='/delete_experiment/{{ experiment.key }}'> DELETE experiment</a></dt>
+    {% endif %}
+
     <dt><a href='/tensorboard_exp/{{ experiment.key }}'> View in tensorboard </a></dt>
     <dt> Experiment info: </dt>
     <dd>Status: {{ experiment.status }}</dd>
@@ -43,6 +48,10 @@
         <dd>
         Git repo: <a href={{ experiment.git['url'] }}> {{ experiment.git['url'] }}</a>
             {% if experiment.git['url'].startswith('https://github.com') %}
+                <a href={{ experiment.git['url']+'/commit/'+ experiment.git['commit'] }}>
+                    commit {{ experiment.git['commit'] }}
+                </a>
+            {% elif experiment.git['url'].startswith('http://github.com') %}
                 <a href={{ experiment.git['url']+'/commit/'+ experiment.git['commit'] }}>
                     commit {{ experiment.git['commit'] }}
                 </a>

@@ -42,7 +42,7 @@ def is_clean(path='.'):
 
 def get_repo_url(path='.', remove_user=True):
     p = subprocess.Popen(
-        ['git', 'remote', 'get-url', 'origin'],
+        ['git', 'config', '--get', 'remote.origin.url'],
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         cwd=path)
