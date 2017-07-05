@@ -45,7 +45,7 @@ class RemoteWorkerTest(unittest.TestCase):
         'PubSub')
     def test_remote_worker_c(self):
         tmpfile = os.path.join(tempfile.gettempdir(),
-                               'tmpfile.txt')
+                               str(uuid.uuid4()))
 
         experiment_name = "test_remote_worker_c_" + str(uuid.uuid4())
         db = model.get_db_provider(model.get_config('test_config.yaml'))
@@ -73,6 +73,7 @@ class RemoteWorkerTest(unittest.TestCase):
             queue=PubsubQueue(queue_name))
 
         pw.wait()
+        os.remove(tmpfile)
 
         tmppath = os.path.join(tempfile.gettempdir(), str(uuid.uuid4()))
         if os.path.exists(tmppath):
