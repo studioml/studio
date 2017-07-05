@@ -11,7 +11,7 @@ from local_worker_test import stubtest_worker
 
 class RemoteWorkerTest(unittest.TestCase):
 
-    @unittest.skipIf(
+    @unittest.skipIf(True or
         'GOOGLE_APPLICATION_CREDENTIALS' not in
         os.environ.keys(),
         'GOOGLE_APPLICATION_CREDENTIALS environment ' +
@@ -33,7 +33,7 @@ class RemoteWorkerTest(unittest.TestCase):
 
         pw.wait()
 
-    @unittest.skipIf(
+    @unittest.skipIf(True or
         'GOOGLE_APPLICATION_CREDENTIALS' not in
         os.environ.keys(),
         'GOOGLE_APPLICATION_CREDENTIALS environment ' +
@@ -83,7 +83,7 @@ class RemoteWorkerTest(unittest.TestCase):
             self.assertTrue(f.read() == random_str2)
         os.remove(tmppath)
 
-    @unittest.skipIf(
+    @unittest.skipIf(True or
         'GOOGLE_APPLICATION_CREDENTIALS' not in
         os.environ.keys(),
         'GOOGLE_APPLICATION_CREDENTIALS environment ' +
