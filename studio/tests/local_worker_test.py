@@ -112,16 +112,15 @@ class LocalWorkerTest(unittest.TestCase):
         p = subprocess.Popen(['studio-runner',
                               '--config=' + config_name,
                               '--experiment=' + key,
-                              'stop_experiment.py'], 
-                              stdout=subprocess.PIPE,
-                              stderr=subprocess.STDOUT)
+                              'stop_experiment.py'],
+                             stdout=subprocess.PIPE,
+                             stderr=subprocess.STDOUT)
 
         # give experiment time to spin up
         time.sleep(20)
         logger.info('Stopping experiment')
         db.stop_experiment(key)
         pout, _ = p.communicate()
-        
 
 
 def stubtest_worker(
