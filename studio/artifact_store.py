@@ -174,7 +174,8 @@ class FirebaseArtifactStore(object):
                 # or not
                 self.logger.debug("Untarring {}".format(tar_filename))
                 listtar, _ = subprocess.Popen(['tar', '-tzf', tar_filename],
-                                              stdout=subprocess.PIPE
+                                              stdout=subprocess.PIPE,
+                                              stderr=subprocess.STDOUT
                                               ).communicate()
                 listtar = listtar.strip().split('\n')
                 self.logger.debug('List of files in the tar: ' + str(listtar))
@@ -185,12 +186,18 @@ class FirebaseArtifactStore(object):
                 else:
                     basepath = local_basepath
 
-                subprocess.call([
+                tarp = subprocess.Popen([
                     '/bin/bash',
                     '-c',
                     ('mkdir -p {} &&' +
                      'tar -xzf {} -C {} --keep-newer-files')
-                    .format(basepath, tar_filename, basepath)])
+                    .format(basepath, tar_filename, basepath)],
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.STDOUT)
+                tarout, _ = tarp.communicate()
+                if tarp.returncode != 0:
+                    self.logger.error('Tar had a non-zero return code!')
+                    self.logger.error('tar output: \n ' + tarout)
 
                 if len(listtar) == 1:
                     actual_path = os.path.join(basepath, listtar[0])
