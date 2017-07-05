@@ -77,7 +77,7 @@ ask to sign in with your google account, and issues an authentication token. The
 TensorFlow studio allows one to run experiments remotely. The process of setting up a server is described [here](docs/remote_worker.md). 
 
 The experiments can also be run using google cloud compute with configurable instances. The user manual is [here](docs/cloud.md), and 
-the setup instructions are [here](docs/gcloud_setup.md)
+the setup instructions are here [for Google Cloud](docs/gcloud_setup.md) and [for Amazon EC2](docs/ec2_setup.md)
 
 Another very important aspect of model management is management of artifacts (data, resulting weights etc). The facilities that tfstudio
 provides in that regard are described [here](docs/artifacts.md)

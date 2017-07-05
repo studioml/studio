@@ -98,14 +98,14 @@ def allocate_resources(experiment, config=None):
     logger = logging.getLogger('allocate_resources')
     logger.setLevel(10)
     logger.info('Allocating resources {} for experiment {}'
-            .format(experiment.resources_needed, experiment.key))
+                .format(experiment.resources_needed, experiment.key))
 
     ret_val = True
     gpus_needed = int(experiment.resources_needed.get('gpus')) \
         if experiment.resources_needed else 0
 
     pythonenv_nogpu = [pkg for pkg in experiment.pythonenv
-                        if not pkg.startswith('tensorflow-gpu')]
+                       if not pkg.startswith('tensorflow-gpu')]
 
     if gpus_needed > 0:
         ret_val = ret_val and allocate_gpus(gpus_needed, config)
@@ -116,7 +116,7 @@ def allocate_resources(experiment, config=None):
                           if pkg.startswith('tensorflow==')][0]
 
         experiment.pythonenv = pythonenv_nogpu + \
-            [tensorflow_pkg.replace('tensorflow==','tensorflow-gpu==')]
+            [tensorflow_pkg.replace('tensorflow==', 'tensorflow-gpu==')]
 
     else:
         allocate_gpus(0, config)
@@ -136,7 +136,7 @@ def allocate_gpus(gpus_needed, config=None):
     available_gpus = get_available_gpus()
     gpu_mapping = get_gpu_mapping()
     mapped_gpus = [str(gpu_mapping[g])
-                       for g in available_gpus]
+                   for g in available_gpus]
 
     if len(mapped_gpus) >= gpus_needed:
         os.environ['CUDA_VISIBLE_DEVICES'] = ','.join(

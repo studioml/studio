@@ -145,7 +145,6 @@ def main(args=sys.argv):
             if not parsed_args.queue.startswith('ec2_'):
                 parsed_args.queue = 'ec2_' + parsed_args.queue
 
-
     queue = LocalQueue() if not parsed_args.queue else \
         PubsubQueue(parsed_args.queue)
 
@@ -164,7 +163,8 @@ def main(args=sys.argv):
         logger.info('worker args: {}'.format(worker_args))
         worker = subprocess.Popen(worker_args)
         worker.wait()
-    elif parsed_args.queue.startswith('gcloud_') or parsed_args.queue.startswith('ec2_'):
+    elif parsed_args.queue.startswith('gcloud_') or \
+            parsed_args.queue.startswith('ec2_'):
 
         auth_cookie = None if config['database'].get('guest') \
             else os.path.join(

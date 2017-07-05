@@ -7,9 +7,9 @@ from local_worker_test import stubtest_worker
 
 
 @unittest.skipIf(True or
-    'GOOGLE_APPLICATION_CREDENTIALS' not in os.environ.keys(),
-    'GOOGLE_APPLICATION_CREDENTIALS environment ' +
-    'variable not set, won'' be able to use google cloud')
+                 'GOOGLE_APPLICATION_CREDENTIALS' not in os.environ.keys(),
+                 'GOOGLE_APPLICATION_CREDENTIALS environment ' +
+                 'variable not set, won'' be able to use google cloud')
 class GCloudWorkerTest(unittest.TestCase):
     def get_worker_manager(self):
         project = 'studio-ed756'
@@ -26,7 +26,6 @@ class GCloudWorkerTest(unittest.TestCase):
             script_args=['arg0'],
             expected_output='[ 2.  6.]',
         )
-
 
 
 @unittest.skipIf(
@@ -48,7 +47,6 @@ class EC2WorkerTest(unittest.TestCase):
             script_args=['arg0'],
             expected_output='[ 2.  6.]',
         )
-
 
 
 if __name__ == '__main__':
