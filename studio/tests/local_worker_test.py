@@ -177,8 +177,8 @@ def stubtest_worker(
 
         check_workspace(testclass, db, experiment_name)
     except Exception as e:
-        print("Exception {} raised during test!".format(e))
-        print("worker output: \n {}".format(plog))
+        print("Exception {} raised during test".format(e))
+        print("worker output: \n {}".format(pout))
         raise e
 
 

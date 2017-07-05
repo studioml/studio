@@ -50,7 +50,7 @@ while true
 do
     echo $bash_cmd
     $docker_cmd pull $docker_img
-    $docker_cmd run --rm -it \
+    $docker_cmd run --rm \
             -v $HOME/.tfstudio/keys:/root/.tfstudio/keys \
             -v $gac_path:/creds \
             --pid=host \
