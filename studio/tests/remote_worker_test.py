@@ -80,7 +80,8 @@ class RemoteWorkerTest(unittest.TestCase):
             test_script='art_hello_world.py',
             script_args=[random_str2],
             expected_output=random_str1,
-            queue=PubsubQueue(queue_name))
+            queue=PubsubQueue(queue_name),
+            delete_when_done=False)
 
         pw.wait()
         os.remove(tmpfile)
@@ -98,6 +99,7 @@ class RemoteWorkerTest(unittest.TestCase):
         with open(tmppath, 'r') as f:
             self.assertTrue(f.read() == random_str2)
         os.remove(tmppath)
+        db.delete_experiment(experiment_name)
 
     @timeout(300)
     @unittest.skipIf(
