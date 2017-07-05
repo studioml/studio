@@ -37,7 +37,7 @@ class RemoteWorkerTest(unittest.TestCase):
         model.get_db_provider(
                 model.get_config('test_config.yaml')).delete_experiment(experiment_name)
 
-    @unittest.skipIf(True or
+    @unittest.skipIf(
         'GOOGLE_APPLICATION_CREDENTIALS' not in
         os.environ.keys(),
         'GOOGLE_APPLICATION_CREDENTIALS environment ' +
