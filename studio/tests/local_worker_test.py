@@ -48,6 +48,7 @@ class LocalWorkerTest(unittest.TestCase):
             test_script='art_hello_world.py',
             script_args=[random_str2],
             expected_output=random_str1
+            delete_when_done=False
         )
 
         db = model.get_db_provider(model.get_config('test_config.yaml'))
@@ -63,13 +64,14 @@ class LocalWorkerTest(unittest.TestCase):
 
         stubtest_worker(
             self,
-            experiment_name='test_local_worker_e',
+            experiment_name='test_local_worker_e' + str(uuid.uuid4()),
             runner_args=['--reuse={}/f:f'.format(experiment_name)],
             config_name='test_config.yaml',
             test_script='art_hello_world.py',
             script_args=[],
             expected_output=random_str2
         )
+        db.delete_experiment(experiment_name)
 
     def test_local_worker_co(self):
 
@@ -110,13 +112,16 @@ class LocalWorkerTest(unittest.TestCase):
         p = subprocess.Popen(['studio-runner',
                               '--config=' + config_name,
                               '--experiment=' + key,
-                              'stop_experiment.py'])
+                              'stop_experiment.py'], 
+                              stdout=subprocess.PIPE,
+                              stderr=subprocess.STDOUT)
 
         # give experiment time to spin up
         time.sleep(20)
         logger.info('Stopping experiment')
         db.stop_experiment(key)
-        p.wait()
+        pout, _ = p.communicate()
+        
 
 
 def stubtest_worker(
