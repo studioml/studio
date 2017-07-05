@@ -21,7 +21,10 @@ class RemoteWorkerTest(unittest.TestCase):
     def test_remote_worker(self):
         experiment_name = 'test_remote_worker_' + str(uuid.uuid4())
         queue_name = experiment_name
-        pw = subprocess.Popen(['studio-start-remote-worker', queue_name, "1"])
+        pw = subprocess.Popen(
+                ['studio-start-remote-worker', queue_name, "1"],
+                stdout=subprocess.PIPE,
+                stdout=subprocess.STDOUT)
 
         stubtest_worker(
             self,
@@ -57,7 +60,10 @@ class RemoteWorkerTest(unittest.TestCase):
         random_str2 = str(uuid.uuid4())
 
         queue_name = experiment_name
-        pw = subprocess.Popen(['studio-start-remote-worker', queue_name, "1"])
+        pw = subprocess.Popen(
+                ['studio-start-remote-worker', queue_name, "1"],
+                stdout=subprocess.PIPE,
+                stdout=subprocess.STDOUT)
 
         stubtest_worker(
             self,
@@ -92,7 +98,7 @@ class RemoteWorkerTest(unittest.TestCase):
         model.get_db_provider(
             model.get_config('test_config.yaml')).delete_experiment(experiment_name)
 
-    @unittest.skipIf(
+    @unittest.skipIf(True or
         'GOOGLE_APPLICATION_CREDENTIALS' not in
         os.environ.keys(),
         'GOOGLE_APPLICATION_CREDENTIALS environment ' +
