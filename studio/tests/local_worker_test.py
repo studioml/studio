@@ -21,7 +21,7 @@ class LocalWorkerTest(unittest.TestCase):
         stubtest_worker(
             self,
             experiment_name='test_runner_local',
-            runner_args=[],
+            runner_args=['--verbose=debug'],
             config_name='test_config.yaml',
             test_script='tf_hello_world.py',
             script_args=['arg0'],
@@ -29,7 +29,6 @@ class LocalWorkerTest(unittest.TestCase):
         )
 
     def test_local_worker_ce(self):
-
         tmpfile = os.path.join(tempfile.gettempdir(),
                                'tmpfile.txt')
 
@@ -40,10 +39,11 @@ class LocalWorkerTest(unittest.TestCase):
         random_str2 = str(uuid.uuid4())
         experiment_name = 'test_local_worker_c' + str(uuid.uuid4())
 
-        stubtest_worker(
+        db = stubtest_worker(
             self,
             experiment_name=experiment_name,
-            runner_args=['--capture=' + tmpfile + ':f'],
+            runner_args=['--capture=' + tmpfile + ':f', 
+                         '--verbose=debug'],
             config_name='test_config.yaml',
             test_script='art_hello_world.py',
             script_args=[random_str2],
@@ -51,7 +51,6 @@ class LocalWorkerTest(unittest.TestCase):
             delete_when_done=False
         )
 
-        db = model.get_db_provider(model.get_config('test_config.yaml'))
         tmppath = os.path.join(tempfile.gettempdir(), str(uuid.uuid4()))
 
         db.store.get_artifact(
@@ -73,8 +72,9 @@ class LocalWorkerTest(unittest.TestCase):
         )
         db.delete_experiment(experiment_name)
 
-    def test_local_worker_co(self):
 
+
+    def test_local_worker_co(self):
         tmpfile = os.path.join(tempfile.gettempdir(),
                                'tmpfile.txt')
 
@@ -135,6 +135,7 @@ def stubtest_worker(
         wait_for_experiment=True,
         delete_when_done=True):
 
+    cwd = os.getcwd()
     my_path = os.path.dirname(os.path.realpath(__file__))
     os.chdir(my_path)
 
@@ -184,10 +185,14 @@ def stubtest_worker(
         if delete_when_done:
             db.delete_experiment(experiment_name)
 
+        return db
+
     except Exception as e:
         print("Exception {} raised during test".format(e))
         print("worker output: \n {}".format(pout))
         raise e
+    finally:
+        os.chdir(cwd)
 
 
 def check_workspace(testclass, db, key):
