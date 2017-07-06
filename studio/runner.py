@@ -169,9 +169,9 @@ def main(args=sys.argv):
         worker_args = ['studio-local-worker']
 
         if parsed_args.config:
-            worker_args += '--config=' + parsed_args.config
+            worker_args += ['--config=' + parsed_args.config]
         if parsed_args.guest:
-            worker_args += '--guest'
+            worker_args += ['--guest']
 
         logger.info('worker args: {}'.format(worker_args))
         local_worker.main(worker_args)

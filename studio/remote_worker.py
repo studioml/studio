@@ -12,7 +12,6 @@ logging.basicConfig()
 
 def main(args=sys.argv):
     logger = logging.getLogger('studio-remote-worker')
-    logger.setLevel(10)
     parser = argparse.ArgumentParser(
         description='TensorFlow Studio remote worker. \
                      Usage: studio-remote-worker \
@@ -23,10 +22,17 @@ def main(args=sys.argv):
         help='Guest mode (does not require db credentials)',
         action='store_true')
     parser.add_argument('--queue', help='queue name', required=True)
+    parser.add_argument(
+        '--verbose', '-v',
+        help='Verbosity level. Allowed vaules: ' +
+             'debug, info, warn, error, crit ' +
+             'or numerical value of logger levels.',
+        default=None)
 
     parsed_args, script_args = parser.parse_known_args(args)
-
-    queue = PubsubQueue(parsed_args.queue)
+    verbose = model.parse_verbosity(parsed_args.verbose)
+    logger.setLevel(verbose)
+    queue = PubsubQueue(parsed_args.queue, verbose)
     logger.info('Waiting for the work in the queue...')
     while not queue.has_next():
         time.sleep(5)

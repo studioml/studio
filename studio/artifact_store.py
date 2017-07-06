@@ -203,18 +203,18 @@ class FirebaseArtifactStore(object):
                 else:
                     basepath = local_basepath
 
-                tarp = subprocess.Popen([
-                    '/bin/bash',
-                    '-c',
-                    ('mkdir -p {} &&' +
-                     'tar -xzf {} -C {} --keep-newer-files')
-                    .format(basepath, tar_filename, basepath)],
+                tarcmd = ('mkdir -p {} &&' +
+                          'tar -xzf {} -C {} --keep-newer-files') \
+                         .format(basepath, tar_filename, basepath)
+                tarp = subprocess.Popen(
+                    ['/bin/bash', '-c', tarcmd],
                     stdout=subprocess.PIPE,
                     stderr=subprocess.STDOUT)
 
                 tarout, _ = tarp.communicate()
                 if tarp.returncode != 0:
                     self.logger.info('tar had a non-zero return code!')
+                    self.logger.info('tar cmd = ' + tarcmd)
                     self.logger.info('tar output: \n ' + tarout)
 
                 if len(listtar) == 1:

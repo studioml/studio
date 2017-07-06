@@ -11,6 +11,7 @@ from studio.local_queue import LocalQueue
 
 from timeout_decorator import timeout
 import logging
+import traceback
 
 logging.basicConfig()
 
@@ -95,12 +96,11 @@ class LocalWorkerTest(unittest.TestCase):
     @timeout(60)
     def test_stop_experiment(self):
         my_path = os.path.dirname(os.path.realpath(__file__))
-        os.chdir(my_path)
 
         logger = logging.getLogger('test_stop_experiment')
         logger.setLevel(10)
 
-        config_name = 'test_config.yaml'
+        config_name = os.path.join(my_path, 'test_config.yaml')
         key = 'test_stop_experiment'
 
         db = model.get_db_provider(model.get_config(config_name))
@@ -114,7 +114,8 @@ class LocalWorkerTest(unittest.TestCase):
                               '--experiment=' + key,
                               'stop_experiment.py'],
                              stdout=subprocess.PIPE,
-                             stderr=subprocess.STDOUT)
+                             stderr=subprocess.STDOUT,
+                             cwd=my_path)
 
         # give experiment time to spin up
         time.sleep(20)
@@ -135,9 +136,8 @@ def stubtest_worker(
         wait_for_experiment=True,
         delete_when_done=True):
 
-    cwd = os.getcwd()
     my_path = os.path.dirname(os.path.realpath(__file__))
-    os.chdir(my_path)
+    config_name = os.path.join(my_path, config_name)
 
     queue.clean()
 
@@ -149,10 +149,13 @@ def stubtest_worker(
 
     p = subprocess.Popen(['studio-runner'] + runner_args +
                          ['--config=' + config_name,
+                          '--verbose=debug',
+                          '--force-git',
                           '--experiment=' + experiment_name,
                           test_script] + script_args,
-                         stdout=subprocess.PIPE,
-                         stderr=subprocess.STDOUT)
+#                         stdout=subprocess.PIPE,
+#                         stderr=subprocess.STDOUT, 
+                         cwd=my_path)
 
     pout, _ = p.communicate()
 
@@ -190,9 +193,9 @@ def stubtest_worker(
     except Exception as e:
         print("Exception {} raised during test".format(e))
         print("worker output: \n {}".format(pout))
+        print("Exception trace:")
+        print(traceback.format_exc())
         raise e
-    finally:
-        os.chdir(cwd)
 
 
 def check_workspace(testclass, db, key):

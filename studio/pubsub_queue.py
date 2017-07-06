@@ -6,12 +6,12 @@ logging.basicConfig()
 
 
 class PubsubQueue(object):
-    def __init__(self, queue_name, sub_name=None):
+    def __init__(self, queue_name, sub_name=None, verbose=10):
         assert 'GOOGLE_APPLICATION_CREDENTIALS' in os.environ.keys()
         self.client = pubsub.Client()
         self.topic = self.client.topic(queue_name)
         self.logger = logging.getLogger(self.__class__.__name__)
-        self.logger.setLevel(10)
+        self.logger.setLevel(verbose)
         sub_name = sub_name if sub_name else queue_name + "_sub"
         self.logger.info("Topic name = {}".format(queue_name))
         self.logger.info("Subscription name = {}".format(queue_name))
