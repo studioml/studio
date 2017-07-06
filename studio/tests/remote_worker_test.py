@@ -4,17 +4,19 @@ import tempfile
 import uuid
 import subprocess
 
-from studio import model
 from studio.pubsub_queue import PubsubQueue
 from local_worker_test import stubtest_worker
 
 from timeout_decorator import timeout
+import logging
+
+logging.basicConfig()
 
 
 class RemoteWorkerTest(unittest.TestCase):
     _multiprocess_can_split_ = True
 
-    @timeout(300)
+    @timeout(90)
     @unittest.skipIf(
         'GOOGLE_APPLICATION_CREDENTIALS' not in
         os.environ.keys(),
@@ -24,11 +26,13 @@ class RemoteWorkerTest(unittest.TestCase):
     def test_remote_worker(self):
         experiment_name = 'test_remote_worker_' + str(uuid.uuid4())
         queue_name = experiment_name
-        pw = subprocess.Popen(
-            ['studio-start-remote-worker', queue_name, '1'])
-            #stdout=subprocess.PIPE,
-            #stderr=subprocess.STDOUT)
+        logger = logging.getLogger('test_remote_worker')
+        logger.setLevel(10)
 
+        pw = subprocess.Popen(
+            ['studio-start-remote-worker', queue_name, '1'],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT)
 
         stubtest_worker(
             self,
@@ -40,10 +44,11 @@ class RemoteWorkerTest(unittest.TestCase):
             expected_output='[ 2.  6.]',
             queue=PubsubQueue(queue_name))
 
-        pw.wait()
+        workerout, _ = pw.communicate()
+        logger.debug("studio-start-remote-worker output: \n" + workerout)
 
-    @timeout(300)
-    @unittest.skipIf(True or
+    @timeout(90)
+    @unittest.skipIf(
         'GOOGLE_APPLICATION_CREDENTIALS' not in
         os.environ.keys(),
         'GOOGLE_APPLICATION_CREDENTIALS environment ' +
@@ -53,6 +58,8 @@ class RemoteWorkerTest(unittest.TestCase):
         tmpfile = os.path.join(tempfile.gettempdir(),
                                str(uuid.uuid4()))
 
+        logger = logging.getLogger('test_remote_worker_c')
+        logger.setLevel(10)
         experiment_name = "test_remote_worker_c_" + str(uuid.uuid4())
 
         random_str1 = str(uuid.uuid4())
@@ -81,7 +88,8 @@ class RemoteWorkerTest(unittest.TestCase):
             queue=PubsubQueue(queue_name),
             delete_when_done=False)
 
-        pw.wait()
+        workerout, _ = pw.communicate()
+        logger.debug("studio-start-remote-worker output: \n" + workerout)
         os.remove(tmpfile)
 
         tmppath = os.path.join(tempfile.gettempdir(), str(uuid.uuid4()))
@@ -99,7 +107,7 @@ class RemoteWorkerTest(unittest.TestCase):
         os.remove(tmppath)
         db.delete_experiment(experiment_name)
 
-    @timeout(300)
+    @timeout(90)
     @unittest.skipIf(
         'GOOGLE_APPLICATION_CREDENTIALS' not in
         os.environ.keys(),
@@ -107,7 +115,9 @@ class RemoteWorkerTest(unittest.TestCase):
         'variable not set, won'' be able to use google ' +
         'PubSub')
     def test_remote_worker_co(self):
-        return
+        logger = logging.getLogger('test_remote_worker_co')
+        logger.setLevel(10)
+
         tmpfile = os.path.join(tempfile.gettempdir(),
                                str(uuid.uuid4()))
 
@@ -117,7 +127,9 @@ class RemoteWorkerTest(unittest.TestCase):
 
         experiment_name = 'test_remote_worker_co_' + str(uuid.uuid4())
         queue_name = experiment_name
-        pw = subprocess.Popen(['studio-start-remote-worker', queue_name, "1"])
+        pw = subprocess.Popen(['studio-start-remote-worker', queue_name, "1"],
+                              stdout=subprocess.PIPE,
+                              stderr=subprocess.STDOUT)
 
         stubtest_worker(
             self,
@@ -132,7 +144,9 @@ class RemoteWorkerTest(unittest.TestCase):
             expected_output=random_str,
             queue=PubsubQueue(queue_name))
 
-        pw.wait()
+        workerout, _ = pw.communicate()
+        logger.debug('studio-start-remote-worker output: \n' + workerout)
+
         os.remove(tmpfile)
 
 

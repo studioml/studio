@@ -110,7 +110,8 @@ def main(args=sys.argv):
     if parsed_args.verbose:
         config['verbose'] = parsed_args.verbose
 
-    logger.setLevel(model.parse_verbosity(config['verbose']))
+    verbose = model.parse_verbosity(config['verbose'])
+    logger.setLevel(verbose)
 
     db = model.get_db_provider(config)
 
@@ -159,7 +160,7 @@ def main(args=sys.argv):
                 parsed_args.queue = 'ec2_' + parsed_args.queue
 
     queue = LocalQueue() if not parsed_args.queue else \
-        PubsubQueue(parsed_args.queue)
+        PubsubQueue(parsed_args.queue, verbose=verbose)
 
     queue.enqueue(json.dumps({
         'experiment': experiment.key,

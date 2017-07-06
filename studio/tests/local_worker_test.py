@@ -21,7 +21,7 @@ class LocalWorkerTest(unittest.TestCase):
     def test_runner_local(self):
         stubtest_worker(
             self,
-            experiment_name='test_runner_local',
+            experiment_name='test_runner_local_' + str(uuid.uuid4()),
             runner_args=['--verbose=debug'],
             config_name='test_config.yaml',
             test_script='tf_hello_world.py',
@@ -43,7 +43,7 @@ class LocalWorkerTest(unittest.TestCase):
         db = stubtest_worker(
             self,
             experiment_name=experiment_name,
-            runner_args=['--capture=' + tmpfile + ':f', 
+            runner_args=['--capture=' + tmpfile + ':f',
                          '--verbose=debug'],
             config_name='test_config.yaml',
             test_script='art_hello_world.py',
@@ -72,8 +72,6 @@ class LocalWorkerTest(unittest.TestCase):
             expected_output=random_str2
         )
         db.delete_experiment(experiment_name)
-
-
 
     def test_local_worker_co(self):
         tmpfile = os.path.join(tempfile.gettempdir(),
@@ -138,6 +136,8 @@ def stubtest_worker(
 
     my_path = os.path.dirname(os.path.realpath(__file__))
     config_name = os.path.join(my_path, config_name)
+    logger = logging.getLogger('stubtest_worker')
+    logger.setLevel(10)
 
     queue.clean()
 
@@ -153,11 +153,12 @@ def stubtest_worker(
                           '--force-git',
                           '--experiment=' + experiment_name,
                           test_script] + script_args,
-#                         stdout=subprocess.PIPE,
-#                         stderr=subprocess.STDOUT, 
+                         stdout=subprocess.PIPE,
+                         stderr=subprocess.STDOUT,
                          cwd=my_path)
 
     pout, _ = p.communicate()
+    logger.debug("studio-runner output: \n" + pout)
 
     try:
         # test saved arguments
@@ -202,15 +203,16 @@ def check_workspace(testclass, db, key):
 
     tmpdir = os.path.join(tempfile.gettempdir(), str(uuid.uuid4()))
     os.mkdir(tmpdir)
-    db.store.get_artifact(db.get_experiment(key).artifacts['workspace'],
+    artifact = db.get_experiment(key).artifacts['workspace']
+    db.store.get_artifact(artifact,
                           tmpdir, only_newer=False)
 
-    for _, _, files in os.walk('.', topdown=False):
+    for _, _, files in os.walk(artifact['local'], topdown=False):
         for filename in files:
             downloaded_filename = os.path.join(tmpdir, filename)
             with open(downloaded_filename, 'rb') as f1:
                 data1 = f1.read()
-            with open(filename, 'rb') as f2:
+            with open(os.path.join(artifact['local'], filename), 'rb') as f2:
                 data2 = f2.read()
 
             testclass.assertTrue(

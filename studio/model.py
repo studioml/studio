@@ -45,7 +45,7 @@ class Experiment(object):
         self.args = args if args else []
         self.pythonenv = pythonenv
         self.project = project
-        workspace_path = '.'
+        workspace_path = os.path.abspath('.')
         model_dir = fs_tracker.get_model_directory(key)
 
         self.artifacts = {

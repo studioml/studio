@@ -70,9 +70,12 @@ class FirebaseArtifactStore(object):
             tar_filename = os.path.join(tempfile.gettempdir(),
                                         str(uuid.uuid4()))
 
-            local_path = re.sub('/\Z', '', local_path)
-            local_nameonly = re.sub('.*/', '', local_path)
-            local_basepath = re.sub('/[^/]*\Z', '', local_path)
+            if os.path.isdir(local_path):
+                local_basepath = local_path
+                local_nameonly = '.'
+            else:
+                local_nameonly = os.path.basename(local_path)
+                local_basepath = os.path.dirname(local_path)
 
             if cache and key:
                 cache_dir = fs_tracker.get_artifact_cache(key)
@@ -162,8 +165,8 @@ class FirebaseArtifactStore(object):
         local_path = re.sub('\/\Z', '', local_path)
         local_basepath = os.path.dirname(local_path)
 
-        self.logger.debug("Downloading dir {} to local path {} from storage..."
-                          .format(key, local_path))
+        self.logger.info("Downloading dir {} to local path {} from storage..."
+                         .format(key, local_path))
 
         if only_newer and os.path.exists(local_path):
             self.logger.debug(
@@ -189,13 +192,13 @@ class FirebaseArtifactStore(object):
             if os.path.exists(tar_filename):
                 # first, figure out if the tar file has a base path of .
                 # or not
-                self.logger.debug("Untarring {}".format(tar_filename))
+                self.logger.info("Untarring {}".format(tar_filename))
                 listtar, _ = subprocess.Popen(['tar', '-tzf', tar_filename],
                                               stdout=subprocess.PIPE,
-                                              stderr=subprocess.STDOUT
+                                              stderr=subprocess.PIPE
                                               ).communicate()
                 listtar = listtar.strip().split('\n')
-                self.logger.debug('List of files in the tar: ' + str(listtar))
+                self.logger.info('List of files in the tar: ' + str(listtar))
                 if listtar[0].startswith('./'):
                     # Files are archived into tar from .; adjust path
                     # accordingly
@@ -203,15 +206,15 @@ class FirebaseArtifactStore(object):
                 else:
                     basepath = local_basepath
 
-                tarcmd = ('mkdir -p {} &&' +
+                tarcmd = ('mkdir -p {} && ' +
                           'tar -xzf {} -C {} --keep-newer-files') \
-                         .format(basepath, tar_filename, basepath)
+                    .format(basepath, tar_filename, basepath)
                 tarp = subprocess.Popen(
                     ['/bin/bash', '-c', tarcmd],
                     stdout=subprocess.PIPE,
                     stderr=subprocess.STDOUT)
 
-                tarout, _ = tarp.communicate()
+                tarout, tarerr = tarp.communicate()
                 if tarp.returncode != 0:
                     self.logger.info('tar had a non-zero return code!')
                     self.logger.info('tar cmd = ' + tarcmd)
