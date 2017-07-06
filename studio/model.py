@@ -119,12 +119,12 @@ def create_experiment(
 class FirebaseProvider(object):
     """Data provider for Firebase."""
 
-    def __init__(self, database_config, blocking_auth=True):
+    def __init__(self, database_config, blocking_auth=True, verbose=10):
         guest = database_config.get('guest')
 
         self.app = pyrebase.initialize_app(database_config)
         self.logger = logging.getLogger('FirebaseProvider')
-        self.logger.setLevel(10)
+        self.logger.setLevel(verbose)
 
         self.auth = FirebaseAuth(self.app,
                                  database_config.get("use_email_auth"),
@@ -133,7 +133,8 @@ class FirebaseProvider(object):
                                  blocking_auth) \
             if not guest else None
 
-        self.store = FirebaseArtifactStore(self.app, self.auth)
+        self.store = FirebaseArtifactStore(
+            self.app, self.auth, verbose=verbose)
         self._experiment_info_cache = {}
 
         if self.auth and not self.auth.expired:
@@ -149,8 +150,8 @@ class FirebaseProvider(object):
             return dbobj.get(self.auth.get_token()).val() if self.auth \
                 else dbobj.get().val()
         except Exception as err:
-            self.logger.error(("Getting key {} from a database " +
-                               "raised an exception: {}").format(key, err))
+            self.logger.warn(("Getting key {} from a database " +
+                              "raised an exception: {}").format(key, err))
             return None
 
     def __setitem__(self, key, value):
@@ -164,9 +165,9 @@ class FirebaseProvider(object):
             else:
                 dbobj.update({key_name: value})
         except Exception as err:
-            self.logger.error(("Putting key {}, value {} into a database " +
-                               "raised an exception: {}")
-                              .format(key, value, err))
+            self.logger.warn(("Putting key {}, value {} into a database " +
+                              "raised an exception: {}")
+                             .format(key, value, err))
 
     def _delete(self, key):
         dbobj = self.app.database().child(key)
@@ -535,6 +536,7 @@ def get_db_provider(config=None, blocking_auth=True):
         config = get_config()
     assert 'database' in config.keys()
     db_config = config['database']
+    verbose = parse_verbosity(config.get('verbose'))
     assert db_config['type'].lower() == 'firebase'.lower()
 
     if 'projectId' in db_config.keys():
@@ -544,4 +546,25 @@ def get_db_provider(config=None, blocking_auth=True):
         db_config['storageBucket'] = db_config['storageBucket'].format(
             projectId)
 
-    return FirebaseProvider(db_config, blocking_auth)
+    return FirebaseProvider(db_config, blocking_auth, verbose=verbose)
+
+
+def parse_verbosity(verbosity=None):
+    if verbosity is None:
+        return parse_verbosity('info')
+
+    if verbosity == 'True':
+        return parse_verbosity('info')
+
+    logger_levels = {
+        'debug': 10,
+        'info': 20,
+        'warn': 30,
+        'error': 40,
+        'crit': 50
+    }
+
+    if isinstance(verbosity, basestring):
+        return logger_levels[verbosity]
+    else:
+        return int(verbosity)

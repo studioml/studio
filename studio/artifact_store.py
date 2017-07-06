@@ -20,11 +20,12 @@ logging.basicConfig()
 
 class FirebaseArtifactStore(object):
 
-    def __init__(self, pyrebase_app, auth, measure_timestamp_diff=True):
+    def __init__(self, pyrebase_app, auth, measure_timestamp_diff=True,
+                 verbose=10):
         self.app = pyrebase_app
         self.auth = auth
         self.logger = logging.getLogger('FirebaseArtifactStore')
-        self.logger.setLevel(10)
+        self.logger.setLevel(verbose)
 
         self.timestamp_shift = 0
 
@@ -224,7 +225,7 @@ class FirebaseArtifactStore(object):
                     os.rename(actual_path, local_path)
                 os.remove(tar_filename)
             else:
-                self.logger.error(
+                self.logger.warn(
                     'file {} download failed'.format(tar_filename))
 
         t = Thread(target=finish_download)
@@ -254,9 +255,9 @@ class FirebaseArtifactStore(object):
             else:
                 storageobj.put(local_file_path)
         except Exception as err:
-            self.logger.error(("Uploading file {} with key {} into storage " +
-                               "raised an exception: {}")
-                              .format(local_file_path, key, err))
+            self.logger.warn(("Uploading file {} with key {} into storage " +
+                              "raised an exception: {}")
+                             .format(local_file_path, key, err))
 
     def _download_file(self, key, local_file_path):
         self.logger.debug("Downloading file at key {} to local path {}..."
@@ -289,7 +290,7 @@ class FirebaseArtifactStore(object):
                 storageobj.download(local_file_path)
             self.logger.debug("Done")
         except Exception as err:
-            self.logger.error(
+            self.logger.warn(
                 ("Downloading file {} to local path {} from storage " +
                  "raised an exception: {}") .format(
                     key,
@@ -318,7 +319,7 @@ class FirebaseArtifactStore(object):
 
             self.logger.debug("Done")
         except Exception as err:
-            self.logger.error(
+            self.logger.warn(
                 ("Deleting file {} from storage " +
                  "raised an exception: {}") .format(key, err))
 
@@ -374,7 +375,7 @@ class FirebaseArtifactStore(object):
             return (json.loads(response.content), url)
 
         except Exception as err:
-            self.logger.error(
+            self.logger.warn(
                 ("Getting metainfo of file {} " +
                  "raised an exception: {}") .format(key, err))
             return (None, None)

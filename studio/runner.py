@@ -93,12 +93,25 @@ def main(args=sys.argv):
         help='Name of the artifact from another experiment to use',
         default=[], action='append')
 
+    parser.add_argument(
+        '--verbose', '-v',
+        help='Verbosity level. Allowed vaules: ' +
+             'debug, info, warn, error, crit ' +
+             'or numerical value of logger levels.',
+        default=None)
+
     parsed_args, script_args = parser.parse_known_args(args)
 
     exec_filename, other_args = script_args[1], script_args[2:]
     # TODO: Queue the job based on arguments and only then execute.
 
     config = model.get_config(parsed_args.config)
+
+    if parsed_args.verbose:
+        config['verbose'] = parsed_args.verbose
+
+    logger.setLevel(model.parse_verbosity(config['verbose']))
+
     db = model.get_db_provider(config)
 
     if git_util.is_git() and not git_util.is_clean():

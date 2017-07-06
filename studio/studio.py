@@ -214,11 +214,21 @@ def main():
                         type=int,
                         default=5000)
 
+    parser.add_argument(
+        '--verbose', '-v',
+        help='Verbosity level. Allowed vaules: ' +
+             'debug, info, warn, error, crit ' +
+             'or numerical value of logger levels.',
+        default=None)
+
     args = parser.parse_args()
     config = model.get_config()
     if args.config:
         with open(args.config) as f:
             config.update(yaml.load(f))
+
+    if args.verbose:
+        config['verbose'] = args.verbose
 
 #    if args.guest:
 #        config['database']['guest'] = True
@@ -228,7 +238,7 @@ def main():
 
     global logger
     logger = logging.getLogger('studio')
-    logger.setLevel(10)
+    logger.setLevel(model.parse_verbosity(config.get('verbose')))
 
     app.run(port=args.port, debug=True)
 
