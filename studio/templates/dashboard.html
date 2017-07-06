@@ -2,7 +2,11 @@
 
 {% block content %}
     <div class="container">
-        <h1>Your jobs</h1>
+        <h1>Your experiments</h1>
+        {% if experiments|length > 0 %}
+            <button onclick='deleteAllExperiments()' type="button" class="btn btn-danger"> Delete ALL </button>
+        {% endif %}
+
         <table class="table table-striped">
             {% for experiment in experiments %}
                 <tr>
@@ -14,4 +18,12 @@
             {% endfor %}
         </table>
     </div>
+
+    <script>
+        function deleteAllExperiments() {
+            if (confirm("This will delete ALL of your experiments and CANNOT be undone. Proceed?")) {
+                    window.location.href = /delete_all/
+            }
+        }
+    </script>
 {% endblock %}

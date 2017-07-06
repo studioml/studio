@@ -10,6 +10,7 @@ import socket
 import subprocess
 from urlparse import urlparse
 from requests.exceptions import HTTPError
+from multiprocessing.pool import ThreadPool
 
 import fs_tracker
 
@@ -28,7 +29,7 @@ def authenticated(redirect_after):
     def auth_decorator(func):
         @wraps(func)
         def auth_wrapper(**kwargs):
-            if _db_provider.auth.expired:
+            if _db_provider.auth and _db_provider.auth.expired:
                 formatted_redirect = redirect_after
                 for k, v in kwargs.iteritems():
                     formatted_redirect = formatted_redirect.replace(
@@ -189,6 +190,16 @@ def delete_experiment(key):
 def stop_experiment(key):
     _db_provider.stop_experiment(key)
     return redirect('/experiments/' + key)
+
+
+@app.route('/delete_all/')
+@authenticated('/delete_all/')
+def delete_all_experiments():
+    pool = ThreadPool(128)
+    experiments = _db_provider.get_user_experiments()
+    pool.map(_db_provider.delete_experiment, experiments)
+
+    return redirect('/')
 
 
 def get_auth_url():

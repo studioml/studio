@@ -8,11 +8,17 @@
         <meta http-equiv="refresh" content="60">
     {% endif %}
     
-
 {% endblock %}
 
 {% block content %}
     <h1>Experiment {{ experiment.key }}</h1>
+
+    {% if experiment.status == 'running' %}
+        <button onclick='stopExperiment( "{{ experiment.key }}" )' type="button" class="btn btn-danger"> Stop </button>
+    {% else %}
+        <button onclick='deleteExperiment( "{{ experiment.key }}" )' type="button" class="btn btn-danger"> Delete </button>
+    {% endif %}
+
     {% if experiment.project %}
         <p>Project: {{ experiment.project }}</p>
     {% endif %}
@@ -27,12 +33,6 @@
     {% for key,value in artifacts.iteritems() %}
         <dd><a href={{ value }}> {{ key }} </a></dd>
     {% endfor %} 
-    {% if experiment.status == 'running' %}
-        <dt><a href='/stop_experiment/{{ experiment.key }}'> STOP experiment</a></dt>
-    {% else %}
-        <dt><a href='/delete_experiment/{{ experiment.key }}'> DELETE experiment</a></dt>
-    {% endif %}
-
     <dt><a href='/tensorboard_exp/{{ experiment.key }}'> View in tensorboard </a></dt>
     <dt> Experiment info: </dt>
     <dd>Status: {{ experiment.status }}</dd>
@@ -82,4 +82,23 @@
         {% endfor %}
     {% endif %}
     </dl>
+    
+
+    <script>
+        function deleteExperiment(key) {
+            if (confirm("The experiment and its artfacts will be lost. Proceed?")) {
+                window.location.href = "/delete_experiment/" + key
+            }
+        }
+
+        function stopExperiment(key) {
+            if (confirm("The experiment will be sent a stop signal. Proceed?")) {
+                window.location.href = "/stop_experiment/" + key
+            }
+        }
+    </script>
+
 {% endblock %}
+
+
+
