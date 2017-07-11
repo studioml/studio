@@ -18,6 +18,7 @@ from oauth2client.service_account import ServiceAccountCredentials
 from google.cloud import storage
 from requests.packages.urllib3.contrib.appengine import is_appengine_sandbox
 from requests_toolbelt.adapters import appengine
+import certifi
 
 import python_jwt as jwt
 from Crypto.PublicKey import RSA
@@ -91,7 +92,7 @@ class Auth:
         headers = {"content-type": "application/json; charset=UTF-8"}
         data = json.dumps(
             {"email": email, "password": password, "returnSecureToken": True})
-        request_object = requests.post(request_ref, headers=headers, data=data)
+        request_object = requests.post(request_ref, headers=headers, data=data, verify=certifi.old_where())
         raise_detailed_error(request_object)
         self.current_user = request_object.json()
         return request_object.json()
