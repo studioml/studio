@@ -12,6 +12,7 @@ import glob
 from threading import Thread
 import subprocess
 
+import tensorflow as tf
 from tensorflow.contrib.framework.python.framework import checkpoint_utils
 
 import fs_tracker
@@ -38,16 +39,17 @@ class Experiment(object):
                  time_last_checkpoint=None,
                  time_finished=None,
                  info={},
-                 git=None):
+                 git=None,
+                 metric=None):
 
         self.key = key
         self.filename = filename
         self.args = args if args else []
         self.pythonenv = pythonenv
         self.project = project
+
         workspace_path = os.path.abspath('.')
         model_dir = fs_tracker.get_model_directory(key)
-
         self.artifacts = {
             'workspace': {
                 'local': workspace_path,
@@ -77,6 +79,7 @@ class Experiment(object):
         self.time_finished = time_finished
         self.info = info
         self.git = git
+        self.metric = metric
 
     def get_model(self):
         if self.info.get('type') == 'keras':
@@ -101,7 +104,8 @@ def create_experiment(
         experiment_name=None,
         project=None,
         artifacts={},
-        resources_needed=None):
+        resources_needed=None,
+        metric=None):
     key = str(uuid.uuid4()) if not experiment_name else experiment_name
     packages = [p._key + '==' + p._version for p in
                 pip.pip.get_installed_distributions(local_only=True)]
@@ -113,7 +117,8 @@ def create_experiment(
         pythonenv=packages,
         project=project,
         artifacts=artifacts,
-        resources_needed=resources_needed)
+        resources_needed=resources_needed,
+        metric=metric)
 
 
 class FirebaseProvider(object):
@@ -327,13 +332,16 @@ class FirebaseProvider(object):
             time_last_checkpoint=data.get('time_last_checkpoint'),
             time_finished=data.get('time_finished'),
             info=info,
-            git=data.get('git')
+            git=data.get('git'),
+            metric=data.get('metric')
         )
 
     def _get_experiment_info(self, experiment):
+        info = {}
+        type_found = False
+        '''
         local_modeldir = self.store.get_artifact(
             experiment.artifacts['modeldir'])
-        info = {}
         hdf5_files = glob.glob(os.path.join(local_modeldir, '*.hdf*'))
         type_found = False
         if any(hdf5_files):
@@ -349,12 +357,37 @@ class FirebaseProvider(object):
 
             info['global_step'] = global_step
             type_found = True
-
+        '''
+        
         if not type_found:
             info['type'] = 'unknown'
 
-        info['logtail'] = self.get_experiment_logtail(experiment.key)
+        info['logtail'] = self._get_experiment_logtail(experiment)
 
+        tbpath = self.store.get_artifact(experiment.artifacts['tb'])
+        eventfiles = glob.glob(os.path.join(tbpath, "*"))
+
+        metric_str = experiment.metric.split(':')
+        metric_name = metric_str[0]
+        metric_type = metric_str[1] if len(metric_str) > 1 else None
+    
+        if metric_type == 'min':
+            metric_accum = lambda x,y : min(x,y) if x else y
+        elif metric_type == 'max':
+            metric_accum = lambda x,y : max(x,y) if x else y
+        else:
+            metric_accum = lambda x,y : y
+
+
+        metric_value = None
+        for f in eventfiles:
+            for e in tf.train.summary_iterator(f):
+                for v in e.summary.value:
+                    if v.tag == metric_name:
+                        metric_value = metric_accum(metric_value, v.simple_value)
+        
+        info['metric_value'] = metric_value
+             
         return info
 
     def _get_experiment_logtail(self, experiment):
@@ -390,8 +423,11 @@ class FirebaseProvider(object):
             self._experiment_info_cache[key] = {}
 
         try:
-            self._experiment_info_cache[key]['logtail'] = \
-                self._get_experiment_logtail(experiment)
+            #self._experiment_info_cache[key]['logtail'] = \
+            #    self._get_experiment_logtail(experiment)
+
+            self._experiment_info_cache[key] = \
+                 self._get_experiment_info(experiment)
         except Exception:
             pass
 
@@ -412,7 +448,7 @@ class FirebaseProvider(object):
             self._get_user_keybase(userid) + "/experiments")
         if not experiment_keys:
             experiment_keys = {}
-        return self._get_valid_experiments(experiment_keys.keys())
+        return self._get_valid_experiments(experiment_keys.keys(), getinfo=True)
 
     def get_project_experiments(self, project):
         experiment_keys = self.__getitem__(self._get_projects_keybase()
@@ -432,11 +468,11 @@ class FirebaseProvider(object):
 
         return retval
 
-    def _get_valid_experiments(self, experiment_keys):
+    def _get_valid_experiments(self, experiment_keys, getinfo=False):
         experiments = []
         for key in experiment_keys:
             try:
-                experiment = self.get_experiment(key, getinfo=False)
+                experiment = self.get_experiment(key, getinfo=getinfo)
                 experiments.append(experiment)
             except AssertionError:
                 self.logger.warn(

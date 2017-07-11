@@ -5,30 +5,8 @@
         <div class="container">
         <h1>Your experiments</h1>
 
-        {% if experiments|length > 0 %}
-            <table class="table table-striped" id=experimentTable>
-                <thead> 
-                        <tr>
-                            <th>Time added </th>
-                            <th>Key</th>
-                            <th>Project</th>
-                            <th>Filename</th>
-                            <th>Status</th>
-                        </tr>
-                </thead>
-                    
-            {% for experiment in experiments %}
-                <tr>
-                    <td>{{ experiment.time_added | format_time }}</td>
-                    <td><a href="/experiments/{{ experiment.key }}">{{ experiment.key }}</a></td>
-                    <td>{{ experiment.project }}</td>
-                    <td>{{ experiment.filename }}</td>
-                    <td>{{ experiment.status }}</td>
-                </tr>
-            {% endfor %}
-            </table>
-        {% endif %}
 
+        {{ experimenttable(experiments) }}
 
         {% if experiments|length > 0 %}
             <button onclick='deleteAllExperiments()' type="button" class="btn btn-danger" id=deleteButton>Delete ALL</button>
@@ -44,8 +22,5 @@
             }
         }
 
-        $(document).ready(function() {
-                  $('#experimentTable').DataTable();
-        });
     </script>
 {% endblock %}

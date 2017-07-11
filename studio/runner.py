@@ -4,16 +4,19 @@ import logging
 import json
 import re
 import os
-
-import model
-import auth
 import uuid
+import shutil
+
 from local_queue import LocalQueue
 from pubsub_queue import PubsubQueue
 from gcloud_worker import GCloudWorkerManager
 from ec2cloud_worker import EC2WorkerManager
+
+import model
+import auth
 import git_util
 import local_worker
+import fs_tracker
 
 
 logging.basicConfig()
@@ -100,6 +103,30 @@ def main(args=sys.argv):
              'or numerical value of logger levels.',
         default=None)
 
+    parser.add_argument(
+        '--metric', '-m',
+        help='Metric to show in the summary of the experiment, ' +
+             'and to base hyperparameter search on. ' +
+             'Refers a scalar value in tensorboard log ' + 
+             'example: --metric=val_loss[:final | :min | :max] to report ' +
+             'validation loss in the end of the keras experiment ' +
+             '(or smallest or largest throughout the experiment for :min and :max ' +
+             'respectively)',
+        default=None)
+
+    parser.add_argument(
+        '--hyperparam',
+        help='Try out multiple values of a certain parameter. ' +
+             'For example, --hyperparam=learning_rate:0.01:0.1:l10 ' + 
+             'will instantiate 10 versions of the script, replace learning_rate ' +
+             'with a one of the 10 values for learning rate that lies ' + 
+             'on a log grid from 0.01 to 0.1, create experiments and place ' + 
+             'them in the queue. For local or a cloud execution number of workers ' +
+             'can be controlled by --num-workers option',
+        default=[], action='append')
+
+        
+
     parsed_args, script_args = parser.parse_known_args(args)
 
     exec_filename, other_args = script_args[1], script_args[2:]
@@ -131,16 +158,28 @@ def main(args=sys.argv):
     artifacts.update(parse_artifacts(parsed_args.capture_once, mutable=False))
     artifacts.update(parse_external_artifacts(parsed_args.reuse, db))
 
-    experiment = model.create_experiment(
-        filename=exec_filename,
-        args=other_args,
-        experiment_name=parsed_args.experiment,
-        project=parsed_args.project,
-        artifacts=artifacts,
-        resources_needed=resources_needed)
+    if any(parsed_args.hyperparam):
+        experiments = add_hyperparam_experiments(
+                exec_filename, 
+                other_args,
+                parsed_args,
+                artifacts, 
+                resources_needed) 
+    else:
+        experiments = [model.create_experiment(
+            filename=exec_filename,
+            args=other_args,
+            experiment_name=parsed_args.experiment,
+            project=parsed_args.project,
+            artifacts=artifacts,
+            resources_needed=resources_needed,
+            metric=parsed_args.metric)]
 
-    logger.info("Experiment name: " + experiment.key)
-    db.add_experiment(experiment)
+
+    for e in experiments:
+        db.add_experiment(e)
+        logger.info("Added experiment " + e.key)
+
 
     if parsed_args.cloud is not None:
         assert parsed_args.cloud == 'gcloud' or 'ec2', \
@@ -162,9 +201,11 @@ def main(args=sys.argv):
     queue = LocalQueue() if not parsed_args.queue else \
         PubsubQueue(parsed_args.queue, verbose=verbose)
 
-    queue.enqueue(json.dumps({
-        'experiment': experiment.key,
-        'config': config}))
+
+    for e in experiments:
+        queue.enqueue(json.dumps({
+            'experiment': e.key,
+            'config': config}))
 
     if not parsed_args.queue:
         worker_args = ['studio-local-worker']
@@ -241,6 +282,51 @@ def parse_hardware(parsed_args, config={}):
 
     return resources_needed
 
+
+def add_hyperparam_experiments(exec_filename, other_args, parsed_args, artifacts, resources_needed):
+
+    project = parsed_args.project if parsed_args.project else \
+            'hyperparam' + str(uuid.uuid4())
+
+    experiment_name_base = parsed_args.experiment if parsed_args.experiment \
+                          else str(uuid.uuid4())
+                      
+    experiments = [] 
+    for hyperparam in parsed_args.hyperparam:
+        param_name = hyperparam.split(':')[0]
+        param_value = float(hyperparam.split(':')[1])
+
+        experiment_name = experiment_name_base + '__' + param_name + '__' + str(param_value)
+        experiment_name = experiment_name.replace('.','_')
+    
+        workspace_orig = artifacts['workspace']['local'] if 'workspace' in artifacts.keys() \
+                else '.'
+        workspace_new = fs_tracker.get_artifact_cache('workspace', experiment_name) 
+        
+        current_artifacts = artifacts.copy()
+        current_artifacts.update({
+                'workspace': {
+                        'local': workspace_new,
+                        'mutable':True 
+                    }
+                })
+    
+        shutil.copytree(workspace_orig, workspace_new)
+
+        
+        # replace hyperparameter with new value
+
+        experiments.append(model.create_experiment(
+            filename=exec_filename,
+            args=other_args,
+            experiment_name=experiment_name,
+            project=project,
+            artifacts=current_artifacts,
+            resources_needed=resources_needed,
+            metric=parsed_args.metric))
+
+    return experiments
+   
 
 if __name__ == "__main__":
     main()
