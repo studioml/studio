@@ -3,15 +3,66 @@
 {% block content %}
     <div class="container">
             <h1>Project {{ project_name }} </h1>
-            <a href=/tensorboard_proj/{{ project_name }}>View in TensorBoard</a>
-        <table class="table table-striped">
+        <table class="table table-striped" id=experimentTable>
+            <thead> 
+                    <tr>
+                        <th>Time added </th>
+                        <th>Key</th>
+                        <th>Filename</th>
+                        <th>Status</th>
+                    </tr>
+            </thead>
+                    
             {% for experiment in experiments %}
                 <tr>
+                    <td>{{ experiment.time_added | format_time }}</td>
                     <td><a href="/experiments/{{ experiment.key }}">{{ experiment.key }}</a></td>
                     <td>{{ experiment.filename }}</td>
-                    <td>{{ experiment.status  }}</td>
+                    <td>{{ experiment.status }}</td>
                 </tr>
             {% endfor %}
         </table>
+
+        {% if experiments|length > 0 %}
+            <button onclick='viewInTensorBoard( "{{ project_name }}" )' type="button" class="btn btn-default"> View in tensorboard </button>
+            <button onclick='deleteExperiments({{ key_list }})' type="button" class="btn btn-danger" id="deleteButton"> Delete ALL</button>           
+        {% endif %}
+
     </div>
+
+    <script>
+        function viewInTensorBoard(key) {
+            window.location.href = "/tensorboard_proj/" + key
+        }
+
+        function deleteExperiments(keys) {
+            if (!confirm("Delete ALL experiments in the project?")) {
+                return 
+            }
+
+            document.getElementById("deleteButton").innerHTML="<i class='fa fa-cog fa-spin'></i> Deleting..."
+            console.log("Deleting experiments " + keys)
+            var noCompleted = 0
+            for (var i = 0; i < keys.length; i++) {
+                var xhttp = new XMLHttpRequest();
+
+                xhttp.onreadystatechange = function() {
+                    console.log("Response from the server for experiment " + keys[i] + " deletion request")
+                    noCompleted++;
+                    if (noCompleted == keys.length) {
+                        location.href="/projects"
+                    }
+                }
+
+                console.log("Deleting experiment " + keys[i]);
+                xhttp.open("GET", "/delete_experiment/" + keys[i], true);
+                xhttp.send();
+           }
+        }
+
+        $(document).ready(function() {
+                  $('#experimentTable').DataTable();
+        });
+    </script>
+
 {% endblock %}

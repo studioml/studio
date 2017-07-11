@@ -1,29 +1,51 @@
 {% extends "base.html" %}
 
 {% block content %}
-    <div class="container">
-        <h1>Your experiments</h1>
-        {% if experiments|length > 0 %}
-            <button onclick='deleteAllExperiments()' type="button" class="btn btn-danger"> Delete ALL </button>
-        {% endif %}
 
-        <table class="table table-striped">
+        <div class="container">
+        <h1>Your experiments</h1>
+
+        {% if experiments|length > 0 %}
+            <table class="table table-striped" id=experimentTable>
+                <thead> 
+                        <tr>
+                            <th>Time added </th>
+                            <th>Key</th>
+                            <th>Project</th>
+                            <th>Filename</th>
+                            <th>Status</th>
+                        </tr>
+                </thead>
+                    
             {% for experiment in experiments %}
                 <tr>
                     <td>{{ experiment.time_added | format_time }}</td>
                     <td><a href="/experiments/{{ experiment.key }}">{{ experiment.key }}</a></td>
+                    <td>{{ experiment.project }}</td>
                     <td>{{ experiment.filename }}</td>
                     <td>{{ experiment.status }}</td>
                 </tr>
             {% endfor %}
-        </table>
-    </div>
+            </table>
+        {% endif %}
+
+
+        {% if experiments|length > 0 %}
+            <button onclick='deleteAllExperiments()' type="button" class="btn btn-danger" id=deleteButton>Delete ALL</button>
+        {% endif %}
+
+        </div>
 
     <script>
         function deleteAllExperiments() {
             if (confirm("This will delete ALL of your experiments and CANNOT be undone. Proceed?")) {
+                    document.getElementById("deleteButton").innerHTML="<i class='fa fa-cog fa-spin'></i> Deleting..."
                     window.location.href = /delete_all/
             }
         }
+
+        $(document).ready(function() {
+                  $('#experimentTable').DataTable();
+        });
     </script>
 {% endblock %}

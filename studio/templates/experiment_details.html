@@ -13,27 +13,27 @@
 {% block content %}
     <h1>Experiment {{ experiment.key }}</h1>
 
-    {% if experiment.status == 'running' %}
-        <button onclick='stopExperiment( "{{ experiment.key }}" )' type="button" class="btn btn-danger"> Stop </button>
-    {% else %}
-        <button onclick='deleteExperiment( "{{ experiment.key }}" )' type="button" class="btn btn-danger"> Delete </button>
-    {% endif %}
-
     {% if experiment.project %}
         <p>Project: {{ experiment.project }}</p>
     {% endif %}
     <p>Filename: {{ experiment.filename }}</p>
     <p>Args: {{ experiment.args }}</p>
-    <p>Dependencies:</p>
-    <pre>
-    {{ experiment.pythonenv }}
-    </pre>
+
+    <p> <a data-toggle="collapse" href="#collapse1">Python environment:</a> </p>
+    <div id="collapse1" class="panel-collapse collapse">
+        <ul class="list-group">
+            {% for pypkg in experiment.pythonenv %}
+                <li class="list-group-item">{{ pypkg }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+                                                 
+
     <dl>
     <dt> Experiment artifacts: </dt>
     {% for key,value in artifacts.iteritems() %}
         <dd><a href={{ value }}> {{ key }} </a></dd>
     {% endfor %} 
-    <dt><a href='/tensorboard_exp/{{ experiment.key }}'> View in tensorboard </a></dt>
     <dt> Experiment info: </dt>
     <dd>Status: {{ experiment.status }}</dd>
     <dd>Creation time: {{ experiment.time_added | format_time }}</dd>
@@ -83,6 +83,16 @@
     {% endif %}
     </dl>
     
+    {% if experiment.status == 'running' %}
+        <button onclick='stopExperiment( "{{ experiment.key }}" )' type="button" class="btn btn-danger"> Stop </button>
+    {% else %}
+        <button onclick='deleteExperiment( "{{ experiment.key }}" )' type="button" class="btn btn-danger"> Delete </button>
+    {% endif %}
+    
+    {% if 'tb' in artifacts.keys() %}
+        <button onclick='viewInTensorBoard( "{{ experiment.key }}" )' type="button" class="btn btn-default"> View in tensorboard </button>
+    {% endif %}
+
 
     <script>
         function deleteExperiment(key) {
@@ -96,6 +106,10 @@
                 window.location.href = "/stop_experiment/" + key
             }
         }
+
+        function viewInTensorBoard(key) {
+            window.location.href = "/tensorboard_exp/" + key
+        }       
     </script>
 
 {% endblock %}

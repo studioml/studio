@@ -227,7 +227,7 @@ class FirebaseProvider(object):
         if experiment.project and self.auth:
             self.__setitem__(self._get_projects_keybase() +
                              experiment.project + "/" +
-                             experiment.key + "/userId",
+                             experiment.key + "/owner",
                              self.auth.get_user_id())
 
         self.checkpoint_experiment(experiment, blocking=True)
@@ -281,6 +281,11 @@ class FirebaseProvider(object):
                                    'artifact key {}').format(tag, art['key']))
                 self.store.delete_artifact(art)
 
+        self._delete(
+            self._get_projects_keybase() +
+            experiment.project +
+            "/" +
+            experiment.key)
         self._delete(self._get_experiments_keybase() + experiment.key)
 
     def checkpoint_experiment(self, experiment, blocking=False):
@@ -412,11 +417,7 @@ class FirebaseProvider(object):
                                            + project)
         if not experiment_keys:
             experiment_keys = {}
-        valid_experiments = self._get_valid_experiments(experiment_keys.keys())
-
-        # remove invalid experiment from project (or try to do so)
-        for e in experiment_keys.keys().difference(valid_experiments):
-            self._delete(self._get_projects_keybase() + project + "/" + e)
+        return self._get_valid_experiments(experiment_keys.keys())
 
     def get_artifacts(self, key):
         experiment = self.get_experiment(key, getinfo=False)

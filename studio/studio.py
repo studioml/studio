@@ -76,9 +76,7 @@ def auth_response():
 @authenticated('/')
 def dashboard():
     experiments = _db_provider.get_user_experiments()
-    return render_template(
-        "dashboard.html",
-        experiments=sorted(experiments, key=lambda e: -e.time_added))
+    return render_template("dashboard.html", experiments=experiments)
 
 
 @app.route('/experiments/<key>')
@@ -155,7 +153,8 @@ def project_details(key):
     return render_template(
         "project_details.html",
         project_name=key,
-        experiments=experiments)
+        experiments=experiments,
+        key_list=json.dumps([e.key for e in experiments]))
 
 
 @app.route('/users')
@@ -175,7 +174,7 @@ def user_experiments(key):
         "user_details.html",
         user=key,
         email=email,
-        experiments=sorted(experiments, key=lambda e: -e.time_added))
+        experiments=experiments)
 
 
 @app.route('/delete_experiment/<key>')
