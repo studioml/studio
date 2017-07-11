@@ -9,8 +9,10 @@ import re
 from threading import Thread
 import subprocess
 import requests
+import certifi
 import json
 import shutil
+
 
 import fs_tracker
 import util
@@ -251,7 +253,7 @@ class FirebaseArtifactStore(object):
                     self.app.storage().storage_bucket,
                     escaped_key)
 
-                response = requests.get(url, stream=True, headers=headers)
+                response = requests.get(url, stream=True, headers=headers, verify=certifi.old_where())
                 if response.status_code == 200:
                     with open(local_file_path, 'wb') as f:
                         for chunk in response:
@@ -285,7 +287,7 @@ class FirebaseArtifactStore(object):
                 self.app.storage().storage_bucket,
                 escaped_key)
 
-            response = requests.delete(url, headers=headers)
+            response = requests.delete(url, headers=headers, verify=certifi.old_where())
             if response.status_code != 204:
                 raise ValueError("Response error with code {}, text {}"
                                  .format(response.status_code, response.text))
@@ -340,7 +342,7 @@ class FirebaseArtifactStore(object):
                 self.app.storage().storage_bucket,
                 escaped_key)
 
-            response = requests.get(url, headers=headers)
+            response = requests.get(url, headers=headers, verify=certifi.old_where())
             if response.status_code != 200:
                 raise ValueError("Response error with code {}"
                                  .format(response.status_code))

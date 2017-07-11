@@ -115,7 +115,7 @@ class Auth:
             self.api_key)
         headers = {"content-type": "application/json; charset=UTF-8"}
         data = json.dumps({"returnSecureToken": True, "token": token})
-        request_object = requests.post(request_ref, headers=headers, data=data)
+        request_object = requests.post(request_ref, headers=headers, data=data, verify=certifi.old_where())
         raise_detailed_error(request_object)
         return request_object.json()
 
@@ -125,7 +125,7 @@ class Auth:
         headers = {"content-type": "application/json; charset=UTF-8"}
         data = json.dumps({"grantType": "refresh_token",
                            "refreshToken": refresh_token})
-        request_object = requests.post(request_ref, headers=headers, data=data)
+        request_object = requests.post(request_ref, headers=headers, data=data, verify=certifi.old_where())
         raise_detailed_error(request_object)
         request_object_json = request_object.json()
         # handle weirdly formatted response
@@ -141,7 +141,7 @@ class Auth:
             self.api_key)
         headers = {"content-type": "application/json; charset=UTF-8"}
         data = json.dumps({"idToken": id_token})
-        request_object = requests.post(request_ref, headers=headers, data=data)
+        request_object = requests.post(request_ref, headers=headers, data=data, verify=certifi.old_where())
         raise_detailed_error(request_object)
         return request_object.json()
 
@@ -150,7 +150,7 @@ class Auth:
             self.api_key)
         headers = {"content-type": "application/json; charset=UTF-8"}
         data = json.dumps({"requestType": "VERIFY_EMAIL", "idToken": id_token})
-        request_object = requests.post(request_ref, headers=headers, data=data)
+        request_object = requests.post(request_ref, headers=headers, data=data, verify=certifi.old_where())
         raise_detailed_error(request_object)
         return request_object.json()
 
@@ -159,7 +159,7 @@ class Auth:
             self.api_key)
         headers = {"content-type": "application/json; charset=UTF-8"}
         data = json.dumps({"requestType": "PASSWORD_RESET", "email": email})
-        request_object = requests.post(request_ref, headers=headers, data=data)
+        request_object = requests.post(request_ref, headers=headers, data=data, verify=certifi.old_where())
         raise_detailed_error(request_object)
         return request_object.json()
 
@@ -168,7 +168,7 @@ class Auth:
             self.api_key)
         headers = {"content-type": "application/json; charset=UTF-8"}
         data = json.dumps({"oobCode": reset_code, "newPassword": new_password})
-        request_object = requests.post(request_ref, headers=headers, data=data)
+        request_object = requests.post(request_ref, headers=headers, data=data, verify=certifi.old_where())
         raise_detailed_error(request_object)
         return request_object.json()
 
@@ -178,7 +178,7 @@ class Auth:
         headers = {"content-type": "application/json; charset=UTF-8"}
         data = json.dumps(
             {"email": email, "password": password, "returnSecureToken": True})
-        request_object = requests.post(request_ref, headers=headers, data=data)
+        request_object = requests.post(request_ref, headers=headers, data=data, verify=certifi.old_where())
         raise_detailed_error(request_object)
         return request_object.json()
 
