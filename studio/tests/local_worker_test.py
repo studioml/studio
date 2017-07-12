@@ -42,7 +42,7 @@ class LocalWorkerTest(unittest.TestCase):
         stubtest_worker(
             self,
             experiment_name='test_local_hyperparam' + str(uuid.uuid4()),
-            runner_args=['--verbose=debug', '--hyperparam=learning_rate:0.4'],
+            runner_args=['--verbose=debug', '--hyperparam=learning_rate=0.4'],
             config_name='test_config.yaml',
             test_script='hyperparam_hello_world.py',
             expected_output='0.4'
