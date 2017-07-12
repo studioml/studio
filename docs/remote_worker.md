@@ -12,20 +12,47 @@ This page describes a procedure for setting up a remote worker for studio. Remot
 7. Add `GOOGLE_APPLICATION_CREDENTIALS` variable to the environment that points to the saved json credentials file both on work submitter and work implementer. 
 
 ## II. Setting up remote worker
+If you don't have your own docker container to run jobs in, follow the instructions below. Otherwise, jump to the next section. 
 1. Install docker, and nvidia-docker to use gpus
 2. Clone the repo
 
-    git clone https://github.com/ilblackdragon/studio && cd studio && pip install -e .
+        git clone https://github.com/ilblackdragon/studio && cd studio && pip install -e .
  
    To check success of installation, you can run `python $(which nosetests) --processes=10 --process-timeout=600` to run the tests (may take about 10 min to finish)
 
-3. Start worker (queue name is a name of the queue that will definte where submit work to)
+3. Start worker (queue name is a name of the queue that will define where submit work to)
     
-    studio-start-remote-worker <queue-name>
+        studio-start-remote-worker <queue-name>
 
-## III. Submitting work
+
+## III. Setting up a remote worker in an existing docker container. 
+This section applies to the cases when you already have a docker image/container, and would like studio remote worker to run in it (wink wink Antoine :)
+Full disclosure - this is basically manual retrace of steps happening inside `Dockerfile` and `studio-start-remote-worker` script. As such, these steps can and should be automated, but the particular flavor of automation is left as an exercise for the reader. 
+
+1. Within the docker container, install the prerequisites (if you don't have them already). Particular form of this command depends on your docker image, but if you made it this far, you can handle that. We'll assume you are using ubuntu image. If your host machine does not have gpus or nvidia cuda drivers, don't install tensorflow-gpu package.
+
+        apt install -y python-dev python-pip git && pip install --upgrade pip && pip install tensorflow tensorflow-gpu
+
+2. Within docker container, install studio:
+
+        git clone https://github.com/ilblackdragon/studio && cd studio && pip install -e .
+
+3. Make sure `GOOGLE_APPLICATION_CREDENTIALS` evironment variable is set up and pointing to the credentials file inside the docker container. You can either copy or mount the file, and set up the variable accordingly.
+
+4. Create a folder that will serve as a workspace for experiments (we might switch to working off the artifact cache, in which case the workspace will be automatically created for each new experiment, but for now workspace has to be set up manually). For example:
+
+        mkdir /workspace && cd /workspace
+
+5. Start remote worker script:
+
+        studio-remote-worker --queue <queue_name> 
+    
+If you want the worker to quit after a singe experiment (e.g. if you are using fresh docker container for each experiment), add an extra argument `1` to the studio-remote-worker command line. 
+
+
+## IV. Submitting work
 On a submitting machine (usually local):
 
-    studio-runner --queue <queue-name> script.py <script_args>
+    studio-runner --queue <queue-name> <any_other_args> script.py <script_args>
 
 This script should quit promptly, but you'll be able to see experiment progress in studio web ui 
