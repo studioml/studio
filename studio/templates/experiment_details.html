@@ -14,7 +14,7 @@
     <h1>Experiment {{ experiment.key }}</h1>
 
     {% if experiment.project %}
-        <p>Project: {{ experiment.project }}</p>
+        <p>Project: <a href=/project/{{ experiment.project }}>{{ experiment.project }}</a></p>
     {% endif %}
     <p>Filename: {{ experiment.filename }}</p>
     <p>Args: {{ experiment.args }}</p>

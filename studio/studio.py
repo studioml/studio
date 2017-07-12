@@ -23,6 +23,7 @@ _db_provider = None
 _tensorboard_dirs = {}
 _experiment_info_cache = {}
 logger = None
+_visited_dashboard = False
 
 
 def authenticated(redirect_after):
@@ -75,6 +76,11 @@ def auth_response():
 @app.route('/')
 @authenticated('/')
 def dashboard():
+    global _visited_dashboard
+    if not _visited_dashboard:
+        _visited_dashboard = True
+        return render_template('loader.html')
+
     experiments = _db_provider.get_user_experiments()
     return render_template("dashboard.html", experiments=experiments)
 
@@ -250,6 +256,7 @@ def main():
     logger = logging.getLogger('studio')
     logger.setLevel(model.parse_verbosity(config.get('verbose')))
 
+    print('Starting TensorFlow Studio on port {0}'.format(args.port))
     app.run(port=args.port, debug=True)
 
 

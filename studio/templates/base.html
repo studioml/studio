@@ -57,13 +57,13 @@
                     <td><a href="/experiments/{{ experiment.key }}">{{ experiment.key }}</a></td>
                     <td>{{ experiment.metric }}</td>
 
-                    {% if experiment.info.get('metric_value') %}
+                    {% if experiment.info and experiment.info.get('metric_value') %}
                         <td>{{ '%.4f' | format(experiment.info['metric_value']|float) }}</td>
                     {% else %}
                         <td> None </td>
                     {% endif %}
                         
-                    <td>{{ experiment.project }}</td>
+                    <td><a href="/project/{{ experiment.project }}">{{ experiment.project }}</a></td>
                     <td>{{ experiment.filename }}</td>
                     <td>{{ experiment.status }}</td>
                 </tr>

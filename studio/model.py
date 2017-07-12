@@ -11,6 +11,7 @@ import time
 import glob
 from threading import Thread
 import subprocess
+import traceback
 
 import tensorflow as tf
 from tensorflow.contrib.framework.python.framework import checkpoint_utils
@@ -157,6 +158,7 @@ class FirebaseProvider(object):
         except Exception as err:
             self.logger.warn(("Getting key {} from a database " +
                               "raised an exception: {}").format(key, err))
+            self.logger.warn("Exception stacktrace: \n", traceback.format_exc())
             return None
 
     def __setitem__(self, key, value):
@@ -173,6 +175,7 @@ class FirebaseProvider(object):
             self.logger.warn(("Putting key {}, value {} into a database " +
                               "raised an exception: {}")
                              .format(key, value, err))
+            self.logger.warn("Exception stacktrace: \n", traceback.format_exc())
 
     def _delete(self, key):
         dbobj = self.app.database().child(key)
@@ -305,15 +308,13 @@ class FirebaseProvider(object):
 
         for t in checkpoint_threads:
             t.start()
-            t.join()
 
         self.__setitem__(self._get_experiments_keybase() +
                          experiment.key + "/time_last_checkpoint",
                          time.time())
         if blocking:
             for t in checkpoint_threads:
-                pass
-                # t.join()
+                t.join()
         else:
             return checkpoint_threads
 
@@ -367,26 +368,27 @@ class FirebaseProvider(object):
         tbpath = self.store.get_artifact(experiment.artifacts['tb'])
         eventfiles = glob.glob(os.path.join(tbpath, "*"))
 
-        metric_str = experiment.metric.split(':')
-        metric_name = metric_str[0]
-        metric_type = metric_str[1] if len(metric_str) > 1 else None
+        if experiment.metric is not None:
+            metric_str = experiment.metric.split(':')
+            metric_name = metric_str[0]
+            metric_type = metric_str[1] if len(metric_str) > 1 else None
     
-        if metric_type == 'min':
-            metric_accum = lambda x,y : min(x,y) if x else y
-        elif metric_type == 'max':
-            metric_accum = lambda x,y : max(x,y) if x else y
-        else:
-            metric_accum = lambda x,y : y
+            if metric_type == 'min':
+                metric_accum = lambda x,y : min(x,y) if x else y
+            elif metric_type == 'max':
+                metric_accum = lambda x,y : max(x,y) if x else y
+            else:   
+                metric_accum = lambda x,y : y
 
 
-        metric_value = None
-        for f in eventfiles:
-            for e in tf.train.summary_iterator(f):
-                for v in e.summary.value:
-                    if v.tag == metric_name:
-                        metric_value = metric_accum(metric_value, v.simple_value)
+            metric_value = None
+            for f in eventfiles:
+                for e in tf.train.summary_iterator(f):
+                    for v in e.summary.value:
+                        if v.tag == metric_name:
+                            metric_value = metric_accum(metric_value, v.simple_value)
         
-        info['metric_value'] = metric_value
+            info['metric_value'] = metric_value
              
         return info
 
@@ -423,11 +425,12 @@ class FirebaseProvider(object):
             self._experiment_info_cache[key] = {}
 
         try:
+            pass
             #self._experiment_info_cache[key]['logtail'] = \
             #    self._get_experiment_logtail(experiment)
 
-            self._experiment_info_cache[key] = \
-                 self._get_experiment_info(experiment)
+            #self._experiment_info_cache[key] = \
+            #     self._get_experiment_info(experiment)
         except Exception:
             pass
 
@@ -436,12 +439,16 @@ class FirebaseProvider(object):
                 self._experiment_info_cache[key].update(
                     self._get_experiment_info(experiment)
                 )
-            except Exception:
-                pass
+                self.logger.debug("Finished info download for " + key)
+            except Exception as e:
+                self.logger.info("Exception {} while info download for {}".format(e, key))
+                self.logger.info("Exception stacktrace: \n" + traceback.format_exc())
+                
 
         if not (experiment.status == 'finished' and
                 any(self._experiment_info_cache[key])):
-            Thread(target=download_info)
+            self.logger.debug("Starting info download for " + key)
+            Thread(target=download_info).start()
 
     def get_user_experiments(self, userid=None):
         experiment_keys = self.__getitem__(

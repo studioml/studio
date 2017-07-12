@@ -126,6 +126,12 @@ def main(args=sys.argv):
              'can be controlled by --num-workers option',
         default=[], action='append')
 
+    parser.add_argument(
+        '--num-workers',
+        help='Number of local or cloud workers to spin up',
+        type=int,
+        default=1)
+
         
 
     parsed_args, script_args = parser.parse_known_args(args)
@@ -217,7 +223,11 @@ def main(args=sys.argv):
             worker_args += ['--guest']
 
         logger.info('worker args: {}'.format(worker_args))
-        local_worker.main(worker_args)
+        if parsed_args.num_workers == 1:
+            local_worker.main(worker_args)
+        else:
+            raise NotImplementedError("Multiple local workers are not " +
+                    "implemeted yet")
     elif parsed_args.queue.startswith('gcloud_') or \
             parsed_args.queue.startswith('ec2_'):
 
@@ -236,7 +246,9 @@ def main(args=sys.argv):
             worker_manager = EC2WorkerManager(
                 auth_cookie=auth_cookie
             )
-        worker_manager.start_worker(parsed_args.queue, resources_needed)
+
+        for i in range(parsed_args.num_workers):
+            worker_manager.start_worker(parsed_args.queue, resources_needed)
 
     db = None
 

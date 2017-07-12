@@ -18,10 +18,12 @@ def main(args=sys.argv):
                      Usage: studio-remote-worker \
                      ')
     parser.add_argument('--config', help='configuration file', default=None)
+
     parser.add_argument(
-        '--guest',
-        help='Guest mode (does not require db credentials)',
+        '--single-run',
+        help='quit after a single run (regardless of the state of the queue)',
         action='store_true')
+
     parser.add_argument('--queue', help='queue name', required=True)
     parser.add_argument(
         '--verbose', '-v',
@@ -40,7 +42,7 @@ def main(args=sys.argv):
     logger.info('Starting working')
     worker_loop(queue, parsed_args,
                 setup_pyenv=True,
-                single_experiment=True,
+                single_experiment=parsed_args.signle_run,
                 fetch_artifacts=True)
 
 
