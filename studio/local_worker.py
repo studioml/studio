@@ -69,7 +69,8 @@ class LocalExecutor(object):
                                  experiment.args,
                                  stdout=output_file,
                                  stderr=subprocess.STDOUT,
-                                 env=env)
+                                 env=env, 
+                                 cwd=experiment.artifacts['workspace']['local'])
             # simple hack to show what's in the log file
             ptail = subprocess.Popen(["tail", "-f", log_path])
 

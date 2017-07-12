@@ -6,6 +6,7 @@ import re
 import os
 import uuid
 import shutil
+import numpy as np
 
 from local_queue import LocalQueue
 from pubsub_queue import PubsubQueue
@@ -285,18 +286,32 @@ def parse_hardware(parsed_args, config={}):
 
 def add_hyperparam_experiments(exec_filename, other_args, parsed_args, artifacts, resources_needed):
 
-    project = parsed_args.project if parsed_args.project else \
-            'hyperparam' + str(uuid.uuid4())
 
     experiment_name_base = parsed_args.experiment if parsed_args.experiment \
                           else str(uuid.uuid4())
+
+    project = parsed_args.project if parsed_args.project else \
+            ('hyperparam_' + experiment_name_base)
                       
     experiments = [] 
+    hyperparam_values = {} 
     for hyperparam in parsed_args.hyperparam:
-        param_name = hyperparam.split(':')[0]
-        param_value = float(hyperparam.split(':')[1])
+        param_name = hyperparam.split('=')[0]
+        param_values_str = hyperparam.split('=')[1]
+        
+        param_values = parse_range(param_values_str)
+        hyperparam_values[param_name] = param_values
 
-        experiment_name = experiment_name_base + '__' + param_name + '__' + str(param_value)
+    hyperparam_tuples = unfold_tuples(hyperparam_values)
+
+    
+
+
+    for hyperparam_tuple in hyperparam_tuples:
+        experiment_name = experiment_name_base
+        for param_name, param_value in hyperparam_tuple.iteritems():
+            experiment_name = experiment_name + '__' + param_name + '__' + str(param_value)
+
         experiment_name = experiment_name.replace('.','_')
     
         workspace_orig = artifacts['workspace']['local'] if 'workspace' in artifacts.keys() \
@@ -313,8 +328,16 @@ def add_hyperparam_experiments(exec_filename, other_args, parsed_args, artifacts
     
         shutil.copytree(workspace_orig, workspace_new)
 
+        with open(os.path.join(workspace_new, exec_filename), 'r') as f:
+            script_text = f.read()
+
+        for param_name, param_value in hyperparam_tuple.iteritems():
+            script_text = re.sub('\\b' + param_name + '\\b(?=[^=]*\\n)', 
+                             str(param_value), script_text) 
         
-        # replace hyperparameter with new value
+        with open(os.path.join(workspace_new, exec_filename), 'w') as f:
+            f.write(script_text)
+
 
         experiments.append(model.create_experiment(
             filename=exec_filename,
@@ -326,6 +349,66 @@ def add_hyperparam_experiments(exec_filename, other_args, parsed_args, artifacts
             metric=parsed_args.metric))
 
     return experiments
+
+
+def parse_range(range_str):
+    if ',' in range_str: 
+        # return numpy array for consistency with other cases
+        return np.array([float(s) for s in range_str.split(',')])
+    elif ':' in range_str:
+        range_limits = range_str.split(':')
+        assert len(range_limits) > 1
+        if len(range_limits) == 2:
+            try:
+                limit1 = float(range_limits[0])
+            except ValueError:
+                limit1 = 0.0
+            limit2 = float(range_limits[1])
+            return np.arange(limit1, limit2)
+        else:
+            try:
+                limit1 = float(range_limits[0])
+            except ValueError:
+                limit1 = 0.0
+
+            limit3 = float(range_limits[2])
+
+            try:
+                limit2 = float(range_limits[1])
+                if int(limit2) == limit2 and limit2 > abs(limit3 - limit1):
+                    return np.linspace(limit1, limit3, int(limit2))
+                else:
+                    return np.arange(limit1, limit3, limit2)
+
+            except ValueError:
+                if 'l' in range_limits[1]:
+                    limit2 = int(range_limits[1].replace('l',''))
+                    return np.exp(np.linspace(np.log(limit1), np.log(limit3), limit2))
+                else:
+                    raise ValueError('unknown limit specification ' + range_limits[1])                
+
+    else:
+        return [float(range_str)]
+
+
+
+
+def unfold_tuples(hyperparam_values):
+    hyperparam_tuples = []
+    for param_name, param_values in hyperparam_values.iteritems():
+        hyperparam_tuples_new = []
+        for value in param_values:
+            if any(hyperparam_tuples):
+                for hyperparam_tuple in hyperparam_tuples:
+                    hyperparam_tuple_new = hyperparam_tuple.copy()
+                    hyperparam_tuple_new[param_name] = value
+                    hyperparam_tuples_new.append(hyperparam_tuple_new)
+            else:
+                hyperparam_tuples_new.append({param_name:value})
+
+        hyperparam_tuples = hyperparam_tuples_new
+    return hyperparam_tuples
+
    
 
 if __name__ == "__main__":

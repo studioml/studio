@@ -29,6 +29,25 @@ class LocalWorkerTest(unittest.TestCase):
             expected_output='[ 2.  6.]'
         )
 
+    def test_local_hyperparam(self):
+        stubtest_worker(
+            self,
+            experiment_name='test_local_hyperparam' + str(uuid.uuid4()),
+            runner_args=['--verbose=debug'],
+            config_name='test_config.yaml',
+            test_script='hyperparam_hello_world.py',
+            expected_output='0.3'
+        )
+
+        stubtest_worker(
+            self,
+            experiment_name='test_local_hyperparam' + str(uuid.uuid4()),
+            runner_args=['--verbose=debug', '--hyperparam=learning_rate:0.4'],
+            config_name='test_config.yaml',
+            test_script='hyperparam_hello_world.py',
+            expected_output='0.4'
+        )
+
     def test_local_worker_ce(self):
         tmpfile = os.path.join(tempfile.gettempdir(),
                                'tmpfile.txt')
@@ -128,8 +147,8 @@ def stubtest_worker(
         runner_args,
         config_name,
         test_script,
-        script_args,
         expected_output,
+        script_args=[],
         queue=LocalQueue(),
         wait_for_experiment=True,
         delete_when_done=True):
@@ -159,6 +178,14 @@ def stubtest_worker(
 
     pout, _ = p.communicate()
     logger.debug("studio-runner output: \n" + pout)
+
+
+    experiments = [e for e in db.get_user_experiments() 
+        if e.key.startswith(experiment_name)]
+
+    assert len(experiments) == 1
+
+    experiment_name = experiments[0].key
 
     try:
         # test saved arguments
