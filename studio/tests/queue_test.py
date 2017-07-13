@@ -109,11 +109,13 @@ class PubSubQueueTest(QueueTest, unittest.TestCase):
         self.assertEquals(data1, q2.dequeue())
 
         q1.enqueue(data1)
-        time.sleep(1)
         q1.enqueue(data2)
 
-        self.assertEquals(data1, q1.dequeue())
-        self.assertEquals(data2, q2.dequeue())
+        recv1 = q1.dequeue()
+        recv2 = q2.dequeue()
+        self.assertTrue(data1 == recv1 or data2 == recv1)
+        self.assertTrue(data1 == recv2 or data2 == recv2)
+        self.assertFalse(recv1 == recv2)
 
         self.assertFalse(q1.has_next())
         self.assertFalse(q2.has_next())

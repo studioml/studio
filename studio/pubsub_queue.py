@@ -61,21 +61,9 @@ class PubsubQueue(object):
         retval = self.messages[0]
         self.messages = self.messages[1:]
         if acknowledge:
-
-            success = False
-            while not success:
-                try:
-                    self.acknowledge(retval[0])
-                    success = True
-                    self.logger.debug("Message {} received and acknowledged"
-                        .format(retval[1].message_id))
-                except RetryError:
-                    success = False
-                    if not any(self.messages):
-                        raise ValueError('All received messages are stale')
-                 
-                    retval = self.messages[0]
-                    self.messages = self.messages[1:]
+            self.acknowledge(retval[0])
+            self.logger.debug("Message {} received and acknowledged"
+                .format(retval[1].message_id))
 
             return retval[1].data
         else:
