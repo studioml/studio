@@ -10,6 +10,7 @@ import socket
 import subprocess
 from urlparse import urlparse
 from requests.exceptions import HTTPError
+from multiprocessing.pool import ThreadPool
 
 import fs_tracker
 
@@ -28,7 +29,7 @@ def authenticated(redirect_after):
     def auth_decorator(func):
         @wraps(func)
         def auth_wrapper(**kwargs):
-            if _db_provider.auth.expired:
+            if _db_provider.auth and _db_provider.auth.expired:
                 formatted_redirect = redirect_after
                 for k, v in kwargs.iteritems():
                     formatted_redirect = formatted_redirect.replace(
@@ -75,9 +76,7 @@ def auth_response():
 @authenticated('/')
 def dashboard():
     experiments = _db_provider.get_user_experiments()
-    return render_template(
-        "dashboard.html",
-        experiments=sorted(experiments, key=lambda e: -e.time_added))
+    return render_template("dashboard.html", experiments=experiments)
 
 
 @app.route('/experiments/<key>')
@@ -154,7 +153,8 @@ def project_details(key):
     return render_template(
         "project_details.html",
         project_name=key,
-        experiments=experiments)
+        experiments=experiments,
+        key_list=json.dumps([e.key for e in experiments]))
 
 
 @app.route('/users')
@@ -174,7 +174,7 @@ def user_experiments(key):
         "user_details.html",
         user=key,
         email=email,
-        experiments=sorted(experiments, key=lambda e: -e.time_added))
+        experiments=experiments)
 
 
 @app.route('/delete_experiment/<key>')
@@ -189,6 +189,16 @@ def delete_experiment(key):
 def stop_experiment(key):
     _db_provider.stop_experiment(key)
     return redirect('/experiments/' + key)
+
+
+@app.route('/delete_all/')
+@authenticated('/delete_all/')
+def delete_all_experiments():
+    pool = ThreadPool(128)
+    experiments = _db_provider.get_user_experiments()
+    pool.map(_db_provider.delete_experiment, experiments)
+
+    return redirect('/')
 
 
 def get_auth_url():
@@ -214,11 +224,21 @@ def main():
                         type=int,
                         default=5000)
 
+    parser.add_argument(
+        '--verbose', '-v',
+        help='Verbosity level. Allowed vaules: ' +
+             'debug, info, warn, error, crit ' +
+             'or numerical value of logger levels.',
+        default=None)
+
     args = parser.parse_args()
     config = model.get_config()
     if args.config:
         with open(args.config) as f:
             config.update(yaml.load(f))
+
+    if args.verbose:
+        config['verbose'] = args.verbose
 
 #    if args.guest:
 #        config['database']['guest'] = True
@@ -228,7 +248,7 @@ def main():
 
     global logger
     logger = logging.getLogger('studio')
-    logger.setLevel(10)
+    logger.setLevel(model.parse_verbosity(config.get('verbose')))
 
     app.run(host='0.0.0.0', port=args.port, debug=True)
 

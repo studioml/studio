@@ -74,7 +74,7 @@ def memstr2int(string):
 
     for k, f in conversion_factors:
         if string.endswith(k):
-            return int(string.replace(k, '')) * f
+            return int(float(string.replace(k, '')) * f)
 
     return int(string)
 

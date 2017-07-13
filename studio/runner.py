@@ -1,5 +1,4 @@
 import sys
-import subprocess
 import argparse
 import logging
 import json
@@ -11,8 +10,10 @@ import auth
 import uuid
 from local_queue import LocalQueue
 from pubsub_queue import PubsubQueue
-from cloud_worker import GCloudWorkerManager
+from gcloud_worker import GCloudWorkerManager
+from ec2cloud_worker import EC2WorkerManager
 import git_util
+import local_worker
 
 
 logging.basicConfig()
@@ -92,12 +93,26 @@ def main(args=sys.argv):
         help='Name of the artifact from another experiment to use',
         default=[], action='append')
 
+    parser.add_argument(
+        '--verbose', '-v',
+        help='Verbosity level. Allowed vaules: ' +
+             'debug, info, warn, error, crit ' +
+             'or numerical value of logger levels.',
+        default=None)
+
     parsed_args, script_args = parser.parse_known_args(args)
 
     exec_filename, other_args = script_args[1], script_args[2:]
     # TODO: Queue the job based on arguments and only then execute.
 
     config = model.get_config(parsed_args.config)
+
+    if parsed_args.verbose:
+        config['verbose'] = parsed_args.verbose
+
+    verbose = model.parse_verbosity(config['verbose'])
+    logger.setLevel(verbose)
+
     db = model.get_db_provider(config)
 
     if git_util.is_git() and not git_util.is_clean():
@@ -128,16 +143,24 @@ def main(args=sys.argv):
     db.add_experiment(experiment)
 
     if parsed_args.cloud is not None:
-        assert parsed_args.cloud == 'gcloud', \
-            'Only gcloud is supported for now'
-        if parsed_args.queue is None:
-            parsed_args.queue = 'gcloud_' + str(uuid.uuid4())
+        assert parsed_args.cloud == 'gcloud' or 'ec2', \
+            'Only gcloud or ec2 are supported for now'
+        if parsed_args.cloud == 'gcloud':
+            if parsed_args.queue is None:
+                parsed_args.queue = 'gcloud_' + str(uuid.uuid4())
 
-        if not parsed_args.queue.startswith('gcloud_'):
-            parsed_args.queue = 'gcloud_' + parsed_args.queue
+            if not parsed_args.queue.startswith('gcloud_'):
+                parsed_args.queue = 'gcloud_' + parsed_args.queue
+
+        if parsed_args.cloud == 'ec2':
+            if parsed_args.queue is None:
+                parsed_args.queue = 'ec2_' + str(uuid.uuid4())
+
+            if not parsed_args.queue.startswith('ec2_'):
+                parsed_args.queue = 'ec2_' + parsed_args.queue
 
     queue = LocalQueue() if not parsed_args.queue else \
-        PubsubQueue(parsed_args.queue)
+        PubsubQueue(parsed_args.queue, verbose=verbose)
 
     queue.enqueue(json.dumps({
         'experiment': experiment.key,
@@ -147,14 +170,14 @@ def main(args=sys.argv):
         worker_args = ['studio-local-worker']
 
         if parsed_args.config:
-            worker_args += '--config=' + parsed_args.config
+            worker_args += ['--config=' + parsed_args.config]
         if parsed_args.guest:
-            worker_args += '--guest'
+            worker_args += ['--guest']
 
         logger.info('worker args: {}'.format(worker_args))
-        worker = subprocess.Popen(worker_args)
-        worker.wait()
-    elif parsed_args.queue.startswith('gcloud_'):
+        local_worker.main(worker_args)
+    elif parsed_args.queue.startswith('gcloud_') or \
+            parsed_args.queue.startswith('ec2_'):
 
         auth_cookie = None if config['database'].get('guest') \
             else os.path.join(
@@ -162,10 +185,15 @@ def main(args=sys.argv):
             config['database']['apiKey']
         )
 
-        worker_manager = GCloudWorkerManager(
-            auth_cookie=auth_cookie,
-            zone=config['cloud']['zone']
-        )
+        if parsed_args.queue.startswith('gcloud_'):
+            worker_manager = GCloudWorkerManager(
+                auth_cookie=auth_cookie,
+                zone=config['cloud']['zone']
+            )
+        else:
+            worker_manager = EC2WorkerManager(
+                auth_cookie=auth_cookie
+            )
         worker_manager.start_worker(parsed_args.queue, resources_needed)
 
     db = None

@@ -36,7 +36,7 @@ class LocalExecutor(object):
 
         self.db = model.get_db_provider(self.config)
         self.logger = logging.getLogger('LocalExecutor')
-        self.logger.setLevel(10)
+        self.logger.setLevel(model.parse_verbosity(self.config.get('verbose')))
         self.logger.debug("Config: ")
         self.logger.debug(self.config)
 
@@ -94,20 +94,36 @@ class LocalExecutor(object):
                 sched.shutdown()
 
 
-def allocate_resources(experiment, config=None):
+def allocate_resources(experiment, config=None, verbose=10):
+    logger = logging.getLogger('allocate_resources')
+    logger.setLevel(verbose)
+    logger.info('Allocating resources {} for experiment {}'
+                .format(experiment.resources_needed, experiment.key))
+
     ret_val = True
-    gpus_needed = experiment.resources_needed.get('gpus') \
+    gpus_needed = int(experiment.resources_needed.get('gpus')) \
         if experiment.resources_needed else 0
+
+    pythonenv_nogpu = [pkg for pkg in experiment.pythonenv
+                       if not pkg.startswith('tensorflow-gpu')]
 
     if gpus_needed > 0:
         ret_val = ret_val and allocate_gpus(gpus_needed, config)
+        # experiments with GPU should have tensorflow-gpu version
+        # matching tensorflow version
+
+        tensorflow_pkg = [pkg for pkg in experiment.pythonenv
+                          if pkg.startswith('tensorflow==')][0]
+
+        experiment.pythonenv = pythonenv_nogpu + \
+            [tensorflow_pkg.replace('tensorflow==', 'tensorflow-gpu==')]
+
     else:
         allocate_gpus(0, config)
         # experiments without GPUs should not have
         # tensorflow-gpu package in the evironment, because it won't
         # work on the machines that do not have cuda installed
-        experiment.pythonenv = [pkg for pkg in experiment.pythonenv
-                                if not pkg.startswith('tensorflow-gpu')]
+        experiment.pythonenv = pythonenv_nogpu
 
     return ret_val
 
@@ -119,23 +135,18 @@ def allocate_gpus(gpus_needed, config=None):
 
     available_gpus = get_available_gpus()
     gpu_mapping = get_gpu_mapping()
-    if config and any(gpu_mapping):
-        mapped_gpus = [str(gpu_mapping[g])
-                       for g in available_gpus]
-    else:
-        mapped_gpus = [str(g) for g in available_gpus]
+    mapped_gpus = [str(gpu_mapping[g])
+                   for g in available_gpus]
 
     if len(mapped_gpus) >= gpus_needed:
         os.environ['CUDA_VISIBLE_DEVICES'] = ','.join(
-            mapped_gpus[:int(gpus_needed)])
+            mapped_gpus[:gpus_needed])
         return True
     else:
         return False
 
 
 def main(args=sys.argv):
-    logger = logging.getLogger('studio-local-worker')
-    logger.setLevel(10)
     parser = argparse.ArgumentParser(
         description='TensorFlow Studio worker. \
                      Usage: studio-local-worker \
@@ -161,7 +172,6 @@ def worker_loop(queue, parsed_args,
                 fetch_artifacts=False):
 
     logger = logging.getLogger('worker_loop')
-    logger.setLevel(10)
     while queue.has_next():
         first_exp, ack_key = queue.dequeue(acknowledge=False)
         # first_exp = min([(p, os.path.getmtime(p)) for p in queue],
@@ -170,11 +180,13 @@ def worker_loop(queue, parsed_args,
         experiment_key = json.loads(first_exp)['experiment']
         config = json.loads(first_exp)['config']
         parsed_args.config = config
+        verbose = model.parse_verbosity(config.get('verbose'))
+        logger.setLevel(verbose)
 
         executor = LocalExecutor(parsed_args)
         experiment = executor.db.get_experiment(experiment_key)
 
-        if allocate_resources(experiment, config):
+        if allocate_resources(experiment, config, verbose=verbose):
             # os.remove(first_exp)
             queue.acknowledge(ack_key)
             if setup_pyenv:

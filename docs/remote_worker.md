@@ -6,7 +6,8 @@ This page describes a procedure for setting up a remote worker for studio. Remot
 2. Next, create a project if you don't have a project corresponding to studio just yet. 
 3. Then go to API Manager -> Credentials, and click "Create credentials" -> "Service account key"
 4. Choose "New service account" from the "Select accout" dropdown,  and keep key type as JSON
-5. Enter a name of your liking for account (google will convert it to a uniqie name), and choose "PubSub Editor" for a role (technically, you can create 2 keys, and keep publisher on a machine that submits work, and subscriber key on a machine that implements the work)
+5. Enter a name of your liking for account (google will convert it to a uniqie name), and choose "PubSub Editor" for a role (technically, you can create 2 keys, and keep publisher on a machine that submits work, and subscriber key on a machine that implements the work). If you are planning to use cloud workers, it is also recommended to add Compute Engine / Compute Engine Admin (v1). 
+
 6. Save a json credentials file
 7. Add `GOOGLE_APPLICATION_CREDENTIALS` variable to the environment that points to the saved json credentials file both on work submitter and work implementer. 
 
@@ -17,7 +18,7 @@ If you don't have your own docker container to run jobs in, follow the instructi
 
         git clone https://github.com/ilblackdragon/studio && cd studio && pip install -e .
  
-   To check success of installation, you can run `python $(which nosetests)` to run the tests (may take about 10 min to finish)
+   To check success of installation, you can run `python $(which nosetests) --processes=10 --process-timeout=600` to run the tests (may take about 10 min to finish)
 
 3. Start worker (queue name is a name of the queue that will define where submit work to)
     

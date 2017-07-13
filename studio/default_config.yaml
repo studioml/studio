@@ -14,7 +14,7 @@ database:
     # use_email_auth: true
                                                                     
 saveWorkspaceFrequency: 1 #how often is workspace being saved (minutes)
-
+verbose: error
 
 cloud:
     type: google
