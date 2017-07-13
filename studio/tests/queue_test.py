@@ -39,6 +39,10 @@ class QueueTest(object):
         data2 = str(uuid.uuid4())
 
         q.enqueue(data1)
+        # neither pubsub nor local queue are actually 
+        # very punctual about the order. This delay is 
+        # intended to ensure the messages are not 
+        # swapped accidentally
         time.sleep(1)
         q.enqueue(data2)
 
@@ -105,6 +109,7 @@ class PubSubQueueTest(QueueTest, unittest.TestCase):
         self.assertEquals(data1, q2.dequeue())
 
         q1.enqueue(data1)
+        time.sleep(1)
         q1.enqueue(data2)
 
         self.assertEquals(data1, q1.dequeue())

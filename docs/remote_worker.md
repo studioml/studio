@@ -39,16 +39,11 @@ Full disclosure - this is basically manual retrace of steps happening inside `Do
 
 3. Make sure `GOOGLE_APPLICATION_CREDENTIALS` evironment variable is set up and pointing to the credentials file inside the docker container. You can either copy or mount the file, and set up the variable accordingly.
 
-4. Create a folder that will serve as a workspace for experiments (we might switch to working off the artifact cache, in which case the workspace will be automatically created for each new experiment, but for now workspace has to be set up manually). For example:
-
-        mkdir /workspace && cd /workspace
-
-5. Start remote worker script:
+4. Start remote worker script:
 
         studio-remote-worker --queue <queue_name> 
     
-If you want the worker to quit after a singe experiment (e.g. if you are using fresh docker container for each experiment), add an extra flag `--single-run` to the studio-remote-worker command line. 
-
+If you want the worker to quit after a single experiment (e.g. if you are using fresh docker container for each experiment), add an extra flag `--single-run` to the studio-remote-worker command line. Otherwise, the remote worker will try to execute all outstanding tasks in the queue and quit after that. 
 
 ## IV. Submitting work
 On a submitting machine (usually local):

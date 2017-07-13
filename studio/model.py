@@ -415,14 +415,14 @@ class FirebaseProvider(object):
         if getinfo:
             self._start_info_download(experiment_stub)
 
-        info = self._experiment_info_cache.get(key)
+        info = self._experiment_info_cache.get(key)[0]
 
         return self._experiment(key, data, info)
 
     def _start_info_download(self, experiment):
         key = experiment.key
         if key not in self._experiment_info_cache.keys():
-            self._experiment_info_cache[key] = {}
+            self._experiment_info_cache[key] = ({}, time.time())
 
         try:
             pass
@@ -436,17 +436,19 @@ class FirebaseProvider(object):
 
         def download_info():
             try:
-                self._experiment_info_cache[key].update(
-                    self._get_experiment_info(experiment)
-                )
+                self._experiment_info_cache[key] = (
+                    self._get_experiment_info(experiment),
+                    time.time())
+                
                 self.logger.debug("Finished info download for " + key)
             except Exception as e:
                 self.logger.info("Exception {} while info download for {}".format(e, key))
                 self.logger.info("Exception stacktrace: \n" + traceback.format_exc())
                 
 
-        if not (experiment.status == 'finished' and
-                any(self._experiment_info_cache[key])):
+        if not(any(self._experiment_info_cache[key][0])) or \
+           self._experiment_info_cache[key][1] < experiment.time_last_checkpoint:
+
             self.logger.debug("Starting info download for " + key)
             Thread(target=download_info).start()
 
@@ -462,7 +464,7 @@ class FirebaseProvider(object):
                                            + project)
         if not experiment_keys:
             experiment_keys = {}
-        return self._get_valid_experiments(experiment_keys.keys())
+        return self._get_valid_experiments(experiment_keys.keys(), getinfo=True)
 
     def get_artifacts(self, key):
         experiment = self.get_experiment(key, getinfo=False)

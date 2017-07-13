@@ -33,7 +33,7 @@ branch="master"
 #            studio-rworker --queue=$queue_name"
 
 code_url_base="https://storage.googleapis.com/studio-ed756.appspot.com/src"
-code_ver="tfstudio-hyperparam_opt-2017-07-12_6.tgz"
+code_ver="tfstudio-hyperparam_opt-2017-07-13_1.tgz"
 
 sudo apt -y update 
 sudo apt install -y wget python-pip git python-dev
@@ -47,4 +47,4 @@ mkdir /workspace && cd /workspace
 studio-remote-worker --queue=$queue_name --verbose=debug
 
 # shutdown the instance
-# gcloud compute instances delete $instance_name --zone $zone --quiet
+gcloud compute instances delete $instance_name --zone $zone --quiet

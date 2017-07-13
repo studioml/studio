@@ -88,7 +88,7 @@ def dashboard():
 @app.route('/experiments/<key>')
 @authenticated('/experiments/<key>')
 def experiment(key):
-    experiment = _db_provider.get_experiment(key)
+    experiment = _db_provider.get_experiment(key, getinfo=True)
     artifacts_urls = _db_provider.get_artifacts(key)
     logtail = experiment.info.get('logtail')
     info = experiment.info

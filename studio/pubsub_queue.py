@@ -70,7 +70,6 @@ class PubsubQueue(object):
                     self.logger.debug("Message {} received and acknowledged"
                         .format(retval[1].message_id))
                 except RetryError:
-                    # remove messages with stale ack_id
                     success = False
                     if not any(self.messages):
                         raise ValueError('All received messages are stale')
@@ -85,5 +84,5 @@ class PubsubQueue(object):
             return (retval[1].data, retval[0])
 
     def acknowledge(self, ack_key):
-        # self.logger.debug("Message with key {} acknowledged".format(ack_key))
+        self.logger.debug("Message with key {} acknowledged".format(ack_key))
         self.subscription.acknowledge([ack_key])
