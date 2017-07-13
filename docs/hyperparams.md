@@ -5,7 +5,7 @@ This page describes facilities that TensorFlow Studio provides for hyperparamete
 For now, studio can launch a batch of experiments with a regex substitution of variables inside the script. Those experiments are launched in a separate project, and can be compared in tensorboard or 
 by the value of some scalar metrics reported in tensorboard logs 
 
-Consider the following code snippet (code in [../studio/helloworld/train_mnist_keras.py](here)):
+Consider the following code snippet (code in [here](../studio/helloworld/train_mnist_keras.py)):
     
         lr=0.01
         print('learning rate = {}'.format(lr))
@@ -67,7 +67,7 @@ Note that option `--hyperparam` can be used several times for different hyperpar
 
 ## Cloud workers
 Waiting till your local machine runs all experiments one after another can be daunting. Fortunately, we can outsource the compute to google cloud or Amazon EC2. 
-Please refer to [cloud_workers.md](cloud workers) for setup instructions; all the custom hardware configuration options can be applied to the hyperparameter search as well. 
+Please refer to [cloud workers](cloud_workers.md) for setup instructions; all the custom hardware configuration options can be applied to the hyperparameter search as well. 
 
     studio-runner --hyperparam=lr=0.01:0.01:0.1 --metric=val_loss:min --cloud=gcloud --num-workers=4 train_mnist_keras.py
 

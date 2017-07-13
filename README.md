@@ -83,5 +83,7 @@ the setup instructions are here [for Google Cloud](docs/gcloud_setup.md) and [fo
 Another very important aspect of model management is management of artifacts (data, resulting weights etc). The facilities that tfstudio
 provides in that regard are described [here](docs/artifacts.md)
 
+Hyperparameter search features are described [here](docs/hyperparam.md)
+
 
 
