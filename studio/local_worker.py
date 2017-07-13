@@ -184,6 +184,9 @@ def worker_loop(queue, parsed_args,
         verbose = model.parse_verbosity(config.get('verbose'))
         logger.setLevel(verbose)
 
+        logger.debug('Received experiment {} with config {} from the queue'.
+                format(experiment_key, config))
+
         executor = LocalExecutor(parsed_args)
         experiment = executor.db.get_experiment(experiment_key)
 
@@ -192,14 +195,24 @@ def worker_loop(queue, parsed_args,
             queue.acknowledge(ack_key)
             if setup_pyenv:
                 logger.info('Setting up python packages for experiment')
-                pip.main(['install'] + experiment.pythonenv)
+                pipp = subprocess.Popen(
+                        ['pip','install'] + experiment.pythonenv,
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.STDOUT)
+                
+                pipout, _ = pipp.communicate()
+                logger.info("pip output: \n" + pipout)
+                
+                # pip.main(['install'] + experiment.pythonenv)
 
             for tag, art in experiment.artifacts.iteritems():
                 if fetch_artifacts or 'local' not in art.keys():
                     logger.info('Fetching artifact ' + tag)
                     if tag == 'workspace':
+                        #art['local'] = executor.db.store.get_artifact(
+                        #    art, '.', only_newer=False)
                         art['local'] = executor.db.store.get_artifact(
-                            art, '.', only_newer=False)
+                            art, only_newer=False)
                     else:
                         art['local'] = executor.db.store.get_artifact(art)
 

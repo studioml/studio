@@ -2,6 +2,7 @@ import unittest
 import uuid
 import os
 import time
+
 from studio.pubsub_queue import PubsubQueue
 from studio.local_queue import LocalQueue
 
@@ -66,6 +67,51 @@ class PubSubQueueTest(QueueTest, unittest.TestCase):
 
     def get_queue(self):
         return PubsubQueue('pubsub_queue_test_' + str(uuid.uuid4()))
+
+    def test_unacknowledged(self):
+        q = self.get_queue()
+        q.clean()
+        data1 = str(uuid.uuid4())
+        data2 = str(uuid.uuid4())
+
+        q.enqueue(data1)
+        self.assertTrue(q.has_next())
+        self.assertTrue(q.has_next())
+        q.enqueue(data2)
+
+        self.assertTrue(q.has_next())
+        recv_data1 = q.dequeue()
+        self.assertTrue(q.has_next())
+        time.sleep(15)
+
+        self.assertTrue(q.has_next())
+        recv_data2 = q.dequeue()
+
+        self.assertEquals(data1, recv_data1)
+        self.assertEquals(data2, recv_data2)
+        self.assertFalse(q.has_next())
+
+    def test_two_receivers(self):
+        q1 = self.get_queue()
+        q1.clean()
+
+        q2 = PubsubQueue(q1.get_name())
+
+        data1 = str(uuid.uuid4())
+        data2 = str(uuid.uuid4())
+
+        q1.enqueue(data1)
+
+        self.assertEquals(data1, q2.dequeue())
+
+        q1.enqueue(data1)
+        q1.enqueue(data2)
+
+        self.assertEquals(data1, q1.dequeue())
+        self.assertEquals(data2, q2.dequeue())
+
+        self.assertFalse(q1.has_next())
+        self.assertFalse(q2.has_next())
 
 
 if __name__ == '__main__':

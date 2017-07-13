@@ -4,7 +4,7 @@
     <div class="container">
             <h1>Project {{ project_name }} </h1>
 
-        {{ experimenttable(experiments) }}
+        {{ experimenttable(experiments, showproject=false) }}
 
         {% if experiments|length > 0 %}
             <button onclick='viewInTensorBoard( "{{ project_name }}" )' type="button" class="btn btn-default" id=tbButton> Tensorboard </button>

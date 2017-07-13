@@ -36,7 +36,7 @@
         </div>
       </nav>
 
-      {% macro experimenttable(experiments) -%}
+      {% macro experimenttable(experiments,showproject=true) -%}
         {% if experiments|length > 0 %}
             <table class="table table-striped" id=experimentTable>
                 <thead> 
@@ -45,7 +45,9 @@
                             <th>Key</th>
                             <th>Metric Type</th>
                             <th>Metric Value</th>
-                            <th>Project</th>
+                            {% if showproject %}
+                                <th>Project</th>
+                            {% endif %}
                             <th>Filename</th>
                             <th>Status</th>
                         </tr>
@@ -62,8 +64,11 @@
                     {% else %}
                         <td> None </td>
                     {% endif %}
-                        
-                    <td><a href="/project/{{ experiment.project }}">{{ experiment.project }}</a></td>
+                     
+                    {% if showproject %}   
+                        <td><a href="/project/{{ experiment.project }}">{{ experiment.project }}</a></td>
+                    {% endif %}
+
                     <td>{{ experiment.filename }}</td>
                     <td>{{ experiment.status }}</td>
                 </tr>
@@ -71,7 +76,9 @@
             </table>
             <script>
                 $(document).ready(function() {
-                      $('#experimentTable').DataTable();
+                        $('#experimentTable').DataTable({
+                            "order":[[0, "desc"]]
+                        } );
                 });
             </script>
           {% endif %}
@@ -79,6 +86,8 @@
 
       {% block content %}
       {% endblock %}
+      <p></p>
+      
       <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
   </body>
 </html>
