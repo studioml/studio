@@ -2,7 +2,28 @@
 
 Model management tools.
 
-## Setting up virtualenv (recommended)
+## Main features
+* Capturing experiment information (python environment, files, dependencies, logs) with no invasion in the experiment code
+* Web dashboard to monitor and organize experiments that integrates with TensorBoard
+* Running experiments locally, remotely or in the cloud (google cloud or Amazon EC2) (more details [here](docs/cloud.md) and [here](docs/remote_worker.md))
+* Artifact management and persistence (more details [here](docs/artifacts.md))
+* Hyperparameter search (more details [here](docs/hyperparams.md))
+
+## Example usage
+
+Start visualizer:
+
+    studio 
+
+Run your jobs:
+
+    studio-runner myfile.py
+
+You can see results of your job at http://127.0.0.1:5000. 
+Run `studio-runner --help` for a full list of options. 
+
+## Installation
+### Setting up virtualenv (recommended)
 If you don't want to set up a new virtual environment, feel free to skip this step 
 and go to the next section. 
 
@@ -22,12 +43,12 @@ Upgrade pip:
 
     pip install --upgrade pip
 
-## Installation
+### Installation
 Once open, we'll publish package to PyPI. For now, pip install it from the git project directory:
 
     git clone https://github.com/ilblackdragon/studio && cd studio && pip install -e . 
 
-## Running tests
+### Running tests
 To run the unit and regression tests (for now, we have little difference - some tests take longer than others, but that's about it), run 
 
     python $(which nosetests) --processes=8 --process-timeout=600
@@ -36,19 +57,6 @@ Note that simply `nosetests` tends not to use virtualenv correctly (hence a more
 to work with distributed queues and cloud workers, those will be tested as well, otherwise, respective tests will be skipped. Total test runtime (when run in parallel 
 as in command line above) should be no more than 10 minutes. Most of the tests are I/O limited, so parallel execution speeds up things quite a bit. The longest test is
 gpu cloud worker test in EC2 cloud (takes about 500 seconds due to installation of the drivers / CUDA on the EC2 instance).
-
-## Example usage
-
-Start visualizer:
-
-    studio 
-
-Run your jobs:
-
-    studio-runner myfile.py
-
-You can see results of your job at http://127.0.0.1:5000. 
-Run `studio-runner --help` for a full list of options. 
 
 ## Authentication 
 Both studio and studio-runner use same authentication tokens for database backend. The tokens are valid for 1 hour, 

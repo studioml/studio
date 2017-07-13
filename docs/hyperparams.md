@@ -50,7 +50,7 @@ Scanning learning rate in constant steps is not always the best idea, especially
 
     --hyperparam=lr=1e-5:l5:0.1
 
-which will make 10 steps spaced logarithmically between 1e-5 and 0.1 (that is, 1e-5, 1e-4, 1e-3, 0.01, 0.1)
+which will make 10 steps spaced logarithmically between 1e-5 and 0.1 (that is, 1e-5, 1e-4, 1e-3, 0.01, 0.1 - matlab style rather than numpy)
 Other options are:
 
 1. `lr=1e-5:10:0.1` or `lr=1e-5:u10:0.1` will generate a uniformly spaced grid from 1e-5 to 0.1 (bad idea - the smaller end of the range will be spaced very coarsely)

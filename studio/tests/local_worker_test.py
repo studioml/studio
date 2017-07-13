@@ -118,7 +118,7 @@ class LocalWorkerTest(unittest.TestCase):
         logger.setLevel(10)
 
         config_name = os.path.join(my_path, 'test_config.yaml')
-        key = 'test_stop_experiment'
+        key = 'test_stop_experiment' + str(uuid.uuid4())
 
         db = model.get_db_provider(model.get_config(config_name))
         try:
@@ -129,6 +129,8 @@ class LocalWorkerTest(unittest.TestCase):
         p = subprocess.Popen(['studio-runner',
                               '--config=' + config_name,
                               '--experiment=' + key,
+                              '--force-git',
+                              '--verbose=debug',
                               'stop_experiment.py'],
                              stdout=subprocess.PIPE,
                              stderr=subprocess.STDOUT,
@@ -139,6 +141,9 @@ class LocalWorkerTest(unittest.TestCase):
         logger.info('Stopping experiment')
         db.stop_experiment(key)
         pout, _ = p.communicate()
+        logger.debug("studio-runner output: \n" + pout)
+        
+        db.delete_experiment(key)
 
 
 def stubtest_worker(
