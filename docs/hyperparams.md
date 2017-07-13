@@ -67,7 +67,7 @@ Note that option `--hyperparam` can be used several times for different hyperpar
 
 ## Cloud workers
 Waiting till your local machine runs all experiments one after another can be daunting. Fortunately, we can outsource the compute to google cloud or Amazon EC2. 
-Please refer to [cloud workers](cloud_workers.md) for setup instructions; all the custom hardware configuration options can be applied to the hyperparameter search as well. 
+Please refer to [this page](cloud.md) for setup instructions; all the custom hardware configuration options can be applied to the hyperparameter search as well. 
 
     studio-runner --hyperparam=lr=0.01:0.01:0.1 --metric=val_loss:min --cloud=gcloud --num-workers=4 train_mnist_keras.py
 
