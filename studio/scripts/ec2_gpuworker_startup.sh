@@ -12,7 +12,7 @@ export GOOGLE_APPLICATION_CREDENTIALS=/credentials.json
 
 
 code_url_base="https://storage.googleapis.com/studio-ed756.appspot.com/src"
-code_ver="tfstudio-hyperparam_opt-2017-07-12_4.tgz"
+code_ver="tfstudio-hyperparam_opt-2017-07-13_1.tgz"
 
 cudnn="libcudnn5_5.1.10-1_cuda8.0_amd64.deb"
 
