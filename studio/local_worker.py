@@ -6,7 +6,6 @@ import yaml
 import logging
 import time
 import json
-import pip
 
 from apscheduler.schedulers.background import BackgroundScheduler
 
@@ -69,8 +68,9 @@ class LocalExecutor(object):
                                  experiment.args,
                                  stdout=output_file,
                                  stderr=subprocess.STDOUT,
-                                 env=env, 
-                                 cwd=experiment.artifacts['workspace']['local'])
+                                 env=env,
+                                 cwd=experiment
+                                 .artifacts['workspace']['local'])
             # simple hack to show what's in the log file
             ptail = subprocess.Popen(["tail", "-f", log_path])
 
@@ -185,7 +185,7 @@ def worker_loop(queue, parsed_args,
         logger.setLevel(verbose)
 
         logger.debug('Received experiment {} with config {} from the queue'.
-                format(experiment_key, config))
+                     format(experiment_key, config))
 
         executor = LocalExecutor(parsed_args)
         experiment = executor.db.get_experiment(experiment_key)
@@ -196,20 +196,20 @@ def worker_loop(queue, parsed_args,
             if setup_pyenv:
                 logger.info('Setting up python packages for experiment')
                 pipp = subprocess.Popen(
-                        ['pip','install'] + experiment.pythonenv,
-                        stdout=subprocess.PIPE,
-                        stderr=subprocess.STDOUT)
-                
+                    ['pip', 'install'] + experiment.pythonenv,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.STDOUT)
+
                 pipout, _ = pipp.communicate()
                 logger.info("pip output: \n" + pipout)
-                
+
                 # pip.main(['install'] + experiment.pythonenv)
 
             for tag, art in experiment.artifacts.iteritems():
                 if fetch_artifacts or 'local' not in art.keys():
                     logger.info('Fetching artifact ' + tag)
                     if tag == 'workspace':
-                        #art['local'] = executor.db.store.get_artifact(
+                        # art['local'] = executor.db.store.get_artifact(
                         #    art, '.', only_newer=False)
                         art['local'] = executor.db.store.get_artifact(
                             art, only_newer=False)

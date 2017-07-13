@@ -179,9 +179,8 @@ def stubtest_worker(
     pout, _ = p.communicate()
     logger.debug("studio-runner output: \n" + pout)
 
-
-    experiments = [e for e in db.get_user_experiments() 
-        if e.key.startswith(experiment_name)]
+    experiments = [e for e in db.get_user_experiments()
+                   if e.key.startswith(experiment_name)]
 
     assert len(experiments) == 1
 

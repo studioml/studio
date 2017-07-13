@@ -108,31 +108,28 @@ def main(args=sys.argv):
         '--metric', '-m',
         help='Metric to show in the summary of the experiment, ' +
              'and to base hyperparameter search on. ' +
-             'Refers a scalar value in tensorboard log ' + 
+             'Refers a scalar value in tensorboard log ' +
              'example: --metric=val_loss[:final | :min | :max] to report ' +
              'validation loss in the end of the keras experiment ' +
-             '(or smallest or largest throughout the experiment for :min and :max ' +
-             'respectively)',
+             '(or smallest or largest throughout the experiment for :min ' +
+             'and :max respectively)',
         default=None)
 
     parser.add_argument(
         '--hyperparam',
         help='Try out multiple values of a certain parameter. ' +
-             'For example, --hyperparam=learning_rate:0.01:0.1:l10 ' + 
-             'will instantiate 10 versions of the script, replace learning_rate ' +
-             'with a one of the 10 values for learning rate that lies ' + 
-             'on a log grid from 0.01 to 0.1, create experiments and place ' + 
-             'them in the queue. For local or a cloud execution number of workers ' +
-             'can be controlled by --num-workers option',
-        default=[], action='append')
+             'For example, --hyperparam=learning_rate:0.01:0.1:l10 ' +
+             'will instantiate 10 versions of the script, replace ' +
+             'learning_rate with a one of the 10 values for learning ' +
+             'rate that lies on a log grid from 0.01 to 0.1, create '
+             'experiments and place them in the queue.',
+             default=[], action='append')
 
     parser.add_argument(
         '--num-workers',
         help='Number of local or cloud workers to spin up',
         type=int,
         default=1)
-
-        
 
     parsed_args, script_args = parser.parse_known_args(args)
 
@@ -167,11 +164,11 @@ def main(args=sys.argv):
 
     if any(parsed_args.hyperparam):
         experiments = add_hyperparam_experiments(
-                exec_filename, 
-                other_args,
-                parsed_args,
-                artifacts, 
-                resources_needed) 
+            exec_filename,
+            other_args,
+            parsed_args,
+            artifacts,
+            resources_needed)
     else:
         experiments = [model.create_experiment(
             filename=exec_filename,
@@ -182,11 +179,9 @@ def main(args=sys.argv):
             resources_needed=resources_needed,
             metric=parsed_args.metric)]
 
-
     for e in experiments:
         db.add_experiment(e)
         logger.info("Added experiment " + e.key)
-
 
     if parsed_args.cloud is not None:
         assert parsed_args.cloud == 'gcloud' or 'ec2', \
@@ -208,7 +203,6 @@ def main(args=sys.argv):
     queue = LocalQueue() if not parsed_args.queue else \
         PubsubQueue(parsed_args.queue, verbose=verbose)
 
-
     for e in experiments:
         queue.enqueue(json.dumps({
             'experiment': e.key,
@@ -227,7 +221,7 @@ def main(args=sys.argv):
             local_worker.main(worker_args)
         else:
             raise NotImplementedError("Multiple local workers are not " +
-                    "implemeted yet")
+                                      "implemeted yet")
     elif parsed_args.queue.startswith('gcloud_') or \
             parsed_args.queue.startswith('ec2_'):
 
@@ -296,57 +290,60 @@ def parse_hardware(parsed_args, config={}):
     return resources_needed
 
 
-def add_hyperparam_experiments(exec_filename, other_args, parsed_args, artifacts, resources_needed):
-
+def add_hyperparam_experiments(
+        exec_filename,
+        other_args,
+        parsed_args,
+        artifacts,
+        resources_needed):
 
     experiment_name_base = parsed_args.experiment if parsed_args.experiment \
-                          else str(uuid.uuid4())
+        else str(uuid.uuid4())
 
     project = parsed_args.project if parsed_args.project else \
-            ('hyperparam_' + experiment_name_base)
-                      
-    experiments = [] 
-    hyperparam_values = {} 
+        ('hyperparam_' + experiment_name_base)
+
+    experiments = []
+    hyperparam_values = {}
     for hyperparam in parsed_args.hyperparam:
         param_name = hyperparam.split('=')[0]
         param_values_str = hyperparam.split('=')[1]
-        
+
         param_values = parse_range(param_values_str)
         hyperparam_values[param_name] = param_values
 
     hyperparam_tuples = unfold_tuples(hyperparam_values)
 
-    
-
-
     for hyperparam_tuple in hyperparam_tuples:
         experiment_name = experiment_name_base
         for param_name, param_value in hyperparam_tuple.iteritems():
-            experiment_name = experiment_name + '__' + param_name + '__' + str(param_value)
+            experiment_name = experiment_name + '__' + \
+                param_name + '__' + str(param_value)
 
-        experiment_name = experiment_name.replace('.','_')
-    
-        workspace_orig = artifacts['workspace']['local'] if 'workspace' in artifacts.keys() \
-                else '.'
-        workspace_new = fs_tracker.get_artifact_cache('workspace', experiment_name) 
-        
+        experiment_name = experiment_name.replace('.', '_')
+
+        workspace_orig = artifacts['workspace']['local'] \
+            if 'workspace' in artifacts.keys() else '.'
+        workspace_new = fs_tracker.get_artifact_cache(
+            'workspace', experiment_name)
+
         current_artifacts = artifacts.copy()
         current_artifacts.update({
-                'workspace': {
-                        'local': workspace_new,
-                        'mutable':True 
-                    }
-                })
-    
+            'workspace': {
+                'local': workspace_new,
+                'mutable': True
+            }
+        })
+
         shutil.copytree(workspace_orig, workspace_new)
 
         with open(os.path.join(workspace_new, exec_filename), 'r') as f:
             script_text = f.read()
 
         for param_name, param_value in hyperparam_tuple.iteritems():
-            script_text = re.sub('\\b' + param_name + '\\b(?=[^=]*\\n)', 
-                             str(param_value), script_text) 
-        
+            script_text = re.sub('\\b' + param_name + '\\b(?=[^=]*\\n)',
+                                 str(param_value), script_text)
+
         with open(os.path.join(workspace_new, exec_filename), 'w') as f:
             f.write(script_text)
 
@@ -363,7 +360,7 @@ def add_hyperparam_experiments(exec_filename, other_args, parsed_args, artifacts
 
 
 def parse_range(range_str):
-    if ',' in range_str: 
+    if ',' in range_str:
         # return numpy array for consistency with other cases
         return np.array([float(s) for s in range_str.split(',')])
     elif ':' in range_str:
@@ -375,7 +372,7 @@ def parse_range(range_str):
             except ValueError:
                 limit1 = 0.0
             limit2 = float(range_limits[1])
-            return np.arange(limit1, limit2+1)
+            return np.arange(limit1, limit2 + 1)
         else:
             try:
                 limit1 = float(range_limits[0])
@@ -389,19 +386,23 @@ def parse_range(range_str):
                 if int(limit2) == limit2 and limit2 > abs(limit3 - limit1):
                     return np.linspace(limit1, limit3, int(limit2))
                 else:
-                    return np.arange(limit1, limit3+0.5*limit2, limit2)
+                    return np.arange(limit1, limit3 + 0.5 * limit2, limit2)
 
             except ValueError:
                 if 'l' in range_limits[1]:
-                    limit2 = int(range_limits[1].replace('l',''))
-                    return np.exp(np.linspace(np.log(limit1), np.log(limit3), limit2))
+                    limit2 = int(range_limits[1].replace('l', ''))
+                    return np.exp(
+                        np.linspace(
+                            np.log(limit1),
+                            np.log(limit3),
+                            limit2))
                 else:
-                    raise ValueError('unknown limit specification ' + range_limits[1])                
+                    raise ValueError(
+                        'unknown limit specification ' +
+                        range_limits[1])
 
     else:
         return [float(range_str)]
-
-
 
 
 def unfold_tuples(hyperparam_values):
@@ -415,12 +416,11 @@ def unfold_tuples(hyperparam_values):
                     hyperparam_tuple_new[param_name] = value
                     hyperparam_tuples_new.append(hyperparam_tuple_new)
             else:
-                hyperparam_tuples_new.append({param_name:value})
+                hyperparam_tuples_new.append({param_name: value})
 
         hyperparam_tuples = hyperparam_tuples_new
     return hyperparam_tuples
 
-   
 
 if __name__ == "__main__":
     main()

@@ -13,7 +13,6 @@ from threading import Thread
 import subprocess
 
 import tensorflow as tf
-from tensorflow.contrib.framework.python.framework import checkpoint_utils
 
 import fs_tracker
 import util
@@ -356,7 +355,7 @@ class FirebaseProvider(object):
             info['global_step'] = global_step
             type_found = True
         '''
-        
+
         if not type_found:
             info['type'] = 'unknown'
 
@@ -369,24 +368,24 @@ class FirebaseProvider(object):
             metric_str = experiment.metric.split(':')
             metric_name = metric_str[0]
             metric_type = metric_str[1] if len(metric_str) > 1 else None
-    
-            if metric_type == 'min':
-                metric_accum = lambda x,y : min(x,y) if x else y
-            elif metric_type == 'max':
-                metric_accum = lambda x,y : max(x,y) if x else y
-            else:   
-                metric_accum = lambda x,y : y
 
+            if metric_type == 'min':
+                def metric_accum(x, y): return min(x, y) if x else y
+            elif metric_type == 'max':
+                def metric_accum(x, y): return max(x, y) if x else y
+            else:
+                def metric_accum(x, y): return y
 
             metric_value = None
             for f in eventfiles:
                 for e in tf.train.summary_iterator(f):
                     for v in e.summary.value:
                         if v.tag == metric_name:
-                            metric_value = metric_accum(metric_value, v.simple_value)
-        
+                            metric_value = metric_accum(
+                                metric_value, v.simple_value)
+
             info['metric_value'] = metric_value
-             
+
         return info
 
     def _get_experiment_logtail(self, experiment):
@@ -413,7 +412,7 @@ class FirebaseProvider(object):
             self._start_info_download(experiment_stub)
 
         info = self._experiment_info_cache.get(key)[0] \
-           if self._experiment_info_cache.get(key) else None
+            if self._experiment_info_cache.get(key) else None
 
         return self._experiment(key, data, info)
 
@@ -424,10 +423,10 @@ class FirebaseProvider(object):
 
         try:
             pass
-            #self._experiment_info_cache[key]['logtail'] = \
+            # self._experiment_info_cache[key]['logtail'] = \
             #    self._get_experiment_logtail(experiment)
 
-            #self._experiment_info_cache[key] = \
+            # self._experiment_info_cache[key] = \
             #     self._get_experiment_info(experiment)
         except Exception:
             pass
@@ -437,14 +436,16 @@ class FirebaseProvider(object):
                 self._experiment_info_cache[key] = (
                     self._get_experiment_info(experiment),
                     time.time())
-                
+
                 self.logger.debug("Finished info download for " + key)
             except Exception as e:
-                self.logger.info("Exception {} while info download for {}".format(e, key))
-                
+                self.logger.info(
+                    "Exception {} while info download for {}".format(
+                        e, key))
 
         if not(any(self._experiment_info_cache[key][0])) or \
-           self._experiment_info_cache[key][1] < experiment.time_last_checkpoint:
+           self._experiment_info_cache[key][1] < \
+           experiment.time_last_checkpoint:
 
             self.logger.debug("Starting info download for " + key)
             Thread(target=download_info).start()
@@ -454,14 +455,16 @@ class FirebaseProvider(object):
             self._get_user_keybase(userid) + "/experiments")
         if not experiment_keys:
             experiment_keys = {}
-        return self._get_valid_experiments(experiment_keys.keys(), getinfo=True)
+        return self._get_valid_experiments(
+            experiment_keys.keys(), getinfo=True)
 
     def get_project_experiments(self, project):
         experiment_keys = self.__getitem__(self._get_projects_keybase()
                                            + project)
         if not experiment_keys:
             experiment_keys = {}
-        return self._get_valid_experiments(experiment_keys.keys(), getinfo=True)
+        return self._get_valid_experiments(
+            experiment_keys.keys(), getinfo=True)
 
     def get_artifacts(self, key):
         experiment = self.get_experiment(key, getinfo=False)

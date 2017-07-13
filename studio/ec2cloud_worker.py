@@ -1,6 +1,6 @@
 try:
     import boto3
-except:
+except BaseException:
     boto3 = None
 
 import uuid

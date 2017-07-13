@@ -23,10 +23,10 @@ class GitUtilTest(unittest.TestCase):
         self.assertFalse(is_clean)
 
     def test_repo_url(self):
-        expected = re.compile('https{0,1}://github\.com/ilblackdragon/studio(\.git){0,1}')
+        expected = re.compile(
+            'https{0,1}://github\.com/ilblackdragon/studio(\.git){0,1}')
         actual = git_util.get_repo_url(remove_user=True)
         self.assertTrue(expected.match(actual) is not None)
-
 
 
 if __name__ == "__main__":

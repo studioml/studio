@@ -18,7 +18,7 @@ preds = Dense(10, activation='softmax')(x)
 
 
 model = Model(img, preds)
-lr=0.01
+lr = 0.01
 print('learning rate = {}'.format(lr))
 model.compile(loss='categorical_crossentropy', optimizer=optimizers.SGD(lr=lr))
 

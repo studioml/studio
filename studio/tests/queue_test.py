@@ -39,9 +39,9 @@ class QueueTest(object):
         data2 = str(uuid.uuid4())
 
         q.enqueue(data1)
-        # neither pubsub nor local queue are actually 
-        # very punctual about the order. This delay is 
-        # intended to ensure the messages are not 
+        # neither pubsub nor local queue are actually
+        # very punctual about the order. This delay is
+        # intended to ensure the messages are not
         # swapped accidentally
         time.sleep(1)
         q.enqueue(data2)
