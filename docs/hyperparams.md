@@ -53,13 +53,13 @@ Scanning learning rate in constant steps is not always the best idea, especially
 which will make 10 steps spaced logarithmically between 1e-5 and 0.1 (that is, 1e-5, 1e-4, 1e-3, 0.01, 0.1)
 Other options are:
 
-    1. `lr=1e-5:10:0.1` or `lr=1e-5:u10:0.1` will generate a uniformly spaced grid from 1e-5 to 0.1 (bad idea - the smaller end of the range will be spaced very coarsely)
+1. `lr=1e-5:10:0.1` or `lr=1e-5:u10:0.1` will generate a uniformly spaced grid from 1e-5 to 0.1 (bad idea - the smaller end of the range will be spaced very coarsely)
 
-    2. `no_layers=0:3` or `nolayers=:3` will generate uniformly spaced grid with a step 1 (0,1,2,3 - endpoints are handled in matlab style, not numpy style)
+2. `no_layers=0:3` or `nolayers=:3` will generate uniformly spaced grid with a step 1 (0,1,2,3 - endpoints are handled in matlab style, not numpy style)
 
-    3. `lr=0.1` will simply substitute lr by 0.1
+3. `lr=0.1` will simply substitute lr by 0.1
 
-    4. `no_layers=2,5,6` will generate three values - 2,5 and 6 
+4. `no_layers=2,5,6` will generate three values - 2,5 and 6 
 
 
 Note that option `--hyperparam` can be used several times for different hyperparameters; however, keep in mind that grid size grows exponentially with number of hyperparameters to try. 
