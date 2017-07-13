@@ -11,7 +11,6 @@ import time
 import glob
 from threading import Thread
 import subprocess
-import traceback
 
 import tensorflow as tf
 from tensorflow.contrib.framework.python.framework import checkpoint_utils
@@ -158,7 +157,6 @@ class FirebaseProvider(object):
         except Exception as err:
             self.logger.warn(("Getting key {} from a database " +
                               "raised an exception: {}").format(key, err))
-            self.logger.warn("Exception stacktrace: \n", traceback.format_exc())
             return None
 
     def __setitem__(self, key, value):
@@ -175,7 +173,6 @@ class FirebaseProvider(object):
             self.logger.warn(("Putting key {}, value {} into a database " +
                               "raised an exception: {}")
                              .format(key, value, err))
-            self.logger.warn("Exception stacktrace: \n", traceback.format_exc())
 
     def _delete(self, key):
         dbobj = self.app.database().child(key)
@@ -415,7 +412,8 @@ class FirebaseProvider(object):
         if getinfo:
             self._start_info_download(experiment_stub)
 
-        info = self._experiment_info_cache.get(key)[0]
+        info = self._experiment_info_cache.get(key)[0] \
+           if self._experiment_info_cache.get(key) else None
 
         return self._experiment(key, data, info)
 
@@ -443,7 +441,6 @@ class FirebaseProvider(object):
                 self.logger.debug("Finished info download for " + key)
             except Exception as e:
                 self.logger.info("Exception {} while info download for {}".format(e, key))
-                self.logger.info("Exception stacktrace: \n" + traceback.format_exc())
                 
 
         if not(any(self._experiment_info_cache[key][0])) or \

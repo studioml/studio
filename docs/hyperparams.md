@@ -48,14 +48,14 @@ will report smallest value of `val_loss` so far in the projects page or in dashb
 ## Specifying hyperparameter ranges
 Scanning learning rate in constant steps is not always the best idea, especially if we want to cover several orders of magnitude. We can specify range with a log step as follows:
 
-    --hyperparam=lr=1e-5:l10:0.1
+    --hyperparam=lr=1e-5:l5:0.1
 
-which will make 10 steps spaced logarithmically between 1e-5 and 0.1 
+which will make 10 steps spaced logarithmically between 1e-5 and 0.1 (that is, 1e-5, 1e-4, 1e-3, 0.01, 0.1)
 Other options are:
 
     1. `lr=1e-5:10:0.1` or `lr=1e-5:u10:0.1` will generate a uniformly spaced grid from 1e-5 to 0.1 (bad idea - the smaller end of the range will be spaced very coarsely)
 
-    2. `no_layers=0:3` or `nolayers=:3` will generate uniformly spaced grid with a step 1, 
+    2. `no_layers=0:3` or `nolayers=:3` will generate uniformly spaced grid with a step 1 (0,1,2,3 - endpoints are handled in matlab style, not numpy style)
 
     3. `lr=0.1` will simply substitute lr by 0.1
 
@@ -63,5 +63,18 @@ Other options are:
 
 
 Note that option `--hyperparam` can be used several times for different hyperparameters; however, keep in mind that grid size grows exponentially with number of hyperparameters to try. 
+
+
+## Cloud workers
+Waiting till your local machine runs all experiments one after another can be daunting. Fortunately, we can outsource the compute to google cloud or Amazon EC2. 
+Please refer to [cloud_workers.md](cloud workers) for setup instructions; all the custom hardware configuration options can be applied to the hyperparameter search as well. 
+
+    studio-runner --hyperparam=lr=0.01:0.01:0.1 --metric=val_loss:min --cloud=gcloud --num-workers=4 train_mnist_keras.py
+
+will spin up 4 cloud workers, connect the to the queue and run experiments in parallel. Beware of spinning up too many workers - if a worker starts up and finds that everything in the queue is done, it will (for now) listen to the queue indefinitely waiting for the work, and won't shut down automatically.
+
+
+
+
 
 

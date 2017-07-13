@@ -12,14 +12,14 @@ class RunnerTest(unittest.TestCase):
                                    [1.0, 2.0, 3.0]).any())
 
         self.assertTrue(np.isclose(runner.parse_range(':5'),
-                                   [0.0, 1.0, 2.0, 3.0, 4.0]).any())
+                                   [0.0, 1.0, 2.0, 3.0, 4.0, 5.0]).any())
 
 
         self.assertTrue(np.isclose(runner.parse_range('2:5'),
-                                   [2.0, 3.0, 4.0]).any())
+                                   [2.0, 3.0, 4.0, 5.0]).any())
 
         self.assertTrue(np.isclose(runner.parse_range('0.1:0.05:0.3'),
-                                   [0.1, 0.15, 0.2, 0.25]).any())
+                                   [0.1, 0.15, 0.2, 0.25, 0.3]).any())
 
         self.assertTrue(np.isclose(runner.parse_range('0.1:3:0.3'),
                                    [0.1, 0.2, 0.3]).any())

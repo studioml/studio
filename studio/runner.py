@@ -375,7 +375,7 @@ def parse_range(range_str):
             except ValueError:
                 limit1 = 0.0
             limit2 = float(range_limits[1])
-            return np.arange(limit1, limit2)
+            return np.arange(limit1, limit2+1)
         else:
             try:
                 limit1 = float(range_limits[0])
@@ -389,7 +389,7 @@ def parse_range(range_str):
                 if int(limit2) == limit2 and limit2 > abs(limit3 - limit1):
                     return np.linspace(limit1, limit3, int(limit2))
                 else:
-                    return np.arange(limit1, limit3, limit2)
+                    return np.arange(limit1, limit3+0.5*limit2, limit2)
 
             except ValueError:
                 if 'l' in range_limits[1]:
