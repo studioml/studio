@@ -47,7 +47,7 @@ Full disclosure - this is basically manual retrace of steps happening inside `Do
 
         studio-remote-worker --queue <queue_name> 
     
-If you want the worker to quit after a singe experiment (e.g. if you are using fresh docker container for each experiment), add an extra argument `1` to the studio-remote-worker command line. 
+If you want the worker to quit after a singe experiment (e.g. if you are using fresh docker container for each experiment), add an extra flag `--single-run` to the studio-remote-worker command line. 
 
 
 ## IV. Submitting work
