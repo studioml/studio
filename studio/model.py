@@ -10,6 +10,7 @@ import logging
 import time
 import glob
 from threading import Thread
+from multiprocessing.pool import ThreadPool
 import subprocess
 
 import tensorflow as tf
@@ -140,6 +141,10 @@ class FirebaseProvider(object):
         self.store = FirebaseArtifactStore(
             self.app, self.auth, verbose=verbose)
         self._experiment_info_cache = {}
+        self._experiment_cache = {}
+
+        iothreads = 10
+        self.pool = ThreadPool(iothreads)
 
         if self.auth and not self.auth.expired:
             self.__setitem__(self._get_user_keybase() + "email",
@@ -448,15 +453,16 @@ class FirebaseProvider(object):
            experiment.time_last_checkpoint:
 
             self.logger.debug("Starting info download for " + key)
+            # self.pool.func_async(download_info, ())
             Thread(target=download_info).start()
 
-    def get_user_experiments(self, userid=None):
+    def get_user_experiments(self, userid=None, blocking=True):
         experiment_keys = self.__getitem__(
             self._get_user_keybase(userid) + "/experiments")
         if not experiment_keys:
             experiment_keys = {}
         return self._get_valid_experiments(
-            experiment_keys.keys(), getinfo=True)
+            experiment_keys.keys(), getinfo=True, blocking=blocking)
 
     def get_project_experiments(self, project):
         experiment_keys = self.__getitem__(self._get_projects_keybase()
@@ -477,12 +483,13 @@ class FirebaseProvider(object):
 
         return retval
 
-    def _get_valid_experiments(self, experiment_keys, getinfo=False):
+    def _get_valid_experiments(self, experiment_keys, 
+                               getinfo=False, blocking=True):
         experiments = []
-        for key in experiment_keys:
+
+        def cache_valid_experiment(key):
             try:
-                experiment = self.get_experiment(key, getinfo=getinfo)
-                experiments.append(experiment)
+                self._experiment_cache[key] = self.get_experiment(key, getinfo=getinfo)
             except AssertionError:
                 self.logger.warn(
                     ("Experiment {} does not exist " +
@@ -491,7 +498,15 @@ class FirebaseProvider(object):
                     self.delete_experiment(key)
                 except BaseException:
                     pass
-        return experiments
+
+
+        if blocking:
+            self.pool.map(cache_valid_experiment, experiment_keys)
+        else:
+            self.pool.map_async(cache_valid_experiment, experiment_keys)
+       
+        return [self._experiment_cache[key] for key in experiment_keys 
+                if key in self._experiment_cache.keys()] 
 
     def get_projects(self):
         return self.__getitem__(self._get_projects_keybase())

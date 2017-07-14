@@ -76,12 +76,16 @@ def auth_response():
 @app.route('/')
 @authenticated('/')
 def dashboard():
+    tic = time.time()
     global _visited_dashboard
+    global logger
     if not _visited_dashboard:
         _visited_dashboard = True
         return render_template('loader.html')
 
-    experiments = _db_provider.get_user_experiments()
+    experiments = _db_provider.get_user_experiments(blocking=False)
+    toc = time.time()
+    logger.debug('Dashboard (/) prepared in {} s'.format(toc-tic))
     return render_template("dashboard.html", experiments=experiments)
 
 
