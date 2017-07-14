@@ -21,9 +21,7 @@ app = Flask(__name__)
 
 _db_provider = None
 _tensorboard_dirs = {}
-_experiment_info_cache = {}
 logger = None
-_visited_dashboard = False
 
 
 def authenticated(redirect_after):
@@ -77,11 +75,7 @@ def auth_response():
 @authenticated('/')
 def dashboard():
     tic = time.time()
-    global _visited_dashboard
     global logger
-    if not _visited_dashboard:
-        _visited_dashboard = True
-        return render_template('loader.html')
 
     experiments = _db_provider.get_user_experiments(blocking=False)
     toc = time.time()

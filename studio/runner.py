@@ -131,9 +131,12 @@ def main(args=sys.argv):
         type=int,
         default=1)
 
-    parsed_args, script_args = parser.parse_known_args(args)
+    # detect which argument is the script filename 
+    # and attribute all arguments past that index as related to the script
+    script_index = [i for i,arg in enumerate(args) if arg.endswith('.py')][0]
+    parsed_args = parser.parse_args(args[1:script_index])
 
-    exec_filename, other_args = script_args[1], script_args[2:]
+    exec_filename, other_args = args[script_index], args[script_index+1:]
     # TODO: Queue the job based on arguments and only then execute.
 
     config = model.get_config(parsed_args.config)

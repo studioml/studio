@@ -37,7 +37,6 @@
       </nav>
 
       {% macro experimenttable(experiments,showproject=true) -%}
-        {% if experiments|length > 0 %}
             <table class="table table-striped" id=experimentTable>
                 <thead> 
                         <tr>
@@ -78,12 +77,61 @@
                 $(document).ready(function() {
                         $('#experimentTable').DataTable({
                             "order":[[0, "desc"]],
-                            "pageLength":100,
+                            "paging":false,
                             "stateSave": true
                         } );
+
+                        loadExperiments()
                 });
+
+                function loadExperiments() {
+                    var maxTimeout = 120
+                    var xhttp = new XMLHttpRequest();
+                    if ( typeof loadExperiments.oldResponse == 'undefined') {
+                        loadExperiments.oldResponse = ""
+                        loadExperiments.timeout = 1
+                        loadExperiments.docHeader = document.getElementsByTagName('h1').item(0)
+                        loadExperiments.docHeaderValue = loadExperiments.docHeader.innerHTML
+                    }
+
+                    xhttp.onreadystatechange = function() {
+                        if (this.readyState == 4 && this.status == 200) {
+                            // console.log( "Server sent the document:\n" + this.response )
+                            // console.log( "oldResponse = " + loadExperiments.oldResponse)
+
+                            if (this.response == loadExperiments.oldResponse) {
+                                loadExperiments.docHeader.innerHTML = loadExperiments.docHeaderValue
+                                loadExperiments.timeout *= 2
+                                console.log("The document has not changed, timeout increased to " + loadExperiments.timeout)
+                            } else {
+                                loadExperiments.docHeader.innerHTML = loadExperiments.docHeaderValue + " <i class='fa fa-cog fa-spin'></i>"
+                                        
+                                var html = document.createElement('html')
+                                html.innerHTML = this.response
+                                rows = html.getElementsByTagName("tr")
+                                console.log("Document has changed, updating the table ")
+                                updateTable(rows)
+                                loadExperiments.oldResponse = this.response 
+                                loadExperiments.timeout = 1
+                            }
+                            loadExperiments.timeout = Math.min(loadExperiments.timeout, maxTimeout)
+                            setTimeout(loadExperiments, loadExperiments.timeout * 1000)
+                       }
+                    }
+
+                    console.log("Requesting new dashboard data");
+                    xhttp.open("GET", window.location, true);
+                    xhttp.send();
+                }
+
+                function updateTable(rows) {
+                    $('#experimentTable').DataTable().clear()
+                    for (var i = 1; i < rows.length; i++) {
+                        $('#experimentTable').DataTable().row.add(rows.item(i))
+                     }
+                     $('#experimentTable').DataTable().draw()
+                }
             </script>
-          {% endif %}
       {%- endmacro %}
 
       {% block content %}

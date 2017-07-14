@@ -6,6 +6,8 @@ from studio.gcloud_worker import GCloudWorkerManager
 from studio.ec2cloud_worker import EC2WorkerManager
 from local_worker_test import stubtest_worker
 
+from timeout_decorator import timeout
+
 try:
     import boto3
 except BaseException:
