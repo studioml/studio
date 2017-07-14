@@ -1,8 +1,9 @@
 import unittest
 import numpy as np
+import uuid
 
 from studio import runner
-
+from local_worker_test import stubtest_worker
 
 class RunnerTest(unittest.TestCase):
 
@@ -33,6 +34,18 @@ class RunnerTest(unittest.TestCase):
             {'a': 1, 'b': 5}, {'a': 2, 'b': 5}, {'a': 3, 'b': 5}]
 
         self.assertTrue(runner.unfold_tuples(test_dict) == expected_tuples)
+
+    def test_args_conflict(self):
+        stubtest_worker(
+            self,
+            experiment_name='test_runner_conflict_' + str(uuid.uuid4()),
+            runner_args=['--verbose=debug'],
+            config_name='test_config.yaml',
+            test_script='conflicting_args.py',
+            script_args=['--experiment', 'aaa'],
+            expected_output='Experiment key = aaa'
+        )
+
 
 
 if __name__ == '__main__':

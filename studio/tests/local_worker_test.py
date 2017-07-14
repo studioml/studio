@@ -29,6 +29,7 @@ class LocalWorkerTest(unittest.TestCase):
             expected_output='[ 2.  6.]'
         )
 
+
     def test_local_hyperparam(self):
         stubtest_worker(
             self,
