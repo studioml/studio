@@ -133,8 +133,8 @@ def main(args=sys.argv):
 
     parser.add_argument(
         '--python-pkg',
-        help='Python package not present in the current environment ' + 
-             'that is needed for experiment. Only compatible with ' + 
+        help='Python package not present in the current environment ' +
+             'that is needed for experiment. Only compatible with ' +
              'remote and cloud workers for now',
         default=[], action='append')
 
@@ -435,10 +435,9 @@ def unfold_tuples(hyperparam_values):
 
 def add_packages(list1, list2):
     pkg_name = re.compile('.+==')
-    pkg_dict = {pkg_name.match(pkg).group() : pkg for pkg in list1 + list2}
+    pkg_dict = {pkg_name.match(pkg).group(): pkg for pkg in list1 + list2}
 
     return [pkg for _, pkg in pkg_dict.iteritems()]
-
 
 
 if __name__ == "__main__":
