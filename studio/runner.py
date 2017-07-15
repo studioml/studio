@@ -131,6 +131,13 @@ def main(args=sys.argv):
         type=int,
         default=1)
 
+    parser.add_argument(
+        '--python-pkg',
+        help='Python package not present in the current environment ' + 
+             'that is needed for experiment. Only compatible with ' + 
+             'remote and cloud workers for now',
+        default=[], action='append')
+
     # detect which argument is the script filename
     # and attribute all arguments past that index as related to the script
     script_index = [i for i, arg in enumerate(args) if arg.endswith('.py')][0]
@@ -183,6 +190,7 @@ def main(args=sys.argv):
             metric=parsed_args.metric)]
 
     for e in experiments:
+        e.pythonenv = add_packages(e.pythonenv, parsed_args.python_pkg)
         db.add_experiment(e)
         logger.info("Added experiment " + e.key)
 
@@ -423,6 +431,14 @@ def unfold_tuples(hyperparam_values):
 
         hyperparam_tuples = hyperparam_tuples_new
     return hyperparam_tuples
+
+
+def add_packages(list1, list2):
+    pkg_name = re.compile('.+==')
+    pkg_dict = {pkg_name.match(pkg).group() : pkg for pkg in list1 + list2}
+
+    return [pkg for _, pkg in pkg_dict.iteritems()]
+
 
 
 if __name__ == "__main__":
