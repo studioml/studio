@@ -110,7 +110,7 @@ class LocalWorkerTest(unittest.TestCase):
             expected_output=random_str
         )
 
-    @timeout(60)
+    @timeout(120)
     def test_stop_experiment(self):
         my_path = os.path.dirname(os.path.realpath(__file__))
 
@@ -136,12 +136,20 @@ class LocalWorkerTest(unittest.TestCase):
                              stderr=subprocess.STDOUT,
                              cwd=my_path)
 
-        # give experiment time to spin up
-        time.sleep(20)
+        # wait till experiment spins up
+        experiment = None
+        while experiment is None or experiment.status == 'waiting':
+            time.sleep(1)
+            try:
+                experiment = db.get_experiment(key)
+            except:
+                pass
+
         logger.info('Stopping experiment')
         db.stop_experiment(key)
         pout, _ = p.communicate()
-        logger.debug("studio-runner output: \n" + pout)
+        if pout:
+            logger.debug("studio-runner output: \n" + pout)
 
         db.delete_experiment(key)
 
@@ -182,7 +190,9 @@ def stubtest_worker(
                          cwd=my_path)
 
     pout, _ = p.communicate()
-    logger.debug("studio-runner output: \n" + pout)
+
+    if pout:
+        logger.debug("studio-runner output: \n" + pout)
 
     experiments = [e for e in db.get_user_experiments()
                    if e.key.startswith(experiment_name)]

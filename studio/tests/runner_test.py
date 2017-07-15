@@ -37,7 +37,7 @@ class RunnerTest(unittest.TestCase):
 
         self.assertTrue(runner.unfold_tuples(test_dict) == expected_tuples)
 
-    @timeout(30)
+    @timeout(90)
     def test_args_conflict(self):
         stubtest_worker(
             self,
