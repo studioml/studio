@@ -20,6 +20,9 @@ class LocalQueue:
 
     def dequeue(self, acknowledge=True):
         files = glob.glob(self.path + '/*')
+        if not any(files):
+            return None
+
         first_file = min([(p, os.path.getmtime(p)) for p in files],
                          key=lambda t: t[1])[0]
 
