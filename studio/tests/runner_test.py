@@ -55,11 +55,10 @@ class RunnerTest(unittest.TestCase):
         list2 = ['keras==1.0.9', 'h5py==2.7.0', 'abc']
 
         result = set(runner.add_packages(list1, list2))
-        expected_result = set(['boto3==1.1.3', 'h5py==2.7.0', 
+        expected_result = set(['boto3==1.1.3', 'h5py==2.7.0',
                                'keras==1.0.9', 'abc'])
 
         self.assertEquals(result, expected_result)
-
 
 
 if __name__ == '__main__':
