@@ -1,9 +1,11 @@
 import unittest
 import numpy as np
 import uuid
+from timeout_decorator import timeout
 
 from studio import runner
 from local_worker_test import stubtest_worker
+
 
 class RunnerTest(unittest.TestCase):
 
@@ -35,6 +37,7 @@ class RunnerTest(unittest.TestCase):
 
         self.assertTrue(runner.unfold_tuples(test_dict) == expected_tuples)
 
+    @timeout(30)
     def test_args_conflict(self):
         stubtest_worker(
             self,
@@ -45,7 +48,6 @@ class RunnerTest(unittest.TestCase):
             script_args=['--experiment', 'aaa'],
             expected_output='Experiment key = aaa'
         )
-
 
 
 if __name__ == '__main__':

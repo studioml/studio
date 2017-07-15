@@ -6,8 +6,6 @@ from studio.gcloud_worker import GCloudWorkerManager
 from studio.ec2cloud_worker import EC2WorkerManager
 from local_worker_test import stubtest_worker
 
-from timeout_decorator import timeout
-
 try:
     import boto3
 except BaseException:
@@ -37,10 +35,10 @@ class GCloudWorkerTest(unittest.TestCase):
 
 
 @unittest.skipIf(
-    'GOOGLE_APPLICATION_CREDENTIALS' not in os.environ.keys() or \
+    'GOOGLE_APPLICATION_CREDENTIALS' not in os.environ.keys() or
     not boto3,
     'GOOGLE_APPLICATION_CREDENTIALS environment ' +
-    'variable not set, won'' be able to use google pubsub' )
+    'variable not set, won'' be able to use google pubsub')
 class EC2WorkerTest(unittest.TestCase):
     def get_worker_manager(self):
         return EC2WorkerManager()

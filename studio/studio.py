@@ -79,7 +79,7 @@ def dashboard():
 
     experiments = _db_provider.get_user_experiments(blocking=False)
     toc = time.time()
-    logger.debug('Dashboard (/) prepared in {} s'.format(toc-tic))
+    logger.debug('Dashboard (/) prepared in {} s'.format(toc - tic))
     return render_template("dashboard.html", experiments=experiments)
 
 

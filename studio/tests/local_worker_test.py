@@ -29,7 +29,6 @@ class LocalWorkerTest(unittest.TestCase):
             expected_output='[ 2.  6.]'
         )
 
-
     def test_local_hyperparam(self):
         stubtest_worker(
             self,
@@ -143,7 +142,7 @@ class LocalWorkerTest(unittest.TestCase):
         db.stop_experiment(key)
         pout, _ = p.communicate()
         logger.debug("studio-runner output: \n" + pout)
-        
+
         db.delete_experiment(key)
 
 

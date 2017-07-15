@@ -8,5 +8,3 @@ args = parser.parse_args()
 
 print("Experiment key = " + args.experiment)
 sys.stdout.flush()
-
- 

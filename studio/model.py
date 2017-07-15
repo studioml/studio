@@ -483,13 +483,12 @@ class FirebaseProvider(object):
 
         return retval
 
-    def _get_valid_experiments(self, experiment_keys, 
+    def _get_valid_experiments(self, experiment_keys,
                                getinfo=False, blocking=True):
-        experiments = []
-
         def cache_valid_experiment(key):
             try:
-                self._experiment_cache[key] = self.get_experiment(key, getinfo=getinfo)
+                self._experiment_cache[key] = self.get_experiment(
+                    key, getinfo=getinfo)
             except AssertionError:
                 self.logger.warn(
                     ("Experiment {} does not exist " +
@@ -499,14 +498,13 @@ class FirebaseProvider(object):
                 except BaseException:
                     pass
 
-
         if blocking:
             self.pool.map(cache_valid_experiment, experiment_keys)
         else:
             self.pool.map_async(cache_valid_experiment, experiment_keys)
-       
-        return [self._experiment_cache[key] for key in experiment_keys 
-                if key in self._experiment_cache.keys()] 
+
+        return [self._experiment_cache[key] for key in experiment_keys
+                if key in self._experiment_cache.keys()]
 
     def get_projects(self):
         return self.__getitem__(self._get_projects_keybase())
