@@ -434,9 +434,7 @@ def unfold_tuples(hyperparam_values):
 
 
 def add_packages(list1, list2):
-    pkg_name = re.compile('.+==')
-    pkg_dict = {pkg_name.match(pkg).group(): pkg for pkg in list1 + list2}
-
+    pkg_dict = {re.sub('==.+', '', pkg): pkg for pkg in list1 + list2}
     return [pkg for _, pkg in pkg_dict.iteritems()]
 
 
