@@ -8,6 +8,7 @@ Model management tools.
 * Running experiments locally, remotely or in the cloud (google cloud or Amazon EC2) (more details [here](docs/cloud.md) and [here](docs/remote_worker.md))
 * Artifact management and persistence (more details [here](docs/artifacts.md))
 * Hyperparameter search (more details [here](docs/hyperparams.md))
+* Customizable python environment for remote workers (more details [here](docs/customenv.md))
 
 ## Example usage
 
