@@ -1,10 +1,50 @@
 #!/bin/bash
 
+# Script that starts remote worker
+# Usage:
+#
+#   studio-start-remote-worker --queue=<queue_name> [--image=<custom_docker_image] [--single-run]
+# 
+#   --queue argument specifies the name of the queue remote worker is listening to
+#   --image optional argument specifies the docker image to be used. Image should have studio installed.
+#           Default is peterzhokhoff/tfstudio
+#           
+#   --single-run optional argument specifies that docker container should not be restarted. 
+#           By default, the container will be restarted after the job is done. 
+
+
+
 docker_cmd=docker
 docker_img=peterzhokhoff/tfstudio
 
-queue_name=$1
-single_run=$2
+
+while [[ $# -gt 0 ]] 
+do 
+    key="$1"
+    case ${key%%=*} in 
+            -q|--queue)
+            queue_name="${1##*=}"
+            ;;
+
+            -i|--image)
+            docker_img="${1##*=}"
+            ;;
+
+            -s|--single-run)
+            single_run=1
+            echo Single run mode
+    esac
+    shift
+done
+
+if [ -z $queue_name ]
+then
+        echo "Queue name not specified! Use --queue=<queue_name> argument" 
+        exit 1
+fi
+
+echo "Docker image = $docker_img"
+echo "Queue = $queue_name"
 
 eval $docker_cmd
 if [ $? != 0 ]; then

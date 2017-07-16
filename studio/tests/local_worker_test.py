@@ -142,7 +142,7 @@ class LocalWorkerTest(unittest.TestCase):
             time.sleep(1)
             try:
                 experiment = db.get_experiment(key)
-            except:
+            except BaseException:
                 pass
 
         logger.info('Stopping experiment')
