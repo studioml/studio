@@ -32,11 +32,11 @@ Create new virtual environment:
     
     virtualenv --python=python2.7 tfstudio
 
-Activate it. On Mac OS X:
+Activate it. If you are using plain python:
     
-    source activate tfstudio
+    . tfstudio/bin/activate    
 
-On Linux:
+Or, if you are using anaconda:
 
     . ./tfstuio/bin/activate
 

@@ -5,18 +5,22 @@ import tempfile
 import uuid
 import subprocess
 import time
-
-from studio import model
-from studio.local_queue import LocalQueue
-
 from timeout_decorator import timeout
 import logging
 import traceback
 
+from studio import model
+from studio.local_queue import LocalQueue
+
+from queue_test import QueueTest
+
+
 logging.basicConfig()
 
 
-class LocalWorkerTest(unittest.TestCase):
+class LocalWorkerTest(unittest.TestCase, QueueTest):
+    def get_queue(self):
+        return LocalQueue()
 
     def test_runner_local(self):
         stubtest_worker(

@@ -4,8 +4,6 @@ import os
 import time
 
 from studio.pubsub_queue import PubsubQueue
-from studio.local_queue import LocalQueue
-
 
 class QueueTest(object):
     def get_queue(self):
@@ -54,10 +52,6 @@ class QueueTest(object):
 
         self.assertFalse(q.has_next())
 
-
-class LocalQueueTest(QueueTest, unittest.TestCase):
-    def get_queue(self):
-        return LocalQueue()
 
 
 @unittest.skipIf(
