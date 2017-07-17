@@ -199,10 +199,6 @@ class FirebaseProviderTest(unittest.TestCase):
         self.assertTrue(line == random_str)
         fb.delete_experiment(experiment)
 
-    def test_get_model_info(self):
-        # TODO implement _get_model_info test
-        pass
-
 
 def get_test_experiment():
     filename = 'test.py'
