@@ -8,6 +8,7 @@ import time
 from timeout_decorator import timeout
 import logging
 import traceback
+import numpy as np
 
 from studio import model
 from studio.local_queue import LocalQueue
@@ -106,13 +107,39 @@ class LocalWorkerTest(unittest.TestCase, QueueTest):
 
         stubtest_worker(
             self,
-            experiment_name='test_local_worker_co',
+            experiment_name='test_local_worker_co' + str(uuid.uuid4()),
             runner_args=['--capture-once=' + tmpfile + ':f'],
             config_name='test_config.yaml',
             test_script='art_hello_world.py',
             script_args=[],
             expected_output=random_str
         )
+
+    def test_save_get_model(self):
+        experiment_name = 'test_save_get_model' + str(uuid.uuid4())
+        db = stubtest_worker(
+            self,
+            experiment_name=experiment_name,
+            runner_args=[],
+            config_name='test_config.yaml',
+            test_script='save_model.py',
+            script_args=[],
+            expected_output='',
+            delete_when_done=False,
+            test_output=False
+        )
+
+        experiment = db.get_experiment(experiment_name) 
+        saved_model = experiment.get_model(db).model
+
+        v = np.random.rand(1,2)
+        prediction = saved_model.predict(v)
+        expected = v*2
+
+        self.assertTrue(np.isclose(prediction, expected).all())
+
+        db.delete_experiment(experiment)
+
 
     @timeout(120)
     def test_stop_experiment(self):
@@ -168,7 +195,8 @@ def stubtest_worker(
         script_args=[],
         queue=LocalQueue(),
         wait_for_experiment=True,
-        delete_when_done=True):
+        delete_when_done=True,
+        test_output=True):
 
     my_path = os.path.dirname(os.path.realpath(__file__))
     config_name = os.path.join(my_path, config_name)
@@ -223,11 +251,13 @@ def stubtest_worker(
                 time.sleep(1)
                 experiment = db.get_experiment(experiment_name)
 
-        with open(db.store.get_artifact(experiment.artifacts['output']), 'r') \
-                as f:
-            data = f.read()
-            split_data = data.strip().split('\n')
-            testclass.assertEquals(split_data[-1], expected_output)
+
+        if test_output:
+            with open(db.store.get_artifact(experiment.artifacts['output']),
+                    'r') as f:
+                data = f.read()
+                split_data = data.strip().split('\n')
+                testclass.assertEquals(split_data[-1], expected_output)
 
         check_workspace(testclass, db, experiment_name)
 
