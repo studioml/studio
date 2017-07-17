@@ -5,18 +5,22 @@ import tempfile
 import uuid
 import subprocess
 import time
-
-from studio import model
-from studio.local_queue import LocalQueue
-
 from timeout_decorator import timeout
 import logging
 import traceback
 
+from studio import model
+from studio.local_queue import LocalQueue
+
+from queue_test import QueueTest
+
+
 logging.basicConfig()
 
 
-class LocalWorkerTest(unittest.TestCase):
+class LocalWorkerTest(unittest.TestCase, QueueTest):
+    def get_queue(self):
+        return LocalQueue()
 
     def test_runner_local(self):
         stubtest_worker(
@@ -27,6 +31,25 @@ class LocalWorkerTest(unittest.TestCase):
             test_script='tf_hello_world.py',
             script_args=['arg0'],
             expected_output='[ 2.  6.]'
+        )
+
+    def test_local_hyperparam(self):
+        stubtest_worker(
+            self,
+            experiment_name='test_local_hyperparam' + str(uuid.uuid4()),
+            runner_args=['--verbose=debug'],
+            config_name='test_config.yaml',
+            test_script='hyperparam_hello_world.py',
+            expected_output='0.3'
+        )
+
+        stubtest_worker(
+            self,
+            experiment_name='test_local_hyperparam' + str(uuid.uuid4()),
+            runner_args=['--verbose=debug', '--hyperparam=learning_rate=0.4'],
+            config_name='test_config.yaml',
+            test_script='hyperparam_hello_world.py',
+            expected_output='0.4'
         )
 
     def test_local_worker_ce(self):
@@ -91,7 +114,7 @@ class LocalWorkerTest(unittest.TestCase):
             expected_output=random_str
         )
 
-    @timeout(60)
+    @timeout(120)
     def test_stop_experiment(self):
         my_path = os.path.dirname(os.path.realpath(__file__))
 
@@ -99,7 +122,7 @@ class LocalWorkerTest(unittest.TestCase):
         logger.setLevel(10)
 
         config_name = os.path.join(my_path, 'test_config.yaml')
-        key = 'test_stop_experiment'
+        key = 'test_stop_experiment' + str(uuid.uuid4())
 
         db = model.get_db_provider(model.get_config(config_name))
         try:
@@ -110,16 +133,29 @@ class LocalWorkerTest(unittest.TestCase):
         p = subprocess.Popen(['studio-runner',
                               '--config=' + config_name,
                               '--experiment=' + key,
+                              '--force-git',
+                              '--verbose=debug',
                               'stop_experiment.py'],
                              stdout=subprocess.PIPE,
                              stderr=subprocess.STDOUT,
                              cwd=my_path)
 
-        # give experiment time to spin up
-        time.sleep(20)
+        # wait till experiment spins up
+        experiment = None
+        while experiment is None or experiment.status == 'waiting':
+            time.sleep(1)
+            try:
+                experiment = db.get_experiment(key)
+            except BaseException:
+                pass
+
         logger.info('Stopping experiment')
         db.stop_experiment(key)
         pout, _ = p.communicate()
+        if pout:
+            logger.debug("studio-runner output: \n" + pout)
+
+        db.delete_experiment(key)
 
 
 def stubtest_worker(
@@ -128,8 +164,8 @@ def stubtest_worker(
         runner_args,
         config_name,
         test_script,
-        script_args,
         expected_output,
+        script_args=[],
         queue=LocalQueue(),
         wait_for_experiment=True,
         delete_when_done=True):
@@ -158,7 +194,16 @@ def stubtest_worker(
                          cwd=my_path)
 
     pout, _ = p.communicate()
-    logger.debug("studio-runner output: \n" + pout)
+
+    if pout:
+        logger.debug("studio-runner output: \n" + pout)
+
+    experiments = [e for e in db.get_user_experiments()
+                   if e.key.startswith(experiment_name)]
+
+    assert len(experiments) == 1
+
+    experiment_name = experiments[0].key
 
     try:
         # test saved arguments

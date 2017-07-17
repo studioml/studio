@@ -1,7 +1,7 @@
 from google.cloud import pubsub
 import logging
-from google.gax.errors import RetryError
 import os
+import time
 logging.basicConfig()
 
 
@@ -25,6 +25,7 @@ class PubsubQueue(object):
             self.logger.info('subscription {} created'.format(sub_name))
 
         self.messages = []
+        self.ack_timeout = 10
 
     def clean(self):
         while self.has_next():
@@ -33,9 +34,19 @@ class PubsubQueue(object):
     def get_name(self):
         return self.topic.name
 
+    def _filter_stale_messages(self):
+        self.messages = [
+            m for m in self.messages if (
+                time.time() -
+                m[2]) < self.ack_timeout]
+
     def has_next(self):
-        self.messages += self.subscription.pull(
-            return_immediately=True, max_messages=1)
+        self._filter_stale_messages()
+        if not any(self.messages):
+            pulled_messages = self.subscription.pull(
+                return_immediately=True, max_messages=1)
+            self.messages += [(m[0], m[1], time.time()) for m in
+                              pulled_messages]
 
         return any(self.messages)
 
@@ -51,23 +62,16 @@ class PubsubQueue(object):
         retval = self.messages[0]
         self.messages = self.messages[1:]
         if acknowledge:
-            success = False
-            while not success:
-                try:
-                    self.acknowledge(retval[0])
-                    success = True
-                except RetryError:
-                    # remove messages with stale ack_id
-                    success = False
-                    if not any(self.messages):
-                        raise ValueError('All received messages are stale')
-
-                    retval = self.messages[0]
-                    self.messages = self.messages[1:]
+            self.acknowledge(retval[0])
+            self.logger.debug("Message {} received and acknowledged"
+                              .format(retval[1].message_id))
 
             return retval[1].data
         else:
+            self.logger.debug("Message {} received, ack_id {}"
+                              .format(retval[1].message_id, retval[0]))
             return (retval[1].data, retval[0])
 
     def acknowledge(self, ack_key):
+        self.logger.debug("Message with key {} acknowledged".format(ack_key))
         self.subscription.acknowledge([ack_key])

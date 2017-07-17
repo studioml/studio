@@ -2,40 +2,13 @@
 
 Model management tools.
 
-## Setting up virtualenv (recommended)
-If you don't want to set up a new virtual environment, feel free to skip this step 
-and go to the next section. 
-
-Create new virtual environment:
-    
-    virtualenv --python=python2.7 tfstudio
-
-Activate it. On Mac OS X:
-    
-    source activate tfstudio
-
-On Linux:
-
-    . ./tfstuio/bin/activate
-
-Upgrade pip:
-
-    pip install --upgrade pip
-
-## Installation
-Once open, we'll publish package to PyPI. For now, pip install it from the git project directory:
-
-    git clone https://github.com/ilblackdragon/studio && cd studio && pip install -e . 
-
-## Running tests
-To run the unit and regression tests (for now, we have little difference - some tests take longer than others, but that's about it), run 
-
-    python $(which nosetests) --processes=8 --process-timeout=600
-
-Note that simply `nosetests` tends not to use virtualenv correctly (hence a more extended version of the call). If you have application credentials configured 
-to work with distributed queues and cloud workers, those will be tested as well, otherwise, respective tests will be skipped. Total test runtime (when run in parallel 
-as in command line above) should be no more than 10 minutes. Most of the tests are I/O limited, so parallel execution speeds up things quite a bit. The longest test is
-gpu cloud worker test in EC2 cloud (takes about 500 seconds due to installation of the drivers / CUDA on the EC2 instance).
+## Main features
+* Capturing experiment information (python environment, files, dependencies, logs) with no invasion in the experiment code
+* Web dashboard to monitor and organize experiments that integrates with TensorBoard
+* Running experiments locally, remotely or in the cloud (google cloud or Amazon EC2) (more details [here](docs/cloud.md) and [here](docs/remote_worker.md))
+* Artifact management and persistence (more details [here](docs/artifacts.md))
+* Hyperparameter search (more details [here](docs/hyperparams.md))
+* Customizable python environment for remote workers (more details [here](docs/customenv.md))
 
 ## Example usage
 
@@ -49,6 +22,42 @@ Run your jobs:
 
 You can see results of your job at http://127.0.0.1:5000. 
 Run `studio-runner --help` for a full list of options. 
+
+## Installation
+### Setting up virtualenv (recommended)
+If you don't want to set up a new virtual environment, feel free to skip this step 
+and go to the next section. 
+
+Create new virtual environment:
+    
+    virtualenv --python=python2.7 tfstudio
+
+Activate it. If you are using plain python:
+    
+    . tfstudio/bin/activate    
+
+Or, if you are using anaconda:
+
+    . ./tfstuio/bin/activate
+
+Upgrade pip:
+
+    pip install --upgrade pip
+
+### Installation
+Once open, we'll publish package to PyPI. For now, pip install it from the git project directory:
+
+    git clone https://github.com/ilblackdragon/studio && cd studio && pip install -e . 
+
+### Running tests
+To run the unit and regression tests (for now, we have little difference - some tests take longer than others, but that's about it), run 
+
+    python $(which nosetests) --processes=8 --process-timeout=600
+
+Note that simply `nosetests` tends not to use virtualenv correctly (hence a more extended version of the call). If you have application credentials configured 
+to work with distributed queues and cloud workers, those will be tested as well, otherwise, respective tests will be skipped. Total test runtime (when run in parallel 
+as in command line above) should be no more than 10 minutes. Most of the tests are I/O limited, so parallel execution speeds up things quite a bit. The longest test is
+gpu cloud worker test in EC2 cloud (takes about 500 seconds due to installation of the drivers / CUDA on the EC2 instance).
 
 ## Authentication 
 Both studio and studio-runner use same authentication tokens for database backend. The tokens are valid for 1 hour, 
@@ -82,6 +91,8 @@ the setup instructions are here [for Google Cloud](docs/gcloud_setup.md) and [fo
 
 Another very important aspect of model management is management of artifacts (data, resulting weights etc). The facilities that tfstudio
 provides in that regard are described [here](docs/artifacts.md)
+
+Hyperparameter search features are described [here](docs/hyperparams.md)
 
 
 

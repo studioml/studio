@@ -14,7 +14,7 @@
     <h1>Experiment {{ experiment.key }}</h1>
 
     {% if experiment.project %}
-        <p>Project: {{ experiment.project }}</p>
+        <p>Project: <a href=/project/{{ experiment.project }}>{{ experiment.project }}</a></p>
     {% endif %}
     <p>Filename: {{ experiment.filename }}</p>
     <p>Args: {{ experiment.args }}</p>
@@ -84,18 +84,18 @@
     </dl>
     
     {% if experiment.status == 'running' %}
-        <button onclick='stopExperiment( "{{ experiment.key }}" )' type="button" class="btn btn-danger"> Stop </button>
+        <button onclick='stopExperiment( "{{ experiment.key }}" )' type="button" class="btn btn-danger">Stop</button>
     {% else %}
-        <button onclick='deleteExperiment( "{{ experiment.key }}" )' type="button" class="btn btn-danger"> Delete </button>
+        <button onclick='deleteExperiment( "{{ experiment.key }}" )' type="button" class="btn btn-danger" id=deleteButton>Delete</button>
     {% endif %}
     
     {% if 'tb' in artifacts.keys() %}
-        <button onclick='viewInTensorBoard( "{{ experiment.key }}" )' type="button" class="btn btn-default"> View in tensorboard </button>
+        <button onclick='viewInTensorBoard( "{{ experiment.key }}" )' type="button" class="btn btn-default" id=tbButton>Tensorboard</button>
     {% endif %}
-
 
     <script>
         function deleteExperiment(key) {
+            document.getElementById("deleteButton").innerHTML="<i class='fa fa-cog fa-spin'></i>Deleting..."
             if (confirm("The experiment and its artfacts will be lost. Proceed?")) {
                 window.location.href = "/delete_experiment/" + key
             }
@@ -108,6 +108,7 @@
         }
 
         function viewInTensorBoard(key) {
+            document.getElementById("tbButton").innerHTML="<i class='fa fa-cog fa-spin'></i>Redirecting..."
             window.location.href = "/tensorboard_exp/" + key
         }       
     </script>

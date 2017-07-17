@@ -4,6 +4,7 @@ from keras.models import Model
 from keras.datasets import mnist
 from keras.utils import to_categorical
 from keras.callbacks import ModelCheckpoint, TensorBoard
+from keras import optimizers
 
 from studio import fs_tracker
 
@@ -17,7 +18,9 @@ preds = Dense(10, activation='softmax')(x)
 
 
 model = Model(img, preds)
-model.compile(loss='categorical_crossentropy', optimizer='adam')
+lr = 0.01
+print('learning rate = {}'.format(lr))
+model.compile(loss='categorical_crossentropy', optimizer=optimizers.SGD(lr=lr))
 
 (x_train, y_train), (x_test, y_test) = mnist.load_data()
 

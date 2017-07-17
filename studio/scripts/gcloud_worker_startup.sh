@@ -33,7 +33,7 @@ branch="master"
 #            studio-rworker --queue=$queue_name"
 
 code_url_base="https://storage.googleapis.com/studio-ed756.appspot.com/src"
-code_ver="tfstudio-dockerize-2017-07-01_1.tgz"
+code_ver="tfstudio-hyperparam_opt-2017-07-13_1.tgz"
 
 sudo apt -y update 
 sudo apt install -y wget python-pip git python-dev
@@ -44,7 +44,7 @@ cd studio
 sudo pip install --upgrade pip 
 sudo pip install -e . --upgrade 
 mkdir /workspace && cd /workspace 
-studio-remote-worker --queue=$queue_name 
+studio-remote-worker --queue=$queue_name --verbose=debug
 
 # shutdown the instance
 gcloud compute instances delete $instance_name --zone $zone --quiet

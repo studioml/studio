@@ -21,7 +21,6 @@ app = Flask(__name__)
 
 _db_provider = None
 _tensorboard_dirs = {}
-_experiment_info_cache = {}
 logger = None
 
 
@@ -75,14 +74,19 @@ def auth_response():
 @app.route('/')
 @authenticated('/')
 def dashboard():
-    experiments = _db_provider.get_user_experiments()
+    tic = time.time()
+    global logger
+
+    experiments = _db_provider.get_user_experiments(blocking=False)
+    toc = time.time()
+    logger.debug('Dashboard (/) prepared in {} s'.format(toc - tic))
     return render_template("dashboard.html", experiments=experiments)
 
 
 @app.route('/experiments/<key>')
 @authenticated('/experiments/<key>')
 def experiment(key):
-    experiment = _db_provider.get_experiment(key)
+    experiment = _db_provider.get_experiment(key, getinfo=True)
     artifacts_urls = _db_provider.get_artifacts(key)
     logtail = experiment.info.get('logtail')
     info = experiment.info
@@ -250,6 +254,7 @@ def main():
     logger = logging.getLogger('studio')
     logger.setLevel(model.parse_verbosity(config.get('verbose')))
 
+    print('Starting TensorFlow Studio on port {0}'.format(args.port))
     app.run(host='0.0.0.0', port=args.port, debug=True)
 
 

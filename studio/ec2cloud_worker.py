@@ -1,4 +1,8 @@
-import boto3
+try:
+    import boto3
+except BaseException:
+    boto3 = None
+
 import uuid
 import logging
 import os

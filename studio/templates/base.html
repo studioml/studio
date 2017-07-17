@@ -35,8 +35,109 @@
           </div>
         </div>
       </nav>
+
+      {% macro experimenttable(experiments,showproject=true) -%}
+            <table class="table table-striped" id=experimentTable>
+                <thead> 
+                        <tr>
+                            <th>Time added </th>
+                            <th>Key</th>
+                            <th>Metric Type</th>
+                            <th>Metric Value</th>
+                            {% if showproject %}
+                                <th>Project</th>
+                            {% endif %}
+                            <th>Filename</th>
+                            <th>Status</th>
+                        </tr>
+                </thead>
+                    
+            {% for experiment in experiments %}
+                <tr>
+                    <td>{{ experiment.time_added | format_time }}</td>
+                    <td><a href="/experiments/{{ experiment.key }}">{{ experiment.key }}</a></td>
+                    <td>{{ experiment.metric }}</td>
+
+                    {% if experiment.info and experiment.info.get('metric_value') %}
+                        <td>{{ '%.4f' | format(experiment.info['metric_value']|float) }}</td>
+                    {% else %}
+                        <td> None </td>
+                    {% endif %}
+                     
+                    {% if showproject %}   
+                        <td><a href="/project/{{ experiment.project }}">{{ experiment.project }}</a></td>
+                    {% endif %}
+
+                    <td>{{ experiment.filename }}</td>
+                    <td>{{ experiment.status }}</td>
+                </tr>
+            {% endfor %}
+            </table>
+            <script>
+                $(document).ready(function() {
+                        $('#experimentTable').DataTable({
+                            "order":[[0, "desc"]],
+                            "paging":false,
+                            "stateSave": true
+                        } );
+
+                        loadExperiments()
+                });
+
+                function loadExperiments() {
+                    var maxTimeout = 120
+                    var xhttp = new XMLHttpRequest();
+                    if ( typeof loadExperiments.oldResponse == 'undefined') {
+                        loadExperiments.oldResponse = ""
+                        loadExperiments.timeout = 1
+                        loadExperiments.docHeader = document.getElementsByTagName('h1').item(0)
+                        loadExperiments.docHeaderValue = loadExperiments.docHeader.innerHTML
+                    }
+
+                    xhttp.onreadystatechange = function() {
+                        if (this.readyState == 4 && this.status == 200) {
+                            // console.log( "Server sent the document:\n" + this.response )
+                            // console.log( "oldResponse = " + loadExperiments.oldResponse)
+
+                            if (this.response == loadExperiments.oldResponse) {
+                                loadExperiments.docHeader.innerHTML = loadExperiments.docHeaderValue
+                                loadExperiments.timeout *= 2
+                                console.log("The document has not changed, timeout increased to " + loadExperiments.timeout)
+                            } else {
+                                loadExperiments.docHeader.innerHTML = loadExperiments.docHeaderValue + " <i class='fa fa-cog fa-spin'></i>"
+                                        
+                                var html = document.createElement('html')
+                                html.innerHTML = this.response
+                                rows = html.getElementsByTagName("tr")
+                                console.log("Document has changed, updating the table ")
+                                updateTable(rows)
+                                loadExperiments.oldResponse = this.response 
+                                loadExperiments.timeout = 1
+                            }
+                            loadExperiments.timeout = Math.min(loadExperiments.timeout, maxTimeout)
+                            setTimeout(loadExperiments, loadExperiments.timeout * 1000)
+                       }
+                    }
+
+                    console.log("Requesting new dashboard data");
+                    xhttp.open("GET", window.location, true);
+                    xhttp.send();
+                }
+
+                function updateTable(rows) {
+                    $('#experimentTable').DataTable().clear()
+                    for (var i = 1; i < rows.length; i++) {
+                        $('#experimentTable').DataTable().row.add(rows.item(i))
+                     }
+                     $('#experimentTable').DataTable().draw()
+                }
+            </script>
+      {%- endmacro %}
+
       {% block content %}
       {% endblock %}
+      <p></p>
+      
       <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
   </body>
 </html>

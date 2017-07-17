@@ -12,7 +12,7 @@ export GOOGLE_APPLICATION_CREDENTIALS=/credentials.json
 
 
 code_url_base="https://storage.googleapis.com/studio-ed756.appspot.com/src"
-code_ver="tfstudio-dockerize-2017-07-01_1.tgz"
+code_ver="tfstudio-hyperparam_opt-2017-07-13_1.tgz"
 
 sudo apt -y update 
 sudo apt install -y wget python-pip git python-dev

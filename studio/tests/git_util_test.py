@@ -3,6 +3,7 @@ import tempfile
 import os
 import subprocess
 import uuid
+import re
 from studio import git_util
 
 
@@ -22,11 +23,10 @@ class GitUtilTest(unittest.TestCase):
         self.assertFalse(is_clean)
 
     def test_repo_url(self):
-        expected_url1 = 'https://github.com/ilblackdragon/studio'
-        expected_url2 = 'http://github.com/ilblackdragon/studio'
-        actual_url = git_util.get_repo_url(remove_user=True)
-        self.assertTrue(actual_url == expected_url1 or
-                        actual_url == expected_url2)
+        expected = re.compile(
+            'https{0,1}://github\.com/ilblackdragon/studio(\.git){0,1}')
+        actual = git_util.get_repo_url(remove_user=True)
+        self.assertTrue(expected.match(actual) is not None)
 
 
 if __name__ == "__main__":

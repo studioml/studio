@@ -30,7 +30,9 @@ class RemoteWorkerTest(unittest.TestCase):
         logger.setLevel(10)
 
         pw = subprocess.Popen(
-            ['studio-start-remote-worker', queue_name, '1'],
+            ['studio-start-remote-worker',
+             '--queue=' + queue_name,
+             '--single-run'],
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT)
 
@@ -45,7 +47,8 @@ class RemoteWorkerTest(unittest.TestCase):
             queue=PubsubQueue(queue_name))
 
         workerout, _ = pw.communicate()
-        logger.debug("studio-start-remote-worker output: \n" + workerout)
+        if workerout:
+            logger.debug("studio-start-remote-worker output: \n" + workerout)
 
     @timeout(90)
     @unittest.skipIf(
@@ -70,7 +73,9 @@ class RemoteWorkerTest(unittest.TestCase):
 
         queue_name = experiment_name
         pw = subprocess.Popen(
-            ['studio-start-remote-worker', queue_name, "1"],
+            ['studio-start-remote-worker',
+             '--queue=' + queue_name,
+             '--single-run'],
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT)
 
@@ -89,7 +94,8 @@ class RemoteWorkerTest(unittest.TestCase):
             delete_when_done=False)
 
         workerout, _ = pw.communicate()
-        logger.debug("studio-start-remote-worker output: \n" + workerout)
+        if workerout:
+            logger.debug("studio-start-remote-worker output: \n" + workerout)
         os.remove(tmpfile)
 
         tmppath = os.path.join(tempfile.gettempdir(), str(uuid.uuid4()))
@@ -127,9 +133,12 @@ class RemoteWorkerTest(unittest.TestCase):
 
         experiment_name = 'test_remote_worker_co_' + str(uuid.uuid4())
         queue_name = experiment_name
-        pw = subprocess.Popen(['studio-start-remote-worker', queue_name, "1"],
-                              stdout=subprocess.PIPE,
-                              stderr=subprocess.STDOUT)
+        pw = subprocess.Popen(
+            ['studio-start-remote-worker',
+             '--queue=' + queue_name,
+             '--single-run'],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT)
 
         stubtest_worker(
             self,

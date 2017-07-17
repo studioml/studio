@@ -8,30 +8,8 @@
             <h1>User {{ user }} <h1>
         {% endif %}
 
-        <table class="table table-striped" id=experimentTable>
-            <thead> 
-                    <tr>
-                        <th>Time added </th>
-                        <th>Key</th>
-                        <th>Project</th>
-                        <th>Filename</th>
-                        <th>Status</th>
-                    </tr>
-            </thead>
-             {% for experiment in experiments %}
-                <tr>
-                    <td>{{ experiment.time_added | format_time }}</td>
-                    <td><a href="/experiments/{{ experiment.key }}">{{ experiment.key }}</a></td>
-                    <td>{{ experiment.project }}</td>
-                    <td>{{ experiment.filename }}</td>
-                    <td>{{ experiment.status  }}</td>
-                </tr>
-            {% endfor %}
-        </table>
+
+        {{ experimenttable(experiments) }}
+
     </div>
-    <script>
-        $(document).ready(function() {
-                  $('#experimentTable').DataTable();
-        });
-    </script>
 {% endblock %}

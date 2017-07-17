@@ -3,28 +3,11 @@
 {% block content %}
     <div class="container">
             <h1>Project {{ project_name }} </h1>
-        <table class="table table-striped" id=experimentTable>
-            <thead> 
-                    <tr>
-                        <th>Time added </th>
-                        <th>Key</th>
-                        <th>Filename</th>
-                        <th>Status</th>
-                    </tr>
-            </thead>
-                    
-            {% for experiment in experiments %}
-                <tr>
-                    <td>{{ experiment.time_added | format_time }}</td>
-                    <td><a href="/experiments/{{ experiment.key }}">{{ experiment.key }}</a></td>
-                    <td>{{ experiment.filename }}</td>
-                    <td>{{ experiment.status }}</td>
-                </tr>
-            {% endfor %}
-        </table>
+
+        {{ experimenttable(experiments, showproject=false) }}
 
         {% if experiments|length > 0 %}
-            <button onclick='viewInTensorBoard( "{{ project_name }}" )' type="button" class="btn btn-default"> View in tensorboard </button>
+            <button onclick='viewInTensorBoard( "{{ project_name }}" )' type="button" class="btn btn-default" id=tbButton> Tensorboard </button>
             <button onclick='deleteExperiments({{ key_list }})' type="button" class="btn btn-danger" id="deleteButton"> Delete ALL</button>           
         {% endif %}
 
@@ -32,6 +15,7 @@
 
     <script>
         function viewInTensorBoard(key) {
+            document.getElementById("tbButton").innerHTML="<i class='fa fa-cog fa-spin'></i> Redirecting..."
             window.location.href = "/tensorboard_proj/" + key
         }
 
@@ -60,9 +44,6 @@
            }
         }
 
-        $(document).ready(function() {
-                  $('#experimentTable').DataTable();
-        });
     </script>
 
 {% endblock %}

@@ -17,16 +17,17 @@
     "projects": {
       "$pid": {
         "$eid": {
-        	".read":"true",
-          ".validate":"newData.child('userId').val() == auth.uid",
-          // not secure! User can add an experiment with his own uid
-          ".write":"data.child('userId').val() == auth.uid"  
-          // ideally, should also check whether uid saved in the experiment is the same, like below 
-          // but this will hinder ability to add projects if software does not add userId in the experiment
+          	".validate":"newData.child('owner').val() == auth.uid",
+          	// not secure! User can add an experiment with his own uid
+          	".write": "!data.hasChildren(['owner']) || data.child('owner').val() == auth.uid"  
+          	// ideally, should also check whether uid saved in the experiment is the same, like below 
+          	// but this will hinder ability to add projects if software does not add userId in the experiment
 
-      		// ".write":"root.child('experiments').child($eid).child('userId').val() == auth.uid"  
+      			// ".write":"root.child('experiments').child($eid).child('userId').val() == auth.uid"  
+          
         }
-      }
+      },
+      ".read":"true"
     }, 
         
     "test": {
