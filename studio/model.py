@@ -81,13 +81,14 @@ class Experiment(object):
         self.git = git
         self.metric = metric
 
-    def get_model(self):
+    def get_model(self, db):
+        modeldir = db.store.get_artifact('modeldir')
         if self.info.get('type') == 'keras':
             hdf5_files = [
                 (p, os.path.getmtime(p))
                 for p in
-                glob.glob(self.artifacts['modeldir'] + '/*.hdf*') +
-                glob.glob(self.artifacts['modeldir'] + '/*.h5')]
+                glob.glob(modeldir + '/*.hdf*') +
+                glob.glob(modeldir + '/*.h5')]
 
             last_checkpoint = max(hdf5_files, key=lambda t: t[1])[0]
             return KerasModelWrapper(last_checkpoint)
