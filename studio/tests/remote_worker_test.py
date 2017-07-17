@@ -166,34 +166,35 @@ class RemoteWorkerTest(unittest.TestCase):
         'variable not set, won'' be able to use google ' +
         'PubSub')
     def test_baked_image(self):
-        ''' 
+        '''
         create a docker image with baked in credentials
         and run a remote worker tests with it
         '''
         logger = logging.getLogger('test_baked_image')
         logger.setLevel(10)
 
-        #check if docker is installed
-        dockertestp = subprocess.Popen(['docker'], 
-                                   stdout=subprocess.PIPE,
-                                   stderr=subprocess.STDOUT); 
+        # check if docker is installed
+        dockertestp = subprocess.Popen(['docker'],
+                                       stdout=subprocess.PIPE,
+                                       stderr=subprocess.STDOUT)
 
-        
         dockertestout, _ = dockertestp.communicate()
         if dockertestout:
             logger.info("docker test output: \n" + dockertestout)
 
         if dockertestp.returncode != 0:
-            logger.error("docker is not installed (correctly)")    
+            logger.error("docker is not installed (correctly)")
             return
 
         image = 'test_image' + str(uuid.uuid4())
-    
-        addcredsp = subprocess.Popen(['studio-add-credentials', '--tag=' + image],
-                                     stdout=subprocess.PIPE,
-                                     stderr=subprocess.STDOUT)
 
-        
+        addcredsp = subprocess.Popen(
+            [
+                'studio-add-credentials',
+                '--tag=' + image],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT)
+
         addcredsout, _ = addcredsp.communicate()
         if addcredsout:
             logger.info('studio-add-credentials output: \n' + addcredsout)
@@ -209,8 +210,8 @@ class RemoteWorkerTest(unittest.TestCase):
         pw = subprocess.Popen(
             ['studio-start-remote-worker',
              '--queue=' + queue_name,
-             '--single-run', 
-             '--image='+image],
+             '--single-run',
+             '--image=' + image],
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT)
 
@@ -227,7 +228,6 @@ class RemoteWorkerTest(unittest.TestCase):
         workerout, _ = pw.communicate()
         if workerout:
             logger.debug("studio-start-remote-worker output: \n" + workerout)
- 
 
         rmip = subprocess.Popen(['docker', 'rmi', image],
                                 stdout=subprocess.PIPE,
@@ -236,7 +236,7 @@ class RemoteWorkerTest(unittest.TestCase):
         rmiout, _ = rmip.communicate()
 
         if rmiout:
-            logger.info('docker rmi output: \n' + rmiout)        
+            logger.info('docker rmi output: \n' + rmiout)
 
 
 if __name__ == "__main__":

@@ -95,7 +95,7 @@ gac_name=${GOOGLE_APPLICATION_CREDENTIALS##*/}
 
 docker_args="run --rm --pid=host \
             -v $HOME/.tfstudio/experiments:/root/.tfstudio/experiemnts
-            -v $HOME/.tfstudio/blobCache:/root/.tfstudio/blobCache"
+            -v $HOME/.tfstudio/blobcache:/root/.tfstudio/blobcache"
 
 if [[ $baked_credentials -ne 1 ]]; then
     docker_args="$docker_args -v $HOME/.tfstudio/keys:/root/.tfstudio/keys"
