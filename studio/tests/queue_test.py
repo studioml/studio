@@ -5,6 +5,7 @@ import time
 
 from studio.pubsub_queue import PubsubQueue
 
+
 class QueueTest(object):
     def get_queue(self):
         pass
@@ -51,7 +52,6 @@ class QueueTest(object):
         self.assertEquals(data2, recv_data2)
 
         self.assertFalse(q.has_next())
-
 
 
 @unittest.skipIf(

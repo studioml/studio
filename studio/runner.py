@@ -141,15 +141,15 @@ def main(args=sys.argv):
     # detect which argument is the script filename
     # and attribute all arguments past that index as related to the script
     script_index = [i for i, arg in enumerate(args) if arg.endswith('.py')][0]
-    parsed_args = parser.parse_args(args[1:script_index])
+    runner_args = parser.parse_args(args[1:script_index])
 
     exec_filename, other_args = args[script_index], args[script_index + 1:]
     # TODO: Queue the job based on arguments and only then execute.
 
-    config = model.get_config(parsed_args.config)
+    config = model.get_config(runner_args.config)
 
-    if parsed_args.verbose:
-        config['verbose'] = parsed_args.verbose
+    if runner_args.verbose:
+        config['verbose'] = runner_args.verbose
 
     verbose = model.parse_verbosity(config['verbose'])
     logger.setLevel(verbose)
@@ -158,83 +158,83 @@ def main(args=sys.argv):
 
     if git_util.is_git() and not git_util.is_clean():
         logger.warn('Running from dirty git repo')
-        if not parsed_args.force_git:
+        if not runner_args.force_git:
             logger.error(
                 'Specify --force-git to run experiment from dirty git repo')
             sys.exit(1)
 
-    resources_needed = parse_hardware(parsed_args, config['cloud'])
+    resources_needed = parse_hardware(runner_args, config['cloud'])
     logger.debug('resources requested: ')
     logger.debug(str(resources_needed))
 
     artifacts = {}
-    artifacts.update(parse_artifacts(parsed_args.capture, mutable=True))
-    artifacts.update(parse_artifacts(parsed_args.capture_once, mutable=False))
-    artifacts.update(parse_external_artifacts(parsed_args.reuse, db))
+    artifacts.update(parse_artifacts(runner_args.capture, mutable=True))
+    artifacts.update(parse_artifacts(runner_args.capture_once, mutable=False))
+    artifacts.update(parse_external_artifacts(runner_args.reuse, db))
 
-    if any(parsed_args.hyperparam):
+    if any(runner_args.hyperparam):
         experiments = add_hyperparam_experiments(
             exec_filename,
             other_args,
-            parsed_args,
+            runner_args,
             artifacts,
             resources_needed)
     else:
         experiments = [model.create_experiment(
             filename=exec_filename,
             args=other_args,
-            experiment_name=parsed_args.experiment,
-            project=parsed_args.project,
+            experiment_name=runner_args.experiment,
+            project=runner_args.project,
             artifacts=artifacts,
             resources_needed=resources_needed,
-            metric=parsed_args.metric)]
+            metric=runner_args.metric)]
 
     for e in experiments:
-        e.pythonenv = add_packages(e.pythonenv, parsed_args.python_pkg)
+        e.pythonenv = add_packages(e.pythonenv, runner_args.python_pkg)
         db.add_experiment(e)
         logger.info("Added experiment " + e.key)
 
-    if parsed_args.cloud is not None:
-        assert parsed_args.cloud == 'gcloud' or 'ec2', \
+    if runner_args.cloud is not None:
+        assert runner_args.cloud == 'gcloud' or 'ec2', \
             'Only gcloud or ec2 are supported for now'
-        if parsed_args.cloud == 'gcloud':
-            if parsed_args.queue is None:
-                parsed_args.queue = 'gcloud_' + str(uuid.uuid4())
+        if runner_args.cloud == 'gcloud':
+            if runner_args.queue is None:
+                runner_args.queue = 'gcloud_' + str(uuid.uuid4())
 
-            if not parsed_args.queue.startswith('gcloud_'):
-                parsed_args.queue = 'gcloud_' + parsed_args.queue
+            if not runner_args.queue.startswith('gcloud_'):
+                runner_args.queue = 'gcloud_' + runner_args.queue
 
-        if parsed_args.cloud == 'ec2':
-            if parsed_args.queue is None:
-                parsed_args.queue = 'ec2_' + str(uuid.uuid4())
+        if runner_args.cloud == 'ec2':
+            if runner_args.queue is None:
+                runner_args.queue = 'ec2_' + str(uuid.uuid4())
 
-            if not parsed_args.queue.startswith('ec2_'):
-                parsed_args.queue = 'ec2_' + parsed_args.queue
+            if not runner_args.queue.startswith('ec2_'):
+                runner_args.queue = 'ec2_' + runner_args.queue
 
-    queue = LocalQueue() if not parsed_args.queue else \
-        PubsubQueue(parsed_args.queue, verbose=verbose)
+    queue = LocalQueue() if not runner_args.queue else \
+        PubsubQueue(runner_args.queue, verbose=verbose)
 
     for e in experiments:
         queue.enqueue(json.dumps({
             'experiment': e.key,
             'config': config}))
 
-    if not parsed_args.queue:
+    if not runner_args.queue:
         worker_args = ['studio-local-worker']
 
-        if parsed_args.config:
-            worker_args += ['--config=' + parsed_args.config]
-        if parsed_args.guest:
+        if runner_args.config:
+            worker_args += ['--config=' + runner_args.config]
+        if runner_args.guest:
             worker_args += ['--guest']
 
         logger.info('worker args: {}'.format(worker_args))
-        if parsed_args.num_workers == 1:
+        if runner_args.num_workers == 1:
             local_worker.main(worker_args)
         else:
             raise NotImplementedError("Multiple local workers are not " +
                                       "implemeted yet")
-    elif parsed_args.queue.startswith('gcloud_') or \
-            parsed_args.queue.startswith('ec2_'):
+    elif runner_args.queue.startswith('gcloud_') or \
+            runner_args.queue.startswith('ec2_'):
 
         auth_cookie = None if config['database'].get('guest') \
             else os.path.join(
@@ -242,7 +242,7 @@ def main(args=sys.argv):
             config['database']['apiKey']
         )
 
-        if parsed_args.queue.startswith('gcloud_'):
+        if runner_args.queue.startswith('gcloud_'):
             worker_manager = GCloudWorkerManager(
                 auth_cookie=auth_cookie,
                 zone=config['cloud']['zone']
@@ -252,8 +252,8 @@ def main(args=sys.argv):
                 auth_cookie=auth_cookie
             )
 
-        for i in range(parsed_args.num_workers):
-            worker_manager.start_worker(parsed_args.queue, resources_needed)
+        for i in range(runner_args.num_workers):
+            worker_manager.start_worker(runner_args.queue, resources_needed)
 
     db = None
 
@@ -287,11 +287,11 @@ def parse_external_artifacts(art_list, db):
     return retval
 
 
-def parse_hardware(parsed_args, config={}):
+def parse_hardware(runner_args, config={}):
     resources_needed = {}
     parse_list = ['gpus', 'cpus', 'ram', 'hdd']
     for key in parse_list:
-        from_args = parsed_args.__dict__.get(key)
+        from_args = runner_args.__dict__.get(key)
         from_config = config.get(key)
         if from_args is not None:
             resources_needed[key] = from_args
@@ -304,19 +304,19 @@ def parse_hardware(parsed_args, config={}):
 def add_hyperparam_experiments(
         exec_filename,
         other_args,
-        parsed_args,
+        runner_args,
         artifacts,
         resources_needed):
 
-    experiment_name_base = parsed_args.experiment if parsed_args.experiment \
+    experiment_name_base = runner_args.experiment if runner_args.experiment \
         else str(uuid.uuid4())
 
-    project = parsed_args.project if parsed_args.project else \
+    project = runner_args.project if runner_args.project else \
         ('hyperparam_' + experiment_name_base)
 
     experiments = []
     hyperparam_values = {}
-    for hyperparam in parsed_args.hyperparam:
+    for hyperparam in runner_args.hyperparam:
         param_name = hyperparam.split('=')[0]
         param_values_str = hyperparam.split('=')[1]
 
@@ -365,7 +365,7 @@ def add_hyperparam_experiments(
             project=project,
             artifacts=current_artifacts,
             resources_needed=resources_needed,
-            metric=parsed_args.metric))
+            metric=runner_args.metric))
 
     return experiments
 
