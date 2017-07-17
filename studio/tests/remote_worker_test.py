@@ -47,7 +47,8 @@ class RemoteWorkerTest(unittest.TestCase):
             queue=PubsubQueue(queue_name))
 
         workerout, _ = pw.communicate()
-        logger.debug("studio-start-remote-worker output: \n" + workerout)
+        if workerout:
+            logger.debug("studio-start-remote-worker output: \n" + workerout)
 
     @timeout(90)
     @unittest.skipIf(
@@ -93,7 +94,8 @@ class RemoteWorkerTest(unittest.TestCase):
             delete_when_done=False)
 
         workerout, _ = pw.communicate()
-        logger.debug("studio-start-remote-worker output: \n" + workerout)
+        if workerout:
+            logger.debug("studio-start-remote-worker output: \n" + workerout)
         os.remove(tmpfile)
 
         tmppath = os.path.join(tempfile.gettempdir(), str(uuid.uuid4()))
