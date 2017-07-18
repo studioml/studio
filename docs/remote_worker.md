@@ -22,7 +22,7 @@ If you don't have your own docker container to run jobs in, follow the instructi
 
 3. Start worker (queue name is a name of the queue that will define where submit work to)
     
-        studio-start-remote-worker --queue=<queue-name>
+        studio start remote worker --queue=<queue-name>
 
 
 
@@ -32,18 +32,18 @@ This section applies to the cases when you already have a docker image/container
 1. Make sure that the image has python-dev, python-pip, git installed, as well as studio. The easiest way is to make your Dockerfile inherit from from the tfstudio Dockerfile (located in the studio root directory). Otherwise, copy relevant contents of tfstudio Dockerfile into yours. 
 2. Bake the credentials into your image. Run
 
-        studio-add-credentials [--base_image=<image>] [--tag=<tag>] [--check-gpu]
+        studio add credentials [--base_image=<image>] [--tag=<tag>] [--check-gpu]
   
   where `<image>` is name of your image (default is peterzhokhoff/tfstudio); `<tag>` is the tag of the image with credentials (default is `<image>_creds`). Add option check-gpu if you are planning to use image on the same machine you are running the script from.
   This will check for presence of CUDA toolbox and uninstall tensorflow-gpu if not found. 
 
 3. Start remote worker passing `--image=<tag>`:
 
-        studio-start-remote-worker --image=<tag> --queue=<queue-name>
+        studio start remote worker --image=<tag> --queue=<queue-name>
   
   You can also start the container and remote worker within it manually, by running:
     
-        studio-remote-worker --queue=<queue-name> 
+        studio remote worker --queue=<queue-name> 
  
   within the container - that is essentially what `studio-start-remote-worker` script does, plus mounting cache directories `~/.tfstudio/experiments` and `~/.tfstudio/blobcache`
 
@@ -51,6 +51,6 @@ This section applies to the cases when you already have a docker image/container
 ## IV. Submitting work
 On a submitting machine (usually local):
 
-    studio-runner --queue <queue-name> <any_other_args> script.py <script_args>
+    studio run --queue <queue-name> <any_other_args> script.py <script_args>
 
 This script should quit promptly, but you'll be able to see experiment progress in studio web ui 

@@ -30,17 +30,17 @@ Consider the following code snippet (code in [here](../studio/helloworld/train_m
 
 We compile a keras model with the specified learning rate for stochastic gradient descent. What if we want to search a range of learning rates to determine best? (as a side note, in the `train_mnist_keras.py` you can simply use adaptive learning rate optimizer such as adam with better results, but let's forget about that for the demonstration purposes)
 
-We can add the following argument to `studio-runner` call:
+We can add the following argument to `studio run` call:
 
-    studio-runner --hyperparam=lr=0.01:0.01:0.1 train_mnist_keras.py 30
+    studio run --hyperparam=lr=0.01:0.01:0.1 train_mnist_keras.py 30
 
 This will create a new project with 10 experiments. For each experiment, a copy of working directory will be put in the tfstudio cache, and within in each working directory copy, in the script `train_mnist_keras.py` regex substitution of `lr` not followed by `=` (i.e. located in right-hand side of expression) will be performed to a respective value (from 0.01 with step 0.01 to 0.1). Those experiments will then be submitted to the queue (in the version of the call above to the local queue), and executed. The progress of the experiments can be seen in studio WebUI. Last argument 30 refers to number of epochs as can be seen in the code snippet above. 
 
 
 ## Metrics
-But wait, do you have to go and check each experiment individually to figure out which one has done best? Would not it be nice if we could look at the project and immediately figure out which experiments have done better than the others? And there is such a feature indeed. We can specify an option `--metric` to `studio-runner` to specify which tensorflow / tensorboard variable to report as metric, and how to accumulate it throughout experiment. For keras experiments, that would most often be `val_loss`, but in principle any scalar reported in tensorboard can be used. Note that tensorboard logs need to be written for this feature to work. Let's modify the command line above a bit:
+But wait, do you have to go and check each experiment individually to figure out which one has done best? Would not it be nice if we could look at the project and immediately figure out which experiments have done better than the others? And there is such a feature indeed. We can specify an option `--metric` to `studio run` to specify which tensorflow / tensorboard variable to report as metric, and how to accumulate it throughout experiment. For keras experiments, that would most often be `val_loss`, but in principle any scalar reported in tensorboard can be used. Note that tensorboard logs need to be written for this feature to work. Let's modify the command line above a bit:
 
-    studio-runner --hyperparam=lr=0.01:0.01:0.1 --metric=val_loss:min train_mnist_keras.py
+    studio run --hyperparam=lr=0.01:0.01:0.1 --metric=val_loss:min train_mnist_keras.py
 
 will report smallest value of `val_loss` so far in the projects page or in dashboard in WebUI. Together with column sorting feature of the dashboard it allows you to immediately figure out the best experiment. The reason why this option is given to the runner and not in the WebUI after the run is because we are planning to have a more complicated hyperparameter search that where new experiments actually depend on previously seen values of metric. Other options allowed values for `--metric` parameter suffix are ":max" for maximum value seen throughout experiment, or empty for the last value. 
 
@@ -69,7 +69,7 @@ Note that option `--hyperparam` can be used several times for different hyperpar
 Waiting till your local machine runs all experiments one after another can be daunting. Fortunately, we can outsource the compute to google cloud or Amazon EC2. 
 Please refer to [this page](cloud.md) for setup instructions; all the custom hardware configuration options can be applied to the hyperparameter search as well. 
 
-    studio-runner --hyperparam=lr=0.01:0.01:0.1 --metric=val_loss:min --cloud=gcloud --num-workers=4 train_mnist_keras.py
+    studio run --hyperparam=lr=0.01:0.01:0.1 --metric=val_loss:min --cloud=gcloud --num-workers=4 train_mnist_keras.py
 
 will spin up 4 cloud workers, connect the to the queue and run experiments in parallel. Beware of spinning up too many workers - if a worker starts up and finds that everything in the queue is done, it will (for now) listen to the queue indefinitely waiting for the work, and won't shut down automatically.
 

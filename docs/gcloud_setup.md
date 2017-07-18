@@ -16,7 +16,7 @@ Then click "Create credentials" button, choose service account key, leave key ty
 ## Setting up studio
 
 ### Adding credentials 
-Copy the json file credentials to the machine where studio-runner will be run, and create environment variable `GOOGLE_APPLICATION_CREDENTIALS` that points to it. That is, run
+Copy the json file credentials to the machine where studio run will be run, and create environment variable `GOOGLE_APPLICATION_CREDENTIALS` that points to it. That is, run
 
     export GOOGLE_APPLICATION_CREDENTIALS=/path/to/credentials.json
 
@@ -28,6 +28,6 @@ In the config file (the one that you use with --config flag, or, if you use defa
 ### Test
 To test if things are set up correctly, go to `studio/studio/helloworld` and run
 
-    studio-runner --cloud=gcloud report_system_info.py
+    studio run --cloud=gcloud report_system_info.py
 
 Then run `studio` locally, and watch the new experiment. In a little while, it should change its status to "finished" and show the system information (number of cpus, amount of ram / hdd) of a default instance. See [Cloud computing for studio](cloud.md) for more instructions on using an instance with specific hardware parameters. 
