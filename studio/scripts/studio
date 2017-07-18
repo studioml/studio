@@ -1,6 +1,18 @@
 #!/bin/bash
 
 
+function print_help {
+    echo "List of allowed commands:"
+    echo " "
+    echo "  studio ui  -- launches WebUI"
+    echo "  studio run -- runs an experiment from a python script"
+    echo "  studio start remote worker -- orchestrates (re)-starts of worker that listens to the remote queue in a docker container"
+    echo "  studio remote worker -- start a worker that listens to remote queue"
+    echo "  studio add credentials -- create a docker image with credentials baked in"
+    echo " "
+    echo "Type <command> --help for a list of options for each command"
+}
+
 function parse_command {
 
     expected_command=$1
@@ -12,6 +24,7 @@ function parse_command {
             shift
         else
             echo "Unknown command $1"
+            print_help
             exit 1
         fi
     done
@@ -20,7 +33,6 @@ function parse_command {
     eval $cmd $*
     exit $?
 }
-
 
 
 case $1 in
@@ -47,6 +59,7 @@ case $1 in
 esac
 
 echo "Unknown command $1"
+print_help
 exit 1
 
 
