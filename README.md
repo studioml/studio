@@ -1,6 +1,9 @@
 # TensorFlow Studio
-
 Model management tools.
+
+<p align="center">
+  <img src="logo.png" width="250"/>
+</p>
 
 ## Main features
 * Capturing experiment information (python environment, files, dependencies, logs) with no invasion in the experiment code
