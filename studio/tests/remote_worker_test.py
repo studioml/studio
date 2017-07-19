@@ -32,7 +32,8 @@ class RemoteWorkerTest(unittest.TestCase):
         pw = subprocess.Popen(
             ['studio-start-remote-worker',
              '--queue=' + queue_name,
-             '--single-run'],
+             '--single-run',
+             '--image=peterzhokhoff/tfstudio_test'],
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT)
 
@@ -75,7 +76,8 @@ class RemoteWorkerTest(unittest.TestCase):
         pw = subprocess.Popen(
             ['studio-start-remote-worker',
              '--queue=' + queue_name,
-             '--single-run'],
+             '--single-run',
+             '--image=peterzhokhoff/tfstudio_test'],
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT)
 
@@ -136,7 +138,8 @@ class RemoteWorkerTest(unittest.TestCase):
         pw = subprocess.Popen(
             ['studio-start-remote-worker',
              '--queue=' + queue_name,
-             '--single-run'],
+             '--single-run',
+             '--image=peterzhokhoff/tfstudio_test'],
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT)
 
@@ -191,7 +194,8 @@ class RemoteWorkerTest(unittest.TestCase):
         addcredsp = subprocess.Popen(
             [
                 'studio-add-credentials',
-                '--tag=' + image],
+                '--tag=' + image,
+                '--base-image=peterzhokhoff/tfstudio_test'],
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT)
 

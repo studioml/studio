@@ -41,7 +41,13 @@ class LocalQueue:
             f.write(data)
 
     def acknowledge(self, key):
-        os.remove(key)
+        try:
+            os.remove(key)
+        except BaseException:
+            pass
+
+    def hold(self, key, minutes):
+        self.acknowledge(key)
 
     def get_name(self):
         return self.path

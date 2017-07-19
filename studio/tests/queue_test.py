@@ -73,20 +73,18 @@ class PubSubQueueTest(QueueTest, unittest.TestCase):
         data2 = str(uuid.uuid4())
 
         q.enqueue(data1)
-        self.assertTrue(q.has_next())
-        self.assertTrue(q.has_next())
         q.enqueue(data2)
 
         self.assertTrue(q.has_next())
-        recv_data1 = q.dequeue()
+        recv1 = q.dequeue()
         self.assertTrue(q.has_next())
         time.sleep(15)
+        recv2 = q.dequeue()
 
-        self.assertTrue(q.has_next())
-        recv_data2 = q.dequeue()
+        self.assertTrue(data1 == recv1 or data2 == recv1)
+        self.assertTrue(data1 == recv2 or data2 == recv2)
+        self.assertFalse(recv1 == recv2)
 
-        self.assertEquals(data1, recv_data1)
-        self.assertEquals(data2, recv_data2)
         self.assertFalse(q.has_next())
 
     def test_two_receivers(self):
@@ -113,6 +111,24 @@ class PubSubQueueTest(QueueTest, unittest.TestCase):
 
         self.assertFalse(q1.has_next())
         self.assertFalse(q2.has_next())
+
+    def test_hold(self):
+        q = self.get_queue()
+        q.clean()
+
+        data = str(uuid.uuid4)
+        q.enqueue(data)
+
+        msg, ack_id = q.dequeue(acknowledge=False)
+
+        self.assertFalse(q.has_next())
+        q.hold(ack_id, 0.5)
+        time.sleep(35)
+        self.assertTrue(q.has_next())
+
+        msg = q.dequeue()
+
+        self.assertEquals(data, msg)
 
 
 if __name__ == '__main__':

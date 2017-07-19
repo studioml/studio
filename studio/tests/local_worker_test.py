@@ -129,17 +129,16 @@ class LocalWorkerTest(unittest.TestCase, QueueTest):
             test_output=False
         )
 
-        experiment = db.get_experiment(experiment_name) 
+        experiment = db.get_experiment(experiment_name)
         saved_model = experiment.get_model(db).model
 
-        v = np.random.rand(1,2)
+        v = np.random.rand(1, 2)
         prediction = saved_model.predict(v)
-        expected = v*2
+        expected = v * 2
 
         self.assertTrue(np.isclose(prediction, expected).all())
 
         db.delete_experiment(experiment)
-
 
     @timeout(120)
     def test_stop_experiment(self):
@@ -211,7 +210,7 @@ def stubtest_worker(
     except Exception:
         pass
 
-    p = subprocess.Popen(['studio','run'] + runner_args +
+    p = subprocess.Popen(['studio', 'run'] + runner_args +
                          ['--config=' + config_name,
                           '--verbose=debug',
                           '--force-git',
@@ -251,10 +250,9 @@ def stubtest_worker(
                 time.sleep(1)
                 experiment = db.get_experiment(experiment_name)
 
-
         if test_output:
             with open(db.store.get_artifact(experiment.artifacts['output']),
-                    'r') as f:
+                      'r') as f:
                 data = f.read()
                 split_data = data.strip().split('\n')
                 testclass.assertEquals(split_data[-1], expected_output)

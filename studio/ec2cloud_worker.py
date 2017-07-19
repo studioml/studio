@@ -7,6 +7,10 @@ import uuid
 import logging
 import os
 import base64
+
+import hashlib
+import pickle
+
 from gpu_util import memstr2int
 
 
@@ -69,9 +73,26 @@ class EC2WorkerManager(object):
 
     def __init__(self, auth_cookie=None):
         self.client = boto3.client('ec2')
+        self.asclient = boto3.client('autoscaling')
         self.logger = logging.getLogger('EC2WorkerManager')
         self.logger.setLevel(10)
         self.auth_cookie = auth_cookie
+
+    def _get_image_id(self):
+        # vanilla ubuntu 14.04 image
+        return 'ami-d15a75c7'
+
+    def _get_block_device_mappings(self, resources_needed):
+        return [{
+            'DeviceName': '/dev/sdh',
+            'Ebs': {
+                'Encrypted': False,
+                'DeleteOnTermination': True,
+                'VolumeSize': memstr2int(resources_needed['hdd']) /
+                memstr2int('1g'),
+                'VolumeType': 'standard'
+            }
+        }]
 
     def start_worker(
             self,
@@ -79,7 +100,8 @@ class EC2WorkerManager(object):
             resources_needed={},
             blocking=True,
             ssh_keypair=None):
-        imageid = 'ami-d15a75c7'
+
+        imageid = self._get_image_id()
 
         if self.auth_cookie is not None:
             auth_key = os.path.basename(self.auth_cookie)
@@ -197,3 +219,88 @@ class EC2WorkerManager(object):
 
     def _generate_instance_name(self):
         return 'ec2worker_' + str(uuid.uuid4())
+
+    def start_spot_workers(
+            self,
+            num_workers,
+            bid_price,
+            resources_needed={},
+            ssh_keypair=None):
+
+        # TODO should be able to put bid price as None,
+        # which means price of on-demand instance
+        # or maybe specify bid_price as a fraction of on-demand price
+
+        instance_type, startup_script = self._select_instance_type(
+            resources_needed)
+
+        launch_config = {
+            "ImageId": self._get_image_id(),
+            "UserData": "",
+            "InstanceType": instance_type,
+            "BlockDeviceMappings": self._get_block_device_mappings(
+                resources_needed),
+            "InstanceMonitoring": {
+                'Enabled': False},
+            "SpotPrice": bid_price,
+        }
+
+        if ssh_keypair is not None:
+            group_name = str(uuid.uuid4())
+
+            response = self.client.create_security_group(
+                GroupName=group_name,
+                Description='Group to provide ssh access to workers')
+            groupid = response['GroupId']
+
+            response = self.client.authorize_security_group_ingress(
+                GroupId=groupid,
+                GroupName=group_name,
+                IpPermissions=[{
+                    'IpProtocol': 'tcp',
+                    'FromPort': 22,
+                    'ToPort': 22,
+                    'IpRanges': [{
+                        'CidrIp': '0.0.0.0/0'
+                    }]
+                }]
+            )
+
+            launch_config['SecurityGroups'] = [group_name]
+            launch_config['KeyName'] = ssh_keypair
+
+        launch_config_name = hashlib.sha256(
+            pickle.dumps(launch_config)).hexdigest()
+
+        existing_configs = self.asclient.describe_launch_configurations()
+
+        if launch_config_name in [
+                config['LaunchConfigurationName']
+                for config in existing_configs['LaunchConfigurations']]:
+            self.logger.debug(
+                'Launch configuration {} exists'.format(launch_config_name))
+        else:
+            self.logger.debug(
+                'Launch configuration {} does not exist, creating...'
+                .format(launch_config_name))
+            response = self.asclient.create_launch_configuration(
+                LaunchConfigurationName=launch_config_name, **launch_config)
+
+            self.logger.debug(
+                "create_launch_configuration response:\n" + response)
+
+        asg_config = {
+            "LaunchConfigurationName": launch_config_name,
+            "MinSize": 0,
+            "MaxSize": num_workers,
+            "DesiredCapacity": num_workers,
+            "LoadBalancerNames": [],
+            "AvailabilityZones": ['us-east-1d']
+        }
+
+        asg_name = hashlib.sha256(pickle.dumps(asg_config)).hexdigest()
+
+        response = self.asclient.create_auto_scaling_group(
+            AutoScalingGroupName=asg_name, **asg_config)
+
+        print response

@@ -173,6 +173,9 @@ def worker_loop(queue, parsed_args,
                 fetch_artifacts=False):
 
     logger = logging.getLogger('worker_loop')
+
+    hold_period = 4
+
     while queue.has_next():
         first_exp, ack_key = queue.dequeue(acknowledge=False)
         # first_exp = min([(p, os.path.getmtime(p)) for p in queue],
@@ -191,32 +194,43 @@ def worker_loop(queue, parsed_args,
         experiment = executor.db.get_experiment(experiment_key)
 
         if allocate_resources(experiment, config, verbose=verbose):
-            # os.remove(first_exp)
-            queue.acknowledge(ack_key)
-            if setup_pyenv:
-                logger.info('Setting up python packages for experiment')
-                pipp = subprocess.Popen(
-                    ['pip', 'install'] + experiment.pythonenv,
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.STDOUT)
+            # queue.acknowledge(ack_key)
+            def hold_job():
+                queue.hold(ack_key, hold_period)
 
-                pipout, _ = pipp.communicate()
-                logger.info("pip output: \n" + pipout)
+            hold_job()
+            sched = BackgroundScheduler()
+            sched.add_job(hold_job, 'interval', minutes=hold_period / 2)
+            sched.start()
 
-                # pip.main(['install'] + experiment.pythonenv)
+            try:
+                if setup_pyenv:
+                    logger.info('Setting up python packages for experiment')
+                    pipp = subprocess.Popen(
+                        ['pip', 'install'] + experiment.pythonenv,
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.STDOUT)
 
-            for tag, art in experiment.artifacts.iteritems():
-                if fetch_artifacts or 'local' not in art.keys():
-                    logger.info('Fetching artifact ' + tag)
-                    if tag == 'workspace':
-                        # art['local'] = executor.db.store.get_artifact(
-                        #    art, '.', only_newer=False)
-                        art['local'] = executor.db.store.get_artifact(
-                            art, only_newer=False)
-                    else:
-                        art['local'] = executor.db.store.get_artifact(art)
+                    pipout, _ = pipp.communicate()
+                    logger.info("pip output: \n" + pipout)
 
-            executor.run(experiment)
+                    # pip.main(['install'] + experiment.pythonenv)
+
+                for tag, art in experiment.artifacts.iteritems():
+                    if fetch_artifacts or 'local' not in art.keys():
+                        logger.info('Fetching artifact ' + tag)
+                        if tag == 'workspace':
+                            # art['local'] = executor.db.store.get_artifact(
+                            #    art, '.', only_newer=False)
+                            art['local'] = executor.db.store.get_artifact(
+                                art, only_newer=False)
+                        else:
+                            art['local'] = executor.db.store.get_artifact(art)
+                executor.run(experiment)
+            finally:
+                sched.shutdown()
+                queue.acknowledge(ack_key)
+
             if single_experiment:
                 logger.info('single_experiment is True, quitting')
                 return

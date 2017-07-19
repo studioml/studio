@@ -84,10 +84,10 @@ class Experiment(object):
     def get_model(self, db):
         modeldir = db.store.get_artifact(self.artifacts['modeldir'])
         hdf5_files = [
-                (p, os.path.getmtime(p))
-                for p in
-                glob.glob(modeldir + '/*.hdf*') +
-                glob.glob(modeldir + '/*.h5')]
+            (p, os.path.getmtime(p))
+            for p in
+            glob.glob(modeldir + '/*.hdf*') +
+            glob.glob(modeldir + '/*.h5')]
         if any(hdf5_files):
             # experiment type - keras
             last_checkpoint = max(hdf5_files, key=lambda t: t[1])[0]
