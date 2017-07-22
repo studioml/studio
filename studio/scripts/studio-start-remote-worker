@@ -33,6 +33,12 @@ do
             -s|--single-run)
             single_run=1
             echo Single run mode
+            ;;
+
+            -b|--baked-credentials)
+            baked_credentials=1
+            echo "Baked credentials mode (not mounting credentials/keys)"
+            ;;
     esac
     shift
 done
@@ -86,17 +92,24 @@ gac_name=${GOOGLE_APPLICATION_CREDENTIALS##*/}
 
 
 # loop until killed
+
+docker_args="run --rm --pid=host \
+            -v $HOME/.tfstudio/experiments:/root/.tfstudio/experiemnts
+            -v $HOME/.tfstudio/blobcache:/root/.tfstudio/blobcache"
+
+if [[ $baked_credentials -ne 1 ]]; then
+    docker_args="$docker_args -v $HOME/.tfstudio/keys:/root/.tfstudio/keys"
+    docker_args="$docker_args -v $gac_path:/creds -e GOOGLE_APPLICATION_CREDENTIALS=/creds/$gac_name"
+fi
+
+echo "Docker args = $docker_args"
+echo "Docker image = $docker_img"
+
 while true
 do
     echo $bash_cmd
     $docker_cmd pull $docker_img
-    $docker_cmd run --rm \
-            -v $HOME/.tfstudio/keys:/root/.tfstudio/keys \
-            -v $gac_path:/creds \
-            --pid=host \
-            -e GOOGLE_APPLICATION_CREDENTIALS="/creds/$gac_name" \
-            $docker_img \
-        /bin/bash -c "$bash_cmd"
+    $docker_cmd $docker_args $docker_img /bin/bash -c "$bash_cmd"
    if [ $single_run ];
    then
            exit 0

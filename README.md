@@ -1,6 +1,9 @@
 # TensorFlow Studio
-
 Model management tools.
+
+<p align="center">
+  <img src="logo.png" width="250"/>
+</p>
 
 ## Main features
 * Capturing experiment information (python environment, files, dependencies, logs) with no invasion in the experiment code
@@ -14,14 +17,14 @@ Model management tools.
 
 Start visualizer:
 
-    studio 
+    studio ui
 
 Run your jobs:
 
-    studio-runner myfile.py
+    studio run myfile.py
 
 You can see results of your job at http://127.0.0.1:5000. 
-Run `studio-runner --help` for a full list of options. 
+Run `studio {ui|run} --help` for a full list of ui / runner options
 
 ## Installation
 ### Setting up virtualenv (recommended)
@@ -60,12 +63,12 @@ as in command line above) should be no more than 10 minutes. Most of the tests a
 gpu cloud worker test in EC2 cloud (takes about 500 seconds due to installation of the drivers / CUDA on the EC2 instance).
 
 ## Authentication 
-Both studio and studio-runner use same authentication tokens for database backend. The tokens are valid for 1 hour, 
-but if studio / studio-runner is running, it renews tokens automatically. 
+Both studio ui and studio runner use same authentication tokens for database backend. The tokens are valid for 1 hour, 
+but if studio ui / studio runner is running, it renews tokens automatically. 
 Note that refresh tokens don't expire; this also means that you can use tokens on multiple machines (i.e. when you want to use google account authentication on a remote server and don't want to open extra ports) - simply copy contents of ~/.tfstudio/keys folder to another machine. 
 For now TensorFlow studio supports 2 methods of authentication: email/password and using google account.
 If you don't have a user account set up, and don't have a google account, you can uncomment "guest: true" line
- in the database section of studio/default_config.yaml file to use studio-runner and studio in the guest mode. 
+ in the database section of studio/default_config.yaml file to use studio runner and studio ui in the guest mode. 
 
 Alternatively, you can set up your own database (with blackjack and hook... let's not get distracted here) and configure 
 tfstudio to use it. See [setting up database](docs/setup_database.md). This is also a preferred option if you don't want to
@@ -74,14 +77,14 @@ share the models / artifacts with everyone.
 
 ### Email / password authentication
 If you have an email/password account set up, you can use this method. In default_config.yaml file uncomment "use_email_auth: true" 
-line in database section. If the token is not found or expired when you run studio / studio-runner, either of the commands will ask
+line in database section. If the token is not found or expired when you run studio ui / studio runner, either of the commands will ask
 for email and password and use that to authenticate. Note that the password is NOT stored on your computer (but tokens are), 
 that's why it keeps asking for password if inactive for more than an hour. 
 
 ### Google account authentication
 If you don't have an email/password account set up, don't despair! Any user with a google account can use TensorFlow studio as a 
 first-class citizen. If token not found when you run studio, Web UI will redirect you to the authentication app which will
-ask to sign in with your google account, and issues an authentication token. Then studio / studio-runner can use that token. 
+ask to sign in with your google account, and issues an authentication token. Then studio ui / studio runner can use that token. 
 
 ## Further reading and cool features
 TensorFlow studio allows one to run experiments remotely. The process of setting up a server is described [here](docs/remote_worker.md). 

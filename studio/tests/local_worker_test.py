@@ -157,7 +157,7 @@ class LocalWorkerTest(unittest.TestCase, QueueTest):
         except Exception:
             pass
 
-        p = subprocess.Popen(['studio-runner',
+        p = subprocess.Popen(['studio', 'run',
                               '--config=' + config_name,
                               '--experiment=' + key,
                               '--force-git',
@@ -180,7 +180,7 @@ class LocalWorkerTest(unittest.TestCase, QueueTest):
         db.stop_experiment(key)
         pout, _ = p.communicate()
         if pout:
-            logger.debug("studio-runner output: \n" + pout)
+            logger.debug("studio run output: \n" + pout)
 
         db.delete_experiment(key)
 
@@ -211,7 +211,7 @@ def stubtest_worker(
     except Exception:
         pass
 
-    p = subprocess.Popen(['studio-runner'] + runner_args +
+    p = subprocess.Popen(['studio','run'] + runner_args +
                          ['--config=' + config_name,
                           '--verbose=debug',
                           '--force-git',
@@ -224,7 +224,7 @@ def stubtest_worker(
     pout, _ = p.communicate()
 
     if pout:
-        logger.debug("studio-runner output: \n" + pout)
+        logger.debug("studio run output: \n" + pout)
 
     experiments = [e for e in db.get_user_experiments()
                    if e.key.startswith(experiment_name)]

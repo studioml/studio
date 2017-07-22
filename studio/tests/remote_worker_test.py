@@ -158,6 +158,86 @@ class RemoteWorkerTest(unittest.TestCase):
 
         os.remove(tmpfile)
 
+    @timeout(90)
+    @unittest.skipIf(
+        'GOOGLE_APPLICATION_CREDENTIALS' not in
+        os.environ.keys(),
+        'GOOGLE_APPLICATION_CREDENTIALS environment ' +
+        'variable not set, won'' be able to use google ' +
+        'PubSub')
+    def test_baked_image(self):
+        '''
+        create a docker image with baked in credentials
+        and run a remote worker tests with it
+        '''
+        logger = logging.getLogger('test_baked_image')
+        logger.setLevel(10)
+
+        # check if docker is installed
+        dockertestp = subprocess.Popen(['docker'],
+                                       stdout=subprocess.PIPE,
+                                       stderr=subprocess.STDOUT)
+
+        dockertestout, _ = dockertestp.communicate()
+        if dockertestout:
+            logger.info("docker test output: \n" + dockertestout)
+
+        if dockertestp.returncode != 0:
+            logger.error("docker is not installed (correctly)")
+            return
+
+        image = 'test_image' + str(uuid.uuid4())
+
+        addcredsp = subprocess.Popen(
+            [
+                'studio-add-credentials',
+                '--tag=' + image],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT)
+
+        addcredsout, _ = addcredsp.communicate()
+        if addcredsout:
+            logger.info('studio-add-credentials output: \n' + addcredsout)
+        if addcredsp.returncode != 0:
+            logger.error("studio-add-credentials failed.")
+            self.assertTrue(False)
+
+        experiment_name = 'test_remote_worker_baked' + str(uuid.uuid4())
+        queue_name = experiment_name
+        logger = logging.getLogger('test_baked_image')
+        logger.setLevel(10)
+
+        pw = subprocess.Popen(
+            ['studio-start-remote-worker',
+             '--queue=' + queue_name,
+             '--single-run',
+             '--image=' + image],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT)
+
+        stubtest_worker(
+            self,
+            experiment_name=experiment_name,
+            runner_args=['--queue=' + queue_name, '--force-git'],
+            config_name='test_config.yaml',
+            test_script='tf_hello_world.py',
+            script_args=['arg0'],
+            expected_output='[ 2.  6.]',
+            queue=PubsubQueue(queue_name))
+
+        workerout, _ = pw.communicate()
+        if workerout:
+            logger.debug("studio-start-remote-worker output: \n" + workerout)
+
+        rmip = subprocess.Popen(['docker', 'rmi', image],
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.STDOUT)
+
+        rmiout, _ = rmip.communicate()
+
+        if rmiout:
+            logger.info('docker rmi output: \n' + rmiout)
+
 
 if __name__ == "__main__":
     unittest.main()

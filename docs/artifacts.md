@@ -12,9 +12,9 @@ The idea behind artifact management is three-fold:
 Below we provide the examples of each use case. 
 
 ### Capture data 
-Let's imagine that file `train_nn.py` in current directory trains neural network based on data located in `~/data/`. In order to capture the data, we need to invoke `studio-runner` as follows:
+Let's imagine that file `train_nn.py` in current directory trains neural network based on data located in `~/data/`. In order to capture the data, we need to invoke `studio run` as follows:
 
-    studio-runner --capture-once=~/data:data train_nn.py
+    studio run --capture-once=~/data:data train_nn.py
 
 Flag `--capture-once` (or `-co`) specifies that data at path ~/data needs to be captured once at the experiment startup. Additionally, tag `data` (provided as a value after `:`) allows script to access data
 in a machine-independent way; and also distinguishes the dataset in the web-ui (Web UI page of the experiment will contain download link for tar-gzipped folder `~/data`)
@@ -55,7 +55,7 @@ The reader can immediately see that we are solving a linear regression problem b
 
 In order to simply save the weigths, we can run the following command:
     
-    studio-runner --capture=~/weights:weights train_linreg.py 
+    studio run --capture=~/weights:weights train_linreg.py 
 
 Flag `--capture` (or `-c`) specifies that data from folder `~/weights` needs to be captured continously - every minute (frequency can be changed in a config file), and at the end of the experiment. 
 In the Web ui page of the experiment we now have a link to weights artifact. This simple script should finish almost immediately, but for longer running jobs upload happens every minute of a runtime (the upload happens in a separate thread, so this should not slow down the actual experiment)
@@ -75,11 +75,11 @@ way, as follows. Let us replace last three lines in the script above by:
 
 We can now run the script either locally, the exact same way as before:    
     
-    studio-runner --capture=~/weights:weights train_linreg.py 
+    studio run --capture=~/weights:weights train_linreg.py 
 
 Or, if the have a worker listening to the queue `work_queue`:
 
-    studio-runner --capture=~/weights:weights --queue work_queue train_linreg.py
+    studio run --capture=~/weights:weights --queue work_queue train_linreg.py
 
 In the former case, the call `fs_tracker.get_artifact('weights')` will simply return `os.path.expanduser('~/weights')`. 
 In the latter case, remote worker will set up a cache directory that corresponds to artifact with tag weights, copies existing data from storage into it (so that data can be read from that directory as well), 
@@ -90,7 +90,7 @@ A neat side-benefit of using machine-indepdent access to the artifacts is abilit
 More importantly though, one can reuse datasets (or any artifacts) from another experiment using --reuse flag. 
 First, let's imagine we run the `train_linreg.py` script, this time giving experiment a name: 
     
-    studio-runner --capture=~/weights:weights --experiment linear_regression train_linreg.py 
+    studio run --capture=~/weights:weights --experiment linear_regression train_linreg.py 
 
 Say, now we want to print the L2 norm of the last set of weights. 
 Let's consider the following script (`print_norm_linreg.py`):
@@ -114,9 +114,9 @@ Let's consider the following script (`print_norm_linreg.py`):
 
 We can run it via
 
-    studio-runner --reuse=linear_regression/weights:w print_norm_linreg.py
+    studio run --reuse=linear_regression/weights:w print_norm_linreg.py
 
-Flag reuse tells studio-runner that artifact `weights` from experiment `linear_regression` will be used in the current experiment with a tag `w`. 
+Flag reuse tells studio run that artifact `weights` from experiment `linear_regression` will be used in the current experiment with a tag `w`. 
 There is a bit of a catch - for download optimization, all artifacts from other experiments are considered immutable, and cached as such. If you re-run the experiment with the same name and would like to use new artifacts from it, 
 clean the cache folder `~/.tfstudio/blobcache/`. 
 

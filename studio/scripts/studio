@@ -1,3 +1,67 @@
-#!python
-from studio import studio
-studio.main()
+#!/bin/bash
+
+
+function print_help {
+    echo "List of allowed commands:"
+    echo " "
+    echo "  studio ui  -- launches WebUI"
+    echo "  studio run -- runs an experiment from a python script"
+    echo "  studio start remote worker -- orchestrates (re)-starts of worker that listens to the remote queue in a docker container"
+    echo "  studio remote worker -- start a worker that listens to remote queue"
+    echo "  studio add credentials -- create a docker image with credentials baked in"
+    echo " "
+    echo "Type <command> --help for a list of options for each command"
+}
+
+function parse_command {
+
+    expected_command=$1
+    shift
+    cmd="studio"
+    for w in $expected_command; do
+        if [ "$w" = "$1" ]; then
+            cmd="$cmd-$w"
+            shift
+        else
+            echo "Unknown command $1"
+            print_help
+            exit 1
+        fi
+    done
+
+    echo $cmd $*
+    eval $cmd $*
+    exit $?
+}
+
+
+case $1 in
+    run)
+    parse_command "run" $*
+    ;;
+
+    ui)
+    parse_command "ui" $*
+    ;;  
+
+    start)
+    parse_command "start remote worker" $*
+    ;;
+
+    remote)
+    parse_command "remote worker" $*
+    ;;
+
+    add)
+    parse_command "add credentials" $*
+    ;;
+
+esac
+
+echo "Unknown command $1"
+print_help
+exit 1
+
+
+
+ 

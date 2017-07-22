@@ -22,32 +22,35 @@ If you don't have your own docker container to run jobs in, follow the instructi
 
 3. Start worker (queue name is a name of the queue that will define where submit work to)
     
-        studio-start-remote-worker <queue-name>
+        studio start remote worker --queue=<queue-name>
 
 
-## III. Setting up a remote worker in an existing docker container. 
-This section applies to the cases when you already have a docker image/container, and would like studio remote worker to run in it (wink wink Antoine :)
-Full disclosure - this is basically manual retrace of steps happening inside `Dockerfile` and `studio-start-remote-worker` script. As such, these steps can and should be automated, but the particular flavor of automation is left as an exercise for the reader. 
 
-1. Within the docker container, install the prerequisites (if you don't have them already). Particular form of this command depends on your docker image, but if you made it this far, you can handle that. We'll assume you are using ubuntu image. If your host machine does not have gpus or nvidia cuda drivers, don't install tensorflow-gpu package.
+## III. Setting up a remote worker with exising docker image
+This section applies to the cases when you already have a docker image/container, and would like studio remote worker to run in it (wink wink Antoine :). 
 
-        apt install -y python-dev python-pip git && pip install --upgrade pip && pip install tensorflow tensorflow-gpu
+1. Make sure that the image has python-dev, python-pip, git installed, as well as studio. The easiest way is to make your Dockerfile inherit from from the tfstudio Dockerfile (located in the studio root directory). Otherwise, copy relevant contents of tfstudio Dockerfile into yours. 
+2. Bake the credentials into your image. Run
 
-2. Within docker container, install studio:
+        studio add credentials [--base_image=<image>] [--tag=<tag>] [--check-gpu]
+  
+  where `<image>` is name of your image (default is peterzhokhoff/tfstudio); `<tag>` is the tag of the image with credentials (default is `<image>_creds`). Add option check-gpu if you are planning to use image on the same machine you are running the script from.
+  This will check for presence of CUDA toolbox and uninstall tensorflow-gpu if not found. 
 
-        git clone https://github.com/ilblackdragon/studio && cd studio && pip install -e .
+3. Start remote worker passing `--image=<tag>`:
 
-3. Make sure `GOOGLE_APPLICATION_CREDENTIALS` evironment variable is set up and pointing to the credentials file inside the docker container. You can either copy or mount the file, and set up the variable accordingly.
-
-4. Start remote worker script:
-
-        studio-remote-worker --queue <queue_name> 
+        studio start remote worker --image=<tag> --queue=<queue-name>
+  
+  You can also start the container and remote worker within it manually, by running:
     
-If you want the worker to quit after a single experiment (e.g. if you are using fresh docker container for each experiment), add an extra flag `--single-run` to the studio-remote-worker command line. Otherwise, the remote worker will try to execute all outstanding tasks in the queue and quit after that. 
+        studio remote worker --queue=<queue-name> 
+ 
+  within the container - that is essentially what `studio-start-remote-worker` script does, plus mounting cache directories `~/.tfstudio/experiments` and `~/.tfstudio/blobcache`
+
 
 ## IV. Submitting work
 On a submitting machine (usually local):
 
-    studio-runner --queue <queue-name> <any_other_args> script.py <script_args>
+    studio run --queue <queue-name> <any_other_args> script.py <script_args>
 
 This script should quit promptly, but you'll be able to see experiment progress in studio web ui 

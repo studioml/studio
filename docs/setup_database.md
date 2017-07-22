@@ -36,10 +36,10 @@ To make experiments readable by everyone, but writeable only by creator, a bit m
 ## Test run
 Go to studio/helloworld/ folder, and try running 
 
-        studio-runner --config /path/to/new_config.yaml train_mnist_keras.py 10
+        studio run --config /path/to/new_config.yaml train_mnist_keras.py 10
 (10 stands for number of training epochs). It should ask for user email and password (if you have uncommented use_email_auth in new_config.yaml), or block to wait for studio to authenticate. Then (or in another terminal) run 
 
-        studio --config /path/to/new_config.yaml
+        studio ui --config /path/to/new_config.yaml
 and go to http://localhost:5000 in the browser to see the results of the experiment
     
 
