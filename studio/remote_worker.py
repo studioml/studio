@@ -6,6 +6,7 @@ import model
 
 
 from pubsub_queue import PubsubQueue
+from sqs_queue import SQSQueue
 
 import argparse
 logging.basicConfig()
@@ -37,13 +38,32 @@ def main(args=sys.argv):
              'or numerical value of logger levels.',
         default=None)
 
+    parser.add_argument(
+        '--timeout', '-t',
+        help='Timeout after which remote worker stops listening (in seconds)',
+        default=None)
+
     parsed_args, script_args = parser.parse_known_args(args)
     verbose = model.parse_verbosity(parsed_args.verbose)
     logger.setLevel(verbose)
-    queue = PubsubQueue(parsed_args.queue, verbose=verbose)
+    if parsed_args.queue.startswith('ec2_'):
+        queue = SQSQueue(parsed_args.queue, verbose=verbose)
+    else:
+        queue = PubsubQueue(parsed_args.queue, verbose=verbose)
     logger.info('Waiting for the work in the queue...')
+
+    wait_time = 0
+    wait_step = 5
     while not queue.has_next():
-        time.sleep(5)
+        logger.info('No messages found, sleeping for {} s (total wait time {} s)'
+                .format(wait_step, wait_time))
+        time.sleep(wait_step)
+        wait_time += wait_step
+        if parsed_args.timeout and int(parsed_args.timeout) < wait_time:
+            logger.info('No jobs found in the queue during {} s'.
+                        format(parsed_args.timeout))
+            return
+
     logger.info('Starting working')
     worker_loop(queue, parsed_args,
                 setup_pyenv=True,
