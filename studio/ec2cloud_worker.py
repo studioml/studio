@@ -302,29 +302,30 @@ class EC2WorkerManager(object):
         response = self.asclient.create_auto_scaling_group(
             AutoScalingGroupName=asg_name, **asg_config)
 
-        scaleup_policy_response = self.asclient.put_scaling_policy(
-            AutoScalingGroupName=asg_name,
-            PolicyName=asg_name + "_scaleup",
-            AdjustmentType="ChangeInCapacity",
-            ScalingAdjustment=1,
-            Cooldown=0
-        )
+        if queue_upscaling:
+            scaleup_policy_response = self.asclient.put_scaling_policy(
+                AutoScalingGroupName=asg_name,
+                PolicyName=asg_name + "_scaleup",
+                AdjustmentType="ChangeInCapacity",
+                ScalingAdjustment=1,
+                Cooldown=0
+            )
 
-        self.cwclient.put_metric_alarm(
-            AlarmName=asg_name + "_scaleup_alarm",
-            MetricName="ApproximateNumberOfMessagesVisible",
-            Namespace="AWS/SQS",
-            Statistic="Average",
-            Period=300,
-            Threshold=1,
-            ComparisonOperator="GreaterThanOrEqualToThreshold",
-            EvaluationPeriods=1,
-            AlarmActions=[scaleup_policy_response['PolicyARN']],
-            Dimensions=[{
-                'Name': 'QueueName',
-                'Value': queue_name
-            }]
-        )
+            self.cwclient.put_metric_alarm(
+                AlarmName=asg_name + "_scaleup_alarm",
+                MetricName="ApproximateNumberOfMessagesVisible",
+                Namespace="AWS/SQS",
+                Statistic="Average",
+                Period=300,
+                Threshold=1,
+                ComparisonOperator="GreaterThanOrEqualToThreshold",
+                EvaluationPeriods=1,
+                AlarmActions=[scaleup_policy_response['PolicyARN']],
+                Dimensions=[{
+                    'Name': 'QueueName',
+                    'Value': queue_name
+                }]
+            )
 
     def _get_ondemand_prices(self, instances=_instance_specs.keys()):
         self.logger.info(

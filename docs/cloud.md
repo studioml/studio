@@ -26,6 +26,6 @@ As you might have already guessed, when running with `--cloud=ec2spot` option, t
 Note that bid is max price for *one* instance; number of instances will vary (see below)
 
 ### Autoscaling and number of instances
-Given ephemeral nature of the spot workers, we need additional mechanism controlling / balancing number of such instances. This mechanism is called auto-scaling, and in the simplest setting it tried to keep number of running instances constant. TF Studio handles downsize of the auto-scaling groups when some workers are done and there is no work left in the queue. You can specify this behaviour by setting `--num-workers` flag. 
-Autoscaling allows more complex behaviour, such as spinning extra machines if there are too many messages in the queue. Default behaviour of studio is as follows - to start one spot worker, and specify upscaling when number of outstanding work messages in the queue is above 0.
+Given ephemeral nature of the spot workers, we need additional mechanism controlling / balancing number of such instances. This mechanism is called auto-scaling, and in the simplest setting it tries to keep number of running instances constant. TF Studio handles downsize of the auto-scaling groups when some workers are done and there is no work left in the queue. You can specify this behaviour by setting `--num-workers` flag. 
+Autoscaling allows more complex behaviour, such as spinning extra machines if there are too many messages in the queue. Default behaviour of studio is as follows - to start start with one spot worker, and scale up when number of outstanding work messages in the queue is above 0.
 
