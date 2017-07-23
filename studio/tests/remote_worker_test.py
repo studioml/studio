@@ -16,7 +16,7 @@ logging.basicConfig()
 class RemoteWorkerTest(unittest.TestCase):
     _multiprocess_can_split_ = True
 
-    @timeout(90)
+    @timeout(120)
     @unittest.skipIf(
         'GOOGLE_APPLICATION_CREDENTIALS' not in
         os.environ.keys(),
@@ -51,7 +51,7 @@ class RemoteWorkerTest(unittest.TestCase):
         if workerout:
             logger.debug("studio-start-remote-worker output: \n" + workerout)
 
-    @timeout(90)
+    @timeout(120)
     @unittest.skipIf(
         'GOOGLE_APPLICATION_CREDENTIALS' not in
         os.environ.keys(),
@@ -111,11 +111,11 @@ class RemoteWorkerTest(unittest.TestCase):
         )
 
         with open(tmppath, 'r') as f:
-            self.assertTrue(f.read() == random_str2)
+            self.assertEquals(f.read(), random_str2)
         os.remove(tmppath)
         db.delete_experiment(experiment_name)
 
-    @timeout(90)
+    @timeout(120)
     @unittest.skipIf(
         'GOOGLE_APPLICATION_CREDENTIALS' not in
         os.environ.keys(),
@@ -161,7 +161,7 @@ class RemoteWorkerTest(unittest.TestCase):
 
         os.remove(tmpfile)
 
-    @timeout(90)
+    @timeout(120)
     @unittest.skipIf(
         'GOOGLE_APPLICATION_CREDENTIALS' not in
         os.environ.keys(),
