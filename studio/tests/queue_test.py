@@ -16,6 +16,7 @@ from studio.sqs_queue import SQSQueue
 
 logging.basicConfig()
 
+
 class QueueTest(object):
     def get_queue(self):
         pass
@@ -43,7 +44,7 @@ class QueueTest(object):
 
     # @skip
     def test_enq_deq_order(self):
-        return 
+        return
         q = self.get_queue()
         q.clean()
         data1 = str(uuid.uuid4())
@@ -64,7 +65,6 @@ class QueueTest(object):
         self.assertEquals(data2, recv_data2)
 
         self.assertFalse(q.has_next())
-
 
 
 class DistributedQueueTest(QueueTest):
@@ -99,10 +99,9 @@ class DistributedQueueTest(QueueTest):
 
         data1 = str(uuid.uuid4())
         data2 = str(uuid.uuid4())
-        
+
         logger.debug('data1 = ' + data1)
         logger.debug('data2 = ' + data2)
-
 
         q1.enqueue(data1)
 
@@ -156,8 +155,8 @@ class PubSubQueueTest(DistributedQueueTest, unittest.TestCase):
 
 
 @unittest.skipIf(
-        boto3 is None,
-        "boto3 is not present, cannot use SQSQueue")
+    boto3 is None,
+    "boto3 is not present, cannot use SQSQueue")
 class SQSQueueTest(DistributedQueueTest, unittest.TestCase):
     _multiprocess_can_split_ = True
 

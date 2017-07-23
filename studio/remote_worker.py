@@ -55,8 +55,9 @@ def main(args=sys.argv):
     wait_time = 0
     wait_step = 5
     while not queue.has_next():
-        logger.info('No messages found, sleeping for {} s (total wait time {} s)'
-                .format(wait_step, wait_time))
+        logger.info(
+            'No messages found, sleeping for {} s (total wait time {} s)'
+            .format(wait_step, wait_time))
         time.sleep(wait_step)
         wait_time += wait_step
         if parsed_args.timeout and int(parsed_args.timeout) < wait_time:

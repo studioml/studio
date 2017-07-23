@@ -28,7 +28,7 @@ def main(args=sys.argv):
     logger = logging.getLogger('studio-runner')
     parser = argparse.ArgumentParser(
         description='TensorFlow Studio runner. \
-                     Usage: studio-runner \
+                     Usage: studio run <runner_arguments> \
                      script <script_arguments>')
     parser.add_argument('--config', help='configuration file', default=None)
     parser.add_argument('--project', help='name of the project', default=None)
@@ -84,8 +84,9 @@ def main(args=sys.argv):
 
     parser.add_argument(
         '--bid',
-        help='Spot instance price bid',
-        default=None)
+        help='Spot instance price bid, specified in USD or in percentage ' +
+             'of on-demand instance price. Default is %(default)s',
+        default='100%')
 
     parser.add_argument(
         '--capture-once', '-co',
@@ -134,8 +135,7 @@ def main(args=sys.argv):
     parser.add_argument(
         '--num-workers',
         help='Number of local or cloud workers to spin up',
-        type=int,
-        default=1)
+        default=None)
 
     parser.add_argument(
         '--python-pkg',
@@ -148,7 +148,8 @@ def main(args=sys.argv):
     # and attribute all arguments past that index as related to the script
     py_suffix_args = [i for i, arg in enumerate(args) if arg.endswith('.py')]
     if len(py_suffix_args) < 1:
-        print('At least one argument should be a python script (end with *.py)')
+        print('At least one argument should be a python script ' +
+              '(end with *.py)')
         parser.print_help()
         exit()
 
@@ -207,16 +208,15 @@ def main(args=sys.argv):
         logger.info("Added experiment " + e.key)
 
     if runner_args.cloud is not None:
-        assert (runner_args.cloud == 'gcloud' or 
-               runner_args.cloud == 'ec2' or 
-               runner_args.cloud == 'ec2spot') 
+        assert (runner_args.cloud == 'gcloud' or
+                runner_args.cloud == 'ec2' or
+                runner_args.cloud == 'ec2spot')
 
         auth_cookie = None if config['database'].get('guest') \
             else os.path.join(
             auth.token_dir,
             config['database']['apiKey']
         )
- 
 
         if runner_args.cloud == 'gcloud':
             if runner_args.queue is None:
@@ -247,17 +247,28 @@ def main(args=sys.argv):
 
         if runner_args.cloud == 'gcloud' or \
            runner_args.cloud == 'ec2':
-            
-            for i in range(runner_args.num_workers):
-                worker_manager.start_worker(runner_args.queue, resources_needed, ssh_keypair='peterz-key')
+
+            num_workers = int(
+                runner_args.num_workers) if runner_args.num_workers else 1
+            for i in range(num_workers):
+                worker_manager.start_worker(
+                    runner_args.queue, resources_needed)
         else:
             assert runner_args.bid is not None
-            worker_manager.start_spot_workers(runner_args.queue, 
-                                              runner_args.bid, 
-                                              resources_needed, 
-                                              start_workers=runner_args.num_workers,
-                                              ssh_keypair='peterz-key') 
-    
+            if runner_args.num_workers:
+                start_workers = runner_args.num_workers
+                queue_upscaling = False
+            else:
+                start_workers = 1
+                queue_upscaling = True
+
+            worker_manager.start_spot_workers(
+                runner_args.queue,
+                runner_args.bid,
+                resources_needed,
+                start_workers=start_workers,
+                queue_upscaling=queue_upscaling)
+
     else:
         if not runner_args.queue:
             queue = LocalQueue()
@@ -265,7 +276,7 @@ def main(args=sys.argv):
             if runner_args.queue.startswith('ec2_'):
                 queue = SQSQueue(runner_args.queue, verbose=verbose)
             else:
-                queue = PubSubQueue(runner_args.queue, verbose=verbose)
+                queue = PubsubQueue(runner_args.queue, verbose=verbose)
 
     for e in experiments:
         queue.enqueue(json.dumps({
@@ -281,7 +292,7 @@ def main(args=sys.argv):
             worker_args += ['--guest']
 
         logger.info('worker args: {}'.format(worker_args))
-        if runner_args.num_workers == 1:
+        if not runner_args.num_workers or int(runner_args.num_workers) == 1:
             local_worker.main(worker_args)
         else:
             raise NotImplementedError("Multiple local workers are not " +

@@ -35,11 +35,11 @@ class GCloudWorkerTest(unittest.TestCase):
 
 
 @unittest.skipIf(
-    'GOOGLE_APPLICATION_CREDENTIALS' not in os.environ.keys() or
     not boto3,
-    'GOOGLE_APPLICATION_CREDENTIALS environment ' +
-    'variable not set, won'' be able to use google pubsub')
+    'boto3 not present, won\'t be able to use AWS API')
 class EC2WorkerTest(unittest.TestCase):
+    _multiprocess_can_split_ = True
+
     def get_worker_manager(self):
         return EC2WorkerManager()
 
@@ -54,6 +54,26 @@ class EC2WorkerTest(unittest.TestCase):
             script_args=['arg0'],
             expected_output='[ 2.  6.]',
         )
+
+    def test_worker_spot(self):
+        experiment_name = 'test_ec2_worker_' + str(uuid.uuid4())
+        stubtest_worker(
+            self,
+            experiment_name=experiment_name,
+            runner_args=['--cloud=ec2spot', '--force-git',
+                         '--bid=25%'],
+            config_name='test_config.yaml',
+            test_script='tf_hello_world.py',
+            script_args=['arg0'],
+            expected_output='[ 2.  6.]',
+        )
+
+    def test_get_ondemand_prices(self):
+        wm = self.get_worker_manager()
+        prices = wm._get_ondemand_prices(['c4.large', 'p2.xlarge'])
+
+        expected_prices = {'c4.large': 0.1, 'p2.xlarge': 0.9}
+        self.assertEquals(prices, expected_prices)
 
 
 if __name__ == '__main__':

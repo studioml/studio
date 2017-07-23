@@ -21,7 +21,7 @@ cloud:
     zone: us-central1-f
 
     cpus: 2
-    ram:  4g
+    ram:  3g
     hdd:  10g
     gpus: 0
 

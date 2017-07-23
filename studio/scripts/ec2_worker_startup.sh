@@ -26,6 +26,12 @@ env
 
 sudo apt -y update 
 sudo apt install -y wget python-pip git python-dev jq
+sudo pip install --upgrade pip 
+sudo pip install --upgrade awscli
+
+wget $code_url_base/$code_ver 
+tar -xzf $code_ver 
+cd studio 
 
 if [[ "{use_gpus}" -eq 1 ]]; then
     cudnn="libcudnn5_5.1.10-1_cuda8.0_amd64.deb"
@@ -41,13 +47,9 @@ if [[ "{use_gpus}" -eq 1 ]]; then
     # install cudnn
     wget $code_url_base/$cudnn
     sudo dpkg -i $cudnn
+    sudo pip install tensorflow tensorflow-gpu
 fi
 
-wget $code_url_base/$code_ver 
-tar -xzf $code_ver 
-cd studio 
-sudo pip install --upgrade pip 
-sudo pip install --upgrade awscli
 sudo pip install -e . --upgrade 
 mkdir /workspace && cd /workspace 
 studio remote worker --queue=$queue_name  --verbose=debug --timeout=300
