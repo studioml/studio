@@ -19,18 +19,20 @@ The default rules allow read and write access to all authenticated users, to bot
 To make experiments readable by everyone, but writeable only by creator, a bit more involved rules are needed. The examples of such rules (that are used at the default studio firebase app) are given in `auth/firebase_db.rules` and `auth/firebase_storage.rules` for database and storage. 
 
 ## Setting up an authentication app for google account authentication
-1. Install Firebase CLI (https://firebase.google.com/docs/cli/)
-2. We will be deploying a firebase app, so the following is the summary of (https://firebase.google.com/docs/hosting/deploying). The app iteslf is a modified authentication code example from here: https://firebase.google.com/docs/samples/
-3. Go to studio/auth folder and run 
+1. Create a new Firebase project from the [console] (https://console.firebase.google.com) 
+2. Under the authentication tab in the console, turn on the Google authentication provider 
+3. Install Firebase CLI (https://firebase.google.com/docs/cli/)
+4. We will be deploying a firebase app, so the following is the summary of (https://firebase.google.com/docs/hosting/deploying). The app iteslf is a modified authentication code example from here: https://firebase.google.com/docs/samples/
+5. Go to studio/auth folder and run 
 
         firebase init
-4. Select Hosting, press Enter
-5. Select the right firebase project (if you have more than one)
-6. Answer 'N' to the remaining questions
-7. Run 
+6. Select Hosting by pressing space, press Enter to continue
+7. Select the right firebase project (if you have more than one)
+8. Answer 'N' to the remaining questions
+9. Run 
     
         firebase deploy
-8. To test successful deployment, go the <hosting_url>/index.html url (where hosting_url was output by firebase deploy). You should see page titled "Firebase Authentication" that either has a button "SIGN IN" or "SIGN OUT" and your authentication details below. 
+10. To test successful deployment, go the <hosting_url>/index.html url (where hosting_url was output by firebase deploy). You should see page titled "Firebase Authentication" that either has a button "SIGN IN" or "SIGN OUT" and your authentication details below. 
 
 
 ## Test run
