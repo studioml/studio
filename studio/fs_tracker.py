@@ -6,6 +6,8 @@ import shutil
 import json
 import re
 
+from model import Experiment
+
 TFSTUDIO_EXPERIMENT = 'TFSTUDIO_EXPERIMENT'
 
 
@@ -17,16 +19,23 @@ def get_experiment_key():
 
 
 def setup_experiment(env, experiment, clean=True):
-    env[TFSTUDIO_EXPERIMENT] = experiment.key
+    if isinstance(experiment, Experiment):
+        key = experiment.key
+        artifacts = experiment.artifacts
+    else:
+        key = experiment
+        artifacts = {}
 
-    _setup_model_directory(experiment.key, clean)
+    env[TFSTUDIO_EXPERIMENT] = key
+
+    _setup_model_directory(key, clean)
 
     amapping = {}
-    for tag, art in experiment.artifacts.iteritems():
+    for tag, art in artifacts.iteritems():
         if art.get('local') is not None:
             amapping[tag] = art['local']
 
-        with open(_get_artifact_mapping_path(experiment.key), 'w') as f:
+        with open(_get_artifact_mapping_path(key), 'w') as f:
             json.dump(amapping, f)
 
 
@@ -58,7 +67,7 @@ def get_artifact_cache(tag, experiment_name=None):
         return get_blob_cache(tag)
 
     experiment_name = experiment_name if experiment_name else \
-        os.environ[TFSTUDIO_EXPERIMENT]
+        get_experiment_key()
     retval = os.path.join(
         os.path.expanduser('~'),
         '.tfstudio/experiments',
