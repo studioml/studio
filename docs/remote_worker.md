@@ -13,7 +13,7 @@ This page describes a procedure for setting up a remote worker for studio. Remot
 
 ## II Enabling Google PubSub for the Google Application
 In order to use google queues for your own remote workers, as opposed to the Google Cloud Platform workers, PubSub API services will need to be enabled for the project.
-To do this goto the Google API Manager Dashboard withint he Goocle Cloud Platform console and select the Enable API drop down which is located at the top of the Dashboard with a '+' icon beside it.  From here you will see a panel of API services that can be enabled, choose the PubSub API.  In the PubSub Dashboard there is an option to enable the API at the top of the Dashboard.
+To do this goto the Google API Manager Dashboard within the Google Cloud Platform console and select the Enable API drop down which is located at the top of the Dashboard with a '+' icon beside it.  From here you will see a panel of API services that can be enabled, choose the PubSub API.  In the PubSub Dashboard there is an option to enable the API at the top of the Dashboard.
 
 ## III. Setting up remote worker
 If you don't have your own docker container to run jobs in, follow the instructions below. Otherwise, jump to the next section. 
