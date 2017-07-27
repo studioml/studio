@@ -8,10 +8,14 @@ This page describes a procedure for setting up a remote worker for studio. Remot
 4. Choose "New service account" from the "Select accout" dropdown,  and keep key type as JSON
 5. Enter a name of your liking for account (google will convert it to a uniqie name), and choose "PubSub Editor" for a role (technically, you can create 2 keys, and keep publisher on a machine that submits work, and subscriber key on a machine that implements the work). If you are planning to use cloud workers, it is also recommended to add Compute Engine / Compute Engine Admin (v1). 
 
-6. Save a json credentials file
-7. Add `GOOGLE_APPLICATION_CREDENTIALS` variable to the environment that points to the saved json credentials file both on work submitter and work implementer. 
+6. Save a json credentials file.  It is recommended that the credential file be saved in a safe location such as your ~/.ssh directory and that you use the 'chmod 0600 file.json' command to help secure the file within your Linux user account.
+7. Add `GOOGLE_APPLICATION_CREDENTIALS` variable to the environment that points to the saved json credentials file both on work submitter and work implementer.
 
-## II. Setting up remote worker
+## II Enabling Google PubSub for the Google Application
+In order to use google queues for your own remote workers, as opposed to the Google Cloud Platform workers, PubSub API services will need to be enabled for the project.
+To do this goto the Google API Manager Dashboard within the Google Cloud Platform console and select the Enable API drop down which is located at the top of the Dashboard with a '+' icon beside it.  From here you will see a panel of API services that can be enabled, choose the PubSub API.  In the PubSub Dashboard there is an option to enable the API at the top of the Dashboard.
+
+## III. Setting up remote worker
 If you don't have your own docker container to run jobs in, follow the instructions below. Otherwise, jump to the next section. 
 1. Install docker, and nvidia-docker to use gpus
 2. Clone the repo
@@ -26,7 +30,7 @@ If you don't have your own docker container to run jobs in, follow the instructi
 
 
 
-## III. Setting up a remote worker with exising docker image
+## IV. Setting up a remote worker with exising docker image
 This section applies to the cases when you already have a docker image/container, and would like studio remote worker to run in it (wink wink Antoine :). 
 
 1. Make sure that the image has python-dev, python-pip, git installed, as well as studio. The easiest way is to make your Dockerfile inherit from from the tfstudio Dockerfile (located in the studio root directory). Otherwise, copy relevant contents of tfstudio Dockerfile into yours. 
@@ -48,7 +52,7 @@ This section applies to the cases when you already have a docker image/container
   within the container - that is essentially what `studio-start-remote-worker` script does, plus mounting cache directories `~/.tfstudio/experiments` and `~/.tfstudio/blobcache`
 
 
-## IV. Submitting work
+## V. Submitting work
 On a submitting machine (usually local):
 
     studio run --queue <queue-name> <any_other_args> script.py <script_args>
