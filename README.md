@@ -97,5 +97,9 @@ provides in that regard are described [here](docs/artifacts.md)
 
 Hyperparameter search features are described [here](docs/hyperparams.md)
 
+TensorFlow Studio also provides pipelining for trained models that has buffering, batching and exception handling
+(so that single pipeline can handle, for example, multi-threaded download of data, filtering off the broken urls, prediction and post-processing)
+For more info, see [here](docs/model_pipelines.md)
+
 
 
