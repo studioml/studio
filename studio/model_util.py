@@ -9,8 +9,8 @@ import logging
 
 from PIL import Image
 
-from Queue import Full,Empty
-from multiprocessing import Process, Queue
+from Queue import Full,Empty, Queue
+from multiprocessing import Process
 from threading import Thread
 import numpy as np
 import itertools 
@@ -25,11 +25,14 @@ class BufferedPipe:
                  q_in=None,
                  q_out=None,
                  num_workers=0,
-                 q_size=10,
+                 q_size=None,
                  batch_size=1,
                  filterf=lambda x:x is not None,
-                 batcher=lambda x:x):
+                 batcher=lambda x:x,
+                 timeout=1):
 
+
+        min_q_size=10
 
         self.func = func
         self.parent = parent
@@ -43,11 +46,11 @@ class BufferedPipe:
 
         self.q_out = q_out
         self.q_in = q_in
-        self.q_size = q_size
+        self.q_size = max(min_q_size, 2*num_workers)
         
         self.logger = logging.getLogger('BufferedPipe')
         self.logger.setLevel(10)
-        self.timeout = 10
+        self.timeout = timeout
         self.worker_frame = Thread
         
     def __call__(self, data_gen):
@@ -77,7 +80,7 @@ class BufferedPipe:
                 "func":self._wrapped_func, 
                 "queue_in":q_in, 
                 "queue_out":q_out,
-                "filterf":self.filterf,
+                "filterf":self._wrapped_filter,
                 "timeout":self.timeout}
         else:
             target = _q2q_batch
@@ -85,7 +88,7 @@ class BufferedPipe:
                 "func":self._wrapped_func, 
                 "queue_in":q_in, 
                 "queue_out":q_out,
-                "filterf":self.filterf, 
+                "filterf":self._wrapped_filter, 
                 "batch_size":self.batch_size,
                 "timeout":self.timeout}
 
@@ -103,21 +106,17 @@ class BufferedPipe:
             num_workers=None, 
             batch_size=None, 
             filterf=None, 
-            batcher=None):
-
-        if num_workers == 0:
-            g = self.func
-            self.func = lambda x: func(g(x))
-            self.batch_size = batch_size
-            self.batcher = batcher
-            return self
+            batcher=None,
+            timeout=None):
 
         if num_workers is None and \
            batch_size is None and \
            filterf is None and \
-           batcher is None:
+           batcher is None and \
+           timeout is None:
                g = self.func
                self.func = lambda x: func(g(x))
+               return self
         else:
             assert self.q_out is None
             self.q_out = Queue(self.q_size)
@@ -127,7 +126,8 @@ class BufferedPipe:
                     num_workers=num_workers if num_workers else self.num_workers, 
                     batch_size=batch_size if batch_size else self.batch_size, 
                     filterf=filterf if filterf else self.filterf,
-                    batcher=batcher if batcher else self.batcher)
+                    batcher=batcher if batcher else self.batcher,
+                    timeout=timeout if timeout else self.timeout)
 
     def _wrapped_func(self, x):
         if isinstance(x, tuple):
@@ -150,7 +150,11 @@ class BufferedPipe:
                 self.logger.exception(e)
                 batch_output = [None] * len(batch_index)
 
-            return zip(batch_index, batch_output)
+            try:
+                return zip(batch_index, batch_output)
+            except:
+                import pdb; pdb.set_trace()
+
 
         else:
             try:
@@ -161,13 +165,30 @@ class BufferedPipe:
                 self.logger.exception(e)
                 return None
 
+    def _wrapped_filter(self, x):
+        if isinstance(x, tuple):
+            return self.filterf(x[1])
+        else:
+            return self.filterf(x)
+
 
 class ModelPipe:
     def __init__(self):
         self._pipe = BufferedPipe()
 
-    def add(self, func, num_workers=0, batch_size=1, filterf=lambda x: x is not None, batcher=lambda x:x):
-        self._pipe = self._pipe.add(func, num_workers, batch_size=batch_size, filterf=filterf, batcher=batcher)
+    def add(self, func, 
+            num_workers=None, 
+            batch_size=None, 
+            filterf=None, 
+            batcher=None,
+            timeout=None):
+        if isinstance(func, keras.models.Sequential) or \
+           isinstance(func, keras.models.Model):
+               model = func
+               _prime_keras_model(func)
+               func = model.predict
+
+        self._pipe = self._pipe.add(func, num_workers, batch_size=batch_size, filterf=filterf, batcher=batcher, timeout=timeout)
         return self
 
     def apply_unordered(self, data):
@@ -204,139 +225,12 @@ class ModelPipe:
 
 
 
-class KerasModelWrapper:
-    def __init__(self, model=None, checkpoint_name=None, 
-                 model_transform=lambda x: x, 
-                 preprocessing=lambda x: x,
-                 postprocessing=lambda x: x):
-
-        assert model is not None or checkpoint_name is not None, \
-            "Either model or checkpoint_name should be specified!"
-
-        if model is not None:
-            self.model = model
-        else:
-            self.model = keras.models.load_model(checkpoint_name)
-
-        self.model = model_transform(self.model)
-
-        self.preprocessing = preprocessing
-        self.postprocessing = postprocessing
-        self.logger = logging.getLogger('KerasModelWrapper')
-        self.logger.setLevel(10)
-
-        self.threadpool = []
-        self.processpool = []
-        
-        
-    def __call__(self, data):
-        if isinstance(data, types.DictType):
-
-            output_gen = self._predict_generator(data_iteritems)
-            return {el[0]:el[1] for el in output_gen}
-
-        else:
-
-            transformed_data = (self._wrapped_preprocessing(el) for el in data)
-            inner_output = self._predict_generator(transformed_data)
-            output_gen =  (self._wrapped_postprocessing(el) for el in inner_output)
-
-            if isinstance(data, types.GeneratorType):
-                return filterfed_output
-            elif isinstance(data, types.ListType):
-                return [el for el in filterfed_output]
-            else:
-                return output_gen.iter().next()
-
-
-
-
-    def _predict_generator(self, data, prefetch_length=10, prefetch_workers=1):
-        assert isinstance(data, types.GeneratorType)
-        preprocessing_q = Queue(prefetch_length)
-        prediction_q = Queue(prefetch_length)
-        postprocessing_q = Queue(prefetch_length)
-        results_q = Queue(prefetch_length)
-
-        for i in range(prefetch_workers):
-            Thread(target=_gen2q, args=(data, preprocessing_q)).start()
-
-        
-        #for i in range(prefetch_workers):
-        #    Thread(target=_q2q_single,
-        #            args = (
-        #                self._wrapped_preprocessing,
-        #                preprocessing_q,
-        #                prediction_q)).start()
-
-
-        def predict_on_batch(b):
-            try:
-                return self.model.predict(np.array([x[1][0] for x in b]))
-            except BaseException as e:
-                self.logger.error('prediction on batch raised exception {}'
-                        .format(e.message))
-                self.logger.exception(e)
-                return [None] * len(b)
-
-
-        t = Thread(target=_q2q_batch,
-                args=(
-                    predict_on_batch, 
-                    preprocessing_q, 
-                    results_q,
-                    lambda x: x[1] is not None ))
-        t.start()
-        #t.join()
-
-
-        #_q2q_batch(predict_on_batch, preprocessing_q, results_q, lambda x: x[1] is not None)
-
-        #for i in range(prefetch_workers):
-        #    Thread(target=_q2q_single,
-        #            args = (self._wrapped_postprocessing, 
-        #                    postprocessing_q, 
-        #                    results_q)).start()
-                
-        ret_gen = _q2gen(results_q)
-
-        return ret_gen
-                     
-
-    def _wrapped_preprocessing(self,data):
-        try:
-            return self.preprocessing(data)
-        except BaseException as e:
-            logger.error('Exception {} was caught while preprocessing'
-                    .format(e.message))
-            return None
-            
-    def _wrapped_postprocessing(self, data):
-        try:
-            return self.postprocessing(data)
-        except BaseException as e:
-            logger.error('Exception {} was caught while postprocessing'
-                    .format(e.message))
-            return None
-
-    def get_model(self):
-        return self.model
-
-
-
-
-class TensorFlowModelWrapper:
-    def __init__(self):
-        raise NotImplementedError
-
-    def __call__(self, data):
-        raise NotImplementedError
-
 
 def resize_to_model_input(model, input_index=0):
+    assert keras is not None
+    assert isinstance(model, keras.models.Model) or isinstance(model, keras.models.Sequential)
 
     input_shape = tuple([x.value for x in model.inputs[input_index].shape if x.value])
-    assert keras is not None
     assert len(input_shape) == 3 
 
     if len(input_shape) == 3:  
@@ -351,6 +245,8 @@ def resize_to_model_input(model, input_index=0):
 
     def _run_resize(input_img):
         #assert instanceof(image, Image)
+        if input_img == None:
+            return None
         if len(input_shape) == 3:
             img = input_img.resize((input_shape[1], input_shape[0]), Image.ANTIALIAS)
        
@@ -376,14 +272,23 @@ def _q2q_batch(func, queue_in, queue_out, filterf=lambda x: True, batch_size=32,
             batch = [queue_in.get(True, timeout)]
         except Empty:
             return
-
-        for i in range(1,batch_size):
+        
+        added = 0 
+        while True:
             try:
-                batch.append(queue_in.get_nowait())
-            except Empty:
-                break
+                if added > 0:
+                    next_el = queue_in.get_nowait()
+                else:
+                    next_el = queue_in.get(True, timeout)
 
-        batch = [el for el in batch if filterf(el)]
+                if filterf(next_el):
+                    batch.append(next_el)
+                    added += 1
+
+                if added == batch_size:
+                    break
+            except Empty:
+                    break
 
         retval = func(batch)
                 
@@ -421,4 +326,10 @@ def _q2gen(queue, timeout=1):
         except Empty:
             raise StopIteration
 
+
+def _prime_keras_model(model):
+    input_shapes = [[s.value if s.value else 1 for s in l.shape] for l in model.inputs]
+    dummy_inputs = [np.random.random(shape) for shape in input_shapes]
+
+    model.predict(dummy_inputs)
 

@@ -14,13 +14,17 @@ from multiprocessing.pool import ThreadPool
 import subprocess
 
 import tensorflow as tf
+try:
+    import keras
+except:
+    keras = None
 
 import fs_tracker
 import util
 import git_util
 from auth import FirebaseAuth
 from artifact_store import FirebaseArtifactStore
-from model_util import KerasModelWrapper
+
 
 
 logging.basicConfig()
@@ -90,8 +94,9 @@ class Experiment(object):
             glob.glob(modeldir + '/*.h5')]
         if any(hdf5_files):
             # experiment type - keras
+            assert keras is not None
             last_checkpoint = max(hdf5_files, key=lambda t: t[1])[0]
-            return KerasModelWrapper(last_checkpoint)
+            return keras.models.load(last_checkpoint)
 
         if self.info.get('type') == 'tensorflow':
             raise NotImplementedError

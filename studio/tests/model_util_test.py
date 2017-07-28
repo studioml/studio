@@ -48,7 +48,7 @@ class ModelUtilTest(unittest.TestCase):
         for d in data:
             q_in.put(d)
        
-        model_util._q2q_batch(lambda b: [x*x for x in b], q_in, q_out, filt=lambda x: x != 3, batch_size=4)
+        model_util._q2q_batch(lambda b: [x*x for x in b], q_in, q_out, filterf=lambda x: x != 3, batch_size=4)
 
         expected_out = [x*x for x in data if x != 3] 
         actual_out = []
@@ -82,31 +82,9 @@ class ModelUtilTest(unittest.TestCase):
         gen = model_util._q2gen(q)
 
         self.assertEquals(expected_out, list(gen))
+      
 
 
-    def test_predict_generator(self):
-        model = Sequential()
-        model.add(Dense(2, input_shape=(2,)))
-    
-
-        #weights = [np.array([[2, 0], [0, 2]])]
-        #model.set_weights(weights)
-        test_data = np.random.random((4,2))
-        print(model.predict(test_data))
-
-        mw = model_util.KerasModelWrapper(model)
-
-        no_samples = 10
-        data = [(x,test_data[x].reshape(1,2)) for x in range(len(test_data))]
-
-        out_gen = mw._predict_generator((x for x in data))
-        
-        #import pdb
-        #pdb.set_trace()
-        for x in out_gen:
-            print(x)
-        
-        
 class BufferedPipeTest(unittest.TestCase):
     def test_pipe_simple(self):
         p = model_util.BufferedPipe() \
@@ -149,11 +127,11 @@ class ModelPipeTest(unittest.TestCase):
 
         self.assertEquals(expected_dict, output_dict)
         
-    @timeout(10)
+    # @timeout(10)
     def test_model_pipe_long(self):
 
         p = model_util.ModelPipe()
-        p.add(lambda x: x*x, num_workers=32)
+        p.add(lambda x: x*x, num_workers=32, timeout=1)
 
 
         input_dict = {x:x for x in range(10000)}
@@ -271,28 +249,22 @@ class ModelPipeTest(unittest.TestCase):
 
         pipe = model_util.ModelPipe()
                
-        pipe.add(lambda url: urllib.urlopen(url).read())
+        pipe.add(lambda url: urllib.urlopen(url).read(), num_workers=2)
         pipe.add(lambda img: Image.open(BytesIO(img)))
         pipe.add(model_util.resize_to_model_input(model))
-        pipe.add(lambda t: model.predict(t), num_workers=1)
-        pipe.add(np.argmax)
+        pipe.add(lambda x: 1-x)
+        pipe.add(model, num_workers=1, batch_size=32, batcher=np.vstack)
+        pipe.add(lambda x: np.argmax(x, axis=1))
 
         url5 = 'http://blog.otoro.net/assets/20160401/png/mnist_output_10.png'
         url2 = 'http://joshmontague.com/images/mnist-2.png'
         urlb = 'http://joshmontague.com/images/mnist-3.png'
 
-        #import pdb
-        #pdb.set_trace()
+        expected_output = {url5:5, url2:2}
+        output = pipe({url5:url5, url2:url2, urlb:urlb})
 
-        #output = pipe({url5:url5, url2:url2, urlb:urlb})
-        output = pipe.apply_ordered([url5])
-
-        print output
-
-
-        
-
-
+        self.assertEquals(output, expected_output)
+    
 
 if __name__ == "__main__":
     unittest.main()
