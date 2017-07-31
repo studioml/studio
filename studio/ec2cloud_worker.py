@@ -80,9 +80,8 @@ class EC2WorkerManager(object):
 
     def _get_block_device_mappings(self, resources_needed):
         return [{
-            'DeviceName': '/dev/sdh',
+            'DeviceName': '/dev/sda1',
             'Ebs': {
-                'Encrypted': False,
                 'DeleteOnTermination': True,
                 'VolumeSize': memstr2int(resources_needed['hdd']) /
                 memstr2int('1g'),
@@ -111,18 +110,7 @@ class EC2WorkerManager(object):
         self.logger.info(
             'Starting EC2 instance of type {}'.format(instance_type))
         kwargs = {
-            'BlockDeviceMappings': [{
-                'DeviceName': '/dev/sdh',
-                'VirtualName': 'ephemeral0',
-                'Ebs': {
-                    'Encrypted': False,
-                    'DeleteOnTermination': True,
-                    'VolumeSize': memstr2int(resources_needed['hdd']) /
-                    memstr2int('1g'),
-                    'VolumeType': 'standard'
-                },
-                'NoDevice': ''
-            }],
+            'BlockDeviceMappings': self._get_block_device_mappings(resources_needed),
             'ImageId': imageid,
             'InstanceType': instance_type,
             'MaxCount': 1,
