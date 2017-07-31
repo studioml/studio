@@ -95,7 +95,7 @@ class Experiment(object):
             # experiment type - keras
             assert keras is not None
             last_checkpoint = max(hdf5_files, key=lambda t: t[1])[0]
-            return keras.models.load(last_checkpoint)
+            return keras.models.load_model(last_checkpoint)
 
         if self.info.get('type') == 'tensorflow':
             raise NotImplementedError

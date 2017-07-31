@@ -130,7 +130,7 @@ class LocalWorkerTest(unittest.TestCase, QueueTest):
         )
 
         experiment = db.get_experiment(experiment_name)
-        saved_model = experiment.get_model(db).model
+        saved_model = experiment.get_model(db)
 
         v = np.random.rand(1, 2)
         prediction = saved_model.predict(v)
