@@ -289,7 +289,7 @@ class EC2WorkerManager(object):
             "LaunchConfigurationName": asg_name + '_launch_config',
             "MinSize": 0,
             "MaxSize": max_workers,
-            "DesiredCapacity": start_workers,
+            "DesiredCapacity": int(start_workers),
             "LoadBalancerNames": [],
             "AvailabilityZones": [self.region + "a"],
             "TerminationPolicies": ['NewestInstance'],

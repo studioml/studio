@@ -144,6 +144,12 @@ def main(args=sys.argv):
              'remote and cloud workers for now',
         default=[], action='append')
 
+    parser.add_argument(
+        '--ssh-keypair',
+        help='Name of the SSH keypair used to access the EC2 ' +
+             'instances directly',
+        default=None)
+
     # detect which argument is the script filename
     # and attribute all arguments past that index as related to the script
     py_suffix_args = [i for i, arg in enumerate(args) if arg.endswith('.py')]
@@ -252,7 +258,8 @@ def main(args=sys.argv):
                 runner_args.num_workers) if runner_args.num_workers else 1
             for i in range(num_workers):
                 worker_manager.start_worker(
-                    runner_args.queue, resources_needed)
+                    runner_args.queue, resources_needed,
+                    ssh_keypair=runner_args.ssh_keypair)
         else:
             assert runner_args.bid is not None
             if runner_args.num_workers:
@@ -267,7 +274,8 @@ def main(args=sys.argv):
                 runner_args.bid,
                 resources_needed,
                 start_workers=start_workers,
-                queue_upscaling=queue_upscaling)
+                queue_upscaling=queue_upscaling,
+                ssh_keypair=runner_args.ssh_keypair)
 
     else:
         if not runner_args.queue:

@@ -30,7 +30,14 @@ class GCloudWorkerManager(object):
         self.logger.setLevel(10)
         self.auth_cookie = auth_cookie
 
-    def start_worker(self, queue_name, resources_needed={}, blocking=True):
+    def start_worker(
+            self,
+            queue_name,
+            resources_needed={},
+            blocking=True,
+            ssh_keypair=None):
+        assert ssh_keypair is None, \
+            'ssh keypairs are not supported for google workers'
         if resources_needed is None:
             resources_needed = {}
 

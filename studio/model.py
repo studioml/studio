@@ -16,7 +16,7 @@ import subprocess
 import tensorflow as tf
 try:
     import keras
-except:
+except BaseException:
     keras = None
 
 import fs_tracker
@@ -24,7 +24,6 @@ import util
 import git_util
 from auth import FirebaseAuth
 from artifact_store import FirebaseArtifactStore
-
 
 
 logging.basicConfig()

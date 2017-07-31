@@ -1,6 +1,6 @@
 import sys
 
-from keras.layers import Dense, Conv2D, Flatten
+from keras.layers import Dense, Flatten
 
 from keras.models import Sequential
 from keras.datasets import mnist
@@ -26,21 +26,16 @@ y_train = to_categorical(y_train, 10)
 y_test = to_categorical(y_test, 10)
 
 
-
 model = Sequential()
 
-#model.add(Conv2D(32, 5, activation='relu', input_shape=(28,28,1), data_format='channels_last'))
-#model.add(Conv2D(64, 3, activation='relu'))
-#model.add(Flatten())
-
-model.add(Flatten(input_shape=(28,28,1)))
+model.add(Flatten(input_shape=(28, 28, 1)))
 model.add(Dense(128, activation='relu'))
 model.add(Dense(128, activation='relu'))
 
 model.add(Dense(10, activation='softmax'))
 
 
-batch_size=128
+batch_size = 128
 no_epochs = int(sys.argv[1]) if len(sys.argv) > 1 else 10
 lr = 0.01
 
@@ -49,7 +44,6 @@ print('batch size = {}'.format(batch_size))
 print('no_epochs = {}'.format(no_epochs))
 
 model.compile(loss='categorical_crossentropy', optimizer=optimizers.SGD(lr=lr))
-
 
 
 checkpointer = ModelCheckpoint(
