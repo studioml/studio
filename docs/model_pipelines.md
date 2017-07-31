@@ -93,4 +93,15 @@ for number of seconds specified by the last (closest to output) timeout value.
 Note that `pipe.add()` calls that don't specify number of workers, timeout, batch_size, or batcher (function to assemble list of values into a batch digestable by a function that operates on batches)
 are composed with the function in previous call to `pipe.add()` directly, so that there is no unnecessary queues / buffers / workers. 
 
+## Benchmark
+For benchmark, we use [StyleNet](http://ieeexplore.ieee.org/document/7780408/) inference on a dataset of 7k urls, some of which are missing / broken. The benchmark is being run EC2 p2.xlarge instances (with nVidia Tesla K80 gpus). 
+
+| Experiment                    |   Time (s)  |   Time per url (s)  |
+|-------------------------------|-------------|---------------------|
+| One-by-one                    |   7000      |    ~ 1              |
+| Pipe (batch 64, workers 4)    |   1581      |    ~ 0.22           |
+| Pipe (batch 128, workers 32)  |   157       |    ~ 0.02           |
+
+
+
 
