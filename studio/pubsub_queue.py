@@ -1,7 +1,6 @@
 from google.cloud import pubsub
 import logging
 import os
-import time
 logging.basicConfig()
 
 
@@ -24,9 +23,6 @@ class PubsubQueue(object):
             self.subscription.create()
             self.logger.info('subscription {} created'.format(sub_name))
 
-        self.messages = []
-        self.ack_timeout = 10
-
     def clean(self):
         while self.has_next():
             self.dequeue()
@@ -34,21 +30,15 @@ class PubsubQueue(object):
     def get_name(self):
         return self.topic.name
 
-    def _filter_stale_messages(self):
-        self.messages = [
-            m for m in self.messages if (
-                time.time() -
-                m[2]) < self.ack_timeout]
-
     def has_next(self):
-        self._filter_stale_messages()
-        if not any(self.messages):
-            pulled_messages = self.subscription.pull(
-                return_immediately=True, max_messages=1)
-            self.messages += [(m[0], m[1], time.time()) for m in
-                              pulled_messages]
+        messages = self.subscription.pull(
+            return_immediately=True, max_messages=1)
+        retval = any(messages)
 
-        return any(self.messages)
+        for m in messages:
+            self.hold(m[0], 0)
+
+        return retval
 
     def enqueue(self, data):
         data = data.encode('utf-8')
@@ -56,11 +46,13 @@ class PubsubQueue(object):
         self.logger.debug('Message with id {} published'.format(msg_id))
 
     def dequeue(self, acknowledge=True):
-        if not self.has_next():
+
+        msgs = self.subscription.pull(return_immediately=True, max_messages=1)
+        if not any(msgs):
             return None
 
-        retval = self.messages[0]
-        self.messages = self.messages[1:]
+        retval = msgs[0]
+
         if acknowledge:
             self.acknowledge(retval[0])
             self.logger.debug("Message {} received and acknowledged"
@@ -71,6 +63,14 @@ class PubsubQueue(object):
             self.logger.debug("Message {} received, ack_id {}"
                               .format(retval[1].message_id, retval[0]))
             return (retval[1].data, retval[0])
+
+    def hold(self, ack_key, delay=5):
+        self.logger.debug(
+            ("Message acknoledgment deadline is extended by {} " +
+             "min for {}").format(
+                delay,
+                ack_key))
+        self.subscription.modify_ack_deadline([ack_key], int(delay * 60))
 
     def acknowledge(self, ack_key):
         self.logger.debug("Message with key {} acknowledged".format(ack_key))

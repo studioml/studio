@@ -10,6 +10,7 @@ import numpy as np
 
 from local_queue import LocalQueue
 from pubsub_queue import PubsubQueue
+from sqs_queue import SQSQueue
 from gcloud_worker import GCloudWorkerManager
 from ec2cloud_worker import EC2WorkerManager
 
@@ -27,7 +28,7 @@ def main(args=sys.argv):
     logger = logging.getLogger('studio-runner')
     parser = argparse.ArgumentParser(
         description='TensorFlow Studio runner. \
-                     Usage: studio-runner \
+                     Usage: studio run <runner_arguments> \
                      script <script_arguments>')
     parser.add_argument('--config', help='configuration file', default=None)
     parser.add_argument('--project', help='name of the project', default=None)
@@ -78,8 +79,14 @@ def main(args=sys.argv):
 
     parser.add_argument(
         '--cloud',
-        help='Cloud execution mode',
+        help='Cloud execution mode. Could be gcloud, ec2 or ec2spot',
         default=None)
+
+    parser.add_argument(
+        '--bid',
+        help='Spot instance price bid, specified in USD or in percentage ' +
+             'of on-demand instance price. Default is %(default)s',
+        default='100%')
 
     parser.add_argument(
         '--capture-once', '-co',
@@ -128,8 +135,7 @@ def main(args=sys.argv):
     parser.add_argument(
         '--num-workers',
         help='Number of local or cloud workers to spin up',
-        type=int,
-        default=1)
+        default=None)
 
     parser.add_argument(
         '--python-pkg',
@@ -140,7 +146,14 @@ def main(args=sys.argv):
 
     # detect which argument is the script filename
     # and attribute all arguments past that index as related to the script
-    script_index = [i for i, arg in enumerate(args) if arg.endswith('.py')][0]
+    py_suffix_args = [i for i, arg in enumerate(args) if arg.endswith('.py')]
+    if len(py_suffix_args) < 1:
+        print('At least one argument should be a python script ' +
+              '(end with *.py)')
+        parser.print_help()
+        exit()
+
+    script_index = py_suffix_args[0]
     runner_args = parser.parse_args(args[1:script_index])
 
     exec_filename, other_args = args[script_index], args[script_index + 1:]
@@ -195,8 +208,16 @@ def main(args=sys.argv):
         logger.info("Added experiment " + e.key)
 
     if runner_args.cloud is not None:
-        assert runner_args.cloud == 'gcloud' or 'ec2', \
-            'Only gcloud or ec2 are supported for now'
+        assert (runner_args.cloud == 'gcloud' or
+                runner_args.cloud == 'ec2' or
+                runner_args.cloud == 'ec2spot')
+
+        auth_cookie = None if config['database'].get('guest') \
+            else os.path.join(
+            auth.token_dir,
+            config['database']['apiKey']
+        )
+
         if runner_args.cloud == 'gcloud':
             if runner_args.queue is None:
                 runner_args.queue = 'gcloud_' + str(uuid.uuid4())
@@ -204,15 +225,58 @@ def main(args=sys.argv):
             if not runner_args.queue.startswith('gcloud_'):
                 runner_args.queue = 'gcloud_' + runner_args.queue
 
-        if runner_args.cloud == 'ec2':
+            queue = PubsubQueue(runner_args.queue, verbose=verbose)
+            worker_manager = GCloudWorkerManager(
+                auth_cookie=auth_cookie,
+                zone=config['cloud']['zone']
+            )
+
+        if runner_args.cloud == 'ec2' or \
+           runner_args.cloud == 'ec2spot':
+
             if runner_args.queue is None:
                 runner_args.queue = 'ec2_' + str(uuid.uuid4())
 
             if not runner_args.queue.startswith('ec2_'):
                 runner_args.queue = 'ec2_' + runner_args.queue
 
-    queue = LocalQueue() if not runner_args.queue else \
-        PubsubQueue(runner_args.queue, verbose=verbose)
+            queue = SQSQueue(runner_args.queue, verbose=verbose)
+            worker_manager = EC2WorkerManager(
+                auth_cookie=auth_cookie
+            )
+
+        if runner_args.cloud == 'gcloud' or \
+           runner_args.cloud == 'ec2':
+
+            num_workers = int(
+                runner_args.num_workers) if runner_args.num_workers else 1
+            for i in range(num_workers):
+                worker_manager.start_worker(
+                    runner_args.queue, resources_needed)
+        else:
+            assert runner_args.bid is not None
+            if runner_args.num_workers:
+                start_workers = runner_args.num_workers
+                queue_upscaling = False
+            else:
+                start_workers = 1
+                queue_upscaling = True
+
+            worker_manager.start_spot_workers(
+                runner_args.queue,
+                runner_args.bid,
+                resources_needed,
+                start_workers=start_workers,
+                queue_upscaling=queue_upscaling)
+
+    else:
+        if not runner_args.queue:
+            queue = LocalQueue()
+        else:
+            if runner_args.queue.startswith('ec2_'):
+                queue = SQSQueue(runner_args.queue, verbose=verbose)
+            else:
+                queue = PubsubQueue(runner_args.queue, verbose=verbose)
 
     for e in experiments:
         queue.enqueue(json.dumps({
@@ -228,32 +292,11 @@ def main(args=sys.argv):
             worker_args += ['--guest']
 
         logger.info('worker args: {}'.format(worker_args))
-        if runner_args.num_workers == 1:
+        if not runner_args.num_workers or int(runner_args.num_workers) == 1:
             local_worker.main(worker_args)
         else:
             raise NotImplementedError("Multiple local workers are not " +
                                       "implemeted yet")
-    elif runner_args.queue.startswith('gcloud_') or \
-            runner_args.queue.startswith('ec2_'):
-
-        auth_cookie = None if config['database'].get('guest') \
-            else os.path.join(
-            auth.token_dir,
-            config['database']['apiKey']
-        )
-
-        if runner_args.queue.startswith('gcloud_'):
-            worker_manager = GCloudWorkerManager(
-                auth_cookie=auth_cookie,
-                zone=config['cloud']['zone']
-            )
-        else:
-            worker_manager = EC2WorkerManager(
-                auth_cookie=auth_cookie
-            )
-
-        for i in range(runner_args.num_workers):
-            worker_manager.start_worker(runner_args.queue, resources_needed)
 
     db = None
 
