@@ -94,7 +94,7 @@ Note that `pipe.add()` calls that don't specify number of workers, timeout, batc
 are composed with the function in previous call to `pipe.add()` directly, so that there is no unnecessary queues / buffers / workers. 
 
 ## Benchmark
-For benchmark, we use [StyleNet](http://ieeexplore.ieee.org/document/7780408/) inference on a dataset of 7k urls, some of which are missing / broken. The benchmark is being run EC2 p2.xlarge instances (with nVidia Tesla K80 gpus). 
+For benchmark, we use [StyleNet](http://ieeexplore.ieee.org/document/7780408/) inference on a dataset of 7k urls, some of which are missing / broken. The benchmark is being run EC2 p2.xlarge instances (with nVidia Tesla K80 gpus). One-by-one experiment is running inference one image at a time, pipe is using model pipe primitives as described above. Batch size is number of images being processed as a single call to `model.predict`, and `workers` is number of prefetching workers
 
 | Experiment                    |   Time (s)  |   Time per url (s)  |
 |-------------------------------|-------------|---------------------|
