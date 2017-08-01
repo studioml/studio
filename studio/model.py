@@ -23,7 +23,8 @@ import fs_tracker
 import util
 import git_util
 from auth import FirebaseAuth
-from artifact_store import FirebaseArtifactStore
+from artifact_store import get_artifact_store
+from firebase_artifact_store import FirebaseArtifactStore
 
 
 logging.basicConfig()
@@ -129,22 +130,26 @@ def create_experiment(
 class FirebaseProvider(object):
     """Data provider for Firebase."""
 
-    def __init__(self, database_config, blocking_auth=True, verbose=10):
-        guest = database_config.get('guest')
+    def __init__(self, db_config, blocking_auth=True, verbose=10, store=None):
+        guest = db_config.get('guest')
 
-        self.app = pyrebase.initialize_app(database_config)
+        self.app = pyrebase.initialize_app(db_config)
         self.logger = logging.getLogger('FirebaseProvider')
         self.logger.setLevel(verbose)
+        
+        if guest or 'serviceAccount' in db_config.keys():
+            self.auth = None
+        else:
+            self.auth = FirebaseAuth(self.app,
+                                 db_config.get("use_email_auth"),
+                                 db_config.get("email"),
+                                 db_config.get("password"),
+                                 blocking_auth) 
 
-        self.auth = FirebaseAuth(self.app,
-                                 database_config.get("use_email_auth"),
-                                 database_config.get("email"),
-                                 database_config.get("password"),
-                                 blocking_auth) \
-            if not guest else None
 
-        self.store = FirebaseArtifactStore(
-            self.app, self.auth, verbose=verbose)
+        self.store = store if store else FirebaseArtifactStore(
+            db_config, verbose=verbose, blocking_auth=blocking_auth)
+
         self._experiment_info_cache = {}
         self._experiment_cache = {}
 
@@ -601,19 +606,25 @@ def get_config(config_file=None):
 def get_db_provider(config=None, blocking_auth=True):
     if not config:
         config = get_config()
+    verbose = parse_verbosity(config.get('verbose'))
+
+    if 'storage' in config.keys():
+        artifact_store = get_artifact_store(config['storage'])
+    else:
+        artifact_store = None
+
     assert 'database' in config.keys()
     db_config = config['database']
-    verbose = parse_verbosity(config.get('verbose'))
-    assert db_config['type'].lower() == 'firebase'.lower()
+    if db_config['type'].lower() == 'firebase'.lower():
+        return FirebaseProvider(
+            db_config, 
+            blocking_auth, 
+            verbose=verbose, 
+            store=artifact_store)
+    else:
+        raise ValueError('Unknown type of the database ' + db_config['type'])
 
-    if 'projectId' in db_config.keys():
-        projectId = db_config['projectId']
-        db_config['authDomain'] = db_config['authDomain'].format(projectId)
-        db_config['databaseURL'] = db_config['databaseURL'].format(projectId)
-        db_config['storageBucket'] = db_config['storageBucket'].format(
-            projectId)
 
-    return FirebaseProvider(db_config, blocking_auth, verbose=verbose)
 
 
 def parse_verbosity(verbosity=None):

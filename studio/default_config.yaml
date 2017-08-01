@@ -8,6 +8,11 @@ database:
     authDomain: "{}.firebaseapp.com"
     databaseURL: "https://{}.firebaseio.com"
     storageBucket: "{}.appspot.com"
+    serviceAccount: "/Users/peter.zhokhov/Downloads/studio-ed756-firebase-adminsdk-0ngpm-25796428a9.json"
+
+#storage:
+#    type: FireBase
+#    storageBucket: "{database.projectId}.appspot.com"
 
     # guest: true
 

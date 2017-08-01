@@ -26,6 +26,12 @@ import datetime
 
 
 def initialize_app(config):
+    if 'projectId' in config.keys():
+        projectId = config['projectId']
+        config['authDomain'] = config['authDomain'].format(projectId)
+        config['databaseURL'] = config['databaseURL'].format(projectId)
+        config['storageBucket'] = config['storageBucket'].format(projectId)
+
     return Firebase(config)
 
 
