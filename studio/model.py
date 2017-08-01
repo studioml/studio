@@ -609,7 +609,10 @@ def get_db_provider(config=None, blocking_auth=True):
     verbose = parse_verbosity(config.get('verbose'))
 
     if 'storage' in config.keys():
-        artifact_store = get_artifact_store(config['storage'])
+        artifact_store = get_artifact_store(
+                config['storage'], 
+                blocking_auth=blocking_auth,
+                verbose=verbose)
     else:
         artifact_store = None
 
