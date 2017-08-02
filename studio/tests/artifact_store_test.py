@@ -11,6 +11,7 @@ import subprocess
 from studio import model
 from studio.auth import remove_all_keys
 
+from studio.gcloud_artifact_store import GCloudArtifactStore
 
 class ArtifactStoreTest(object):
     _multiprocess_can_split_ = True
@@ -284,6 +285,10 @@ class FirebaseArtifactStoreTest(ArtifactStoreTest, unittest.TestCase):
         fb._download_file(key, tmp_filename)
         self.assertTrue(not os.path.exists(tmp_filename))
 
+
+class GCloudArtifactStoreTest(ArtifactStoreTest, unittest.TestCase):
+    def get_store(self, config='test_config_gcloud_store.yaml'):
+        return GCloudArtifactStore({"bucket":"peterz_test"})
 
 if __name__ == "__main__":
     unittest.main()

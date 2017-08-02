@@ -12,51 +12,55 @@ import requests
 import certifi
 import json
 import shutil
+import time
 
 from google.cloud import storage
 import fs_tracker
 import util
-
+from tartifact_store import TartifactStore
 
 logging.basicConfig()
 
 
-class GCloudArtifactStore():
-    def __init__(config, verbose=10):
+class GCloudArtifactStore(TartifactStore):
+    def __init__(self, config, verbose=10, measure_timestamp_diff=True):
         self.logger = logging.getLogger('GCloudArtifactStore')
         self.logger.setLevel(verbose)
         self.client = storage.Client()
+        
+        self.bucket = self.client.bucket(config['bucket'])
 
-        self.basebucket = config['bucket']
+        existing_buckets = {b.name for b in self.client.list_buckets()}
+        if self.bucket.name not in existing_buckets:
+            self.bucket.create()
 
-    def put_artifact(
-            self,
-            artifact,
-            local_path=None,
-            cache=True,
-            background=False):
-        raise NotImplementedError
+        super(GCloudArtifactStore,self).__init__(measure_timestamp_diff)
 
 
-    def get_artifact(
-            self,
-            artifact,
-            local_path=None,
-            only_newer=True,
-            background=False):
-        raise NotImplementedError
+    def _upload_file(self, key, local_path):
+        self.bucket.blob(key).upload_from_filename(local_path)
 
-    def get_artifact_url(self, artifact):
-        if 'key' in artifact.keys():
-            return self._get_file_url(artifact['key'])
-        return None
+    def _download_file(self, key, local_path):
+        self.bucket.get_blob(key).download_to_filename(local_path)
 
-    def delete_artifact(self, artifact):
-        if 'key' in artifact.keys():
-            self._delete_file(artifact['key'])
+    def _delete_file(self, key):
+        self.bucket.get_blob(key).delete()
 
-    def _get_file_url(self, filename):
-        pass
+
+    def _get_file_url(self, key):
+        expiration = long(time.time() + 100000)
+        return self.bucket.blob(key).generate_signed_url(expiration)
+        
+
+    def _get_file_timestamp(self, key):
+        time_updated = self.bucket.get_blob(key).updated
+        if time_updated:
+            timestamp = calendar.timegm(time_updated.timetuple())
+            return timestamp
+        else:
+            return None
+
+
 
 
 
