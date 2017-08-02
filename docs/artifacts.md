@@ -130,3 +130,12 @@ Each experiment gets default artifacts that it can use via `fs_tracker.get_artif
 4. `tb` - it is recommended to save tensorboard logs into this directory, this way studio will be able to automatically feed them into tensorboard
 
 All of the default artifacts are considered mutable (i.e. are stored continously). The default artifacts can be overwritten by --capture(-once) flags. 
+
+
+## Custom storage
+
+Firebase API is great for small projects, but it is easy to grow beyond limits of free storage in it (5 Gb as of 08/02/2017), after which it becomes really expensive. TensorFlow Studio can utilize google cloud storage for artifact storage directly if your projects don't fit into firebase (support of Amazon S3 is on the way). For now the downside of using google cloud storage is that google service account credentials are used, which means that all users in possession of the credentials file have read/write access to the objects in the storage, so in principle one user can delete experiments of another. See [here](gcloud_setup.md) for instructions on how to generate service account credentials. 
+Once you have credentials file generated, uncomment "storage" section in your config.yaml file, set type of storage to `gcloud`, and specify storage bucket. 
+Note that bucket name needs to be unique, and the error will be thrown if bucket with that name cannot be created. Thus the safest way is to create bucket manually from the google cloud console,
+and then specify it in config.yaml. 
+Folder/file structure within the bucket is the same as for firebase storage, so if you want to migrate all your firebase experiments to the new storage, you can copy the firebase storage bucket and point config.yaml to the copy (you could point config.yaml to the original, but then you'll be paying the same Firebase prices).
