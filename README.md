@@ -8,7 +8,7 @@ TensorFlow studio is a model management framework written in Python to help simp
 Most of the features are compatible with any Python machine learning framework ([Keras](https://github.com/fchollet/keras), [TensorFlow](https://github.com/tensorflow/tensorflow), [scikit-learn](https://github.com/scikit-learn/scikit-learn), etc); some extra features are available for Keras and TensorFlow.
 
 **Use TFstudio to:** 
-* Capture experiment information-- Python environment, files, dependencies and logs-- without modifying the experiment code.
+* Capture experiment information- Python environment, files, dependencies and logs- without modifying the experiment code.
 * Monitor and organize experiments using a web dashboard that integrates with TensorBoard.
 * Run experiments locally, remotely, or in the cloud (Google Cloud or Amazon EC2)
 * Manage artifacts (persistence?)
