@@ -47,10 +47,20 @@ Upgrade pip:
 
     pip install --upgrade pip
 
-### Installation
-Once open, we'll publish package to PyPI. For now, pip install it from the git project directory:
+### Installation Packaging
+Once open sourced, we'll publish package to PyPI. For now, pip install it from the git project directory:
 
-    git clone https://github.com/ilblackdragon/studio && cd studio && pip install -e . 
+    git clone https://github.com/ilblackdragon/studio && cd studio && pip install -e .
+
+A setup.py is included in the top level of the git repository that allows the creation of tar archives for installation on runners and other system where git is not the primary use case for handling python artifacts.  To create the installable use the following command from the top level directory of a cloned repository.
+
+python setup.py sdist
+
+This command will create a file dist/studio-x.x.tar.gz that can be used with pip as follows:
+
+pip install studio-x.x.tar.gz
+
+Certain types of runners can make use of the studio software distribution to start projects without any intervention, devops less runners.  To include the software distribution add the tar.gz file to your workspace directory under a dist subdirectory.  Runners supporting software distribution will unroll the software and install it using virtualenv.
 
 ### Running tests
 To run the unit and regression tests (for now, we have little difference - some tests take longer than others, but that's about it), run 

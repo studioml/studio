@@ -93,3 +93,13 @@ studio/.DS_Store
 
 auth/.firebaserc
 auth/firebase.json
+
+# Ignore directories used by the packaging tools, 
+# the go runner, and google tooling
+#
+bin/
+include/
+local/ 
+pkg/
+src/
+pip-selfcheck.json

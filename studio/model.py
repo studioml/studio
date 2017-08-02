@@ -581,15 +581,16 @@ class PostgresProvider(object):
 
 
 def get_config(config_file=None):
-    def_config_file = os.path.join(
-        os.path.dirname(os.path.realpath(__file__)),
-        "default_config.yaml")
-    with open(def_config_file) as f:
-        config = yaml.load(f.read())
 
     if config_file:
         with open(config_file) as f:
-            config.update(yaml.load(f.read()))
+            config = yaml.load(f.read())
+    else:
+        def_config_file = os.path.join(
+            os.path.dirname(os.path.realpath(__file__)),
+            "default_config.yaml")
+        with open(def_config_file) as f:
+            config = yaml.load(f.read())
 
     return config
 
