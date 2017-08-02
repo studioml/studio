@@ -16,8 +16,15 @@ from studio.gcloud_artifact_store import GCloudArtifactStore
 class ArtifactStoreTest(object):
     _multiprocess_can_split_ = True
 
-    def get_store(self):
-        return None
+    def get_store(self, config_name='test_config.yaml'):
+        config_file = os.path.join(
+            os.path.dirname(
+                os.path.realpath(__file__)),
+            config_name)
+        with open(config_file) as f:
+            config = yaml.load(f)
+
+        return model.get_db_provider(config).store
 
     def test_get_put_artifact(self):
         fb = self.get_store()
@@ -141,16 +148,6 @@ class ArtifactStoreTest(object):
 
 
 class FirebaseArtifactStoreTest(ArtifactStoreTest, unittest.TestCase):
-    def get_store(self, config_name='test_config.yaml'):
-        config_file = os.path.join(
-            os.path.dirname(
-                os.path.realpath(__file__)),
-            config_name)
-        with open(config_file) as f:
-            config = yaml.load(f)
-
-        return model.get_db_provider(config).store
-
     # Tests of private methods
 
     def test_get_file_url(self):
@@ -286,9 +283,16 @@ class FirebaseArtifactStoreTest(ArtifactStoreTest, unittest.TestCase):
         self.assertTrue(not os.path.exists(tmp_filename))
 
 
+@unittest.skipIf(
+    'GOOGLE_APPLICATION_CREDENTIALS' not in os.environ.keys(),
+    'GOOGLE_APPLICATION_CREDENTIALS environment ' +
+    'variable not set, won'' be able to use google cloud')
 class GCloudArtifactStoreTest(ArtifactStoreTest, unittest.TestCase):
-    def get_store(self, config='test_config_gcloud_store.yaml'):
-        return GCloudArtifactStore({"bucket":"peterz_test"})
+
+    def get_store(self, config_name=None):
+        store = ArtifactStoreTest.get_store(self, 'test_config_gcloud_storage.yaml')
+        self.assertTrue(isinstance(store, GCloudArtifactStore))
+        return store
 
 if __name__ == "__main__":
     unittest.main()

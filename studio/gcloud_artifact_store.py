@@ -18,7 +18,6 @@ from google.cloud import storage
 import fs_tracker
 import util
 from tartifact_store import TartifactStore
-
 logging.basicConfig()
 
 
@@ -28,11 +27,10 @@ class GCloudArtifactStore(TartifactStore):
         self.logger.setLevel(verbose)
         self.client = storage.Client()
         
-        self.bucket = self.client.bucket(config['bucket'])
-
-        existing_buckets = {b.name for b in self.client.list_buckets()}
-        if self.bucket.name not in existing_buckets:
-            self.bucket.create()
+        try:
+            self.bucket = self.client.get_bucket(config['bucket'])
+        except BaseException:
+            self.bucket = self.client.create_bucket(config['bucket'])
 
         super(GCloudArtifactStore,self).__init__(measure_timestamp_diff)
 
