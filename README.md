@@ -41,7 +41,7 @@ Activate it. If you are using plain python:
 
 Or, if you are using anaconda:
 
-    . ./tfstuio/bin/activate
+    . ./tfstudio/bin/activate
 
 Upgrade pip:
 
