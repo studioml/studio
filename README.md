@@ -7,7 +7,7 @@ TensorFlow studio is a model management framework written in Python to help simp
 
 Most of the features are compatible with any Python machine learning framework ([Keras](https://github.com/fchollet/keras), [TensorFlow](https://github.com/tensorflow/tensorflow), [scikit-learn](https://github.com/scikit-learn/scikit-learn), etc); some extra features are available for Keras and TensorFlow.
 
-Use tfstudio to: 
+Use TFstudio to: 
 * Capture experiment information, Python environment, files, dependencies and logs, without modifying the experiment code.
 * Monitor and organize experiments using a web dashboard that integrates with TensorBoard.
 * Run experiments locally, remotely, or in the cloud (Google Cloud or Amazon EC2)
@@ -60,14 +60,14 @@ gpu cloud worker test in EC2 cloud (takes about 500 seconds due to installation 
 
 ## Authentication 
 Both studio ui and studio runner use the same authentication tokens for a database backend. The tokens are valid for 1 hour, 
-but if tfstudio is running, it renews the tokens automatically. 
+but if TFstudio is running, it renews the tokens automatically. 
 
 Note that refresh tokens do not expire; this means you can use these tokens on multiple machines, e.g. when you want to use a Google account authentication on a remote server but don't want to open extra ports. Simply copy the contents of ~/.tfstudio/keys folder to the desired machine.
 
 Currently TensorFlow studio supports 2 methods of authentication: email and password and using a Google account.
 To use studio runner and studio ui in guest mode, in studio/default_config.yaml, uncomment "guest: true" under the database section.
 
-Alternatively, you can set up your own database and configure tfstudio to use it. See [setting up database](docs/setup_database.md). This is a preferred option if you want to keep your models and artifacts private. 
+Alternatively, you can set up your own database and configure TFstudio to use it. See [setting up database](docs/setup_database.md). This is a preferred option if you want to keep your models and artifacts private. 
 
 
 ### Email / password authentication
