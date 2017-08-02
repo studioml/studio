@@ -1,28 +1,51 @@
+import os
 from setuptools import setup
-from pip.req import parse_requirements
+from subprocess import call
+from setuptools.command.install import install
 
-install_reqs = parse_requirements('requirements.txt', session='hack')
-
-# reqs is a list of requirement
-# e.g. ['django==1.5.1', 'mezzanine==1.4.6']
-reqs = [str(ir.req) for ir in install_reqs]
+# This file contains metadata related to the tfstudio client and python base server
+# software
 
 
-setup(name='tfstudio',
-      version='0.0',
-      description='TensorFlow Studio',
-      long_description='TensorFlow model and data management tool',
-      url='https://github.com/ilblackdragon/studio',
-      packages=['studio'],
-      install_requires=reqs,
-      scripts=['studio/scripts/studio',
-               'studio/scripts/studio-run',
-               'studio/scripts/studio-ui',
-               'studio/scripts/studio-local-worker',
-               'studio/scripts/studio-remote-worker',
-               'studio/scripts/studio-start-remote-worker',
-               'studio/scripts/studio-add-credentials'],
-      tests_suite='nose.collector',
-      tests_require=['nose'],
-      include_package_data=True,
-      zip_safe=False)
+class MyInstall(install):
+    def run(self):
+        call(["pip install -r requirements.txt --no-clean"], shell=True)
+        install.run(self)
+
+# Utility function to read the README file.
+# Used for the long_description.  It's nice, because now 1) we have a top level
+# README file and 2) it's easier to type in the README file than to put a raw
+# string in below ...
+def read(fname):
+    return open(os.path.join(os.path.dirname(__file__), fname)).read()
+
+
+with open('requirements.txt') as f:
+        required = f.read().splitlines()
+
+# projects using the tfstudio pthon APIs will need to use this installer
+# to access the google and AWS cloud storage
+
+setup(
+        name='studio',
+        version='0.0',
+        description='TensorFlow Studio',
+        packages=['studio'],
+        long_description=read('README.md'),
+        url='https://github.com/ilblackdragon/studio',
+        author='Illia Polosukhin',
+        author_email='ilblackdragon@XIX.ai',
+#        data_files=[('bin', ['studio/scripts/*'])],
+        scripts=[
+        'studio/scripts/studio-ui',
+        'studio/scripts/studio-start-remote-worker',
+        'studio/scripts/studio-run',
+        'studio/scripts/studio-remote-worker',
+        'studio/scripts/studio-local-worker',
+        'studio/scripts/studio-add-credentials',
+        'studio/scripts/studio',
+        'studio/scripts/gcloud_worker_startup.sh',
+        'studio/scripts/ec2_worker_startup.sh',
+        'studio/scripts/ec2_gpuworker_startup.sh'],
+        install_requires=required,
+        zip_safe=False)
