@@ -81,14 +81,11 @@ first-class citizen. If a token is not found when you run studio, the Web UI wil
 
 ## Further reading and cool features
 
-[Running experiments remotely](docs/remote_worker.md)
-* [Custom Python environments for remote workers](docs/customenv.md)
-
-[Running experiments in the cloud](docs/cloud.md)
-* [Google Cloud setup instructions](docs/gcloud_setup.md)
-* [Amazon EC2 setup instructions](docs/ec2_setup.md)
-
-[Artifacts management](docs/artifacts.md)
-
-[Hyperparameter search](docs/hyperparams.md)
+* [Running experiments remotely](docs/remote_worker.md)
+   * [Custom Python environments for remote workers](docs/customenv.md)
+* [Running experiments in the cloud](docs/cloud.md)
+   * [Google Cloud setup instructions](docs/gcloud_setup.md)
+   * [Amazon EC2 setup instructions](docs/ec2_setup.md)
+* [Artifacts management](docs/artifacts.md)
+* [Hyperparameter search](docs/hyperparams.md)
 
