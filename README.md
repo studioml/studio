@@ -3,11 +3,11 @@
   <img src="logo.png" width="250"/>
 </p>
 
-TensorFlow studio is a model management framework written in Python to help simplify and expedite your model building experience. It was developed to minimize any overhead involvd with the scheduling, running, monitoring or mangagement of artifacts of your machine learning experiments in Python without invasion of your code. Nobody wants to spend their time configuring different machines, setting up dependencies, or playing archeology to track down previous model artifacts. 
+TensorFlow studio is a model management framework written in Python to help simplify and expedite your model building experience. It was developed to minimize any overhead involved with the scheduling, running, monitoring or mangagement of artifacts of your machine learning experiments in Python without invasion of your code. Nobody wants to spend their time configuring different machines, setting up dependencies, or playing archeology to track down previous model artifacts. 
 
 Most of the features are compatible with any Python machine learning framework ([Keras](https://github.com/fchollet/keras), [TensorFlow](https://github.com/tensorflow/tensorflow), [scikit-learn](https://github.com/scikit-learn/scikit-learn), etc); some extra features are available for Keras and TensorFlow.
 
-Use TFstudio to: 
+**Use TFstudio to:** 
 * Capture experiment information, Python environment, files, dependencies and logs, without modifying the experiment code.
 * Monitor and organize experiments using a web dashboard that integrates with TensorBoard.
 * Run experiments locally, remotely, or in the cloud (Google Cloud or Amazon EC2)
@@ -59,7 +59,7 @@ as in command line above) should be no more than 10 minutes. Most of the tests a
 gpu cloud worker test in EC2 cloud (takes about 500 seconds due to installation of the drivers / CUDA on the EC2 instance).
 
 ## Authentication 
-Both studio ui and studio runner use the same authentication tokens for a database backend. The tokens are valid for 1 hour, 
+Both studio ui and studio runner use the same authentication tokens for a database backend. The tokens are valid for one hour, 
 but if TFstudio is running, it renews the tokens automatically. 
 
 Note that refresh tokens do not expire; this means you can use these tokens on multiple machines, e.g. when you want to use a Google account authentication on a remote server but don't want to open extra ports. Simply copy the contents of ~/.tfstudio/keys folder to the desired machine.
