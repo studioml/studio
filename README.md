@@ -49,13 +49,13 @@ Certain types of runners can make use of the studio software distribution to sta
 We recommend setting up a [virtual environment](https://github.com/pypa/virtualenv).
 
 ### Running tests
-To run the unit and regression tests (for now, we have little difference - some tests take longer than others, but that's about it), run 
+To run the unit and regression tests, run 
 
     python $(which nosetests) --processes=8 --process-timeout=600
 
-Note that simply `nosetests` tends not to use virtualenv correctly (hence a more extended version of the call). If you have application credentials configured 
-to work with distributed queues and cloud workers, those will be tested as well, otherwise, respective tests will be skipped. Total test runtime (when run in parallel 
-as in command line above) should be no more than 10 minutes. Most of the tests are I/O limited, so parallel execution speeds up things quite a bit. The longest test is
+Note that simply `nosetests` tends not to use virtualenv correctly. If you have application credentials configured 
+to work with distributed queues and cloud workers, those will be tested as well. Otherwise, respective tests will be skipped. The total test runtime, when run in parallel 
+as in the command above, should be no more than 10 minutes. Most of the tests are I/O limited, so parallel execution speeds up things quite a bit. The longest test is the
 gpu cloud worker test in EC2 cloud (takes about 500 seconds due to installation of the drivers / CUDA on the EC2 instance).
 
 ## Authentication 
