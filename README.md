@@ -8,17 +8,12 @@ TensorFlow studio is a model management framework written in Python to help simp
 Most of the features are compatible with any Python machine learning framework ([Keras](https://github.com/fchollet/keras), [TensorFlow](https://github.com/tensorflow/tensorflow), [scikit-learn](https://github.com/scikit-learn/scikit-learn), etc); some extra features are available for Keras and TensorFlow.
 
 Use tfstudio to: 
-   * Capture experiment information, Python environment, files, dependencies and logs, without modifying the experiment code.
-
-   * Monitor and organize experiments using a web dashboard that integrates with TensorBoard.
-
-   * Run experiments locally, remotely, or in the cloud (Google Cloud or Amazon EC2)
-
-   * Manage artifacts (persistence?)
-
-   * Perform hyperparameter search
-
-   * Create customizable Python environments for remote workers.
+* Capture experiment information, Python environment, files, dependencies and logs, without modifying the experiment code.
+* Monitor and organize experiments using a web dashboard that integrates with TensorBoard.
+* Run experiments locally, remotely, or in the cloud (Google Cloud or Amazon EC2)
+* Manage artifacts (persistence?)
+* Perform hyperparameter search
+* Create customizable Python environments for remote workers.
     
 
 ## Example usage
@@ -87,11 +82,11 @@ first-class citizen. If a token is not found when you run studio, the Web UI wil
 ## Further reading and cool features
 
 [Running experiments remotely](docs/remote_worker.md)
-   * [Custom Python environments for remote workers](docs/customenv.md)
+* [Custom Python environments for remote workers](docs/customenv.md)
 
 [Running experiments in the cloud](docs/cloud.md)
-   * [Google Cloud setup instructions](docs/gcloud_setup.md)
-   * [Amazon EC2 setup instructions](docs/ec2_setup.md)
+* [Google Cloud setup instructions](docs/gcloud_setup.md)
+* [Amazon EC2 setup instructions](docs/ec2_setup.md)
 
 [Artifacts management](docs/artifacts.md)
 
