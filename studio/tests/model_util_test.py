@@ -5,12 +5,15 @@ import urllib
 from PIL import Image
 from io import BytesIO
 
-import keras
-from keras.layers import Dense, Flatten
+try:
+    import keras
+    from keras.layers import Dense, Flatten
+    from keras.models import Sequential
+    from keras.datasets import mnist
+    from keras.utils import to_categorical
 
-from keras.models import Sequential
-from keras.datasets import mnist
-from keras.utils import to_categorical
+except BaseException:
+    keras = None
 
 from timeout_decorator import timeout
 from Queue import Queue, Empty
@@ -182,6 +185,9 @@ class ModelPipeTest(unittest.TestCase):
 
         self.assertEquals(expected_list, output_list)
 
+
+    @unittest.skipIf(keras is None, 
+            "should have keras for this test")
     def test_model_pipe_keras(self):
 
         model = keras.models.Sequential()
@@ -203,6 +209,8 @@ class ModelPipeTest(unittest.TestCase):
         self.assertTrue(np.isclose(np.array(output).flatten(),
                                    np.array(expected_output).flatten()).all())
 
+    @unittest.skipIf(keras is None, 
+            "should have keras for this test")
     def test_model_pipe_mnist_urls(self):
 
         (x_train, y_train), (x_test, y_test) = mnist.load_data()
