@@ -80,9 +80,8 @@ class EC2WorkerManager(object):
 
     def _get_block_device_mappings(self, resources_needed):
         return [{
-            'DeviceName': '/dev/sdh',
+            'DeviceName': '/dev/sda1',
             'Ebs': {
-                'Encrypted': False,
                 'DeleteOnTermination': True,
                 'VolumeSize': memstr2int(resources_needed['hdd']) /
                 memstr2int('1g'),
@@ -111,18 +110,7 @@ class EC2WorkerManager(object):
         self.logger.info(
             'Starting EC2 instance of type {}'.format(instance_type))
         kwargs = {
-            'BlockDeviceMappings': [{
-                'DeviceName': '/dev/sdh',
-                'VirtualName': 'ephemeral0',
-                'Ebs': {
-                    'Encrypted': False,
-                    'DeleteOnTermination': True,
-                    'VolumeSize': memstr2int(resources_needed['hdd']) /
-                    memstr2int('1g'),
-                    'VolumeType': 'standard'
-                },
-                'NoDevice': ''
-            }],
+            'BlockDeviceMappings': self._get_block_device_mappings(resources_needed),
             'ImageId': imageid,
             'InstanceType': instance_type,
             'MaxCount': 1,
@@ -289,7 +277,7 @@ class EC2WorkerManager(object):
             "LaunchConfigurationName": asg_name + '_launch_config',
             "MinSize": 0,
             "MaxSize": max_workers,
-            "DesiredCapacity": start_workers,
+            "DesiredCapacity": int(start_workers),
             "LoadBalancerNames": [],
             "AvailabilityZones": [self.region + "a"],
             "TerminationPolicies": ['NewestInstance'],
@@ -302,29 +290,30 @@ class EC2WorkerManager(object):
         response = self.asclient.create_auto_scaling_group(
             AutoScalingGroupName=asg_name, **asg_config)
 
-        scaleup_policy_response = self.asclient.put_scaling_policy(
-            AutoScalingGroupName=asg_name,
-            PolicyName=asg_name + "_scaleup",
-            AdjustmentType="ChangeInCapacity",
-            ScalingAdjustment=1,
-            Cooldown=0
-        )
+        if queue_upscaling:
+            scaleup_policy_response = self.asclient.put_scaling_policy(
+                AutoScalingGroupName=asg_name,
+                PolicyName=asg_name + "_scaleup",
+                AdjustmentType="ChangeInCapacity",
+                ScalingAdjustment=1,
+                Cooldown=0
+            )
 
-        self.cwclient.put_metric_alarm(
-            AlarmName=asg_name + "_scaleup_alarm",
-            MetricName="ApproximateNumberOfMessagesVisible",
-            Namespace="AWS/SQS",
-            Statistic="Average",
-            Period=300,
-            Threshold=1,
-            ComparisonOperator="GreaterThanOrEqualToThreshold",
-            EvaluationPeriods=1,
-            AlarmActions=[scaleup_policy_response['PolicyARN']],
-            Dimensions=[{
-                'Name': 'QueueName',
-                'Value': queue_name
-            }]
-        )
+            self.cwclient.put_metric_alarm(
+                AlarmName=asg_name + "_scaleup_alarm",
+                MetricName="ApproximateNumberOfMessagesVisible",
+                Namespace="AWS/SQS",
+                Statistic="Average",
+                Period=300,
+                Threshold=1,
+                ComparisonOperator="GreaterThanOrEqualToThreshold",
+                EvaluationPeriods=1,
+                AlarmActions=[scaleup_policy_response['PolicyARN']],
+                Dimensions=[{
+                    'Name': 'QueueName',
+                    'Value': queue_name
+                }]
+            )
 
     def _get_ondemand_prices(self, instances=_instance_specs.keys()):
         self.logger.info(
