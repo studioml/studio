@@ -288,7 +288,7 @@ def main(args=sys.argv):
 
     for e in experiments:
         queue.enqueue(json.dumps({
-            'experiment': e.key,
+            'experiment': e.__dict__,
             'config': config}))
 
     if not runner_args.queue:

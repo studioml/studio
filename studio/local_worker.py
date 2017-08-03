@@ -181,7 +181,7 @@ def worker_loop(queue, parsed_args,
         # first_exp = min([(p, os.path.getmtime(p)) for p in queue],
         #                key=lambda t: t[1])[0]
 
-        experiment_key = json.loads(first_exp)['experiment']
+        experiment_key = json.loads(first_exp)['experiment']['key']
         config = json.loads(first_exp)['config']
         parsed_args.config = config
         verbose = model.parse_verbosity(config.get('verbose'))
