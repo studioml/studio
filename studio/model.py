@@ -233,6 +233,9 @@ class FirebaseProvider(object):
                     # upload immutable artifacts
                     art['key'] = self.store.put_artifact(art)
 
+            if 'key' in art.keys():
+                art['qualified'] = self.store.get_qualified_location(art['key'])
+
         experiment_dict = experiment.__dict__.copy()
         experiment_dict['owner'] = self._get_userid()
 

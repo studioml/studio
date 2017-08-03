@@ -184,4 +184,12 @@ class FirebaseArtifactStore(TartifactStore):
             return (None, None)
 
 
+    def get_qualified_location(self, key):
+        return 'gs://' + self.app.storage_bucket + '/' +key
+
+
+    def get_browsable_url(self, key):
+        raise NotImplementedError
+
+
 

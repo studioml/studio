@@ -59,6 +59,14 @@ class GCloudArtifactStore(TartifactStore):
             return None
 
 
+    def get_qualified_location(self, key):
+        return 'gs://' + self.bucket.name + '/' + key
+
+
+    def get_browsable_url(self, key):
+        raise NotImplementedError
+
+
 
 
 
