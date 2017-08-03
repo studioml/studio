@@ -98,7 +98,7 @@ For benchmark, we use [StyleNet](http://ieeexplore.ieee.org/document/7780408/) i
 
 | Experiment                    |   Time (s)  |   Time per url (s)  |
 |-------------------------------|-------------|---------------------|
-| One-by-one                    |   7000      |    ~ 1              |
+| One-by-one                    |   6994      |    ~ 0.98           |
 | Pipe (batch 64, workers 4)    |   1581      |    ~ 0.22           |
 | Pipe (batch 128, workers 32)  |   157       |    ~ 0.02           |
 
