@@ -1,4 +1,3 @@
 include README.md
-include studio/defaultConfig.yaml
-
-
+include studio/default_config.yaml
+include requirements.txt
