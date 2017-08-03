@@ -188,8 +188,5 @@ class FirebaseArtifactStore(TartifactStore):
         return 'gs://' + self.app.storage_bucket + '/' +key
 
 
-    def get_browsable_url(self, key):
-        raise NotImplementedError
-
 
 

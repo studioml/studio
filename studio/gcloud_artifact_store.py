@@ -63,11 +63,6 @@ class GCloudArtifactStore(TartifactStore):
         return 'gs://' + self.bucket.name + '/' + key
 
 
-    def get_browsable_url(self, key):
-        raise NotImplementedError
-
-
-
 
 
 
