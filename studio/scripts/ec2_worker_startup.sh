@@ -17,7 +17,7 @@ export AWS_ACCESS_KEY_ID="{aws_access_key}"
 export AWS_SECRET_ACCESS_KEY="{aws_secret_key}"
 
 code_url_base="https://storage.googleapis.com/studio-ed756.appspot.com/src"
-code_ver="tfstudio-63_storage_selection-2017-08-03_2.tgz"
+code_ver="tfstudio-63_storage_selection-2017-08-03_3.tgz"
 
 autoscaling_group="{autoscaling_group}"
 

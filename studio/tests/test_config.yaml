@@ -14,3 +14,13 @@ log:
     name: output.log
 
 saveWorkspaceFrequency: 1 #how often is workspace being saved (minutes)
+
+cloud:
+    type: google
+    zone: us-central1-f
+
+    cpus: 2
+    ram:  3g
+    hdd:  10g
+    gpus: 0
+
