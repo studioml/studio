@@ -301,7 +301,7 @@ class FirebaseProvider(object):
 
         self._delete(self._get_user_keybase() + 'experiments/' +
                      experiment_key)
-        
+
         if experiment_key in self._experiment_cache.keys():
             del self._experiment_cache[experiment_key]
         if experiment_key in self._experiment_info_cache.keys():
@@ -311,8 +311,8 @@ class FirebaseProvider(object):
             for tag, art in experiment.artifacts.iteritems():
                 if art.get('key') is not None:
                     self.logger.debug(
-                            ('Deleting artifact {} from the store, ' +
-                             'artifact key {}').format(tag, art['key']))
+                        ('Deleting artifact {} from the store, ' +
+                         'artifact key {}').format(tag, art['key']))
                     self.store.delete_artifact(art)
 
         if experiment.project is not None:
@@ -622,7 +622,7 @@ def get_config(config_file=None):
 
         with(open(path)) as f:
             config = yaml.load(f.read())
-            
+
             def replace_with_env(config):
                 for key, value in config.iteritems():
                     if isinstance(value, str) and value.startswith('$'):
