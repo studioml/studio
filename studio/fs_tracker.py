@@ -9,6 +9,7 @@ import re
 from model import Experiment
 
 TFSTUDIO_EXPERIMENT = 'TFSTUDIO_EXPERIMENT'
+TFSTUDIO_HOME = 'TFSTUDIO_HOME'
 
 
 def get_experiment_key():
@@ -17,6 +18,12 @@ def get_experiment_key():
         setup_experiment(os.environ, key)
     return os.environ[TFSTUDIO_EXPERIMENT]
 
+
+def get_studio_home():
+    if TFSTUDIO_HOME in os.environ.keys():
+        return os.environ[TFSTUDIO_HOME]
+    else:
+        return os.path.join(os.path.expanduser('~'), '.tfstudio')
 
 def setup_experiment(env, experiment, clean=True):
     if isinstance(experiment, Experiment):
@@ -69,8 +76,8 @@ def get_artifact_cache(tag, experiment_name=None):
     experiment_name = experiment_name if experiment_name else \
         get_experiment_key()
     retval = os.path.join(
-        os.path.expanduser('~'),
-        '.tfstudio/experiments',
+        get_studio_home(),
+        'experiments',
         experiment_name,
         tag
     )
@@ -86,8 +93,8 @@ def get_blob_cache(blobkey):
         blobkey = re.sub('.*/', '', blobkey)
 
     return os.path.join(
-        os.path.expanduser('~'),
-        '.tfstudio/blobcache',
+        get_studio_home(),
+        'blobcache',
         blobkey
     )
 
@@ -97,8 +104,8 @@ def _get_artifact_mapping_path(experiment_name=None):
         os.environ[TFSTUDIO_EXPERIMENT]
 
     basepath = os.path.join(
-        os.path.expanduser('~'),
-        '.tfstudio/artifact_mappings/',
+        get_studio_home(),
+        'artifact_mappings',
         experiment_name
     )
     if not os.path.exists(basepath):
@@ -117,8 +124,9 @@ def _setup_model_directory(experiment_name, clean=False):
 
 
 def get_queue_directory():
-    queue_dir = os.path.join(os.path.expanduser('~'),
-                             '.tfstudio/queue')
+    queue_dir = os.path.join(
+        get_studio_home(),
+        'queue')
     if not os.path.exists(queue_dir):
         os.makedirs(queue_dir)
 
