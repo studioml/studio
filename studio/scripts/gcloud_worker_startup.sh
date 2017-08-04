@@ -33,7 +33,7 @@ branch="master"
 #            studio-rworker --queue=$queue_name"
 
 code_url_base="https://storage.googleapis.com/studio-ed756.appspot.com/src"
-code_ver="tfstudio-model_pipe-2017-07-31_1.tgz"
+code_ver="tfstudio-63_storage_selection-2017-08-03_3.tgz"
 
 sudo apt -y update 
 sudo apt install -y wget python-pip git python-dev

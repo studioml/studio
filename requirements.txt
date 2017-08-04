@@ -3,6 +3,7 @@ configparser
 numpy
 tensorflow
 h5py
+pillow
 
 flask
 jinja2

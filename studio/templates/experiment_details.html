@@ -32,7 +32,12 @@
     <dl>
     <dt> Experiment artifacts: </dt>
     {% for key,value in artifacts.iteritems() %}
-        <dd><a href={{ value }}> {{ key }} </a></dd>
+        {% if 'qualified' in experiment.artifacts[key].keys() %}
+            <dd><a href={{ value }}> {{ key }} </a> 
+            (<a onclick="qualifiedLocationToBrowsable('{{ experiment.artifacts[key].qualified }}')" href="#">view in console </a>)</dd>
+        {% else %}
+            <dd><a href={{ value }}> {{ key }} </a></dd>
+        {% endif %} 
     {% endfor %} 
     <dt> Experiment info: </dt>
     <dd>Status: {{ experiment.status }}</dd>
@@ -110,8 +115,24 @@
         function viewInTensorBoard(key) {
             document.getElementById("tbButton").innerHTML="<i class='fa fa-cog fa-spin'></i>Redirecting..."
             window.location.href = "/tensorboard_exp/" + key
-        }       
+        } 
+        
+        
+        function qualifiedLocationToBrowsable(key) {
+            if (key.startsWith('gs://')) {
+                url = key.replace('gs://', 'https://console.cloud.google.com/storage/browser/')
+                url = url.replace(/\/[^/]+$/g, '')
+
+            } else {
+                url = null
+            }
+            if (url != null) {
+                window.location.href = url
+            }
+        }
     </script>
+
+
 
 {% endblock %}
 

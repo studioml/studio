@@ -11,7 +11,12 @@ Google cloud computing actually bills you for the compute time you use... So you
 
 ### Generate service credentials
 The machines that run submit cloud jobs will need to be authorized with service credentials. Go to left-hand pane in the google cloud console, select API Manager -> Credentials. 
-Then click "Create credentials" button, choose service account key, leave key type as JSON, in the "Service account" drop-down select "New service account". Enter a service account name (the name can be virtually anything and won't matter for the rest of the instructions). Important part is selecting a role. Click "Select a role" dropdown menu, scroll down to "Compute Engine" and select "Compute Engine Admin (v1)". Then scroll down to "Pub/Sub", and add a role "Pub/Sub editor" (this is required to create queues, publish and read messages from them). You can also add other roles if you are planning to use these credentials in other applications. When done, click "Create". Google cloud console should generate a json credentials file and save it to your computer. 
+Then click "Create credentials" button, choose service account key, leave key type as JSON, in the "Service account" drop-down select "New service account". Enter a service account name (the name can be virtually anything and won't matter for the rest of the instructions). 
+Important part is selecting a role. Click "Select a role" dropdown menu, in "Project" select "Service Account Actor", 
+then scroll down to "Compute Engine" and select "Compute Engine Admin (v1)". 
+Then scroll down to "Pub/Sub", and add a role "Pub/Sub editor" (this is required to create queues, publish and read messages from them). 
+If you are planning to use google cloud storage (directly, without Firebase layer) for artifact storage, select Storage Admin role too. 
+You can also add other roles if you are planning to use these credentials in other applications. When done, click "Create". Google cloud console should generate a json credentials file and save it to your computer. 
 
 ## Setting up studio
 

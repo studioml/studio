@@ -1,3 +1,1 @@
-import os
-from fs_tracker import get_model_directory
-from fs_tracker import get_artifact
+from fs_tracker import get_model_directory, get_artifact

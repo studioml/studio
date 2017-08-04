@@ -83,6 +83,22 @@ def dashboard():
     return render_template("dashboard.html", experiments=experiments)
 
 
+@app.route('/all')
+@authenticated('/all')
+def all_experiments():
+    tic = time.time()
+    global logger
+    
+    experiments = []
+    users = _db_provider.get_users()
+    for user in users:
+        experiments += _db_provider.get_user_experiments(user, blocking=False)
+
+    toc = time.time()
+    logger.debug('All experiments page (/all) prepared in {} s'.format(toc - tic))
+    return render_template("all_experiments.html", experiments=experiments)
+
+
 @app.route('/experiments/<key>')
 @authenticated('/experiments/<key>')
 def experiment(key):
