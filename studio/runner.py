@@ -166,6 +166,14 @@ def main(args=sys.argv):
     # TODO: Queue the job based on arguments and only then execute.
 
     config = model.get_config(runner_args.config)
+    
+    queue_name = 'local'
+    if 'queue' in config.keys():
+        queue_name = config['queue']
+    if runner_args.queue:
+        queue_name = runner_args.queue
+
+
 
     if runner_args.verbose:
         config['verbose'] = runner_args.verbose
@@ -218,6 +226,8 @@ def main(args=sys.argv):
                 runner_args.cloud == 'ec2' or
                 runner_args.cloud == 'ec2spot')
 
+        assert runner_args.queue is None, \
+                '--queue argument cannot be provided with --cloud argument'
         auth_cookie = None if config['database'].get('guest') \
             else os.path.join(
             auth.token_dir,
@@ -225,13 +235,10 @@ def main(args=sys.argv):
         )
 
         if runner_args.cloud == 'gcloud':
-            if runner_args.queue is None:
-                runner_args.queue = 'gcloud_' + str(uuid.uuid4())
 
-            if not runner_args.queue.startswith('gcloud_'):
-                runner_args.queue = 'gcloud_' + runner_args.queue
+            queue_name = 'pubsub_' + str(uuid.uuid4())
 
-            queue = PubsubQueue(runner_args.queue, verbose=verbose)
+            queue = PubsubQueue(queue_name, verbose=verbose)
             worker_manager = GCloudWorkerManager(
                 auth_cookie=auth_cookie,
                 zone=config['cloud']['zone']
@@ -240,13 +247,9 @@ def main(args=sys.argv):
         if runner_args.cloud == 'ec2' or \
            runner_args.cloud == 'ec2spot':
 
-            if runner_args.queue is None:
-                runner_args.queue = 'ec2_' + str(uuid.uuid4())
+            queue_name = 'sqs_' + str(uuid.uuid4())
 
-            if not runner_args.queue.startswith('ec2_'):
-                runner_args.queue = 'ec2_' + runner_args.queue
-
-            queue = SQSQueue(runner_args.queue, verbose=verbose)
+            queue = SQSQueue(queue_name, verbose=verbose)
             worker_manager = EC2WorkerManager(
                 auth_cookie=auth_cookie
             )
@@ -278,20 +281,20 @@ def main(args=sys.argv):
                 ssh_keypair=runner_args.ssh_keypair)
 
     else:
-        if not runner_args.queue:
+        if queue_name == 'local':
             queue = LocalQueue()
+        elif queue_name.startswith('sqs_'):
+            queue = SQSQueue(runner_args.queue, verbose=verbose)
         else:
-            if runner_args.queue.startswith('ec2_'):
-                queue = SQSQueue(runner_args.queue, verbose=verbose)
-            else:
-                queue = PubsubQueue(runner_args.queue, verbose=verbose)
+            queue = PubsubQueue(runner_args.queue, verbose=verbose)
+
 
     for e in experiments:
         queue.enqueue(json.dumps({
             'experiment': e.__dict__,
             'config': config}))
 
-    if not runner_args.queue:
+    if queue_name == 'local':
         worker_args = ['studio-local-worker']
 
         if runner_args.config:
