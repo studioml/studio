@@ -231,7 +231,7 @@ class ModelTest(unittest.TestCase):
         os.environ['TEST_VAR1'] = value1
         value2 = str(uuid.uuid4())
         os.environ['TEST_VAR2'] = value2
-        
+
         config = model.get_config('test_config_env.yaml')
         self.assertEquals(config['test_key'], value1)
         self.assertEquals(config['test_section']['test_key'], value2)
