@@ -259,7 +259,7 @@ def main(args=sys.argv):
                 runner_args.num_workers) if runner_args.num_workers else 1
             for i in range(num_workers):
                 worker_manager.start_worker(
-                    runner_args.queue, resources_needed,
+                    queue_name, resources_needed,
                     ssh_keypair=runner_args.ssh_keypair)
         else:
             assert runner_args.bid is not None
@@ -271,7 +271,7 @@ def main(args=sys.argv):
                 queue_upscaling = True
 
             worker_manager.start_spot_workers(
-                runner_args.queue,
+                queue_name,
                 runner_args.bid,
                 resources_needed,
                 start_workers=start_workers,
@@ -282,9 +282,9 @@ def main(args=sys.argv):
         if queue_name == 'local':
             queue = LocalQueue()
         elif queue_name.startswith('sqs_'):
-            queue = SQSQueue(runner_args.queue, verbose=verbose)
+            queue = SQSQueue(queue_name, verbose=verbose)
         else:
-            queue = PubsubQueue(runner_args.queue, verbose=verbose)
+            queue = PubsubQueue(queue_name, verbose=verbose)
 
     for e in experiments:
         queue.enqueue(json.dumps({
