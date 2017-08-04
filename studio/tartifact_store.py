@@ -3,21 +3,15 @@ import uuid
 
 import logging
 import time
-import calendar
 import tempfile
 import re
 from threading import Thread
 import subprocess
-import requests
-import certifi
-import json
 import shutil
 
 
 import fs_tracker
 import util
-import pyrebase
-from auth import FirebaseAuth
 
 logging.basicConfig()
 
@@ -37,7 +31,7 @@ class TartifactStore(object):
 
         tmpfile = os.path.join(
             tempfile.gettempdir(), str(
-                    uuid.uuid4()) + '.txt')
+                uuid.uuid4()) + '.txt')
         with open(tmpfile, 'w') as f:
             f.write('timestamp_diff_test')
         key = 'tests/' + str(uuid.uuid4())
@@ -57,8 +51,6 @@ class TartifactStore(object):
                 "to work correctly"
 
             return -now_remote_diff if now_remote_diff < 0 else 0
-
-
 
     def put_artifact(
             self,
@@ -251,5 +243,3 @@ class TartifactStore(object):
     def delete_artifact(self, artifact):
         if 'key' in artifact.keys():
             self._delete_file(artifact['key'])
-
-
