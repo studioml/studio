@@ -166,14 +166,12 @@ def main(args=sys.argv):
     # TODO: Queue the job based on arguments and only then execute.
 
     config = model.get_config(runner_args.config)
-    
+
     queue_name = 'local'
     if 'queue' in config.keys():
         queue_name = config['queue']
     if runner_args.queue:
         queue_name = runner_args.queue
-
-
 
     if runner_args.verbose:
         config['verbose'] = runner_args.verbose
@@ -227,7 +225,7 @@ def main(args=sys.argv):
                 runner_args.cloud == 'ec2spot')
 
         assert runner_args.queue is None, \
-                '--queue argument cannot be provided with --cloud argument'
+            '--queue argument cannot be provided with --cloud argument'
         auth_cookie = None if config['database'].get('guest') \
             else os.path.join(
             auth.token_dir,
@@ -287,7 +285,6 @@ def main(args=sys.argv):
             queue = SQSQueue(runner_args.queue, verbose=verbose)
         else:
             queue = PubsubQueue(runner_args.queue, verbose=verbose)
-
 
     for e in experiments:
         queue.enqueue(json.dumps({

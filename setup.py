@@ -30,6 +30,9 @@ def copyconfig():
         "studio/default_config.yaml")
 
     if not os.path.exists(config_path):
+        if not os.path.exists(os.path.dirname(config_path)):
+                os.makedirs(os.path.dirname(config_path))
+
         shutil.copyfile(
             default_config_path,
             os.path.expanduser('~/.tfstudio/config.yaml'))
