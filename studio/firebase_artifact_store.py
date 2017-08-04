@@ -170,6 +170,7 @@ class FirebaseArtifactStore(TartifactStore):
             self.logger.warn(
                 ("Getting metainfo of file {} " +
                  "raised an exception: {}") .format(key, err))
+            self.logger.exception(err)
             return (None, None)
 
     def get_qualified_location(self, key):
