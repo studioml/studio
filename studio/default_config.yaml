@@ -21,7 +21,7 @@ database:
 
 queue: local
 
-saveWorkspaceFrequency: 1 #how often is workspace being saved (minutes)
+saveWorkspaceFrequencyMinutes: 1
 verbose: error
 
 cloud:
