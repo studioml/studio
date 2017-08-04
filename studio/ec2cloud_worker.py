@@ -110,7 +110,8 @@ class EC2WorkerManager(object):
         self.logger.info(
             'Starting EC2 instance of type {}'.format(instance_type))
         kwargs = {
-            'BlockDeviceMappings': self._get_block_device_mappings(resources_needed),
+            'BlockDeviceMappings':
+                self._get_block_device_mappings(resources_needed),
             'ImageId': imageid,
             'InstanceType': instance_type,
             'MaxCount': 1,

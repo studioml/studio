@@ -1,21 +1,10 @@
-import os
-import uuid
-
 import logging
 import time
 import calendar
-import tempfile
-import re
-from threading import Thread
-import subprocess
 import requests
 import certifi
 import json
-import shutil
 
-
-import fs_tracker
-import util
 import pyrebase
 from auth import FirebaseAuth
 from tartifact_store import TartifactStore
@@ -40,7 +29,7 @@ class FirebaseArtifactStore(TartifactStore):
 
         self.logger = logging.getLogger('FirebaseArtifactStore')
         self.logger.setLevel(verbose)
-        super(FirebaseArtifactStore,self).__init__(measure_timestamp_diff)
+        super(FirebaseArtifactStore, self).__init__(measure_timestamp_diff)
 
     def _upload_file(self, key, local_file_path):
         try:
@@ -183,10 +172,5 @@ class FirebaseArtifactStore(TartifactStore):
                  "raised an exception: {}") .format(key, err))
             return (None, None)
 
-
     def get_qualified_location(self, key):
-        return 'gs://' + self.app.storage_bucket + '/' +key
-
-
-
-
+        return 'gs://' + self.app.storage_bucket + '/' + key

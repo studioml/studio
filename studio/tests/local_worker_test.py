@@ -120,9 +120,8 @@ class LocalWorkerTest(unittest.TestCase, QueueTest):
             expected_output=random_str
         )
 
-
     @unittest.skipIf(keras is None,
-        'keras is required for this test')
+                     'keras is required for this test')
     def test_save_get_model(self):
         experiment_name = 'test_save_get_model' + str(uuid.uuid4())
         db = stubtest_worker(

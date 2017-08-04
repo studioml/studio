@@ -181,8 +181,8 @@ class ModelPipe:
             filterf=None,
             batcher=None,
             timeout=None):
-        if keras and (isinstance(func, keras.models.Sequential) or 
-                isinstance(func, keras.models.Model)):
+        if keras and (isinstance(func, keras.models.Sequential) or
+                      isinstance(func, keras.models.Model)):
             model = func
             _prime_keras_model(func)
             func = model.predict

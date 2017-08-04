@@ -13,6 +13,7 @@ from studio.auth import remove_all_keys
 
 from studio.gcloud_artifact_store import GCloudArtifactStore
 
+
 class ArtifactStoreTest(object):
     _multiprocess_can_split_ = True
 
@@ -151,7 +152,7 @@ class ArtifactStoreTest(object):
         key = str(uuid.uuid4())
         qualified_location = fb.get_qualified_location(key)
         expected_qualified_location = self.get_qualified_location_prefix() + \
-                key
+            key
 
         self.assertEquals(qualified_location, expected_qualified_location)
 
@@ -295,8 +296,6 @@ class FirebaseArtifactStoreTest(ArtifactStoreTest, unittest.TestCase):
         self.assertTrue(not os.path.exists(tmp_filename))
 
 
-
-
 @unittest.skipIf(
     'GOOGLE_APPLICATION_CREDENTIALS' not in os.environ.keys(),
     'GOOGLE_APPLICATION_CREDENTIALS environment ' +
@@ -304,13 +303,15 @@ class FirebaseArtifactStoreTest(ArtifactStoreTest, unittest.TestCase):
 class GCloudArtifactStoreTest(ArtifactStoreTest, unittest.TestCase):
 
     def get_store(self, config_name=None):
-        store = ArtifactStoreTest.get_store(self, 'test_config_gcloud_storage.yaml')
+        store = ArtifactStoreTest.get_store(
+            self, 'test_config_gcloud_storage.yaml')
         self.assertTrue(isinstance(store, GCloudArtifactStore))
         return store
 
     def get_qualified_location_prefix(self):
         store = self.get_store()
         return "gs://" + store.bucket.name + "/"
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -136,16 +136,15 @@ class FirebaseProvider(object):
         self.app = pyrebase.initialize_app(db_config)
         self.logger = logging.getLogger('FirebaseProvider')
         self.logger.setLevel(verbose)
-        
+
         if guest or 'serviceAccount' in db_config.keys():
             self.auth = None
         else:
             self.auth = FirebaseAuth(self.app,
-                                 db_config.get("use_email_auth"),
-                                 db_config.get("email"),
-                                 db_config.get("password"),
-                                 blocking_auth) 
-
+                                     db_config.get("use_email_auth"),
+                                     db_config.get("email"),
+                                     db_config.get("password"),
+                                     blocking_auth)
 
         self.store = store if store else FirebaseArtifactStore(
             db_config, verbose=verbose, blocking_auth=blocking_auth)
@@ -234,7 +233,8 @@ class FirebaseProvider(object):
                     art['key'] = self.store.put_artifact(art)
 
             if 'key' in art.keys():
-                art['qualified'] = self.store.get_qualified_location(art['key'])
+                art['qualified'] = self.store.get_qualified_location(
+                    art['key'])
 
         experiment_dict = experiment.__dict__.copy()
         experiment_dict['owner'] = self._get_userid()
@@ -597,22 +597,22 @@ def get_config(config_file=None):
     config_paths = []
     if config_file:
         config_paths.append(os.expanduser(config_file))
-    
+
     config_paths.append(os.path.expanduser('~/.tfstudio/config.yaml'))
     config_paths.append(
-            os.path.join(
+        os.path.join(
             os.path.dirname(os.path.realpath(__file__)),
             "default_config.yaml"))
 
     for path in config_paths:
         if not os.path.exists(path):
             continue
-        
+
         with(open(path)) as f:
             return yaml.load(f.read())
 
     raise ValueError('None of the config paths {} exits!'
-            .format(config_paths))
+                     .format(config_paths))
 
 
 def get_db_provider(config=None, blocking_auth=True):
@@ -622,9 +622,9 @@ def get_db_provider(config=None, blocking_auth=True):
 
     if 'storage' in config.keys():
         artifact_store = get_artifact_store(
-                config['storage'], 
-                blocking_auth=blocking_auth,
-                verbose=verbose)
+            config['storage'],
+            blocking_auth=blocking_auth,
+            verbose=verbose)
     else:
         artifact_store = None
 
@@ -632,14 +632,12 @@ def get_db_provider(config=None, blocking_auth=True):
     db_config = config['database']
     if db_config['type'].lower() == 'firebase'.lower():
         return FirebaseProvider(
-            db_config, 
-            blocking_auth, 
-            verbose=verbose, 
+            db_config,
+            blocking_auth,
+            verbose=verbose,
             store=artifact_store)
     else:
         raise ValueError('Unknown type of the database ' + db_config['type'])
-
-
 
 
 def parse_verbosity(verbosity=None):
