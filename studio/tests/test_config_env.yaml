@@ -1,0 +1,31 @@
+database: 
+    type: FireBase
+
+    apiKey: AIzaSyCLQbp5X2B4SWzBw-sz9rUnGHNSdMl0Yx8
+    authDomain: "{}.firebaseapp.com"
+    databaseURL: "https://{}.firebaseio.com"
+    projectId: studio-ed756
+    storageBucket: "{}.appspot.com"
+    messagingSenderId: 81790704397
+
+    guest: true
+                                                                    
+log:
+    name: output.log
+
+saveWorkspaceFrequency: 1 #how often is workspace being saved (minutes)
+
+test_key: $TEST_VAR1
+test_section:
+        test_key: $TEST_VAR2
+
+
+cloud:
+    type: google
+    zone: us-central1-f
+
+    cpus: 2
+    ram:  3g
+    hdd:  10g
+    gpus: 0
+

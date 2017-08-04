@@ -609,7 +609,17 @@ def get_config(config_file=None):
             continue
 
         with(open(path)) as f:
-            return yaml.load(f.read())
+            config = yaml.load(f.read())
+            
+            def replace_with_env(config):
+                for key, value in config.iteritems():
+                    if isinstance(value, str) and value.startswith('$'):
+                        config[key]=os.environ.get(value[1:])
+                    elif isinstance(value, dict):
+                        replace_with_env(value)
+
+            replace_with_env(config)
+            return config
 
     raise ValueError('None of the config paths {} exits!'
                      .format(config_paths))
