@@ -594,17 +594,25 @@ class PostgresProvider(object):
 
 def get_config(config_file=None):
 
+    config_paths = []
     if config_file:
-        with open(config_file) as f:
-            config = yaml.load(f.read())
-    else:
-        def_config_file = os.path.join(
+        config_paths.append(os.expanduser(config_file))
+    
+    config_paths.append(os.path.expanduser('~/.tfstudio/config.yaml'))
+    config_paths.append(
+            os.path.join(
             os.path.dirname(os.path.realpath(__file__)),
-            "default_config.yaml")
-        with open(def_config_file) as f:
-            config = yaml.load(f.read())
+            "default_config.yaml"))
 
-    return config
+    for path in config_paths:
+        if not os.path.exists(path):
+            continue
+        
+        with(open(path)) as f:
+            return yaml.load(f.read())
+
+    raise ValueError('None of the config paths {} exits!'
+            .format(config_paths))
 
 
 def get_db_provider(config=None, blocking_auth=True):
