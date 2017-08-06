@@ -1,16 +1,42 @@
 import os
+import shutil
 from setuptools import setup
 from subprocess import call
 from setuptools.command.install import install
+from setuptools.command.develop import develop
 
 # This file contains metadata related to the tfstudio client and python base
 # server software
 
 
+class MyDevelop(develop):
+    def run(self):
+        call(["pip install -r requirements.txt --no-clean"], shell=True)
+        copyconfig()
+        develop.run(self)
+
+
 class MyInstall(install):
     def run(self):
         call(["pip install -r requirements.txt --no-clean"], shell=True)
+        copyconfig()
         install.run(self)
+
+
+def copyconfig():
+    config_path = os.path.expanduser('~/.tfstudio/config.yaml')
+    default_config_path = os.path.join(
+        os.path.dirname(os.path.realpath(__file__)),
+        "studio/default_config.yaml")
+
+    if not os.path.exists(config_path):
+        if not os.path.exists(os.path.dirname(config_path)):
+                os.makedirs(os.path.dirname(config_path))
+
+        shutil.copyfile(
+            default_config_path,
+            os.path.expanduser('~/.tfstudio/config.yaml'))
+
 
 # Utility function to read the README file.
 # Used for the long_description.  It's nice, because now 1) we have a top level
@@ -50,5 +76,6 @@ setup(
             'studio/scripts/ec2_worker_startup.sh'],
     tests_suite='nose.collector',
     tests_require=['nose'],
+    cmdclass={'develop': MyDevelop, 'install': MyInstall},
     install_requires=required,
     zip_safe=False)

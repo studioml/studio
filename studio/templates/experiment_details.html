@@ -100,7 +100,7 @@
 
     <script>
         function deleteExperiment(key) {
-            document.getElementById("deleteButton").innerHTML="<i class='fa fa-cog fa-spin'></i>Deleting..."
+            document.getElementById("deleteButton").innerHTML="<i class='fa fa-cog fa-spin'></i> Deleting..."
             if (confirm("The experiment and its artfacts will be lost. Proceed?")) {
                 window.location.href = "/delete_experiment/" + key
             }
@@ -113,7 +113,7 @@
         }
 
         function viewInTensorBoard(key) {
-            document.getElementById("tbButton").innerHTML="<i class='fa fa-cog fa-spin'></i>Redirecting..."
+            document.getElementById("tbButton").innerHTML="<i class='fa fa-cog fa-spin'></i> Redirecting..."
             window.location.href = "/tensorboard_exp/" + key
         } 
         

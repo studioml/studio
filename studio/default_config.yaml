@@ -19,9 +19,9 @@ database:
     # type: gcloud
     # bucket: "studio-ed756.appspot.com"
 
+queue: local
 
-
-saveWorkspaceFrequency: 1 #how often is workspace being saved (minutes)
+saveWorkspaceFrequencyMinutes: 1
 verbose: error
 
 cloud:

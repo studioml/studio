@@ -77,7 +77,7 @@ class LocalExecutor(object):
             sched.add_job(
                 lambda: self.db.checkpoint_experiment(experiment),
                 'interval',
-                minutes=self.config['saveWorkspaceFrequency'])
+                minutes=self.config['saveWorkspaceFrequencyMinutes'])
 
             def kill_if_stopped():
                 if self.db.get_experiment(

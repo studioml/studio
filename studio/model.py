@@ -292,16 +292,30 @@ class FirebaseProvider(object):
 
     def delete_experiment(self, experiment):
         if isinstance(experiment, basestring):
-            experiment = self.get_experiment(experiment)
+            experiment_key = experiment
+            try:
+                experiment = self.get_experiment(experiment)
+                experiment_key = experiment.key
+            except BaseException:
+                experiment = None
+        else:
+            experiment_key = experiment.key
 
         self._delete(self._get_user_keybase() + 'experiments/' +
-                     experiment.key)
+                     experiment_key)
 
-        for tag, art in experiment.artifacts.iteritems():
-            if art.get('key') is not None:
-                self.logger.debug(('Deleting artifact {} from the store, ' +
-                                   'artifact key {}').format(tag, art['key']))
-                self.store.delete_artifact(art)
+        if experiment_key in self._experiment_cache.keys():
+            del self._experiment_cache[experiment_key]
+        if experiment_key in self._experiment_info_cache.keys():
+            del self._experiment_info_cache[experiment_key]
+
+        if experiment is not None:
+            for tag, art in experiment.artifacts.iteritems():
+                if art.get('key') is not None:
+                    self.logger.debug(
+                        ('Deleting artifact {} from the store, ' +
+                         'artifact key {}').format(tag, art['key']))
+                    self.store.delete_artifact(art)
 
         if experiment.project is not None:
             self._delete(
@@ -505,7 +519,7 @@ class FirebaseProvider(object):
             except AssertionError:
                 self.logger.warn(
                     ("Experiment {} does not exist " +
-                     "or is corrupted, deleting record").format(key))
+                     "or is corrupted, try to delete record").format(key))
                 try:
                     self.delete_experiment(key)
                 except BaseException:
@@ -594,17 +608,35 @@ class PostgresProvider(object):
 
 def get_config(config_file=None):
 
+    config_paths = []
     if config_file:
-        with open(config_file) as f:
-            config = yaml.load(f.read())
-    else:
-        def_config_file = os.path.join(
+        config_paths.append(os.path.expanduser(config_file))
+
+    config_paths.append(os.path.expanduser('~/.tfstudio/config.yaml'))
+    config_paths.append(
+        os.path.join(
             os.path.dirname(os.path.realpath(__file__)),
-            "default_config.yaml")
-        with open(def_config_file) as f:
+            "default_config.yaml"))
+
+    for path in config_paths:
+        if not os.path.exists(path):
+            continue
+
+        with(open(path)) as f:
             config = yaml.load(f.read())
 
-    return config
+            def replace_with_env(config):
+                for key, value in config.iteritems():
+                    if isinstance(value, str) and value.startswith('$'):
+                        config[key] = os.environ.get(value[1:])
+                    elif isinstance(value, dict):
+                        replace_with_env(value)
+
+            replace_with_env(config)
+            return config
+
+    raise ValueError('None of the config paths {} exits!'
+                     .format(config_paths))
 
 
 def get_db_provider(config=None, blocking_auth=True):

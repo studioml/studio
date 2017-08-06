@@ -46,7 +46,8 @@ def main(args=sys.argv):
     parsed_args, script_args = parser.parse_known_args(args)
     verbose = model.parse_verbosity(parsed_args.verbose)
     logger.setLevel(verbose)
-    if parsed_args.queue.startswith('ec2_'):
+    if parsed_args.queue.startswith('ec2_') or \
+       parsed_args.queue.startswith('sqs_'):
         queue = SQSQueue(parsed_args.queue, verbose=verbose)
     else:
         queue = PubsubQueue(parsed_args.queue, verbose=verbose)
