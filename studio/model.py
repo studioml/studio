@@ -298,6 +298,8 @@ class FirebaseProvider(object):
                 experiment_key = experiment.key
             except BaseException:
                 experiment = None
+        else:
+            experiment_key = experiment.key
 
         self._delete(self._get_user_keybase() + 'experiments/' +
                      experiment_key)
