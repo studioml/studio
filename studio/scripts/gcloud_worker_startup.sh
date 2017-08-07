@@ -51,7 +51,10 @@ mkdir /workspace && cd /workspace
 studio-remote-worker --queue=$queue_name --verbose=debug --timeout=300
 
 # shutdown the instance
-if [[ -z $(echo $group_name | grep "404 Not Found") ]]; then
+not_spot=$(echo "$group_name" | grep "Error 404" | wc -l)
+echo "not_spot = $not_spot"
+
+if [[ "$not_spot" -eq "0" ]]; then
     current_size=$(gcloud compute instance-groups managed describe $group_name --zone $zone | grep "targetSize" | awk '{print $2}')
     echo Current group size is $current_size
     if [[ $current_size -gt 1 ]]; then
@@ -62,7 +65,6 @@ if [[ -z $(echo $group_name | grep "404 Not Found") ]]; then
         echo "Deleting group $group_name and the template $template"
         gcloud compute instance-groups managed delete $group_name --zone $zone --quiet
     fi
-else
-    echo "Shutting down"
-    gcloud compute instances delete $instance_name --zone $zone --quiet 
 fi
+echo "Shutting down"
+gcloud compute instances delete $instance_name --zone $zone --quiet 
