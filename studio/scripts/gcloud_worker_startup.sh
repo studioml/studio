@@ -61,7 +61,6 @@ if [[ -z $(echo $group_name | grep "404 Not Found") ]]; then
         template=$(gcloud compute instance-groups managed describe $group_name --zone $zone | grep "instanceTemplate" | awk '{print $2}')
         echo "Deleting group $group_name and the template $template"
         gcloud compute instance-groups managed delete $group_name --zone $zone --quiet
-        gcloud compute instance-templates delete $template --quiet
     fi
 else
     echo "Shutting down"

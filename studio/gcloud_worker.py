@@ -61,7 +61,6 @@ class GCloudWorkerManager(object):
         else:
             return (name, op['name'])
 
-
     def start_spot_workers(
             self,
             queue_name,
@@ -76,15 +75,15 @@ class GCloudWorkerManager(object):
             resources_needed = {}
 
         if queue_upscaling is not False:
-            self.logger.warn("autoscaling on the queue is not " + 
+            self.logger.warn("autoscaling on the queue is not " +
                              "supported for google workers yet")
 
         if ssh_keypair is not None:
-            self.logger.warn('ssh keypairs are not supported ' + 
+            self.logger.warn('ssh keypairs are not supported ' +
                              'for google workers')
 
-        if bid is not  None:
-            self.logger.warn("bidding is not supported for " + 
+        if bid is not None:
+            self.logger.warn("bidding is not supported for " +
                              "google spot instances")
 
         template_name = self._generate_template_name()
@@ -93,11 +92,12 @@ class GCloudWorkerManager(object):
         config = self._get_instance_config(resources_needed, queue_name)
         config['scheduling']['preemptible'] = True
         config['machineType'] = config['machineType'].split('/')[-1]
-        config['metadata']['items'].append({'key':'groupname', 'value':group_name})
+        config['metadata']['items'].append(
+            {'key': 'groupname', 'value': group_name})
 
         template_config = {
-                'name': template_name,
-                'properties': config
+            'name': template_name,
+            'properties': config
         }
 
         op = self.compute.instanceTemplates() \
@@ -108,17 +108,17 @@ class GCloudWorkerManager(object):
 
         self.logger.info('instance template {} added'.format(template_name))
 
-        self.compute.instanceGroupManagers() \
-            .insert(project=self.projectid, zone=self.zone, body={
-                "baseInstanceName": self._generate_instance_name(), 
-                "instanceTemplate": 'global/instanceTemplates/' + template_name, 
+        self.compute.instanceGroupManagers() .insert(
+            project=self.projectid,
+            zone=self.zone,
+            body={
+                "baseInstanceName": self._generate_instance_name(),
+                "instanceTemplate": 'global/instanceTemplates/' +
+                template_name,
                 "name": group_name,
-                "targetSize": start_workers
-            }) \
-            .execute()
+                "targetSize": start_workers}) .execute()
 
         self.logger.info('Managed groupd {} created'.format(group_name))
-
 
     def _get_instance_config(self, resources_needed, queue_name):
         image_response = self.compute.images().getFromFamily(
@@ -194,7 +194,7 @@ class GCloudWorkerManager(object):
                 }]
             },
             "scheduling": {
-                "preemptilble":False
+                "preemptilble": False
             }
         }
 
@@ -203,7 +203,6 @@ class GCloudWorkerManager(object):
                 memstr2int(resources_needed['hdd']) / memstr2int('1Gb')
 
         return config
-
 
     def _stop_worker(self, worker_id, blocking=True):
         op = self.compute.instances().delete(
@@ -261,8 +260,8 @@ class GCloudWorkerManager(object):
                     project=self.projectid,
                     operation=operation).execute()
             else:
-                raise ValueError(('Unknown locality {} ' + 
-                    'should be zone or global'.format(locality)))
+                raise ValueError(('Unknown locality {} ' +
+                                  'should be zone or global'.format(locality)))
 
             if result['status'] == 'DONE':
                 self.logger.debug("done.")

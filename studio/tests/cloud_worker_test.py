@@ -17,6 +17,8 @@ except BaseException:
     'GOOGLE_APPLICATION_CREDENTIALS environment ' +
     'variable not set, won'' be able to use google cloud')
 class GCloudWorkerTest(unittest.TestCase):
+    _multiprocess_can_split_ = True
+
     def get_worker_manager(self):
         project = 'studio-ed756'
         return GCloudWorkerManager(project)
@@ -44,6 +46,7 @@ class GCloudWorkerTest(unittest.TestCase):
             script_args=['arg0'],
             expected_output='[ 2.  6.]',
         )
+
 
 @unittest.skipIf(
     not boto3,
