@@ -62,9 +62,14 @@ if [[ "$not_spot" -eq "0" ]]; then
         gcloud compute instance-groups managed delete-instances $group_name --zone $zone --instances $instance_name
     else
         template=$(gcloud compute instance-groups managed describe $group_name --zone $zone | grep "instanceTemplate" | awk '{print $2}')
-        echo "Deleting group $group_name and the template $template"
+        echo "Detaching myself, deleting group $group_name and the template $template"
+        gcloud compute instance-groups managed abandon-instances $group_name --zone $zone --instances $instance_name
+        sleep 5
         gcloud compute instance-groups managed delete $group_name --zone $zone --quiet
+        sleep 5
+        gcloud compute instance-templates delete $template --quiet
     fi
+
 fi
 echo "Shutting down"
 gcloud compute instances delete $instance_name --zone $zone --quiet 
