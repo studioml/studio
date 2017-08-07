@@ -142,7 +142,7 @@ class FirebaseArtifactStore(TartifactStore):
         self.logger.debug("Getting metainformation for a file at key {}"
                           .format(key))
         try:
-            if self.auth:
+            if self.auth and self.auth.get_token():
                 # pyrebase download does not work with files that require
                 # authentication...
                 # Need to rewrite

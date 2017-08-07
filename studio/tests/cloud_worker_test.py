@@ -33,6 +33,17 @@ class GCloudWorkerTest(unittest.TestCase):
             expected_output='[ 2.  6.]',
         )
 
+    def test_worker_spot(self):
+        experiment_name = 'test_gcloud_spot_worker_' + str(uuid.uuid4())
+        stubtest_worker(
+            self,
+            experiment_name=experiment_name,
+            runner_args=['--cloud=gcspot', '--force-git'],
+            config_name='test_config.yaml',
+            test_script='tf_hello_world.py',
+            script_args=['arg0'],
+            expected_output='[ 2.  6.]',
+        )
 
 @unittest.skipIf(
     not boto3,

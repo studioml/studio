@@ -7,6 +7,10 @@ key_name=$(curl "${metadata_url}/attributes/auth_key" -H  "Metadata-Flavor: Goog
 
 zone=$(curl "${metadata_url}/zone" -H  "Metadata-Flavor: Google")
 instance_name=$(curl "${metadata_url}/name" -H  "Metadata-Flavor: Google")
+group_name=$(curl "${metadata_url}/attributes/groupname" -H  "Metadata-Flavor: Google")
+
+echo Instance name is $instance_name
+echo Group name is $group_name
 
 cd ~
 
@@ -44,7 +48,22 @@ cd studio
 sudo pip install --upgrade pip 
 sudo pip install -e . --upgrade 
 mkdir /workspace && cd /workspace 
-studio-remote-worker --queue=$queue_name --verbose=debug
+studio-remote-worker --queue=$queue_name --verbose=debug --timeout=300
 
 # shutdown the instance
-gcloud compute instances delete $instance_name --zone $zone --quiet
+if [[ -z $(echo $group_name | grep "404 Not Found") ]]; then
+    current_size=$(gcloud compute instance-groups managed describe $group_name --zone $zone | grep "targetSize" | awk '{print $2}')
+    echo Current group size is $current_size
+    if [[ $current_size -gt 1 ]]; then
+        echo "Deleting myself (that is, $instance_name) from $group_name"
+        gcloud compute instance-groups managed delete-instances $group_name --zone $zone --instances $instance_name
+    else
+        template=$(gcloud compute instance-groups managed describe $group_name --zone $zone | grep "instanceTemplate" | awk '{print $2}')
+        echo "Deleting group $group_name and the template $template"
+        gcloud compute instance-groups managed delete $group_name --zone $zone --quiet
+        gcloud compute instance-templates delete $template --quiet
+    fi
+else
+    echo "Shutting down"
+    gcloud compute instances delete $instance_name --zone $zone --quiet 
+fi
