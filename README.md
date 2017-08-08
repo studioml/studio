@@ -57,18 +57,18 @@ TFStudio is released as a binary or source distribution using a hosted package a
 
 When working with the pypi command line tooling you should create a ~/.pyirc file with your account details, for example:
 ```
-  [distutils]
-  index-servers=
+[distutils]
+index-servers=
     pypi
     testpypi
 
-  [testpypi]
-  repository = https://testpypi.python.org/pypi
-  username = {your pipy account}
-  password = {your password}
+[testpypi]
+repository = https://testpypi.python.org/pypi
+username = {your pipy account}
+password = {your password}
 
-  [pypi]
-  username = {your pipy account}
+[pypi]
+username = {your pipy account}
 ```
 The command to push a release is as follows.
 
