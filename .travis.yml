@@ -12,7 +12,7 @@ before_install:
   - env
 
 install:
-  - cp pipyrc ~/.pypirc
+  - cp pypirc ~/.pypirc
   - sed -ri "s/{{.password}}/$PYPY_PASSWORD/" ~/.pypirc
   - pip install --user -r requirements.txt
 
