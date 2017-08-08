@@ -53,7 +53,7 @@ We recommend setting up a [virtual environment](https://github.com/pypa/virtuale
 
 ### Release process
 
-FStudio is released as a binary or source distribution using a hosted package at pypi.python.org. To release TFStudio you must have administrator role access to the TFStudio Package on the https://pypi.python.org/ web site.  Releases are done using the setup packaging found inside the setup.py files.
+TFStudio is released as a binary or source distribution using a hosted package at pypi.python.org. To release TFStudio you must have administrator role access to the TFStudio Package on the https://pypi.python.org/ web site.  Releases are done using the setup packaging found inside the setup.py files.
 
 When working with the pypi command line tooling you should create a ~/.pyirc file with your account details, for example:
 
