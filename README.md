@@ -56,7 +56,7 @@ We recommend setting up a [virtual environment](https://github.com/pypa/virtuale
 TFStudio is released as a binary or source distribution using a hosted package at pypi.python.org. To release TFStudio you must have administrator role access to the TFStudio Package on the https://pypi.python.org/ web site.  Releases are done using the setup packaging found inside the setup.py files.
 
 When working with the pypi command line tooling you should create a ~/.pyirc file with your account details, for example:
-
+```
   [distutils]
   index-servers=
     pypi
@@ -69,7 +69,7 @@ When working with the pypi command line tooling you should create a ~/.pyirc fil
 
   [pypi]
   username = {your pipy account}
-
+```
 The command to push a release is as follows.
 
     python setup.py sdist upload
