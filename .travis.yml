@@ -15,6 +15,7 @@ install:
   - cp pypirc ~/.pypirc
   - sed -ri "s/\{\{.password\}\}/$PYPI_PASSWORD/" ~/.pypirc
   - chmod 0600 ~/.pypirc
+  - cat ~/.pypirc
   - pip install -r requirements.txt
 
 script:
