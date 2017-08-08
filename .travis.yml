@@ -14,7 +14,8 @@ before_install:
 install:
   - cp pypirc ~/.pypirc
   - sed -ri "s/\{\{.password\}\}/$PYPI_PASSWORD/" ~/.pypirc
+  - chmod 0600 ~/.pypirc
   - pip install -r requirements.txt
 
 script:
-  - python setup.py dist upload
+  - python setup.py sdist upload
