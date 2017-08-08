@@ -1,0 +1,46 @@
+TensorFlow Studio
+
+TensorFlow studio is a model management framework written in Python to help simplify and expedite your model building experience. It was developed to minimize any overhead involved with the scheduling, running, monitoring or mangagement of artifacts of your machine learning experiments in Python without invasion of your code. Nobody wants to spend their time configuring different machines, setting up dependencies, or playing archeology to track down previous model artifacts. 
+
+Most of the features are compatible with any Python machine learning framework Keras, TensorFlow, scikit-learn, etc, some extra features are available for Keras and TensorFlow.
+
+TFStudio is hosted at https://github.com/ilblackdragon/studio.  More information including detailed documentation can be found at http://tfstudio.io.
+
+**Use TFStudio to:**
+
+* Capture experiment information- Python environment, files, dependencies and logs- without modifying the experiment code.
+* Monitor and organize experiments using a web dashboard that integrates with TensorBoard.
+* Run experiments locally, remotely, or in the cloud (Google Cloud or Amazon EC2)
+* Manage artifacts (persistence?)
+* Perform hyperparameter search
+* Create customizable Python environments for remote workers.
+
+
+Example usage
+
+Start visualizer:
+
+    studio ui
+
+Run your jobs:
+
+    studio run myfile.py
+
+You can see results of your job at http://127.0.0.1:5000. 
+Run `studio {ui|run} --help` for a full list of ui / runner options
+
+
+Installation
+pip install TFStudio from the git project directory:
+
+    git clone https://github.com/ilblackdragon/studio && cd studio && pip install -e .
+
+or
+
+    pip install TFStudio
+
+Certain types of runners can make use of the studio software distribution to start projects without any intervention, devops less runners.  To include the software distribution, add the tar.gz file to your workspace directory under a dist subdirectory.  Runners supporting software distribution will unroll the software and install it using virtualenv.
+
+We recommend setting up a virtual environment, please see https://github.com/pypa/virtualenv.
+
+For detailed information about how to setup your own compute resources for use with TFStudio please visit http://tfstudio.io/.

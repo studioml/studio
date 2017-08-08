@@ -55,12 +55,14 @@ with open('requirements.txt') as f:
 # to access the google and AWS cloud storage
 
 setup(
-    name='studio',
-    version='0.0',
+    name='TFStudio',
+    version='0.0.1-2',
     description='TensorFlow model and data management tool',
     packages=['studio'],
-    long_description=read('README.md'),
+    long_description=read('README'),
     url='https://github.com/ilblackdragon/studio',
+    license='Apache License, Version 2.0',
+    keywords='TensorFlow TFStudio TensorFlowStudio Studio Keras scikit-learn',
     author='Illia Polosukhin',
     author_email='ilblackdragon@XIX.ai',
     #        data_files=[('bin', ['studio/scripts/*'])],
@@ -77,5 +79,16 @@ setup(
     tests_suite='nose.collector',
     tests_require=['nose'],
     cmdclass={'develop': MyDevelop, 'install': MyInstall},
+    classifiers=[
+            "Development Status :: 3 - Alpha",
+            "Environment :: Console",
+            "Intended Audience :: Developers",
+            "Intended Audience :: Science/Research",
+            "Operating System :: POSIX :: Linux",
+            "Programming Language :: Python",
+            "Topic :: Scientific/Engineering :: Artificial Intelligence",
+            "Topic :: Utilities",
+            "License :: OSI Approved :: Apache Software License",
+    ],
     install_requires=required,
     zip_safe=False)
