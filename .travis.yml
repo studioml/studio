@@ -9,10 +9,11 @@ env:
   fast_finish: true
 
 before_install:
-  - env
+  - env | sort
 
 install:
   - cp pypirc ~/.pypirc
+  - sed -ri "s/\{\{.user\}\}/$PYPI_USER/" ~/.pypirc
   - sed -ri "s/\{\{.password\}\}/$PYPI_PASSWORD/" ~/.pypirc
   - chmod 0600 ~/.pypirc
   - cat ~/.pypirc

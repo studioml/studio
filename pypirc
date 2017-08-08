@@ -1,12 +1,13 @@
-distutils]
+[distutils]
 index-servers=
     pypi
     testpypi
 
 [testpypi]
 repository = https://testpypi.python.org/pypi
-username = karlmutch
+username = {{.user}}
 password = {{.password}}
 
 [pypi]
-username = karlmutch
+username = {{.user}}
+password = {{.password}}
