@@ -51,6 +51,12 @@ Certain types of runners can make use of the studio software distribution to sta
 
 We recommend setting up a [virtual environment](https://github.com/pypa/virtualenv).
 
+### CI/CD pipeline
+
+The TFStudio project distributes official releases using a travis based build and deploy pipeline.  The Travis project that builds the official github repository for TFStudio has associated with it encrypted user and password credentials that the travis yml file refers to, these secrets can be updated using the Travis configuration found at https://travis-ci.com/SentientTechnologies/studio/settings.  The PYPI_PASSWORD and PYPI_USER variables should point at an owner account for the project.  To rotate these values remove the old ones using the settings page and re-add then same variables with new values.
+
+When code is pushed to the master branch in the github repository a traditional build will be performed by travis.  To push a release after the build is complete add a semver compatible version number as a tag to the repository and do a 'git push --tags' to trigger the deployment to pypi.  Non tagged builds are never pushed to pypi.  Any tag will results in a push to pypi so care should be taken to manage the visible versions using the PYPI_USER account.
+
 ### Release process
 
 TFStudio is released as a binary or source distribution using a hosted package at pypi.python.org. To release TFStudio you must have administrator role access to the TFStudio Package on the https://pypi.python.org/ web site.  Releases are done using the setup packaging found inside the setup.py files.

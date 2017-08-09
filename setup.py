@@ -5,6 +5,8 @@ from subprocess import call
 from setuptools.command.install import install
 from setuptools.command.develop import develop
 
+VERSION = ""
+
 # This file contains metadata related to the tfstudio client and python base
 # server software
 
@@ -17,6 +19,9 @@ class MyDevelop(develop):
 
 
 class MyInstall(install):
+    if "TRAVIS_TAG" in os.environ:
+      global VERSION
+      VERSION = os.environ["TRAVIS_TAG"]
     def run(self):
         call(["pip install -r requirements.txt --no-clean"], shell=True)
         copyconfig()
@@ -56,7 +61,7 @@ with open('requirements.txt') as f:
 
 setup(
     name='TFStudio',
-    version='0.0.1-2',
+    version=VERSION,
     description='TensorFlow model and data management tool',
     packages=['studio'],
     long_description=read('README'),
