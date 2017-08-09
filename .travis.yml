@@ -26,5 +26,7 @@ script:
 deploy:
   provider: pypi
   distributions: "sdist"
+  user: $PYPI_US
+  password: $PYPI_PASSWORD
   on:
     tags: true
