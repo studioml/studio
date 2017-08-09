@@ -19,6 +19,7 @@ class MyDevelop(develop):
 
 
 class MyInstall(install):
+    global VERSION
     VERSION = os.environ["TRAVIS_TAG"]
     def run(self):
         call(["pip install -r requirements.txt --no-clean"], shell=True)
