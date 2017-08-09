@@ -220,9 +220,7 @@ def main(args=sys.argv):
         logger.info("Added experiment " + e.key)
 
     if runner_args.cloud is not None:
-        assert (runner_args.cloud == 'gcloud' or
-                runner_args.cloud == 'ec2' or
-                runner_args.cloud == 'ec2spot')
+        assert runner_args.cloud in ['gcloud', 'gcspot', 'ec2', 'ec2spot']
 
         assert runner_args.queue is None, \
             '--queue argument cannot be provided with --cloud argument'
@@ -232,7 +230,7 @@ def main(args=sys.argv):
             config['database']['apiKey']
         )
 
-        if runner_args.cloud == 'gcloud':
+        if runner_args.cloud in ['gcloud', 'gcspot']:
 
             queue_name = 'pubsub_' + str(uuid.uuid4())
 
@@ -242,8 +240,7 @@ def main(args=sys.argv):
                 zone=config['cloud']['zone']
             )
 
-        if runner_args.cloud == 'ec2' or \
-           runner_args.cloud == 'ec2spot':
+        if runner_args.cloud in ['ec2', 'ec2spot']:
 
             queue_name = 'sqs_' + str(uuid.uuid4())
 
