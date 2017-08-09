@@ -31,16 +31,22 @@ Run `studio {ui|run} --help` for a full list of ui / runner options
 
 
 Installation
-pip install TFStudio from the git project directory:
 
-    git clone https://github.com/ilblackdragon/studio && cd studio && pip install -e .
-
-or
+pip install TFStudio from the master pypi repositry:
 
     pip install TFStudio
 
-Certain types of runners can make use of the studio software distribution to start projects without any intervention, devops less runners.  To include the software distribution, add the tar.gz file to your workspace directory under a dist subdirectory.  Runners supporting software distribution will unroll the software and install it using virtualenv.
+or, install the source and development environment for TFStudio from the git project directory:
+
+    git clone https://github.com/ilblackdragon/studio && cd studio && pip install -e .
 
 We recommend setting up a virtual environment, please see https://github.com/pypa/virtualenv.
 
 For detailed information about how to setup your own compute resources for use with TFStudio please visit http://tfstudio.io/.
+
+Alpha program instructions
+
+The following instructions only apply to the alpha version of TFStudio and specific open source components.
+
+Some runners can make use of the studio software distribution to start projects without any intervention, devops less runners.  To include the software distribution, add the tar.gz file to your workspace directory under a dist subdirectory for the runner.  Runners supporting software distribution will unroll the software and install it using virtualenv.
+
