@@ -1,0 +1,3 @@
+#!python
+from studio import cli
+cli.main()
