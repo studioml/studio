@@ -55,13 +55,33 @@ def _list(args, cli_args):
         elif args[0] == 'project':
             assert len(args) == 2
             experiments = db.get_project_experiments(args[1])
+        elif args[0] == 'users':
+            assert len(args) == 1
+            users = db.get_users()
+            for u in users.keys():
+                print users[u].get('email')
+            return 
+        elif args[0] == 'user':
+            assert len(args) == 2
+            users = db.get_users()
+            user_ids = [u for u in users if users[u].get('email') == args[1]]
+            assert len(user_ids) == 1, \
+                'The user with email ' + args[1] + \
+                'not found!'
+            experiments = db.get_user_experiments(user_ids[0])
+        elif args[0] == 'all':
+            assert len(args) == 1
+            users = db.get_users()
+            experiments = []
+            for u in users:
+                experiments += db.get_user_experiments(u)
         else:
             get_logger().critical('Unknown command ' + args[0])
             return
 
     # TODO list experiments of other user or all
 
-    experiments.sort(key=lambda e:e.time_added)
+    experiments.sort(key=lambda e:-e.time_added)
     table = [['Time added', 'Key', 'Project', 'Status']]
 
     for e in experiments:
