@@ -98,15 +98,15 @@ but if TFstudio is running, it renews the tokens automatically.
 
 Note that refresh tokens do not expire; this means you can use these tokens on multiple machines, e.g. when you want to use a Google account authentication on a remote server but don't want to open extra ports. Simply copy the contents of ~/.tfstudio/keys folder to the desired machine.
 
-Currently TensorFlow studio supports 2 methods of authentication: email and password and using a Google account.
+Currently TensorFlow studio supports 2 methods of authentication: email & password and using a Google account.
 To use studio runner and studio ui in guest mode, in studio/default_config.yaml, uncomment "guest: true" under the database section.
 
 Alternatively, you can set up your own database and configure TFstudio to use it. See [setting up database](docs/setup_database.md). This is a preferred option if you want to keep your models and artifacts private. 
 
 
 ### Email / password authentication
-If you have an email and password account set up, you can use this method. In default_config.yaml, uncomment "use_email_auth: true" 
-under the database section. If the token is not found or expired when you run studio ui / studio runner, you will be asked fof your email and password for authentication. Note that the password is NOT stored on your computer (but tokens are), 
+If you have an email & password account set up, you can use this method. In default_config.yaml, uncomment "use_email_auth: true" 
+under the database section. If the token is not found or expired when you run studio ui / studio runner, you will be asked for your email and password for authentication. Note that the password is NOT stored on your computer (but tokens are), 
 so you will be asked for your password after an hour of inactivity. 
 
 ### Google account authentication
