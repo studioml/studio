@@ -53,13 +53,13 @@ We recommend setting up a [virtual environment](https://github.com/pypa/virtuale
 
 ### CI/CD pipeline
 
-The TFStudio project distributes official releases using a travis based build and deploy pipeline.  The Travis project that builds the official github repository for TFStudio has associated with it encrypted user and password credentials that the travis yml file refers to, these secrets can be updated using the Travis configuration found at https://travis-ci.com/SentientTechnologies/studio/settings.  The PYPI_PASSWORD and PYPI_USER variables should point at an owner account for the project.  To rotate these values remove the old ones using the settings page and re-add then same variables with new values.
+The TFstudio project distributes official releases using a travis based build and deploy pipeline.  The Travis project that builds the official github repository for TFstudio has associated with it encrypted user and password credentials that the travis yml file refers to. These secrets can be updated using the Travis configuration found at https://travis-ci.com/SentientTechnologies/studio/settings.  The PYPI_PASSWORD and PYPI_USER variables should point at an owner account for the project. To rotate these values, remove the old ones using the settings page and re-add then same variables with new values.
 
-When code is pushed to the master branch in the github repository a traditional build will be performed by travis.  To push a release after the build is complete add a semver compatible version number as a tag to the repository and do a 'git push --tags' to trigger the deployment to pypi.  Non tagged builds are never pushed to pypi.  Any tag will results in a push to pypi so care should be taken to manage the visible versions using the PYPI_USER account.
+When code is pushed to the master branch in the github repository, a traditional build will be performed by travis.  To push a release after the build is complete, add a server compatible version number as a tag to the repository and do a 'git push --tags' to trigger the deployment to pypi.  Non-tagged builds are never pushed to pypi.  Any tag will result in a push to pypi, so care should be taken to manage the visible versions using the PYPI_USER account.
 
 ### Release process
 
-TFStudio is released as a binary or source distribution using a hosted package at pypi.python.org. To release TFStudio you must have administrator role access to the TFStudio Package on the https://pypi.python.org/ web site.  Releases are done using the setup packaging found inside the setup.py files.
+TFstudio is released as a binary or source distribution using a hosted package at pypi.python.org. To release TFstudio, you must have administrator role access to the TFstudio Package on the https://pypi.python.org/ web site.  Releases are done using the setup packaging found inside the setup.py files.
 
 When working with the pypi command line tooling you should create a ~/.pyirc file with your account details, for example:
 ```
@@ -80,14 +80,14 @@ The command to push a release is as follows.
 
     python setup.py sdist upload
 
-If you wish to test releases and not pollute our pypi production release train and numbering please use the '-r' option to specify the test pypi repository.  pypi releases are idempotent.
+If you wish to test releases and not pollute our pypi production release train and numbering, please use the '-r' option to specify the test pypi repository.  pypi releases are idempotent.
 
 ### Running tests
 To run the unit and regression tests, run 
 
     python $(which nosetests) --processes=8 --process-timeout=600
 
-Note that simply `nosetests` tends not to use virtualenv correctly. If you have application credentials configured 
+Note that simply running `nosetests` tends to not use virtualenv correctly. If you have application credentials configured 
 to work with distributed queues and cloud workers, those will be tested as well. Otherwise, respective tests will be skipped. The total test runtime, when run in parallel 
 as in the command above, should be no more than 10 minutes. Most of the tests are I/O limited, so parallel execution speeds up things quite a bit. The longest test is the
 gpu cloud worker test in EC2 cloud (takes about 500 seconds due to installation of the drivers / CUDA on the EC2 instance).
@@ -110,7 +110,7 @@ under the database section. If the token is not found or expired when you run st
 so you will be asked for your password after an hour of inactivity. 
 
 ### Google account authentication
-If you don't have an email and password account set up, don't despair! Any user with a Google account can use TensorFlow studio as a 
+If you don't have an email & password account set up, don't despair! Any user with a Google account can use TensorFlow studio as a 
 first-class citizen. If a token is not found when you run studio, the Web UI will redirect you to the Google account authentication app where you will be issued a new authentication token.
 
 ## Further reading and cool features
