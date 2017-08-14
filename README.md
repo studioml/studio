@@ -1,20 +1,16 @@
-# TensorFlow Studio
-<p align="center">
-  <img src="logo.png" width="250"/>
-</p>
+# Studio
 
-[![Hex.pm](https://img.shields.io/hexpm/l/plug.svg)](https://github.com/ilblackdragon/studio/blob/master/LICENSE)
-[![GitHub issues](https://img.shields.io/github/issues/badges/shields.svg)](https://github.com/ilblackdragon/studio/issues)
+[![Hex.pm](https://img.shields.io/hexpm/l/plug.svg)](https://github.com/studioml/studio/blob/master/LICENSE)
 
-TensorFlow studio is a model management framework written in Python to help simplify and expedite your model building experience. It was developed to minimize any overhead involved with the scheduling, running, monitoring or mangagement of artifacts of your machine learning experiments in Python without invasion of your code. No one wants to spend their time configuring different machines, setting up dependencies, or playing archeology to track down previous model artifacts. 
+Studio is a model management framework written in Python to help simplify and expedite your model building experience. It was developed to minimize any overhead involved with the scheduling, running, monitoring or mangagement of artifacts of your machine learning experiments in Python without invasion of your code. No one wants to spend their time configuring different machines, setting up dependencies, or playing archeology to track down previous model artifacts. 
 
 Most of the features are compatible with any Python machine learning framework ([Keras](https://github.com/fchollet/keras), [TensorFlow](https://github.com/tensorflow/tensorflow), [scikit-learn](https://github.com/scikit-learn/scikit-learn), etc); some extra features are available for Keras and TensorFlow.
 
-**Use TFstudio to:** 
+**Use Studio to:** 
 * Capture experiment information- Python environment, files, dependencies and logs- without modifying the experiment code.
 * Monitor and organize experiments using a web dashboard that integrates with TensorBoard.
 * Run experiments locally, remotely, or in the cloud (Google Cloud or Amazon EC2)
-* Manage artifacts (persistence?)
+* Manage artifacts 
 * Perform hyperparameter search
 * Create customizable Python environments for remote workers.
     
@@ -37,7 +33,7 @@ Run `studio {ui|run} --help` for a full list of ui / runner options
 ### Installation Packaging
 Once open sourced, we'll publish package to PyPI. For now, pip install it from the git project directory:
 
-    git clone https://github.com/ilblackdragon/studio && cd studio && pip install -e .
+    git clone https://github.com/studioml/studio && cd studio && pip install -e .
 
 A setup.py is included in the top level of the git repository that allows the creation of tar archives for installation on runners and other systems where git is not the primary use case for handling Python artifacts.  To create the installable, use the following command from the top level directory of a cloned repository:
 
@@ -53,13 +49,13 @@ We recommend setting up a [virtual environment](https://github.com/pypa/virtuale
 
 ### CI/CD pipeline
 
-The TFstudio project distributes official releases using a travis based build and deploy pipeline.  The Travis project that builds the official github repository for TFstudio has associated with it encrypted user and password credentials that the travis yml file refers to. These secrets can be updated using the Travis configuration found at https://travis-ci.com/SentientTechnologies/studio/settings.  The PYPI_PASSWORD and PYPI_USER variables should point at an owner account for the project. To rotate these values, remove the old ones using the settings page and re-add then same variables with new values.
+The Studio project distributes official releases using a travis based build and deploy pipeline.  The Travis project that builds the official github repository for Studio has associated with it encrypted user and password credentials that the Travis yml file refers to. These secrets can be updated using the Travis configuration found at https://travis-ci.com/SentientTechnologies/studio/settings.  The PYPI_PASSWORD and PYPI_USER variables should point at an owner account for the project. To rotate these values, remove the old ones using the settings page and re-add then same variables with new values.
 
-When code is pushed to the master branch in the github repository, a traditional build will be performed by travis.  To push a release after the build is complete, add a server compatible version number as a tag to the repository and do a 'git push --tags' to trigger the deployment to pypi.  Non-tagged builds are never pushed to pypi.  Any tag will result in a push to pypi, so care should be taken to manage the visible versions using the PYPI_USER account.
+When code is pushed to the master branch in the github repository, a traditional build will be performed by Travis.  To push a release after the build is complete, add a server compatible version number as a tag to the repository and do a 'git push --tags' to trigger the deployment to pypi.  Non-tagged builds are never pushed to pypi.  Any tag will result in a push to pypi, so care should be taken to manage the visible versions using the PYPI_USER account.
 
 ### Release process
 
-TFstudio is released as a binary or source distribution using a hosted package at pypi.python.org. To release TFstudio, you must have administrator role access to the TFstudio Package on the https://pypi.python.org/ web site.  Releases are done using the setup packaging found inside the setup.py files.
+Studio is released as a binary or source distribution using a hosted package at pypi.python.org. To release Studio, you must have administrator role access to the Studio Package on the https://pypi.python.org/ web site.  Releases are done using the setup packaging found inside the setup.py files.
 
 When working with the pypi command line tooling you should create a ~/.pyirc file with your account details, for example:
 ```
@@ -94,14 +90,14 @@ gpu cloud worker test in EC2 cloud (takes about 500 seconds due to installation 
 
 ## Authentication 
 Both studio ui and studio runner use the same authentication tokens for a database backend. The tokens are valid for one hour, 
-but if TFstudio is running, it renews the tokens automatically. 
+but if Studio is running, it renews the tokens automatically. 
 
 Note that refresh tokens do not expire; this means you can use these tokens on multiple machines, e.g. when you want to use a Google account authentication on a remote server but don't want to open extra ports. Simply copy the contents of ~/.tfstudio/keys folder to the desired machine.
 
-Currently TensorFlow studio supports 2 methods of authentication: email & password and using a Google account.
+Currently Studio supports 2 methods of authentication: email & password and using a Google account.
 To use studio runner and studio ui in guest mode, in studio/default_config.yaml, uncomment "guest: true" under the database section.
 
-Alternatively, you can set up your own database and configure TFstudio to use it. See [setting up database](docs/setup_database.md). This is a preferred option if you want to keep your models and artifacts private. 
+Alternatively, you can set up your own database and configure Studio to use it. See [setting up database](docs/setup_database.md). This is a preferred option if you want to keep your models and artifacts private. 
 
 
 ### Email / password authentication
@@ -110,7 +106,7 @@ under the database section. If the token is not found or expired when you run st
 so you will be asked for your password after an hour of inactivity. 
 
 ### Google account authentication
-If you don't have an email & password account set up, don't despair! Any user with a Google account can use TensorFlow studio as a 
+If you don't have an email & password account set up, don't despair! Any user with a Google account can use Studio as a 
 first-class citizen. If a token is not found when you run studio, the Web UI will redirect you to the Google account authentication app where you will be issued a new authentication token.
 
 ## Further reading and cool features
