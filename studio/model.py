@@ -480,8 +480,10 @@ class FirebaseProvider(object):
            experiment.time_last_checkpoint:
 
             self.logger.debug("Starting info download for " + key)
-            # self.pool.func_async(download_info, ())
-            Thread(target=download_info).start()
+            if self.pool:
+                self.pool.map_async(download_info, [None])
+            else:
+                download_info()
 
     def get_user_experiments(self, userid=None, blocking=True):
         experiment_keys = self.__getitem__(
@@ -525,10 +527,14 @@ class FirebaseProvider(object):
                 except BaseException:
                     pass
 
-        if blocking:
-            self.pool.map(cache_valid_experiment, experiment_keys)
+        if self.pool:
+            if blocking:
+                self.pool.map(cache_valid_experiment, experiment_keys)
+            else:
+                self.pool.map_async(cache_valid_experiment, experiment_keys)
         else:
-            self.pool.map_async(cache_valid_experiment, experiment_keys)
+            for e in experiment_keys:
+                cache_valid_experiment(e)
 
         return [self._experiment_cache[key] for key in experiment_keys
                 if key in self._experiment_cache.keys()]
@@ -551,6 +557,13 @@ class FirebaseProvider(object):
             return self.auth.expired
         else:
             return False
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args):
+        if self.pool:
+            self.pool.close()
 
 
 class PostgresProvider(object):

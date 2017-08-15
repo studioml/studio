@@ -75,6 +75,7 @@ setup(
             'studio/scripts/studio',
             'studio/scripts/studio-ui',
             'studio/scripts/studio-run',
+            'studio/scripts/studio-runs',
             'studio/scripts/studio-local-worker',
             'studio/scripts/studio-remote-worker',
             'studio/scripts/studio-start-remote-worker',
