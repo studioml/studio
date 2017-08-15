@@ -12,6 +12,8 @@ import shutil
 
 import fs_tracker
 import util
+import tarfile
+import urllib
 
 logging.basicConfig()
 
@@ -21,7 +23,10 @@ class TartifactStore(object):
     def __init__(self, measure_timestamp_diff=True):
 
         if measure_timestamp_diff:
-            self.timestamp_shift = self._measure_timestamp_diff()
+            try:
+                self.timestamp_shift = self._measure_timestamp_diff()
+            except BaseException:
+                self.timestamp_shift = 0
         else:
             self.timestamp_shift = 0
 
@@ -243,3 +248,7 @@ class TartifactStore(object):
     def delete_artifact(self, artifact):
         if 'key' in artifact.keys():
             self._delete_file(artifact['key'])
+    
+    def stream_artifact(self, artifact):
+        url = self.get_artifact_url(artifact)
+        return tarfile.open(fileobj=urllib.urlopen(url), mode='r|gz')

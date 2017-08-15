@@ -1,6 +1,9 @@
 import hashlib
 import StringIO
 import re
+import struct
+
+from tensorflow.core.util import event_pb2
 
 
 def remove_backspaces(line):
@@ -21,3 +24,35 @@ def sha256_checksum(filename, block_size=65536):
         for block in iter(lambda: f.read(block_size), b''):
             sha256.update(block)
     return sha256.hexdigest()
+
+
+
+def event_reader(fileobj):
+
+    if isinstance(fileobj, str):
+        fileobj = open(fileobj, 'rb')
+
+    header_len = 12
+    footer_len = 4
+    size_len = 8
+
+
+    while True:
+        try:
+            data_len = struct.unpack('Q', fileobj.read(size_len))[0]
+            fileobj.read(header_len - size_len)
+
+            data = fileobj.read(data_len)
+
+            event = None
+            event = event_pb2.Event()
+            event.ParseFromString(data)
+
+            fileobj.read(footer_len)
+            yield event
+        except BaseException:
+            break
+
+    fileobj.close()
+
+

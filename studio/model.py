@@ -1,8 +1,11 @@
 """Data providers."""
 
 import os
-import pip
 import uuid
+try:
+    import pip
+except BaseException:
+    pip = None
 
 import yaml
 import pyrebase
@@ -10,10 +13,19 @@ import logging
 import time
 import glob
 from threading import Thread
-from multiprocessing.pool import ThreadPool
+try:
+    from multiprocessing.pool import ThreadPool
+except BaseException:
+    ThreadPool = None
+
+ThreadPool = None
+
 import subprocess
 
-import tensorflow as tf
+try:
+    import tensorflow as tf
+except:
+    tf = None
 try:
     import keras
 except BaseException:
@@ -153,7 +165,11 @@ class FirebaseProvider(object):
         self._experiment_cache = {}
 
         iothreads = 10
-        self.pool = ThreadPool(iothreads)
+
+        if ThreadPool:
+            self.pool = ThreadPool(iothreads)
+        else:
+            self.pool = None
 
         if self.auth and not self.auth.expired:
             self.__setitem__(self._get_user_keybase() + "email",
@@ -393,13 +409,13 @@ class FirebaseProvider(object):
 
         info['logtail'] = self._get_experiment_logtail(experiment)
 
-        tbpath = self.store.get_artifact(experiment.artifacts['tb'])
-        eventfiles = glob.glob(os.path.join(tbpath, "*"))
 
         if experiment.metric is not None:
             metric_str = experiment.metric.split(':')
             metric_name = metric_str[0]
             metric_type = metric_str[1] if len(metric_str) > 1 else None
+
+            tbtar = self.store.stream_artifact(experiment.artifacts['tb'])
 
             if metric_type == 'min':
                 def metric_accum(x, y): return min(x, y) if x else y
@@ -409,30 +425,29 @@ class FirebaseProvider(object):
                 def metric_accum(x, y): return y
 
             metric_value = None
-            for f in eventfiles:
-                for e in tf.train.summary_iterator(f):
-                    for v in e.summary.value:
-                        if v.tag == metric_name:
-                            metric_value = metric_accum(
-                                metric_value, v.simple_value)
+            for f in tbtar:
+                if f.isreg():
+                    for e in util.event_reader(tbtar.extractfile(f)):
+                        for v in e.summary.value:
+                            if v.tag == metric_name:
+                                metric_value = metric_accum(
+                                    metric_value, v.simple_value)
 
             info['metric_value'] = metric_value
 
         return info
 
     def _get_experiment_logtail(self, experiment):
-        logpath = self.store.get_artifact(experiment.artifacts['output'])
+        try:
+            tarf = self.store.stream_artifact(experiment.artifacts['output'])
 
-        if os.path.exists(logpath):
-            tailp = subprocess.Popen(
-                ['tail', '-50', logpath], stdout=subprocess.PIPE)
-            stdoutdata = tailp.communicate()[0]
-            logtail = util.remove_backspaces(stdoutdata).split('\n')
-
-            return logtail
-        else:
+            logdata = tarf.extractfile(tarf.members[0]).read()
+            logdata = util.remove_backspaces(logdata).split('\n')
+            return logdata
+        except BaseException as e:
+            self.logger.exception(e)
             return None
-
+            
     def get_experiment(self, key, getinfo=True):
         data = self.__getitem__(self._get_experiments_keybase() + key)
         assert data, "data at path %s not found! " % (
@@ -453,16 +468,6 @@ class FirebaseProvider(object):
         if key not in self._experiment_info_cache.keys():
             self._experiment_info_cache[key] = ({}, time.time())
 
-        try:
-            pass
-            # self._experiment_info_cache[key]['logtail'] = \
-            #    self._get_experiment_logtail(experiment)
-
-            # self._experiment_info_cache[key] = \
-            #     self._get_experiment_info(experiment)
-        except Exception:
-            pass
-
         def download_info():
             try:
                 self._experiment_info_cache[key] = (
@@ -481,11 +486,19 @@ class FirebaseProvider(object):
 
             self.logger.debug("Starting info download for " + key)
             if self.pool:
-                self.pool.map_async(download_info, [None])
+                Thread(target=download_info).start()
             else:
                 download_info()
 
     def get_user_experiments(self, userid=None, blocking=True):
+        if userid and '@' in userid:
+            users = self.get_users()
+            user_ids = [u for u in users if users[u].get('email') == userid]
+            if len(user_ids) < 1:
+                return None
+            else:
+                userid = user_ids[0]
+
         experiment_keys = self.__getitem__(
             self._get_user_keybase(userid) + "/experiments")
         if not experiment_keys:
@@ -619,6 +632,9 @@ class PostgresProvider(object):
         raise NotImplementedError()
 
 
+
+
+
 def get_config(config_file=None):
 
     config_paths = []
@@ -652,7 +668,7 @@ def get_config(config_file=None):
                      .format(config_paths))
 
 
-def get_db_provider(config=None, blocking_auth=True):
+def get_db_provider(config=None, blocking_auth=True): 
     if not config:
         config = get_config()
     verbose = parse_verbosity(config.get('verbose'))

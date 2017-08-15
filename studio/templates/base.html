@@ -5,7 +5,12 @@
       <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
       <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
       <link href="https://cdnjs.cloudflare.com/ajax/libs/datatables/1.10.12/css/dataTables.bootstrap.min.css" rel="stylesheet"/><div class="container">  
-     
+
+      <script src="https://www.gstatic.com/firebasejs/3.2.1/firebase.js"></script>
+      <script src="https://www.gstatic.com/firebasejs/3.1.0/firebase-app.js"></script>
+      <script src="https://www.gstatic.com/firebasejs/3.1.0/firebase-auth.js"></script>
+      <script src="https://www.gstatic.com/firebasejs/ui/live/0.5/firebase-ui-auth.js"></script>    
+
       <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
       <script src="https://cdnjs.cloudflare.com/ajax/libs/datatables/1.10.12/js/jquery.dataTables.min.js"></script>
       <script src="https://cdnjs.cloudflare.com/ajax/libs/datatables/1.10.12/js/dataTables.bootstrap.min.js"></script>
@@ -38,52 +43,53 @@
         </div>
       </nav>
 
+      <div id="logged-out">
+    	<h1>Studio.ML</h1>
+    	<h3>Sign in to access your experiments</h3>
+    	<div id="firebaseui-auth-container"></div>
+  	 </div>
+
+	  <div id="logged-in">     	 
+
       {% macro experimenttable(experiments,showproject=true) -%}
-            <table class="table table-striped" id=experimentTable>
-                <thead> 
-                        <tr>
-                            <th>Time added </th>
-                            <th>Key</th>
-                            <th>Metric Type</th>
-                            <th>Metric Value</th>
-                            {% if showproject %}
-                                <th>Project</th>
-                            {% endif %}
-                            <th>Filename</th>
-                            <th>Status</th>
-                        </tr>
-                </thead>
-                    
-            {% for experiment in experiments %}
-                <tr>
-                    <td>{{ experiment.time_added | format_time }}</td>
-                    <td><a href="/experiments/{{ experiment.key }}">{{ experiment.key }}</a></td>
-                    <td>{{ experiment.metric }}</td>
-
-                    {% if experiment.info and experiment.info.get('metric_value') %}
-                        <td>{{ '%.4f' | format(experiment.info['metric_value']|float) }}</td>
-                    {% else %}
-                        <td> None </td>
-                    {% endif %}
-                     
-                    {% if showproject %}   
-                        <td><a href="/project/{{ experiment.project }}">{{ experiment.project }}</a></td>
-                    {% endif %}
-
-                    <td>{{ experiment.filename }}</td>
-                    <td>{{ experiment.status }}</td>
-                </tr>
-            {% endfor %}
-            </table>
+            <table class="table table-striped" id=experimentTable> </table>
             <script>
                 $(document).ready(function() {
                         $('#experimentTable').DataTable({
                             "order":[[0, "desc"]],
                             "paging":false,
-                            "stateSave": true
+                            "stateSave": true,
+                            "columns": [
+                                {
+                                    "title":"Time added",
+                                    "render":function(data, type, row) {
+                                        return new Date(data * 1000)
+                                    }   
+                                },
+                                {
+                                    "title":"Key",
+                                    "render":function(data, type, row) {
+                                        return '<a href="experiments/' + data + '">' + data + '</a>' 
+                                    }  
+                                },
+                                {"title":"Metric"},
+                                {
+                                    "title":"Metric Value",
+                                    "render":function(data, type, row) {
+                                        return data.toFixed(4)
+                                    }
+                                },
+                                {
+                                    "title":"Project",
+                                    "render":function(data, type, row) {
+                                        return '<a href="experiments/' + data + '">' + data + '</a>' 
+                                    }  
+                                },
+                                {"title":"Status"}
+                            ]
                         } );
 
-                        loadExperiments()
+                        // loadExperiments()
                 });
 
                 function loadExperiments() {
@@ -136,12 +142,12 @@
 
  
 
-				$(function(){
+				$(function() {
   					var config = {
     					apiKey: "{{ api_key }}",
-    					authDomain: "{{ auth_domain }}",
-    					//databaseURL: "https://<DATABASE_NAME>.firebaseio.com",
-    					//storageBucket: "<BUCKET>.appspot.com",
+    					authDomain: "{{ project_id }}.firebaseapp.com",
+    					databaseURL: "https://{{ project_id }}.firebaseio.com",
+    					storageBucket: "{{ project_id }}.appspot.com",
   					};
 
   					var userIdToken = null;
@@ -166,23 +172,60 @@
 
           						/* Now that the user is authenicated, fetch the notes. */
           						// fetchNotes();
+                            
+                                get_my_experiments(userIdToken)
 								
-
           						$('#user').text(welcomeName);
           						$('#logged-in').show();
 
-        					a});
+        					});
 
       						} else {
         						$('#logged-in').hide();
         						$('#logged-out').show();
-
       						}
-    // [END onAuthStateChanged]
+                        // [END onAuthStateChanged]
+                        });
+                    }
+                    configureFirebaseLogin();
+                    configureFirebaseLoginWidget();
+                });
 
-    });
+            
 
-  }
+            function get_my_experiments(userIdToken) {
+                $.ajax(
+                    '/api/get_user_experiments',
+                    {
+                        headers: {
+                            "Authorization": "Bearer " + userIdToken
+                        },
+                        method: 'POST'
+                    }
+                ).then(fillTable);
+            }
+
+            function fillTable(data) {
+                $('#experimentTable').DataTable().clear()
+                response_data = JSON.parse(data)
+                if (response_data.status == 'ok') {
+                    
+                    for (var i in response_data.experiments) {
+                        experiment = response_data.experiments[i]
+                        new_row = [
+                            experiment.time_added,
+                            experiment.key,
+                            experiment.metric,
+                            experiment.info.metric_value,
+                            experiment.project,
+                            experiment.status
+                        ]
+                        console.log(new_row)
+                        $('#experimentTable').DataTable().row.add(new_row)
+                    }
+                    $('#experimentTable').DataTable().draw()
+                }
+            }
 
 
             function configureFirebaseLoginWidget() {
@@ -191,10 +234,10 @@
                     'signInOptions': [
                         // Leave the lines as is for the providers you want to offer your users.
                         firebase.auth.GoogleAuthProvider.PROVIDER_ID,
-                        firebase.auth.FacebookAuthProvider.PROVIDER_ID,
-                        firebase.auth.TwitterAuthProvider.PROVIDER_ID,
-                        firebase.auth.GithubAuthProvider.PROVIDER_ID,
-                        firebase.auth.EmailAuthProvider.PROVIDER_ID
+                        // firebase.auth.FacebookAuthProvider.PROVIDER_ID,
+                        // firebase.auth.TwitterAuthProvider.PROVIDER_ID,
+                        // firebase.auth.GithubAuthProvider.PROVIDER_ID,
+                        // firebase.auth.EmailAuthProvider.PROVIDER_ID
                      ],
                      // Terms of service url
                      //`'tosUrl': '<your-tos-url>',
@@ -223,6 +266,8 @@
       {% block content %}
       {% endblock %}
       <p></p>
+
+	  </div>
       
       <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
   </body>
