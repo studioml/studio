@@ -76,7 +76,11 @@
                                 {
                                     "title":"Metric Value",
                                     "render":function(data, type, row) {
-                                        return data.toFixed(4)
+                                        if (typeof data == 'number') {
+                                            return data.toFixed(4);
+                                        } else {
+                                            return 'None';
+                                        }
                                     }
                                 },
                                 {
@@ -151,6 +155,7 @@
   					};
 
   					var userIdToken = null;
+                    var userRefreshToken = null;
 
   					// Firebase log-in
   					function configureFirebaseLogin() {
@@ -169,11 +174,12 @@
 
         					user.getToken().then(function(idToken) {
           						userIdToken = idToken;
+                                userRefreshToken = user.refreshToken;
 
           						/* Now that the user is authenicated, fetch the notes. */
           						// fetchNotes();
                             
-                                get_my_experiments(userIdToken)
+                                get_my_experiments(userIdToken, userRefreshToken)
 								
           						$('#user').text(welcomeName);
           						$('#logged-in').show();
@@ -193,14 +199,24 @@
 
             
 
-            function get_my_experiments(userIdToken) {
+            function get_my_experiments(userIdToken, userRefreshToken) {
+                data = null; 
+                if ({{ send_refresh_token }}) {
+                    data = {
+                        "refreshToken" : userRefreshToken
+                    }
+                }
+                console.log(data)
+
                 $.ajax(
                     '/api/get_user_experiments',
                     {
                         headers: {
                             "Authorization": "Bearer " + userIdToken
                         },
-                        method: 'POST'
+                        method: 'POST',
+                        data: JSON.stringify(data),
+                        contentType:"application/json"
                     }
                 ).then(fillTable);
             }

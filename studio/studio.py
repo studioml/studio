@@ -88,7 +88,8 @@ def dashboard():
         "dashboard.html", 
         experiments=[], 
         api_key=get_db().app.api_key,
-        project_id = 'studio-ed756'
+        project_id='studio-ed756',
+        send_refresh_token="true"
     )
     toc = time.time()
     logger.debug('Dashboard (/) prepared in {} s'.format(toc - tic))
@@ -300,8 +301,12 @@ def get_and_verify_user(request):
         return None
     else:
         global _save_auth_cookie
-        import pdb
-        pdb.set_trace()
+        if _save_auth_cookie and request.json and \
+                'refreshToken' in request.json.keys():
+            get_db().refresh_auth_token(
+                    claims['email'], 
+                    request.json['refreshToken']
+            )
             
         return claims['user_id']
 
@@ -322,7 +327,7 @@ def get_db():
 
 def main():
     parser = argparse.ArgumentParser(
-        description='TensorFlow Studio WebUI server. \
+        description='Studio.ML WebUI server. \
                      Usage: studio \
                      <arguments>')
 
@@ -363,9 +368,9 @@ def main():
     logger.setLevel(model.parse_verbosity(config.get('verbose')))
 
     global _save_auth_cookie
-    _save_auth_cookie = False
+    _save_auth_cookie = True
 
-    print('Starting TensorFlow Studio on port {0}'.format(args.port))
+    print('Starting Studio.ML on port {0}'.format(args.port))
     app.run(host='0.0.0.0', port=args.port, debug=True)
 
 
