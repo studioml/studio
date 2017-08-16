@@ -79,18 +79,21 @@ def auth_response():
     return redirect(request.form['redirect'])
 
 
+
+def _render(page):
+    return render_template(
+        page, 
+        api_key=get_db().app.api_key,
+        project_id='studio-ed756',
+        send_refresh_token="true"
+    )
+
 @app.route('/')
 # @authenticated('/')
 def dashboard():
     tic = time.time()
     global logger
-    retval = render_template(
-        "dashboard.html", 
-        experiments=[], 
-        api_key=get_db().app.api_key,
-        project_id='studio-ed756',
-        send_refresh_token="true"
-    )
+    retval = _render('dashboard.html')
     toc = time.time()
     logger.debug('Dashboard (/) prepared in {} s'.format(toc - tic))
     return retval 
@@ -194,8 +197,14 @@ def project_details(key):
 @app.route('/users')
 @authenticated('/users')
 def users():
+    tic = time.time()
     users = _db_provider.get_users()
-    return render_template("users.html", users=users)
+    retval = _render('users.html')
+    toc = time.time()
+    global logger
+    logger.info('users page rendered in {} s'
+        .format(toc-tic))
+    return retval
 
 
 @app.route('/user/<key>')
@@ -272,6 +281,26 @@ def get_user_experiments():
     logger.info('Processed get_user_experiments request in {} s'
         .format(toc - tic))
     return retval 
+
+@app.route('/api/get_users', methods=['POST'])
+def get_users():
+    tic = time.time()
+    myuser_id = get_and_verify_user(request)
+    
+    #TODO check access
+
+    users = get_db().get_users()
+    status = "ok"
+
+    retval = json.dumps({
+        "status":status,
+        "users":users
+    })
+    toc = time.time()
+    logger.info('Processed get_user_experiments request in {} s'
+        .format(toc - tic))
+    return retval 
+
 
 @app.route('/api/stop_experiment', methods=['POST'])
 def stop_experiment():
