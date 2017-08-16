@@ -2,7 +2,7 @@
 
 {% block content %}
 
-    {{ authwidget('get_users', 'fillUsersTable') }}
+    {{ authwidget('get_data_ajax(userIdToken, userRefreshToken, `get_users`).then(fillUsersTable)') }}
 
     <h1>Users</h1>
     <table class="table table-striped" id="usersTable"></table>
@@ -16,7 +16,7 @@
                     {
                         "title":"Email",
                         "render": function(data, type, row) {
-                            return '<a href=/user/'+ row[1] + '>' + data + '</a>'
+                            return '<a href=/user/'+ data + '>' + data + '</a>'
                         }
                     },
                     {

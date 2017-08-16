@@ -2,7 +2,7 @@
 
 {% block content %}
 
-    {{ authwidget('get_user_experiments', 'fillExperimentTable') }}
+    {{ authwidget('get_data_ajax(userIdToken, userRefreshToken, `get_user_experiments`).then(fillExperimentTable)') }}
 
     <h1>Your experiments</h1>
 

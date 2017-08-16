@@ -1,15 +1,39 @@
 {% extends "base.html" %}
 
 {% block content %}
-    <div class="container">
-        <h1>Projects</h1>
-        <table class="table table-striped">
-            {% for project in projects.keys() %}
-                <tr>
-                    <td><a href="/project/{{ project }}">{{ project }}</a></td>
-                    <td>{{ project }}</td>
-                </tr>
-            {% endfor %}
-        </table>
-    </div>
+    
+    {{ authwidget('get_data_ajax(userIdToken, userRefreshToken, `get_projects`).then(fillProjectsTable)') }}
+    
+    <h1>Projects</h1>   
+    <table class="table table-striped" id="projectsTable"></table>
+
+    <script>
+        $(function() {
+            $('#projectsTable').DataTable({
+                "paging":false,
+                "saveState":true,
+                "columns": [
+                    {
+                        "title":"Project",
+                        "render": function(data, type, row) {
+                            return '<a href=/project/'+ data + '>' + data + '</a>'
+                        }
+                    }
+                ]
+            });
+        });
+        
+        function fillProjectsTable(response) {
+            table = $('#projectsTable').DataTable()
+            data = JSON.parse(response)
+            if (data.status == 'ok') {
+                table.clear()
+                for (var project in data.projects) {
+                    table.row.add([project]);
+                }
+                table.draw()
+            }
+        }
+        
+    </script>
 {% endblock %}

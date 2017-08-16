@@ -1,17 +1,17 @@
 {% extends "base.html" %}
 
 {% block content %}
-    <div class="container">
-            <h1>Project {{ project_name }} </h1>
 
-        {{ experimenttable(experiments, showproject=false) }}
+    {{ authwidget('get_data_ajax(userIdToken, userRefreshToken, "get_project_experiments", data={"project":"' + project + '"}).then(fillExperimentTable)') }}
 
-        {% if experiments|length > 0 %}
-            <button onclick='viewInTensorBoard( "{{ project_name }}" )' type="button" class="btn btn-default" id=tbButton> Tensorboard </button>
-            <button onclick='deleteExperiments({{ key_list }})' type="button" class="btn btn-danger" id="deleteButton"> Delete ALL</button>           
-        {% endif %}
+    <h1>Project {{ project_name }} </h1>
 
-    </div>
+    {{ experimenttable(showproject=false) }}
+
+    {% if experiments|length > 0 %}
+        <button onclick='viewInTensorBoard( "{{ project_name }}" )' type="button" class="btn btn-default" id=tbButton> Tensorboard </button>
+        <button onclick='deleteExperiments({{ key_list }})' type="button" class="btn btn-danger" id="deleteButton"> Delete ALL</button>           
+    {% endif %}
 
     <script>
         function viewInTensorBoard(key) {

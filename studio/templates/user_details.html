@@ -1,15 +1,10 @@
 {% extends "base.html" %}
 
 {% block content %}
-    <div class="container">
-        {% if email  %}
-            <h1>User {{ email }} </h1>
-        {% else %}
-            <h1>User {{ user }} <h1>
-        {% endif %}
+    {{ authwidget('get_data_ajax(userIdToken, userRefreshToken, "get_user_experiments", data={"user":"' + user + '"}).then(fillExperimentTable)') }}
 
+     <h1>User {{ user }} </h1>
+    
+    {{ experimenttable(experiments) }}
 
-        {{ experimenttable(experiments) }}
-
-    </div>
 {% endblock %}

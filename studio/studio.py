@@ -79,26 +79,18 @@ def auth_response():
     return redirect(request.form['redirect'])
 
 
-
-def _render(page):
-    return render_template(
-        page, 
-        api_key=get_db().app.api_key,
-        project_id='studio-ed756',
-        send_refresh_token="true"
-    )
-
 @app.route('/')
-# @authenticated('/')
 def dashboard():
-    tic = time.time()
-    global logger
-    retval = _render('dashboard.html')
-    toc = time.time()
-    logger.debug('Dashboard (/) prepared in {} s'.format(toc - tic))
-    return retval 
+    return _render('dashboard.html')
 
+@app.route('/projects')
+def projects(): 
+    return _render('projects.html')
 
+@app.route('/users')
+def users():
+    return _render('users.html')
+  
 @app.route('/all')
 @authenticated('/all')
 def all_experiments():
@@ -116,18 +108,28 @@ def all_experiments():
     return render_template("all_experiments.html", experiments=experiments)
 
 
+@app.route('/project/<key>')
+def project_details(key):
+    return _render('project_details.html', project=key)
+
+
+
+@app.route('/user/<key>')
+def user_experiments(key):
+    return _render("user_details.html", user=key)
+
 @app.route('/experiments/<key>')
-@authenticated('/experiments/<key>')
 def experiment(key):
-    experiment = _db_provider.get_experiment(key, getinfo=True)
-    artifacts_urls = _db_provider.get_artifacts(key)
-    logtail = experiment.info.get('logtail')
-    info = experiment.info
-    return render_template("experiment_details.html",
-                           experiment=experiment,
-                           artifacts=artifacts_urls,
-                           logtail=logtail,
-                           info=info)
+    #experiment = _db_provider.get_experiment(key, getinfo=True)
+    #artifacts_urls = _db_provider.get_artifacts(key)
+    #logtail = experiment.info.get('logtail')
+    #info = experiment.info
+    #return render_template("experiment_details.html",
+    #                       experiment=experiment,
+    #                       artifacts=artifacts_urls,
+    #                       logtail=logtail,
+    #                       info=info)
+    return _render("experiment_details.html", experiment=experiment)
 
 
 @app.route('/tensorboard_exp/<key>')
@@ -174,50 +176,8 @@ def tensorboard(logdir):
     return redirect(redirect_url)
 
 
-@app.route('/projects')
-@authenticated('/projects')
-def projects():
-    projects = _db_provider.get_projects()
-    if not projects:
-        projects = {}
-    return render_template("projects.html", projects=projects)
 
 
-@app.route('/project/<key>')
-@authenticated('/project/<key>')
-def project_details(key):
-    experiments = _db_provider.get_project_experiments(key)
-    return render_template(
-        "project_details.html",
-        project_name=key,
-        experiments=experiments,
-        key_list=json.dumps([e.key for e in experiments]))
-
-
-@app.route('/users')
-@authenticated('/users')
-def users():
-    tic = time.time()
-    users = _db_provider.get_users()
-    retval = _render('users.html')
-    toc = time.time()
-    global logger
-    logger.info('users page rendered in {} s'
-        .format(toc-tic))
-    return retval
-
-
-@app.route('/user/<key>')
-@authenticated('/user/<key>')
-def user_experiments(key):
-    experiments = _db_provider.get_user_experiments(key)
-    users = _db_provider.get_users()
-    email = users[key]['email'] if 'email' in users[key].keys() else None
-    return render_template(
-        "user_details.html",
-        user=key,
-        email=email,
-        experiments=experiments)
 
 
 @app.route('/delete_experiment/<key>')
@@ -282,12 +242,32 @@ def get_user_experiments():
         .format(toc - tic))
     return retval 
 
+@app.route('/api/get_projects', methods=['POST'])
+def get_projects():
+    tic = time.time()
+    myuser_id = get_and_verify_user(request)
+    
+    #TODO check / filter access
+
+    projects = get_db().get_projects()
+    status = "ok"
+
+    retval = json.dumps({
+        "status":status,
+        "projects":projects
+    })
+
+    toc = time.time()
+    logger.info('Processed get_projects request in {} s'
+        .format(toc - tic))
+    return retval 
+
 @app.route('/api/get_users', methods=['POST'])
 def get_users():
     tic = time.time()
     myuser_id = get_and_verify_user(request)
     
-    #TODO check access
+    #TODO check / filter access
 
     users = get_db().get_users()
     status = "ok"
@@ -300,6 +280,35 @@ def get_users():
     logger.info('Processed get_user_experiments request in {} s'
         .format(toc - tic))
     return retval 
+
+
+@app.route('/api/get_project_experiments', methods=['POST'])
+def get_project_experiments():
+    tic = time.time()
+    myuser_id = get_and_verify_user(request)
+    
+    project = request.json.get('project')
+    if not project:
+        status = "Project is none!"
+        experiments = []
+    else:
+        # TODO check is myuser_id is authorized to do that
+    
+        logger.info('Getting experiments in project {}'
+            .format(project))
+
+        experiments = get_db().get_project_experiments(project)
+
+    status = "ok"
+    retval = json.dumps({
+        "status":status, 
+        "experiments":[e.__dict__ for e in experiments]
+    })
+    toc = time.time()
+    logger.info('Processed get_project_experiments request in {} s'
+        .format(toc - tic))
+    return retval 
+
 
 
 @app.route('/api/stop_experiment', methods=['POST'])
@@ -353,6 +362,23 @@ def get_db():
 
     return _db_provider
 
+def getlogger():
+    global logger
+    return logger
+
+def _render(page, **kwargs):
+    tic = time.time()
+    retval = render_template(
+        page, 
+        api_key=get_db().app.api_key,
+        project_id='studio-ed756',
+        send_refresh_token="true",
+        **kwargs
+    )
+    toc = time.time()
+    getlogger().info('page {} rendered in {} s'.
+        format(page, toc - tic))
+    return retval
 
 def main():
     parser = argparse.ArgumentParser(

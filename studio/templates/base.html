@@ -115,7 +115,7 @@
     {%- endmacro %}
     
      
-    {% macro authwidget(apiMethod, thenFunc) -%}
+    {% macro authwidget(after_auth_callback, send_refresh_token=send_refresh_token) -%}
         <div id="logged-out" hidden>
             <h1>Studio.ML</h1>
     	    <h3>Sign in to access your experiments</h3>
@@ -143,22 +143,18 @@
                     firebase.auth().onAuthStateChanged(function(user) {
                     if (user) {
                         $('#logged-out').hide();
-                        var name = user.displayName;
-
-                        /* If the provider gives a display name, use the name for the
-                        personal welcome message. Otherwise, use the user's email. */
-                        var welcomeName = name ? name : user.email;
-
                         user.getToken().then(function(idToken) {
                             userIdToken = idToken;
-                            userRefreshToken = user.refreshToken;
 
-                            /* Now that the user is authenicated, fetch the notes. */
-                            // fetchNotes();
-                        
-                            if ({{ thenFunc }} != null) {
-                                get_data_ajax(userIdToken, userRefreshToken, '{{ apiMethod }}', {{ thenFunc }})
+                            {% if send_refresh_token %}
+                                userRefreshToken = user.refreshToken;
+                            {% endif %}
+
+                            {% autoescape false %}
+                            if ('{{ after_auth_callback }}' != '') {
+                                {{ after_auth_callback }}
                             }
+                            {% endautoescape %}
                             
                             $('#logged-in').show();
 
@@ -210,15 +206,12 @@
 
         
     <script>
-        function get_data_ajax(userIdToken, userRefreshToken, apiMethod, thenFunc) {
-            data = null; 
-            if ({{ send_refresh_token }}) {
-                data = {
-                    "refreshToken" : userRefreshToken
-                }
+        function get_data_ajax(userIdToken, userRefreshToken, apiMethod, data={}) {
+            if ( userRefreshToken != null ) {
+                data["refreshToken"] = userRefreshToken
             }
 
-            $.ajax(
+            return $.ajax(
                 '/api/' + apiMethod,
                 {
                     headers: {
@@ -228,7 +221,7 @@
                     data: JSON.stringify(data),
                     contentType:"application/json"
                 }
-            ).then(thenFunc);
+            )
         }
 
 /*        
