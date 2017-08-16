@@ -43,206 +43,136 @@
         </div>
       </nav>
 
-      <div id="logged-out">
-    	<h1>Studio.ML</h1>
-    	<h3>Sign in to access your experiments</h3>
-    	<div id="firebaseui-auth-container"></div>
-  	 </div>
 
-	  <div id="logged-in">     	 
+    <div id="logged-in">     	 
 
-      {% macro experimenttable(experiments,showproject=true) -%}
-            <table class="table table-striped" id=experimentTable> </table>
-            <script>
-                $(document).ready(function() {
-                        $('#experimentTable').DataTable({
-                            "order":[[0, "desc"]],
-                            "paging":false,
-                            "stateSave": true,
-                            "columns": [
-                                {
-                                    "title":"Time added",
-                                    "render":function(data, type, row) {
-                                        return new Date(data * 1000)
-                                    }   
-                                },
-                                {
-                                    "title":"Key",
-                                    "render":function(data, type, row) {
-                                        return '<a href="experiments/' + data + '">' + data + '</a>' 
-                                    }  
-                                },
-                                {"title":"Metric"},
-                                {
-                                    "title":"Metric Value",
-                                    "render":function(data, type, row) {
-                                        if (typeof data == 'number') {
-                                            return data.toFixed(4);
-                                        } else {
-                                            return 'None';
-                                        }
-                                    }
-                                },
-                                {
-                                    "title":"Project",
-                                    "render":function(data, type, row) {
-                                        return '<a href="experiments/' + data + '">' + data + '</a>' 
-                                    }  
-                                },
-                                {"title":"Status"}
-                            ]
-                        } );
-
-                        // loadExperiments()
-                });
-
-                function loadExperiments() {
-                    var maxTimeout = 120
-                    var xhttp = new XMLHttpRequest();
-                    if ( typeof loadExperiments.oldResponse == 'undefined') {
-                        loadExperiments.oldResponse = ""
-                        loadExperiments.timeout = 1
-                        loadExperiments.docHeader = document.getElementsByTagName('h1').item(0)
-                        loadExperiments.docHeaderValue = loadExperiments.docHeader.innerHTML
-                    }
-
-                    xhttp.onreadystatechange = function() {
-                        if (this.readyState == 4 && this.status == 200) {
-                            // console.log( "Server sent the document:\n" + this.response )
-                            // console.log( "oldResponse = " + loadExperiments.oldResponse)
-
-                            if (this.response == loadExperiments.oldResponse) {
-                                loadExperiments.docHeader.innerHTML = loadExperiments.docHeaderValue
-                                loadExperiments.timeout *= 2
-                                console.log("The document has not changed, timeout increased to " + loadExperiments.timeout)
-                            } else {
-                                loadExperiments.docHeader.innerHTML = loadExperiments.docHeaderValue + " <i class='fa fa-cog fa-spin'></i>"
-                                        
-                                var html = document.createElement('html')
-                                html.innerHTML = this.response
-                                rows = html.getElementsByTagName("tr")
-                                console.log("Document has changed, updating the table ")
-                                updateTable(rows)
-                                loadExperiments.oldResponse = this.response 
-                                loadExperiments.timeout = 1
-                            }
-                            loadExperiments.timeout = Math.min(loadExperiments.timeout, maxTimeout)
-                            setTimeout(loadExperiments, loadExperiments.timeout * 1000)
-                       }
-                    }
-
-                    console.log("Requesting new dashboard data");
-                    xhttp.open("GET", window.location, true);
-                    xhttp.send();
-                }
-
-                function updateTable(rows) {
-                    $('#experimentTable').DataTable().clear()
-                    for (var i = 1; i < rows.length; i++) {
-                        $('#experimentTable').DataTable().row.add(rows.item(i))
-                     }
-                     $('#experimentTable').DataTable().draw()
-                }
-
- 
-
-				$(function() {
-  					var config = {
-    					apiKey: "{{ api_key }}",
-    					authDomain: "{{ project_id }}.firebaseapp.com",
-    					databaseURL: "https://{{ project_id }}.firebaseio.com",
-    					storageBucket: "{{ project_id }}.appspot.com",
-  					};
-
-  					var userIdToken = null;
-                    var userRefreshToken = null;
-
-  					// Firebase log-in
-  					function configureFirebaseLogin() {
-
-    					firebase.initializeApp(config);
-
-    					// [START onAuthStateChanged]
-    					firebase.auth().onAuthStateChanged(function(user) {
-      					if (user) {
-        					$('#logged-out').hide();
-        					var name = user.displayName;
-
-        					/* If the provider gives a display name, use the name for the
-       						personal welcome message. Otherwise, use the user's email. */
-        					var welcomeName = name ? name : user.email;
-
-        					user.getToken().then(function(idToken) {
-          						userIdToken = idToken;
-                                userRefreshToken = user.refreshToken;
-
-          						/* Now that the user is authenicated, fetch the notes. */
-          						// fetchNotes();
-                            
-                                get_my_experiments(userIdToken, userRefreshToken)
-								
-          						$('#user').text(welcomeName);
-          						$('#logged-in').show();
-
-        					});
-
-      						} else {
-        						$('#logged-in').hide();
-        						$('#logged-out').show();
-      						}
-                        // [END onAuthStateChanged]
-                        });
-                    }
-                    configureFirebaseLogin();
-                    configureFirebaseLoginWidget();
-                });
-
-            
-
-            function get_my_experiments(userIdToken, userRefreshToken) {
-                data = null; 
-                if ({{ send_refresh_token }}) {
-                    data = {
-                        "refreshToken" : userRefreshToken
-                    }
-                }
-                console.log(data)
-
-                $.ajax(
-                    '/api/get_user_experiments',
-                    {
-                        headers: {
-                            "Authorization": "Bearer " + userIdToken
+    {% macro experimenttable(showproject=true) -%}
+        <table class="table table-striped" id="experimentTable"> </table>
+        <script>
+            $(document).ready(function() {
+                $('#experimentTable').DataTable({
+                    "order":[[0, "desc"]],
+                    "paging":false,
+                    "stateSave": true,
+                    "columns": [
+                        {
+                            "title":"Time added",
+                            "render":function(data, type, row) {
+                                return new Date(data * 1000)
+                            }   
                         },
-                        method: 'POST',
-                        data: JSON.stringify(data),
-                        contentType:"application/json"
-                    }
-                ).then(fillTable);
-            }
+                        {
+                            "title":"Key",
+                            "render":function(data, type, row) {
+                                return '<a href="experiments/' + data + '">' + data + '</a>' 
+                            }  
+                        },
+                        {"title":"Metric"},
+                        {
+                            "title":"Metric Value",
+                            "render":function(data, type, row) {
+                                if (typeof data == 'number') {
+                                    return data.toFixed(4);
+                                } else {
+                                    return 'None';
+                                }
+                            }
+                        },
+                        {
+                            "title":"Project",
+                            "render":function(data, type, row) {
+                                return '<a href="experiments/' + data + '">' + data + '</a>' 
+                            }  
+                        },
+                        {"title":"Status"}
+                    ]
+                });
+        });
 
-            function fillTable(data) {
-                $('#experimentTable').DataTable().clear()
-                response_data = JSON.parse(data)
-                if (response_data.status == 'ok') {
-                    
-                    for (var i in response_data.experiments) {
-                        experiment = response_data.experiments[i]
-                        new_row = [
-                            experiment.time_added,
-                            experiment.key,
-                            experiment.metric,
-                            experiment.info.metric_value,
-                            experiment.project,
-                            experiment.status
-                        ]
-                        console.log(new_row)
-                        $('#experimentTable').DataTable().row.add(new_row)
-                    }
-                    $('#experimentTable').DataTable().draw()
+        function fillExperimentTable(data) {
+            $('#experimentTable').DataTable().clear()
+            response_data = JSON.parse(data)
+            if (response_data.status == 'ok') {
+                
+                for (var i in response_data.experiments) {
+                    experiment = response_data.experiments[i]
+                    new_row = [
+                        experiment.time_added,
+                        experiment.key,
+                        experiment.metric,
+                        experiment.info.metric_value,
+                        experiment.project,
+                        experiment.status,
+                    ]
+                    $('#experimentTable').DataTable().row.add(new_row)
                 }
+                $('#experimentTable').DataTable().draw()
             }
+        }
 
+        </script>
+    {%- endmacro %}
+    
+     
+    {% macro authwidget(thenMethod="fillExperimentTable") -%}
+        <div id="logged-out">
+            <h1>Studio.ML</h1>
+    	    <h3>Sign in to access your experiments</h3>
+    	    <div id="firebaseui-auth-container"></div>
+  	    </div>
+
+        <script>
+            $(function() {
+                var config = {
+                    apiKey: "{{ api_key }}",
+                    authDomain: "{{ project_id }}.firebaseapp.com",
+                    databaseURL: "https://{{ project_id }}.firebaseio.com",
+                    storageBucket: "{{ project_id }}.appspot.com",
+                };
+
+                var userIdToken = null;
+                var userRefreshToken = null;
+
+                // Firebase log-in
+                function configureFirebaseLogin() {
+
+                    firebase.initializeApp(config);
+
+                    // [START onAuthStateChanged]
+                    firebase.auth().onAuthStateChanged(function(user) {
+                    if (user) {
+                        $('#logged-out').hide();
+                        var name = user.displayName;
+
+                        /* If the provider gives a display name, use the name for the
+                        personal welcome message. Otherwise, use the user's email. */
+                        var welcomeName = name ? name : user.email;
+
+                        user.getToken().then(function(idToken) {
+                            userIdToken = idToken;
+                            userRefreshToken = user.refreshToken;
+
+                            /* Now that the user is authenicated, fetch the notes. */
+                            // fetchNotes();
+                        
+                            if ({{ thenMethod }} != null) {
+                                get_data_ajax(userIdToken, userRefreshToken, {{ thenMethod }})
+                            }
+                            
+                            $('#logged-in').show();
+
+                        });
+
+                        } else {
+                            $('#logged-in').hide();
+                            $('#logged-out').show();
+                        }
+                    // [END onAuthStateChanged]
+                    });
+                }
+                configureFirebaseLogin();
+                configureFirebaseLoginWidget();
+            });
 
             function configureFirebaseLoginWidget() {
                 var uiConfig = {
@@ -263,7 +193,6 @@
                  ui.start('#firebaseui-auth-container', uiConfig);
             }
 
-            // [START signOutBtn]
             // Sign out a user
             $('#sign-out').click(function(event) {
                 event.preventDefault();
@@ -274,16 +203,90 @@
                     console.log(error);
                 });
             });
-            // [END signOutBtn]
 
             </script>
-      {%- endmacro %}
+    {%- endmacro -%}
 
-      {% block content %}
-      {% endblock %}
-      <p></p>
+        
+    <script>
+        function get_data_ajax(userIdToken, userRefreshToken, thenMethod) {
+            data = null; 
+            if ({{ send_refresh_token }}) {
+                data = {
+                    "refreshToken" : userRefreshToken
+                }
+            }
 
-	  </div>
+            $.ajax(
+                '/api/get_user_experiments',
+                {
+                    headers: {
+                        "Authorization": "Bearer " + userIdToken
+                    },
+                    method: 'POST',
+                    data: JSON.stringify(data),
+                    contentType:"application/json"
+                }
+            ).then(thenMethod);
+        }
+
+/*        
+        function loadExperiments() {
+            var maxTimeout = 120
+            var xhttp = new XMLHttpRequest();
+            if ( typeof loadExperiments.oldResponse == 'undefined') {
+                loadExperiments.oldResponse = ""
+                loadExperiments.timeout = 1
+                loadExperiments.docHeader = document.getElementsByTagName('h1').item(0)
+                loadExperiments.docHeaderValue = loadExperiments.docHeader.innerHTML
+            }
+
+            xhttp.onreadystatechange = function() {
+                if (this.readyState == 4 && this.status == 200) {
+                    // console.log( "Server sent the document:\n" + this.response )
+                    // console.log( "oldResponse = " + loadExperiments.oldResponse)
+
+                    if (this.response == loadExperiments.oldResponse) {
+                        loadExperiments.docHeader.innerHTML = loadExperiments.docHeaderValue
+                        loadExperiments.timeout *= 2
+                        console.log("The document has not changed, timeout increased to " + loadExperiments.timeout)
+                    } else {
+                        loadExperiments.docHeader.innerHTML = loadExperiments.docHeaderValue + " <i class='fa fa-cog fa-spin'></i>"
+                                
+                        var html = document.createElement('html')
+                        html.innerHTML = this.response
+                        rows = html.getElementsByTagName("tr")
+                        console.log("Document has changed, updating the table ")
+                        updateTable(rows)
+                        loadExperiments.oldResponse = this.response 
+                        loadExperiments.timeout = 1
+                    }
+                    loadExperiments.timeout = Math.min(loadExperiments.timeout, maxTimeout)
+                    setTimeout(loadExperiments, loadExperiments.timeout * 1000)
+               }
+            }
+
+            console.log("Requesting new dashboard data");
+            xhttp.open("GET", window.location, true);
+            xhttp.send();
+        }
+
+        function updateTable(rows) {
+            $('#experimentTable').DataTable().clear()
+            for (var i = 1; i < rows.length; i++) {
+                $('#experimentTable').DataTable().row.add(rows.item(i))
+             }
+             $('#experimentTable').DataTable().draw()
+        }
+*/
+
+    </script>
+  
+   {% block content %}
+   {% endblock %}
+   <p></p>
+
+    </div>
       
       <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
   </body>
