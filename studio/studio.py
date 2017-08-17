@@ -118,7 +118,7 @@ def project_details(key):
 def user_experiments(key):
     return _render("user_details.html", user=key)
 
-@app.route('/experiments/<key>')
+@app.route('/experiment/<key>')
 def experiment(key):
     #experiment = _db_provider.get_experiment(key, getinfo=True)
     #artifacts_urls = _db_provider.get_artifacts(key)
@@ -129,7 +129,7 @@ def experiment(key):
     #                       artifacts=artifacts_urls,
     #                       logtail=logtail,
     #                       info=info)
-    return _render("experiment_details.html", experiment=experiment)
+    return _render("experiment_details.html", experiment=key)
 
 
 @app.route('/tensorboard_exp/<key>')
@@ -204,16 +204,22 @@ def get_experiment():
     logger.info('Getting experiment {} '.format(key))
     try:
         experiment = get_db().get_experiment(key).__dict__
+        artifacts = get_db().get_artifacts(key)
+        for art, url in artifacts.iteritems():
+            experiment['artifacts'][art]['url']=url
+
         status = 'ok'
     except BaseException as e:
         experiment = {}
-        status = e.msg
+        status = e.message
+
+    retval = json.dumps({'status':status, 'experiment':experiment})
 
     toc = time.time()
     logger.info('Processed get_experiment request in {} s'
         .format(toc - tic))
-
-    return json.dumps({'status':status, 'experiment':{}})
+    
+    return retval
 
 
 @app.route('/api/get_user_experiments', methods=['POST'])

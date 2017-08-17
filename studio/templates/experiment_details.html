@@ -1,102 +1,48 @@
 {% extends "base.html" %}
 
-{% block head %}
-    {% if experiment.status == 'running' %}
-        <meta http-equiv="refresh" content="5">
-    {% endif %}
-    {% if experiment.status == 'waiting' %}
-        <meta http-equiv="refresh" content="60">
-    {% endif %}
-    
-{% endblock %}
-
 {% block content %}
-    <h1>Experiment {{ experiment.key }}</h1>
+    
+    {{ authwidget('get_data_ajax(userIdToken, userRefreshToken, `get_experiment`, data={"key":"' + experiment + '"}).then(updateExperimentPage)') }}
 
-    {% if experiment.project %}
-        <p>Project: <a href=/project/{{ experiment.project }}>{{ experiment.project }}</a></p>
-    {% endif %}
-    <p>Filename: {{ experiment.filename }}</p>
-    <p>Args: {{ experiment.args }}</p>
+    <h1>Experiment {{ experiment }}</h1>
 
-    <p> <a data-toggle="collapse" href="#collapse1">Python environment:</a> </p>
-    <div id="collapse1" class="panel-collapse collapse">
-        <ul class="list-group">
-            {% for pypkg in experiment.pythonenv %}
-                <li class="list-group-item">{{ pypkg }}</li>
-            {% endfor %}
-        </ul>
+    <p id=project></p>
+    <p id=filename></p>
+    <p id=args></p>
+    
+    <div id="container-pyenv" hidden>
+        <p> <a data-toggle="collapse" href="#collapse-pyenv">Python environment:</a> </p>
+        <div id="collapse-pyenv" class="panel-collapse collapse">
+            <ul class="list-group" id="listgroup-pyenv"> </ul>
+        </div>  
     </div>
-                                                 
 
     <dl>
-    <dt> Experiment artifacts: </dt>
-    {% for key,value in artifacts.iteritems() %}
-        {% if 'qualified' in experiment.artifacts[key].keys() %}
-            <dd><a href={{ value }}> {{ key }} </a> 
-            (<a onclick="qualifiedLocationToBrowsable('{{ experiment.artifacts[key].qualified }}')" href="#">view in console </a>)</dd>
-        {% else %}
-            <dd><a href={{ value }}> {{ key }} </a></dd>
-        {% endif %} 
-    {% endfor %} 
-    <dt> Experiment info: </dt>
-    <dd>Status: {{ experiment.status }}</dd>
-    <dd>Creation time: {{ experiment.time_added | format_time }}</dd>
-    {% if experiment.status == 'finished' or experiment.status == 'running' %}
-        <dd>Start time: {{ experiment.time_started | format_time }}</dd>
-    {% endif %}
-    {% if experiment.status == 'finished' %}
-        <dd>Finish time: {{ experiment.time_finished | format_time }}</dd>
-    {% endif %}
-    
-    {% if experiment.git %}
-        <dd>
-        Git repo: <a href={{ experiment.git['url'] }}> {{ experiment.git['url'] }}</a>
-            {% if experiment.git['url'].startswith('https://github.com') %}
-                <a href={{ experiment.git['url']+'/commit/'+ experiment.git['commit'] }}>
-                    commit {{ experiment.git['commit'] }}
-                </a>
-            {% elif experiment.git['url'].startswith('http://github.com') %}
-                <a href={{ experiment.git['url']+'/commit/'+ experiment.git['commit'] }}>
-                    commit {{ experiment.git['commit'] }}
-                </a>
-            {% elif experiment.git['url'].startswith('http://stash.') %}
-                <a href={{ experiment.git['url']+'/commits/'+ experiment.git['commit'] }}>
-                    commit {{ experiment.git['commit'] }}
-                </a>
-            {% else %}
-                    commit {{ experiment.git['commit'] }}
-            {% endif %}
-        </dd>
-    {% endif %} 
+        <div id="container-artifacts" hidden>
+            <dt>Experiment artifacts:</dt>
+        </div>
 
-    {% if info %}
-        {% if 'type' in info.keys() %}
-            {% for infokey, infovalue in info.iteritems() %}
-                {% if not infokey == 'logtail' %}
-                    <dd>{{ infokey }} : {{ infovalue }}</dd>
-                {% endif %}
-            {% endfor %}
-        {% endif %}
-    {% endif %}
+        <div id="info" hidden>
+            <dt>Experiment info:</dt>
 
-    {% if logtail %}
-        <dt> Tail of the log: </dt>
-        {% for line in logtail %}
-            <dd>{{ line }}</dd>
-        {% endfor %}
-    {% endif %}
-    </dl>
+            <dd id=status hidden><dd>
+            <dd id=timeCreated hidden><dd>
+            <dd id=timeStarted hidden><dd>
+            <dd id=timeFinished hidden><dd>
+            <dd id=git hidden></dd>
+         
+            <div id=extra-info hidden></div>
+            <div id=logtail hidden></div>
+
+        </div>
+
+        <div id="buttons" hidden>
+            <button onclick='stopExperiment( "{{ experiment }}" )' type="button" class="btn btn-danger" id=stopButton>Stop</button>
+            <button onclick='deleteExperiment( "{{ experiment }}" )' type="button" class="btn btn-danger" id=deleteButton>Delete</button>
+            <button onclick='viewInTensorBoard( "{{ experiment }}" )' type="button" class="btn btn-default" id=tbButton>Tensorboard</button>
+        </div>
+    <dl>
     
-    {% if experiment.status == 'running' %}
-        <button onclick='stopExperiment( "{{ experiment.key }}" )' type="button" class="btn btn-danger">Stop</button>
-    {% else %}
-        <button onclick='deleteExperiment( "{{ experiment.key }}" )' type="button" class="btn btn-danger" id=deleteButton>Delete</button>
-    {% endif %}
-    
-    {% if 'tb' in artifacts.keys() %}
-        <button onclick='viewInTensorBoard( "{{ experiment.key }}" )' type="button" class="btn btn-default" id=tbButton>Tensorboard</button>
-    {% endif %}
 
     <script>
         function deleteExperiment(key) {
@@ -126,10 +72,125 @@
             } else {
                 url = null
             }
-            if (url != null) {
-                window.location.href = url
+            return url
+        }
+
+        function updateExperimentPage(response) {
+            data = JSON.parse(response)
+            console.log(data)
+            if (data.status == 'ok') { 
+                e = data.experiment
+                if (e.project) {
+                    $('#project').html('Project: <a href=projects/' + e.project + '>' + e.project + '</a>')
+                }
+                
+                $('#filename').html('Filename: ' + e.filename)
+                $('#args').html('Args: ' + e.args)
+
+                for (i in e.pythonenv) {
+                    $('#listgroup-pyenv').append('<li class=list-group-item>' + e.pythonenv[i] + '</li>')
+                }
+                $('#container-pyenv').show()
+
+                
+                for (var key in e.artifacts) {
+                    art = e.artifacts[key]
+                    var artifactHtml = '<dd>';
+                    artifactHtml += '<a href="' + art.url + '">' + key + '</a>';
+                    if (art.qualified && qualifiedLocationToBrowsable(art.qualified)) {
+                        artifactHtml += '<a href="' + qualifiedLocationToBrowsable(art.qualified) + '"> (view in console)</a>';
+                    }
+                    artifactHtml += '</dd>';
+                    console.log(artifactHtml)
+                    $('#container-artifacts').append(artifactHtml)
+                }
+                $('#container-artifacts').show()
+            
+                $('#status').html('Status: ' + e.status).show()
+
+                displayTime('timeCreated', e.time_added, 'Time created: ')
+                displayTime('timeStarted', e.time_started, 'Time started: ')
+                displayTime('timeFinished', e.time_finished, 'Time finished: ')               
+
+                displayGit('git', e.git)
+                displayExtraInfo('extra-info', e.info)
+                displayLogtail('logtail', e.info.logtail)
+                
+                $('#info').show()
+
+                if (e.status == 'running') {
+                    $('#stopButton').show()   
+                    $('#deleteButton').hide()   
+                } else {
+                    $('#stopButton').hide()   
+                    $('#deleteButton').show()   
+                }
+                
+                if ('tb' in e.artifacts) {
+                    $('#tbButton').show()
+                } else {    
+                    $('#tbButon').hide()
+                }
+                
+                $('#buttons').show()
             }
         }
+       
+        function displayTime(elementId, timestamp, texttag) {
+            el = $('#' + elementId)
+            if (timestamp) {
+                el.html(texttag + new Date(timestamp * 1000))
+                el.show()
+            } else {
+                el.hide()
+            }
+        }
+
+        function displayGit(elementId, gitinfo) {
+            el = $('#' + elementId)
+            if (gitinfo) {
+                el.html('Git: <a href="' + gitinfo.url + '">' + gitinfo.url + '</a>');
+                if (gitinfo.url.match(/https?:\/\/github\.com\//g)) {
+                    el.append('<a href="' + gitinfo.url + '/commit/' + gitinfo.commit + '">' + gitinfo.commit + '</a>');
+                } else if (gitinfo.url.match(/https?:\/\/stash\./g)) {
+                    el.append('<a href="' + gitinfo.url + '/commits/' + gitinfo.commit + '">' + gitinfo.commit + '</a>');
+                } else {
+                    el.append(' ' + gitinfo.commit);
+                }
+                el.show()
+            } else {
+                el.hide()
+            }
+            return el
+        }
+
+        function displayExtraInfo(elementId, info) {
+            el = $('#' + elementId)
+            if (info) {
+                for (var key in info) {
+                    if (key != 'logtail') {
+                        el.append('<dd>' + key + ':' + info[key])
+                    }
+                }
+                el.show()
+            } else {
+                el.hide()
+            }
+        }
+
+        function displayLogtail(elementId, logtail) {
+            el = $('#' + elementId) 
+            if (logtail) {
+                el.html('Tail of the log: ')
+                for (var index in logtail) {
+                    el.append('<dd>' + logtail[index] + '</dd>')
+                }
+                el.show()
+            } else {
+                el.hide()
+            }   
+        }
+            
     </script>
 
 

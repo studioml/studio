@@ -82,8 +82,6 @@ def stop_experiment():
     return json.dumps({'status':status})
 
 
-
-
 def get_db():
     global _my_db_provider
     if not _my_db_provider:
