@@ -2,9 +2,7 @@
 
 {% block content %}
     
-    {{ authwidget('get_data_ajax(userIdToken, userRefreshToken, `get_experiment`, data={"key":"' + experiment + '"}).then(updateExperimentPage)') }}
-
-    <h1>Experiment {{ experiment }}</h1>
+    <h1 id=header>Experiment {{ experiment }}</h1>
 
     <p id=project></p>
     <p id=filename></p>
@@ -45,6 +43,10 @@
     
 
     <script>
+        $(authWidget(function() {
+            get_data_ajax('get_experiment', data={"key": "{{ experiment }}"}).then(updateExperimentPage)
+        }));
+
         function deleteExperiment(key) {
             document.getElementById("deleteButton").innerHTML="<i class='fa fa-cog fa-spin'></i> Deleting..."
             if (confirm("The experiment and its artfacts will be lost. Proceed?")) {

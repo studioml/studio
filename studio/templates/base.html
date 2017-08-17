@@ -4,7 +4,10 @@
 
       <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
       <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
-      <link href="https://cdnjs.cloudflare.com/ajax/libs/datatables/1.10.12/css/dataTables.bootstrap.min.css" rel="stylesheet"/><div class="container">  
+      <link href="https://cdnjs.cloudflare.com/ajax/libs/datatables/1.10.12/css/dataTables.bootstrap.min.css" rel="stylesheet"/>
+      <link href="https://cdn.datatables.net/select/1.2.2/css/select.dataTables.css" rel="stylesheet"/> <div class="container">
+
+        
 
       <script src="https://www.gstatic.com/firebasejs/3.2.1/firebase.js"></script>
       <script src="https://www.gstatic.com/firebasejs/3.1.0/firebase-app.js"></script>
@@ -14,6 +17,7 @@
       <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
       <script src="https://cdnjs.cloudflare.com/ajax/libs/datatables/1.10.12/js/jquery.dataTables.min.js"></script>
       <script src="https://cdnjs.cloudflare.com/ajax/libs/datatables/1.10.12/js/dataTables.bootstrap.min.js"></script>
+      <script src="https://cdn.datatables.net/select/1.2.2/js/dataTables.select.js"></script>
 
       {% block head %}
       {% endblock %}
@@ -37,7 +41,7 @@
               <li><a href="/projects">Projects</a></li>
               <li><a href="/users">Users</a></li>
               <li><a href="/all">All</a></li>
-              <li><a href="/dummy" id="sign-out">Sign out</a>
+              <li><a href="" id="sign-out">Sign out</a>
             </ul>
           </div>
         </div>
@@ -46,16 +50,27 @@
 
     <div id="logged-in">     	 
 
-    {% macro experimenttable(showproject=true) -%}
+    {% macro experimenttable(showproject=true, delete_button=true) -%}
         <table class="table table-striped" id="experimentTable"> </table>
+        <div id=buttonContainer hidden>
+            <button onclick='toggleSelectAll()' type="button" class="btn btn-default" id=selectAllButton>Select All</button>
+            {% if delete_button %}
+                <button onclick='deleteExperiments()' type="button" class="btn btn-danger" id=deleteButton>Delete</button>
+            {%- endif %}
+        </div>
+
         <script>
             $(function() {
                 $('#experimentTable').DataTable({
+                    select: {
+                        style: "multi"
+                    },
+
                     "order":[[0, "desc"]],
                     "paging":false,
                     "stateSave": true,
                     "columns": [
-                        {
+                       {
                             "title":"Time added",
                             "render":function(data, type, row) {
                                 return new Date(data * 1000)
@@ -89,6 +104,11 @@
                 });
         });
 
+
+        $('#experimentTable tbody').on( 'click', 'tr', function () {
+        	$(this).toggleClass('selected');
+	    });
+
         function fillExperimentTable(data) {
             table = $('#experimentTable').DataTable()
             table.clear()
@@ -108,6 +128,35 @@
                     table.row.add(new_row)
                 }
                 table.draw()
+                
+                if (response_data.experiments.length > 0) {
+                    $('#buttonContainer').show()
+                }
+            }
+        }
+
+        function deleteExperiments() {
+            if (!confirm("Delete experiments?")) {
+                return 
+            }
+            keys = []
+            selectedData = $('#experimentTable').DataTable().rows('.selected').data()
+            console.log(selectedData)
+            for (var i = 0; i < selectedData.length; i++) {
+                console.log('Deleting experiment with key ' + selectedData[i][1])
+                get_data_ajax('delete_experiment', data={"key":selectedData[i][1]})
+            }            
+        }
+
+        function toggleSelectAll() {
+            btn = $('#selectAllButton')
+            table = $('#experimentTable').DataTable()
+            if (btn.html() == 'Select All') {
+                table.rows({page:'current'}).select()
+                btn.html('Deselect All')
+            } else {
+                table.rows({page:'current'}).deselect()
+                btn.html('Select All')
             }
         }
 
@@ -115,107 +164,140 @@
     {%- endmacro %}
     
      
-    {% macro authwidget(after_auth_callback, send_refresh_token=send_refresh_token) -%}
-        <div id="logged-out" hidden>
-            <h1>Studio.ML</h1>
-    	    <h3>Sign in to access your experiments</h3>
-    	    <div id="firebaseui-auth-container"></div>
-  	    </div>
+    <div id="logged-out" hidden>
+        <h1>Studio.ML</h1>
+        <h3>Sign in to access your experiments</h3>
+        <div id="firebaseui-auth-container"></div>
+    </div>
 
-        <script>
-            $(function() {
-                var config = {
-                    apiKey: "{{ api_key }}",
-                    authDomain: "{{ project_id }}.firebaseapp.com",
-                    databaseURL: "https://{{ project_id }}.firebaseio.com",
-                    storageBucket: "{{ project_id }}.appspot.com",
-                };
+    <script>
+        function authWidget(afterAuthCallback) {
+            var config = {
+                apiKey: "{{ api_key }}",
+                authDomain: "{{ project_id }}.firebaseapp.com",
+                databaseURL: "https://{{ project_id }}.firebaseio.com",
+                storageBucket: "{{ project_id }}.appspot.com",
+            };
 
-                var userIdToken = null;
-                var userRefreshToken = null;
+            authWidget.userIdToken = null;
+            authWidget.userRefreshToken = null;
 
-                // Firebase log-in
-                function configureFirebaseLogin() {
+            // Firebase log-in
+            function configureFirebaseLogin() {
 
-                    firebase.initializeApp(config);
+                firebase.initializeApp(config);
 
-                    // [START onAuthStateChanged]
-                    firebase.auth().onAuthStateChanged(function(user) {
-                    if (user) {
-                        $('#logged-out').hide();
-                        user.getToken().then(function(idToken) {
-                            userIdToken = idToken;
+                // [START onAuthStateChanged]
+                firebase.auth().onAuthStateChanged(function(user) {
+                if (user) {
+                    $('#logged-out').hide();
+                    user.getToken().then(function(idToken) {
+                        authWidget.userIdToken = idToken;
 
-                            {% if send_refresh_token %}
-                                userRefreshToken = user.refreshToken;
-                            {% endif %}
+                        {% if send_refresh_token %}
+                            authWidget.userRefreshToken = user.refreshToken;
+                        {% endif %}
 
-                            {% autoescape false %}
-                            if ('{{ after_auth_callback }}' != '') {
-                                {{ after_auth_callback }}
-                            }
-                            {% endautoescape %}
-                            
-                            $('#logged-in').show();
-
-                        });
-
-                        } else {
-                            $('#logged-in').hide();
-                            $('#logged-out').show();
+                        if (afterAuthCallback) {
+                            afterAuthCallback()
                         }
-                    // [END onAuthStateChanged]
+                        
+                        $('#logged-in').show();
+
                     });
-                }
-                configureFirebaseLogin();
-                configureFirebaseLoginWidget();
-            });
 
-            function configureFirebaseLoginWidget() {
-                var uiConfig = {
-                    'signInSuccessUrl': '/',
-                    'signInOptions': [
-                        // Leave the lines as is for the providers you want to offer your users.
-                        firebase.auth.GoogleAuthProvider.PROVIDER_ID,
-                        // firebase.auth.FacebookAuthProvider.PROVIDER_ID,
-                        // firebase.auth.TwitterAuthProvider.PROVIDER_ID,
-                        // firebase.auth.GithubAuthProvider.PROVIDER_ID,
-                        // firebase.auth.EmailAuthProvider.PROVIDER_ID
-                     ],
-                     // Terms of service url
-                     //`'tosUrl': '<your-tos-url>',
-                 };
-
-                 var ui = new firebaseui.auth.AuthUI(firebase.auth());
-                 ui.start('#firebaseui-auth-container', uiConfig);
-            }
-
-            // Sign out a user
-            $('#sign-out').click(function(event) {
-                event.preventDefault();
-
-                firebase.auth().signOut().then(function() {
-                    console.log("Sign out successful");
-                }, function(error) {
-                    console.log(error);
+                    } else {
+                        $('#logged-in').hide();
+                        $('#logged-out').show();
+                    }
+                // [END onAuthStateChanged]
                 });
-            });
+            }
+            configureFirebaseLogin();
+            configureFirebaseLoginWidget();
+        }
 
-            </script>
-    {%- endmacro -%}
+        function configureFirebaseLoginWidget() {
+            var uiConfig = {
+                'signInSuccessUrl': '/',
+                'signInOptions': [
+                    // Leave the lines as is for the providers you want to offer your users.
+                    firebase.auth.GoogleAuthProvider.PROVIDER_ID,
+                    // firebase.auth.FacebookAuthProvider.PROVIDER_ID,
+                    // firebase.auth.TwitterAuthProvider.PROVIDER_ID,
+                    // firebase.auth.GithubAuthProvider.PROVIDER_ID,
+                    // firebase.auth.EmailAuthProvider.PROVIDER_ID
+                 ],
+                 // Terms of service url
+                 //`'tosUrl': '<your-tos-url>',
+             };
+
+             var ui = new firebaseui.auth.AuthUI(firebase.auth());
+             ui.start('#firebaseui-auth-container', uiConfig);
+        }
+
+        // Sign out a user
+        $('#sign-out').click(function(event) {
+            event.preventDefault();
+
+            firebase.auth().signOut().then(function() {
+                console.log("Sign out successful");
+            }, function(error) {
+                console.log(error);
+            });
+        });
+
+
+
+
+    </script>
 
         
     <script>
-        function get_data_ajax(userIdToken, userRefreshToken, apiMethod, data={}) {
-            if ( userRefreshToken != null ) {
-                data["refreshToken"] = userRefreshToken
+
+        function data_reload(apiMethod, data, thenFunc) {
+                           
+            var minTimeout = 1
+            var maxTimeout = 120
+
+            var timeout = minTimeout
+            var oldData = null
+            
+            var headerData = $('#header').html()
+
+            function reload() {
+                get_data_ajax(apiMethod, data).then(function(data) {
+                    
+                    if (oldData == data) {
+                        timeout = timeout * 2
+                        $('#header').html(headerData)
+                    } else {
+                        timeout = minTimeout;
+                        thenFunc(data);
+                        oldData = data;
+                        $('#header').html(headerData + ' <i class="fa fa-cog fa-spin"></i>');
+                    }
+                    timeout = Math.min(timeout, maxTimeout);
+                    console.log("Timeout = " + timeout)
+                    setTimeout(reload, timeout * 1000);
+                });               
             }
+            reload(); 
+        }
+
+        function get_data_ajax(apiMethod, data={}) {
+            if ( authWidget.userRefreshToken != null ) {
+                data["refreshToken"] = authWidget.userRefreshToken
+            }
+
+            console.log('Sending POST request to ' + apiMethod + ' with data')
+            console.log(data)
 
             return $.ajax(
                 '/api/' + apiMethod,
                 {
                     headers: {
-                        "Authorization": "Bearer " + userIdToken
+                        "Authorization": "Bearer " + authWidget.userIdToken
                     },
                     method: 'POST',
                     data: JSON.stringify(data),
@@ -224,55 +306,6 @@
             )
         }
 
-/*        
-        function loadExperiments() {
-            var maxTimeout = 120
-            var xhttp = new XMLHttpRequest();
-            if ( typeof loadExperiments.oldResponse == 'undefined') {
-                loadExperiments.oldResponse = ""
-                loadExperiments.timeout = 1
-                loadExperiments.docHeader = document.getElementsByTagName('h1').item(0)
-                loadExperiments.docHeaderValue = loadExperiments.docHeader.innerHTML
-            }
-
-            xhttp.onreadystatechange = function() {
-                if (this.readyState == 4 && this.status == 200) {
-                    // console.log( "Server sent the document:\n" + this.response )
-                    // console.log( "oldResponse = " + loadExperiments.oldResponse)
-
-                    if (this.response == loadExperiments.oldResponse) {
-                        loadExperiments.docHeader.innerHTML = loadExperiments.docHeaderValue
-                        loadExperiments.timeout *= 2
-                        console.log("The document has not changed, timeout increased to " + loadExperiments.timeout)
-                    } else {
-                        loadExperiments.docHeader.innerHTML = loadExperiments.docHeaderValue + " <i class='fa fa-cog fa-spin'></i>"
-                                
-                        var html = document.createElement('html')
-                        html.innerHTML = this.response
-                        rows = html.getElementsByTagName("tr")
-                        console.log("Document has changed, updating the table ")
-                        updateTable(rows)
-                        loadExperiments.oldResponse = this.response 
-                        loadExperiments.timeout = 1
-                    }
-                    loadExperiments.timeout = Math.min(loadExperiments.timeout, maxTimeout)
-                    setTimeout(loadExperiments, loadExperiments.timeout * 1000)
-               }
-            }
-
-            console.log("Requesting new dashboard data");
-            xhttp.open("GET", window.location, true);
-            xhttp.send();
-        }
-
-        function updateTable(rows) {
-            $('#experimentTable').DataTable().clear()
-            for (var i = 1; i < rows.length; i++) {
-                $('#experimentTable').DataTable().row.add(rows.item(i))
-             }
-             $('#experimentTable').DataTable().draw()
-        }
-*/
 
     </script>
   

@@ -1,13 +1,14 @@
 {% extends "base.html" %}
 
 {% block content %}
-
-    {{ authwidget('get_data_ajax(userIdToken, userRefreshToken, `get_users`).then(fillUsersTable)') }}
-
     <h1>Users</h1>
     <table class="table table-striped" id="usersTable"></table>
 
     <script>
+        $(authWidget(function() {
+            data_reload('get_users', {}, fillUsersTable)
+        }));
+    
         $(function() {
             $('#usersTable').DataTable({
                 "paging":false,

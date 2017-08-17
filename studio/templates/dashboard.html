@@ -2,9 +2,7 @@
 
 {% block content %}
 
-    {{ authwidget('get_data_ajax(userIdToken, userRefreshToken, `get_user_experiments`).then(fillExperimentTable)') }}
-
-    <h1>Your experiments</h1>
+    <h1 id=header>Your experiments</h1>
 
     {{ experimenttable() }}
 
@@ -13,6 +11,11 @@
     {% endif %}
 
     <script>
+        $(authWidget(function() {
+            data_reload('get_user_experiments', {}, fillExperimentTable)
+        }));
+           
+ 
         function deleteAllExperiments() {
             if (confirm("This will delete ALL of your experiments and CANNOT be undone. Proceed?")) {
                     document.getElementById("deleteButton").innerHTML="<i class='fa fa-cog fa-spin'></i> Deleting..."

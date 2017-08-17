@@ -1,19 +1,21 @@
 {% extends "base.html" %}
 
 {% block content %}
-
-    {{ authwidget('get_data_ajax(userIdToken, userRefreshToken, "get_project_experiments", data={"project":"' + project + '"}).then(fillExperimentTable)') }}
-
-    <h1>Project {{ project_name }} </h1>
+    <h1 id=header>Project {{ project }} </h1>
 
     {{ experimenttable(showproject=false) }}
 
     {% if experiments|length > 0 %}
-        <button onclick='viewInTensorBoard( "{{ project_name }}" )' type="button" class="btn btn-default" id=tbButton> Tensorboard </button>
+        <button onclick='viewInTensorBoard( "{{ project }}" )' type="button" class="btn btn-default" id=tbButton> Tensorboard </button>
         <button onclick='deleteExperiments({{ key_list }})' type="button" class="btn btn-danger" id="deleteButton"> Delete ALL</button>           
     {% endif %}
 
     <script>
+
+        $(authWidget(function() {
+            data_reload('get_project_experiments', data={"project": "{{ project }}"}, fillExperimentTable)
+        }));
+        
         function viewInTensorBoard(key) {
             document.getElementById("tbButton").innerHTML="<i class='fa fa-cog fa-spin'></i> Redirecting..."
             window.location.href = "/tensorboard_proj/" + key

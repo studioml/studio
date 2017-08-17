@@ -1,10 +1,14 @@
 {% extends "base.html" %}
 
 {% block content %}
-    {{ authwidget('get_data_ajax(userIdToken, userRefreshToken, "get_user_experiments", data={"user":"' + user + '"}).then(fillExperimentTable)') }}
-
-     <h1>User {{ user }} </h1>
+     <h1 id=header>User {{ user }} </h1>
     
-    {{ experimenttable(experiments) }}
+    {{ experimenttable(delete_button=false) }}
+
+    <script>
+        $(authWidget(function() {
+            data_reload('get_user_experiments', data={"user": "{{ user }}"}, fillExperimentTable)
+        }));
+    </script>
 
 {% endblock %}

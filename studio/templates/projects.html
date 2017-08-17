@@ -1,13 +1,14 @@
 {% extends "base.html" %}
 
 {% block content %}
-    
-    {{ authwidget('get_data_ajax(userIdToken, userRefreshToken, `get_projects`).then(fillProjectsTable)') }}
-    
-    <h1>Projects</h1>   
+    <h1 id=header>Projects</h1>   
     <table class="table table-striped" id="projectsTable"></table>
 
     <script>
+        $(authWidget(function() {
+            data_reload('get_projects', {}, fillProjectsTable);
+        }));
+        
         $(function() {
             $('#projectsTable').DataTable({
                 "paging":false,
