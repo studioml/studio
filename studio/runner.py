@@ -371,7 +371,10 @@ def add_hyperparam_experiments(
         param_values = parse_range(param_values_str)
         hyperparam_values[param_name] = param_values
 
+    import pprint
+    pprint.pprint(hyperparam_values)
     hyperparam_tuples = unfold_tuples(hyperparam_values)
+    print hyperparam_tuples
 
     for hyperparam_tuple in hyperparam_tuples:
         experiment_name = experiment_name_base
