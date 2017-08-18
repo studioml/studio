@@ -92,8 +92,8 @@ def users():
     return _render('users.html')
   
 @app.route('/all')
-@authenticated('/all')
 def all_experiments():
+    '''
     tic = time.time()
     global logger
 
@@ -106,13 +106,13 @@ def all_experiments():
     logger.debug(
         'All experiments page (/all) prepared in {} s'.format(toc - tic))
     return render_template("all_experiments.html", experiments=experiments)
+    '''
+    return _render('all_experiments.html')
 
 
 @app.route('/project/<key>')
 def project_details(key):
     return _render('project_details.html', project=key)
-
-
 
 @app.route('/user/<key>')
 def user_experiments(key):
@@ -120,15 +120,6 @@ def user_experiments(key):
 
 @app.route('/experiment/<key>')
 def experiment(key):
-    #experiment = _db_provider.get_experiment(key, getinfo=True)
-    #artifacts_urls = _db_provider.get_artifacts(key)
-    #logtail = experiment.info.get('logtail')
-    #info = experiment.info
-    #return render_template("experiment_details.html",
-    #                       experiment=experiment,
-    #                       artifacts=artifacts_urls,
-    #                       logtail=logtail,
-    #                       info=info)
     return _render("experiment_details.html", experiment=key)
 
 
@@ -174,27 +165,6 @@ def tensorboard(logdir):
 
     logger.debug('Redirecting to ' + redirect_url)
     return redirect(redirect_url)
-
-
-
-
-
-
-@app.route('/delete_experiment/<key>')
-@authenticated('/delete_experiment/<key>')
-def delete_experiment(key):
-    _db_provider.delete_experiment(key)
-    return redirect('/')
-
-
-@app.route('/delete_all/')
-@authenticated('/delete_all/')
-def delete_all_experiments():
-    pool = ThreadPool(128)
-    experiments = _db_provider.get_user_experiments()
-    pool.map(_db_provider.delete_experiment, experiments)
-
-    return redirect('/')
 
 
 @app.route('/api/get_experiment', methods=['POST'])
@@ -316,17 +286,33 @@ def get_project_experiments():
     return retval 
 
 
+@app.route('/api/delete_experiment', methods=['POST'])
+def delete_experiment():
+    tic = time.time()
+    key = request.json['key']
+    logger.info('Deleting experiment {} '.format(key))
+    try:
+        experiment = get_db().delete_experiment(key)
+        status = 'ok'
+    except BaseException as e:
+        status = e.message
+
+    toc = time.time()
+    logger.info('Processed delete_experiment request in {} s'
+        .format(toc - tic))
+
+    return json.dumps({'status':status})
 
 @app.route('/api/stop_experiment', methods=['POST'])
 def stop_experiment():
     tic = time.time()
     key = request.json['key']
-    logger.info('Getting experiment {} '.format(key))
+    logger.info('Deleting experiment {} '.format(key))
     try:
         experiment = get_db().stop_experiment(key)
         status = 'ok'
     except BaseException as e:
-        status = e.msg
+        status = e.message
 
     toc = time.time()
     logger.info('Processed stop_experiment request in {} s'
@@ -388,7 +374,7 @@ def _render(page, **kwargs):
 
 def main():
     parser = argparse.ArgumentParser(
-        description='Studio.ML WebUI server. \
+        description='Studio WebUI server. \
                      Usage: studio \
                      <arguments>')
 
@@ -431,7 +417,7 @@ def main():
     global _save_auth_cookie
     _save_auth_cookie = True
 
-    print('Starting Studio.ML on port {0}'.format(args.port))
+    print('Starting Studio UI on port {0}'.format(args.port))
     app.run(host='0.0.0.0', port=args.port, debug=True)
 
 

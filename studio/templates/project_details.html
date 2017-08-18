@@ -13,7 +13,7 @@
     <script>
 
         $(authWidget(function() {
-            data_reload('get_project_experiments', data={"project": "{{ project }}"}, fillExperimentTable)
+            reload(() => data_ajax('get_project_experiments', data={"project": "{{ project }}"}), fillExperimentTable)
         }));
         
         function viewInTensorBoard(key) {

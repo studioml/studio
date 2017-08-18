@@ -41,12 +41,18 @@
               <li><a href="/projects">Projects</a></li>
               <li><a href="/users">Users</a></li>
               <li><a href="/all">All</a></li>
-              <li><a href="" id="sign-out">Sign out</a>
+              <li><a href="" id="sign-out" hidden>Sign out</a>
             </ul>
           </div>
         </div>
       </nav>
 
+
+    <div id="logged-out" hidden>
+        <h1>Studio UI</h1>
+        <h3>Sign in to access your experiments</h3>
+        <div id="firebaseui-auth-container"></div>
+    </div>
 
     <div id="logged-in">     	 
 
@@ -79,7 +85,7 @@
                         {
                             "title":"Key",
                             "render":function(data, type, row) {
-                                return '<a href="experiment/' + data + '">' + data + '</a>' 
+                                return '<a href="/experiment/' + data + '">' + data + '</a>' 
                             }  
                         },
                         {"title":"Metric"},
@@ -96,7 +102,7 @@
                         {
                             "title":"Project",
                             "render":function(data, type, row) {
-                                return '<a href="project/' + data + '">' + data + '</a>' 
+                                return '<a href="/project/' + data + '">' + data + '</a>' 
                             }  
                         },
                         {"title":"Status"}
@@ -109,30 +115,39 @@
         	$(this).toggleClass('selected');
 	    });
 
-        function fillExperimentTable(data) {
-            table = $('#experimentTable').DataTable()
-            table.clear()
+        function fillExperimentTable(data, clearTable=true) {
             response_data = JSON.parse(data)
             if (response_data.status == 'ok') {
                 
-                for (var i in response_data.experiments) {
-                    experiment = response_data.experiments[i]
-                    new_row = [
-                        experiment.time_added,
-                        experiment.key,
-                        experiment.metric,
-                        experiment.info.metric_value,
-                        experiment.project,
-                        experiment.status,
-                    ]
-                    table.row.add(new_row)
+                table = $('#experimentTable').DataTable()
+                if (clearTable) {
+                    table.clear()
                 }
-                table.draw()
+                addExperimentsToTable(response_data.experiments)                
                 
                 if (response_data.experiments.length > 0) {
                     $('#buttonContainer').show()
                 }
             }
+            return response_data
+        }
+
+        function addExperimentsToTable(experiments) {
+            table = $('#experimentTable').DataTable()
+            console.log(experiments)
+            for (var i=0; i < experiments.length; i++) {
+                experiment = experiments[i]
+                new_row = [
+                    experiment.time_added,
+                    experiment.key,
+                    experiment.metric,
+                    experiment.info.metric_value,
+                    experiment.project,
+                    experiment.status,
+                ]
+                table.row.add(new_row)
+            }
+            table.draw()
         }
 
         function deleteExperiments() {
@@ -144,7 +159,7 @@
             console.log(selectedData)
             for (var i = 0; i < selectedData.length; i++) {
                 console.log('Deleting experiment with key ' + selectedData[i][1])
-                get_data_ajax('delete_experiment', data={"key":selectedData[i][1]})
+                data_ajax('delete_experiment', data={"key":selectedData[i][1]})
             }            
         }
 
@@ -163,13 +178,7 @@
         </script>
     {%- endmacro %}
     
-     
-    <div id="logged-out" hidden>
-        <h1>Studio.ML</h1>
-        <h3>Sign in to access your experiments</h3>
-        <div id="firebaseui-auth-container"></div>
-    </div>
-
+    
     <script>
         function authWidget(afterAuthCallback) {
             var config = {
@@ -203,11 +212,15 @@
                         }
                         
                         $('#logged-in').show();
+                        var name = user.displayName ? user.displayName : user.email;
+                        $('#sign-out').html('Sign out of ' + name)
+                        $('#sign-out').show();
 
                     });
 
                     } else {
                         $('#logged-in').hide();
+                        $('#sign-out').hide();
                         $('#logged-out').show();
                     }
                 // [END onAuthStateChanged]
@@ -255,27 +268,23 @@
         
     <script>
 
-        function data_reload(apiMethod, data, thenFunc) {
-                           
-            var minTimeout = 1
-            var maxTimeout = 120
-
+        function reload(loader, thenFunc, minTimeout=1, maxTimeout=120) {
             var timeout = minTimeout
             var oldData = null
             
             var headerData = $('#header').html()
 
             function reload() {
-                get_data_ajax(apiMethod, data).then(function(data) {
-                    
-                    if (oldData == data) {
+                $('#header').html(headerData + ' <i class="fa fa-cog fa-spin"></i>');
+                loader().then(function(data) {
+                    console.log(data)
+                    if (oldData == JSON.stringify(data)) {
                         timeout = timeout * 2
                         $('#header').html(headerData)
                     } else {
                         timeout = minTimeout;
                         thenFunc(data);
-                        oldData = data;
-                        $('#header').html(headerData + ' <i class="fa fa-cog fa-spin"></i>');
+                        oldData = JSON.stringify(data)
                     }
                     timeout = Math.min(timeout, maxTimeout);
                     console.log("Timeout = " + timeout)
@@ -285,7 +294,7 @@
             reload(); 
         }
 
-        function get_data_ajax(apiMethod, data={}) {
+        function data_ajax(apiMethod, data={}) {
             if ( authWidget.userRefreshToken != null ) {
                 data["refreshToken"] = authWidget.userRefreshToken
             }

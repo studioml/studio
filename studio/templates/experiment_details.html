@@ -44,19 +44,20 @@
 
     <script>
         $(authWidget(function() {
-            get_data_ajax('get_experiment', data={"key": "{{ experiment }}"}).then(updateExperimentPage)
+            reload(() => data_ajax('get_experiment', data={"key": "{{ experiment }}"}), updateExperimentPage)
         }));
 
         function deleteExperiment(key) {
-            document.getElementById("deleteButton").innerHTML="<i class='fa fa-cog fa-spin'></i> Deleting..."
             if (confirm("The experiment and its artfacts will be lost. Proceed?")) {
-                window.location.href = "/delete_experiment/" + key
+                data_ajax('delete_experiment', data={"key": "{{ experiment }}"}).then(function() {
+                    window.location.href='/'
+                });
             }
         }
 
         function stopExperiment(key) {
             if (confirm("The experiment will be sent a stop signal. Proceed?")) {
-                window.location.href = "/stop_experiment/" + key
+                data_ajax('stop_experiment', data={"key": "{{ experiment }}"})
             }
         }
 

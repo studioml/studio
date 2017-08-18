@@ -6,7 +6,7 @@
 
     <script>
         $(authWidget(function() {
-            data_reload('get_projects', {}, fillProjectsTable);
+            reload(() => data_ajax('get_projects'), fillProjectsTable);
         }));
         
         $(function() {

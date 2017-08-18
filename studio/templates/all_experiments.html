@@ -2,8 +2,51 @@
 
 {% block content %}
 
-        <h1>All experiments</h1>
+        <h1 id=header>All experiments</h1>
 
         {{ experimenttable() }}
+        
+        <script>
+            $(authWidget(() => reload(getAllExperiments, addExperimentsToTable)))
+
+            function getAllExperiments() {
+                var allExperiments = {}
+                return data_ajax('get_users').then( (response) => {
+                    
+                    userdata = JSON.parse(response)
+                    // parse data and get userids
+                    deferreds = []
+                    console.log(userdata)
+                    for (user in userdata.users) {
+                        console.log(user)
+                        deferreds.push(data_ajax('get_user_experiments', data={"user":user}))
+                            
+                    }
+                    console.log(deferreds)
+
+                    return $.when.apply($, deferreds).then(flattenExperiments)
+                })
+            }
+
+
+            function flattenExperiments() {
+                var allExperiments = []
+                
+                for (var i=0; i < arguments.length; i++) {
+                    response = arguments[i][0]
+                    data = JSON.parse(response)
+                    if (data.status == 'ok') {
+                        for (var j = 0; j < data.experiments.length; j++) {
+                            allExperiments.push(data.experiments[j])
+                        }
+                    }
+                }
+                
+                return allExperiments
+                
+            }
+        </script>
+
+
 
 {% endblock %}

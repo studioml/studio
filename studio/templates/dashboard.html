@@ -12,7 +12,7 @@
 
     <script>
         $(authWidget(function() {
-            data_reload('get_user_experiments', {}, fillExperimentTable)
+            reload(() => data_ajax('get_user_experiments'), fillExperimentTable)
         }));
            
  
