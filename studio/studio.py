@@ -5,19 +5,12 @@ import argparse
 import yaml
 import logging
 import json
-from functools import wraps
 import socket
 import subprocess
 from urlparse import urlparse
-from requests.exceptions import HTTPError
-from multiprocessing.pool import ThreadPool
 
 import google.oauth2.id_token
 import google.auth.transport.requests
-
-
-
-import fs_tracker
 
 logging.basicConfig()
 
@@ -31,18 +24,22 @@ _save_auth_cookie = False
 
 logger = None
 
+
 @app.route('/')
 def dashboard():
     return _render('dashboard.html')
 
+
 @app.route('/projects')
-def projects(): 
+def projects():
     return _render('projects.html')
+
 
 @app.route('/users')
 def users():
     return _render('users.html')
-  
+
+
 @app.route('/all')
 def all_experiments():
     return _render('all_experiments.html')
@@ -52,9 +49,11 @@ def all_experiments():
 def project_details(key):
     return _render('project_details.html', project=key)
 
+
 @app.route('/user/<key>')
 def user_experiments(key):
     return _render("user_details.html", user=key)
+
 
 @app.route('/experiment/<key>')
 def experiment(key):
@@ -69,7 +68,9 @@ def tensorboard_exp(key):
 
         return tensorboard(tb_path)
     else:
-        return render_template('error.html', errormsg="Tensorboard is not allowed in hosted mode yet")
+        return render_template(
+            'error.html',
+            errormsg="Tensorboard is not allowed in hosted mode yet")
 
 
 @app.route('/tensorboard_proj/<key>')
@@ -83,7 +84,9 @@ def tensorboard_proj(key):
 
         return tensorboard(logdir)
     else:
-        return render_template('error.html', errormsg="TensorBoard is not allowed in hosted mode yet")
+        return render_template(
+            'error.html',
+            errormsg="TensorBoard is not allowed in hosted mode yet")
 
 
 def tensorboard(logdir):
@@ -119,19 +122,19 @@ def get_experiment():
         experiment = get_db().get_experiment(key).__dict__
         artifacts = get_db().get_artifacts(key)
         for art, url in artifacts.iteritems():
-            experiment['artifacts'][art]['url']=url
+            experiment['artifacts'][art]['url'] = url
 
         status = 'ok'
     except BaseException as e:
         experiment = {}
         status = e.message
 
-    retval = json.dumps({'status':status, 'experiment':experiment})
+    retval = json.dumps({'status': status, 'experiment': experiment})
 
     toc = time.time()
     logger.info('Processed get_experiment request in {} s'
-        .format(toc - tic))
-    
+                .format(toc - tic))
+
     return retval
 
 
@@ -146,87 +149,89 @@ def get_user_experiments():
         user = myuser_id
 
     # TODO check is myuser_id is authorized to do that
-    
+
     logger.info('Getting experiments of user {}'
-        .format(user))
+                .format(user))
 
     experiments = get_db().get_user_experiments(user, blocking=True)
     status = "ok"
     retval = json.dumps({
-        "status":status, 
-        "experiments":[e.__dict__ for e in experiments]
+        "status": status,
+        "experiments": [e.__dict__ for e in experiments]
     })
     toc = time.time()
     logger.info('Processed get_user_experiments request in {} s'
-        .format(toc - tic))
-    return retval 
+                .format(toc - tic))
+    return retval
+
 
 @app.route('/api/get_projects', methods=['POST'])
 def get_projects():
     tic = time.time()
     myuser_id = get_and_verify_user(request)
-    
-    #TODO check / filter access
+
+    # TODO check / filter access
 
     projects = get_db().get_projects()
     status = "ok"
 
     retval = json.dumps({
-        "status":status,
-        "projects":projects
+        "status": status,
+        "projects": projects
     })
 
     toc = time.time()
     logger.info('Processed get_projects request in {} s'
-        .format(toc - tic))
-    return retval 
+                .format(toc - tic))
+    return retval
+
 
 @app.route('/api/get_users', methods=['POST'])
 def get_users():
     tic = time.time()
     myuser_id = get_and_verify_user(request)
-    
-    #TODO check / filter access
+
+    # TODO check / filter access
 
     users = get_db().get_users()
     status = "ok"
 
     retval = json.dumps({
-        "status":status,
-        "users":users
+        "status": status,
+        "users": users
     })
     toc = time.time()
     logger.info('Processed get_user_experiments request in {} s'
-        .format(toc - tic))
-    return retval 
+                .format(toc - tic))
+    return retval
 
 
 @app.route('/api/get_project_experiments', methods=['POST'])
 def get_project_experiments():
     tic = time.time()
     myuser_id = get_and_verify_user(request)
-    
+
     project = request.json.get('project')
     if not project:
         status = "Project is none!"
         experiments = []
     else:
         # TODO check is myuser_id is authorized to do that
-    
+
         logger.info('Getting experiments in project {}'
-            .format(project))
+                    .format(project))
 
         experiments = get_db().get_project_experiments(project)
 
     status = "ok"
     retval = json.dumps({
-        "status":status, 
-        "experiments":[e.__dict__ for e in experiments]
+        "status": status,
+        "experiments": [e.__dict__ for e in experiments]
     })
     toc = time.time()
     logger.info('Processed get_project_experiments request in {} s'
-        .format(toc - tic))
-    return retval 
+                .format(toc - tic))
+    return retval
 
 
 @app.route('/api/delete_experiment', methods=['POST'])
@@ -235,16 +240,17 @@ def delete_experiment():
     key = request.json['key']
     logger.info('Deleting experiment {} '.format(key))
     try:
-        experiment = get_db().delete_experiment(key)
+        get_db().delete_experiment(key)
         status = 'ok'
     except BaseException as e:
         status = e.message
 
     toc = time.time()
     logger.info('Processed delete_experiment request in {} s'
-        .format(toc - tic))
+                .format(toc - tic))
 
-    return json.dumps({'status':status})
+    return json.dumps({'status': status})
+
 
 @app.route('/api/stop_experiment', methods=['POST'])
 def stop_experiment():
@@ -252,24 +258,25 @@ def stop_experiment():
     key = request.json['key']
     logger.info('Deleting experiment {} '.format(key))
     try:
-        experiment = get_db().stop_experiment(key)
+        get_db().stop_experiment(key)
         status = 'ok'
     except BaseException as e:
         status = e.message
 
     toc = time.time()
     logger.info('Processed stop_experiment request in {} s'
-        .format(toc - tic))
+                .format(toc - tic))
 
-    return json.dumps({'status':status})
+    return json.dumps({'status': status})
+
 
 def get_and_verify_user(request):
     if not request.headers or 'Authorization' not in request.headers.keys():
         return None
-    
+
     auth_token = request.headers['Authorization'].split(' ')[-1]
     claims = google.oauth2.id_token.verify_firebase_token(
-            auth_token, _grequest)
+        auth_token, _grequest)
     if not claims:
         return None
     else:
@@ -277,10 +284,10 @@ def get_and_verify_user(request):
         if _save_auth_cookie and request.json and \
                 'refreshToken' in request.json.keys():
             get_db().refresh_auth_token(
-                    claims['email'], 
-                    request.json['refreshToken']
+                claims['email'],
+                request.json['refreshToken']
             )
-            
+
         return claims['user_id']
 
 
@@ -301,10 +308,11 @@ def getlogger():
     global logger
     return logger
 
+
 def _render(page, **kwargs):
     tic = time.time()
     retval = render_template(
-        page, 
+        page,
         api_key=get_db().app.api_key,
         project_id='studio-ed756',
         send_refresh_token="true",
@@ -313,8 +321,9 @@ def _render(page, **kwargs):
     )
     toc = time.time()
     getlogger().info('page {} rendered in {} s'.
-        format(page, toc - tic))
+                     format(page, toc - tic))
     return retval
+
 
 def main():
     parser = argparse.ArgumentParser(

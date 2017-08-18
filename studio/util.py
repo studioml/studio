@@ -26,7 +26,6 @@ def sha256_checksum(filename, block_size=65536):
     return sha256.hexdigest()
 
 
-
 def event_reader(fileobj):
 
     if isinstance(fileobj, str):
@@ -35,7 +34,6 @@ def event_reader(fileobj):
     header_len = 12
     footer_len = 4
     size_len = 8
-
 
     while True:
         try:
@@ -54,5 +52,3 @@ def event_reader(fileobj):
             break
 
     fileobj.close()
-
-

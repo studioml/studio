@@ -233,8 +233,8 @@ class ModelTest(unittest.TestCase):
         os.environ['TEST_VAR2'] = value2
 
         config = model.get_config(
-            os.path.join(os.path.dirname(os.path.realpath(__file__)), 
-            'test_config_env.yaml'))
+            os.path.join(os.path.dirname(os.path.realpath(__file__)),
+                         'test_config_env.yaml'))
         self.assertEquals(config['test_key'], value1)
         self.assertEquals(config['test_section']['test_key'], value2)
 

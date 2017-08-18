@@ -248,7 +248,7 @@ class TartifactStore(object):
     def delete_artifact(self, artifact):
         if 'key' in artifact.keys():
             self._delete_file(artifact['key'])
-    
+
     def stream_artifact(self, artifact):
         url = self.get_artifact_url(artifact)
         return tarfile.open(fileobj=urllib.urlopen(url), mode='r|gz')

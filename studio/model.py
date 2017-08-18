@@ -17,14 +17,9 @@ try:
     from multiprocessing.pool import ThreadPool
 except BaseException:
     ThreadPool = None
-
-# ThreadPool = None
-
-import subprocess
-
 try:
     import tensorflow as tf
-except:
+except BaseException:
     tf = None
 try:
     import keras
@@ -409,7 +404,6 @@ class FirebaseProvider(object):
 
         info['logtail'] = self._get_experiment_logtail(experiment)
 
-
         if experiment.metric is not None:
             metric_str = experiment.metric.split(':')
             metric_name = metric_str[0]
@@ -447,7 +441,7 @@ class FirebaseProvider(object):
         except BaseException as e:
             self.logger.exception(e)
             return None
-            
+
     def get_experiment(self, key, getinfo=True):
         data = self.__getitem__(self._get_experiments_keybase() + key)
         assert data, "data at path %s not found! " % (
@@ -632,9 +626,6 @@ class PostgresProvider(object):
         raise NotImplementedError()
 
 
-
-
-
 def get_config(config_file=None):
 
     config_paths = []
@@ -668,7 +659,7 @@ def get_config(config_file=None):
                      .format(config_paths))
 
 
-def get_db_provider(config=None, blocking_auth=True): 
+def get_db_provider(config=None, blocking_auth=True):
     if not config:
         config = get_config()
     verbose = parse_verbosity(config.get('verbose'))
