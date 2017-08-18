@@ -37,7 +37,9 @@
         <div id="buttons" hidden>
             <button onclick='stopExperiment( "{{ experiment }}" )' type="button" class="btn btn-danger" id=stopButton>Stop</button>
             <button onclick='deleteExperiment( "{{ experiment }}" )' type="button" class="btn btn-danger" id=deleteButton>Delete</button>
-            <button onclick='viewInTensorBoard( "{{ experiment }}" )' type="button" class="btn btn-default" id=tbButton>Tensorboard</button>
+            {% if allow_tensorboard %}
+                <button onclick='viewInTensorBoard( "{{ experiment }}" )' type="button" class="btn btn-default" id=tbButton>Tensorboard</button>
+            {%- endif %}
         </div>
     <dl>
     
@@ -84,7 +86,7 @@
             if (data.status == 'ok') { 
                 e = data.experiment
                 if (e.project) {
-                    $('#project').html('Project: <a href=projects/' + e.project + '>' + e.project + '</a>')
+                    $('#project').html('Project: <a href="/project/' + e.project + '">' + e.project + '</a>')
                 }
                 
                 $('#filename').html('Filename: ' + e.filename)

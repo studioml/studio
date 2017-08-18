@@ -5,10 +5,9 @@
 
     {{ experimenttable(showproject=false) }}
 
-    {% if experiments|length > 0 %}
+    {% if allow_tensorboard %}
         <button onclick='viewInTensorBoard( "{{ project }}" )' type="button" class="btn btn-default" id=tbButton> Tensorboard </button>
-        <button onclick='deleteExperiments({{ key_list }})' type="button" class="btn btn-danger" id="deleteButton"> Delete ALL</button>           
-    {% endif %}
+    {%- endif %}
 
     <script>
 
@@ -19,31 +18,6 @@
         function viewInTensorBoard(key) {
             document.getElementById("tbButton").innerHTML="<i class='fa fa-cog fa-spin'></i> Redirecting..."
             window.location.href = "/tensorboard_proj/" + key
-        }
-
-        function deleteExperiments(keys) {
-            if (!confirm("Delete ALL experiments in the project?")) {
-                return 
-            }
-
-            document.getElementById("deleteButton").innerHTML="<i class='fa fa-cog fa-spin'></i> Deleting..."
-            console.log("Deleting experiments " + keys)
-            var noCompleted = 0
-            for (var i = 0; i < keys.length; i++) {
-                var xhttp = new XMLHttpRequest();
-
-                xhttp.onreadystatechange = function() {
-                    console.log("Response from the server for experiment " + keys[i] + " deletion request")
-                    noCompleted++;
-                    if (noCompleted == keys.length) {
-                        location.href="/projects"
-                    }
-                }
-
-                console.log("Deleting experiment " + keys[i]);
-                xhttp.open("GET", "/delete_experiment/" + keys[i], true);
-                xhttp.send();
-           }
         }
 
     </script>

@@ -31,54 +31,6 @@ _save_auth_cookie = False
 
 logger = None
 
-
-def authenticated(redirect_after):
-    def auth_decorator(func):
-        @wraps(func)
-        def auth_wrapper(**kwargs):
-            if _db_provider.auth and _db_provider.auth.expired:
-                formatted_redirect = redirect_after
-                for k, v in kwargs.iteritems():
-                    formatted_redirect = formatted_redirect.replace(
-                        '<' + k + '>', v)
-                logger.debug(get_auth_url() + formatted_redirect)
-                return redirect(get_auth_url() + formatted_redirect)
-
-            try:
-                return func(**kwargs)
-            except HTTPError as e:
-                return render_template('error.html', errormsg=str(e))
-
-        return auth_wrapper
-    return auth_decorator
-
-
-@app.template_filter('format_time')
-def format_time(timestamp):
-    return time.strftime(
-        '%Y-%m-%d %H:%M:%S', time.localtime(timestamp))
-
-
-@app.route('/auth_response', methods=['POST'])
-def auth_response():
-    auth_dict = json.loads(request.form['data'])
-    logger.debug(auth_dict.keys())
-    expires = auth_dict['stsTokenManager']['expirationTime'] / 1000
-    logger.debug("Authentication successful. Token duration (s): {}"
-                 .format(expires - time.time()))
-    logger.debug("auth_dict = " + str(auth_dict))
-
-    refresh_token = auth_dict['stsTokenManager']['refreshToken']
-    email = auth_dict['email']
-
-    logger.debug('refresh_token = ' + refresh_token)
-    logger.debug('email = ' + email)
-
-    _db_provider.refresh_auth_token(email, refresh_token)
-    logger.debug("Authentication successfull, response" + str(request.form))
-    return redirect(request.form['redirect'])
-
-
 @app.route('/')
 def dashboard():
     return _render('dashboard.html')
@@ -93,20 +45,6 @@ def users():
   
 @app.route('/all')
 def all_experiments():
-    '''
-    tic = time.time()
-    global logger
-
-    experiments = []
-    users = _db_provider.get_users()
-    for user in users:
-        experiments += _db_provider.get_user_experiments(user, blocking=False)
-
-    toc = time.time()
-    logger.debug(
-        'All experiments page (/all) prepared in {} s'.format(toc - tic))
-    return render_template("all_experiments.html", experiments=experiments)
-    '''
     return _render('all_experiments.html')
 
 
@@ -124,23 +62,28 @@ def experiment(key):
 
 
 @app.route('/tensorboard_exp/<key>')
-@authenticated('/tensorboard_exp/<key>')
 def tensorboard_exp(key):
-    experiment = _db_provider.get_experiment(key, getinfo=False)
-    tb_path = _db_provider.store.get_artifact(experiment.artifacts['tb'])
+    if get_allow_tensorboard():
+        experiment = _db_provider.get_experiment(key, getinfo=False)
+        tb_path = _db_provider.store.get_artifact(experiment.artifacts['tb'])
 
-    return tensorboard(tb_path)
+        return tensorboard(tb_path)
+    else:
+        return render_template('error.html', errormsg="Tensorboard is not allowed in hosted mode yet")
 
 
 @app.route('/tensorboard_proj/<key>')
-@authenticated('/tensorboard_proj/<key>')
 def tensorboard_proj(key):
-    experiments = _db_provider.get_project_experiments(key)
-    logdir = ','.join(
-        [e.key + ":" + fs_tracker.get_tensorboard_dir(e.key)
-         for e in experiments])
+    if get_allow_tensorboard():
+        experiments = get_db().get_project_experiments(key)
 
-    return tensorboard(logdir)
+        logdir = ','.join(
+            [e.key + ":" + get_db().store.get_artifact(e.artifacts['tb'])
+             for e in experiments])
+
+        return tensorboard(logdir)
+    else:
+        return render_template('error.html', errormsg="TensorBoard is not allowed in hosted mode yet")
 
 
 def tensorboard(logdir):
@@ -341,18 +284,18 @@ def get_and_verify_user(request):
         return claims['user_id']
 
 
-def get_auth_url():
-    return ("https://{}/index.html?" +
-            "authurl=http://{}/auth_response&redirect=").format(
-        _db_provider.get_auth_domain(),
-        request.host)
-
 def get_db():
     global _db_provider
     if not _db_provider:
         _db_provider = model.get_db_provider()
 
     return _db_provider
+
+
+def get_allow_tensorboard():
+    global _save_auth_cookie
+    return _save_auth_cookie
+
 
 def getlogger():
     global logger
@@ -365,6 +308,7 @@ def _render(page, **kwargs):
         api_key=get_db().app.api_key,
         project_id='studio-ed756',
         send_refresh_token="true",
+        allow_tensorboard=get_allow_tensorboard(),
         **kwargs
     )
     toc = time.time()

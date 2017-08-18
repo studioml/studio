@@ -72,21 +72,22 @@
                         style: "multi"
                     },
 
-                    "order":[[0, "desc"]],
+                    "order":[[2, "desc"]],
                     "paging":false,
                     "stateSave": true,
                     "columns": [
-                       {
-                            "title":"Time added",
-                            "render":function(data, type, row) {
-                                return new Date(data * 1000)
-                            }   
-                        },
                         {
                             "title":"Key",
                             "render":function(data, type, row) {
                                 return '<a href="/experiment/' + data + '">' + data + '</a>' 
                             }  
+                        },
+                        {"title": "Script"},
+                        {
+                            "title":"Time added",
+                            "render":function(data, type, row) {
+                                return new Date(data * 1000)
+                            }   
                         },
                         {"title":"Metric"},
                         {
@@ -102,7 +103,11 @@
                         {
                             "title":"Project",
                             "render":function(data, type, row) {
-                                return '<a href="/project/' + data + '">' + data + '</a>' 
+                                if (data) {
+                                    return '<a href="/project/' + data + '">' + data + '</a>';
+                                } else {    
+                                    return 'None';
+                                }
                             }  
                         },
                         {"title":"Status"}
@@ -138,8 +143,9 @@
             for (var i=0; i < experiments.length; i++) {
                 experiment = experiments[i]
                 new_row = [
-                    experiment.time_added,
                     experiment.key,
+                    experiment.filename,
+                    experiment.time_added,
                     experiment.metric,
                     experiment.info.metric_value,
                     experiment.project,
