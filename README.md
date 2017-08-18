@@ -2,7 +2,7 @@
 
 [![Hex.pm](https://img.shields.io/hexpm/l/plug.svg)](https://github.com/studioml/studio/blob/master/LICENSE)
 
-Studio is a model management framework written in Python to help simplify and expedite your model building experience. It was developed to minimize any overhead involved with the scheduling, running, monitoring or mangagement of artifacts of your machine learning experiments in Python without invasion of your code. No one wants to spend their time configuring different machines, setting up dependencies, or playing archeology to track down previous model artifacts. 
+Studio is a model management framework written in Python to help simplify and expedite your model building experience. It was developed to minimize any overhead involved with the scheduling, running, monitoring or management of artifacts of your machine learning experiments in Python without invasion of your code. No one wants to spend their time configuring different machines, setting up dependencies, or playing archeology to track down previous model artifacts. 
 
 Most of the features are compatible with any Python machine learning framework ([Keras](https://github.com/fchollet/keras), [TensorFlow](https://github.com/tensorflow/tensorflow), [scikit-learn](https://github.com/scikit-learn/scikit-learn), etc); some extra features are available for Keras and TensorFlow.
 
