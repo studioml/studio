@@ -237,11 +237,16 @@ def get_project_experiments():
 @app.route('/api/delete_experiment', methods=['POST'])
 def delete_experiment():
     tic = time.time()
-    key = request.json['key']
-    logger.info('Deleting experiment {} '.format(key))
+    userid = get_and_verify_user(request)
     try:
-        get_db().delete_experiment(key)
-        status = 'ok'
+        key = request.json['key']
+        if get_db().can_write_experiment(key, userid):
+            logger.info('Deleting experiment {} '.format(key))
+            get_db().delete_experiment(key)
+            status = 'ok'
+        else:
+            raise ValueError('Unauthorized')
+
     except BaseException as e:
         status = e.message
 
@@ -255,11 +260,16 @@ def delete_experiment():
 @app.route('/api/stop_experiment', methods=['POST'])
 def stop_experiment():
     tic = time.time()
-    key = request.json['key']
-    logger.info('Deleting experiment {} '.format(key))
+    userid = get_and_verify_user(request)
     try:
-        get_db().stop_experiment(key)
-        status = 'ok'
+        key = request.json['key']
+        if get_db().can_write_experiment(userid, key):
+            logger.info('Stopping experiment {} '.format(key))
+            get_db().stop_experiment(key)
+            status = 'ok'
+        else:
+            raise ValueError('Unauthorized')
+
     except BaseException as e:
         status = e.message
 

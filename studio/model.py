@@ -565,6 +565,17 @@ class FirebaseProvider(object):
         else:
             return False
 
+    def can_write_experiment(self, key=None, user=None):
+        assert key is not None
+        user = user if user else self._get_userid()
+
+        owner = self.__getitem__(
+            self._get_experiments_keybase() + key + "/owner")
+        if owner is None:
+            return True
+        else:
+            return (owner == user)
+
     def __enter__(self):
         return self
 
@@ -623,6 +634,9 @@ class PostgresProvider(object):
         raise NotImplementedError()
 
     def is_auth_expired(self):
+        raise NotImplementedError()
+
+    def can_write_experiment(self, key=None, user=None):
         raise NotImplementedError()
 
 

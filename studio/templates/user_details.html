@@ -3,7 +3,7 @@
 {% block content %}
      <h1 id=header>User {{ user }} </h1>
     
-    {{ experimenttable(delete_button=false) }}
+    {{ experimenttable(delete_button=true) }}
 
     <script>
         $(authWidget(() => reload(() => data_ajax('get_user_experiments', data={"user": "{{ user }}"}), fillExperimentTable)));

@@ -51,15 +51,25 @@
 
         function deleteExperiment(key) {
             if (confirm("The experiment and its artfacts will be lost. Proceed?")) {
-                data_ajax('delete_experiment', data={"key": "{{ experiment }}"}).then(function() {
-                    window.location.href='/'
-                });
+                data_ajax('delete_experiment', data={"key": "{{ experiment }}"}).then((response) => {
+                    data = JSON.parse(response);
+                    if (data.status != 'ok') {
+                        alert(data.status);
+                    } else {
+                        window.location.href = '/';
+                    }
+                });                   
             }
         }
 
         function stopExperiment(key) {
             if (confirm("The experiment will be sent a stop signal. Proceed?")) {
-                data_ajax('stop_experiment', data={"key": "{{ experiment }}"})
+                data_ajax('stop_experiment', data={"key": "{{ experiment }}"}).then((response) => {
+                    data = JSON.parse(response);
+                    if (data.status != 'ok') {
+                        alert(data.status);
+                    }       
+                });                   
             }
         }
 

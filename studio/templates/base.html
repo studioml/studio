@@ -164,8 +164,13 @@
             selectedData = $('#experimentTable').DataTable().rows('.selected').data()
             console.log(selectedData)
             for (var i = 0; i < selectedData.length; i++) {
-                console.log('Deleting experiment with key ' + selectedData[i][1])
-                data_ajax('delete_experiment', data={"key":selectedData[i][1]})
+                console.log('Deleting experiment with key ' + selectedData[i][0])
+                data_ajax('delete_experiment', data={"key":selectedData[i][0]}).then((response) => {
+                    data = JSON.parse(response);
+                    if (data.status != 'ok') {
+                        alert(data.status);
+                    }       
+                });                   
             }            
         }
 
