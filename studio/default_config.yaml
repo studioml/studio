@@ -9,7 +9,7 @@ database:
     databaseURL: "https://{}.firebaseio.com"
     storageBucket: "{}.appspot.com"
 
-    # serviceAccount: "/path/to/serviceAccount.json"
+    serviceAccount: $GOOGLE_APPLICATION_CREDENTIALS
     # guest: true
     # use_email_auth: true
             

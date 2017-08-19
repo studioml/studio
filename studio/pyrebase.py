@@ -21,7 +21,10 @@ from requests_toolbelt.adapters import appengine
 import certifi
 
 import python_jwt as jwt
-from Crypto.PublicKey import RSA
+try:
+    from Crypto.PublicKey import RSA
+except BaseException:
+    RSA = None
 import datetime
 
 

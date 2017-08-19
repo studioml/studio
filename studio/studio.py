@@ -141,7 +141,8 @@ def get_experiment():
 @app.route('/api/get_user_experiments', methods=['POST'])
 def get_user_experiments():
     tic = time.time()
-
+    import pdb
+    pdb.set_trace()
     myuser_id = get_and_verify_user(request)
     if request.json and 'user' in request.json.keys():
         user = request.json['user']
@@ -316,6 +317,10 @@ def get_allow_tensorboard():
 
 def getlogger():
     global logger
+    if logger is None:
+        logger = logging.getLogger('studio_server')
+        logger.setLevel(10)
+
     return logger
 
 
@@ -373,9 +378,7 @@ def main():
     global _db_provider
     _db_provider = model.get_db_provider(config, blocking_auth=False)
 
-    global logger
-    logger = logging.getLogger('studio')
-    logger.setLevel(model.parse_verbosity(config.get('verbose')))
+    getlogger().setLevel(model.parse_verbosity(config.get('verbose')))
 
     global _save_auth_cookie
     _save_auth_cookie = True

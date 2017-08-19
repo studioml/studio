@@ -4,7 +4,10 @@ import time
 import json
 import shutil
 import atexit
-from apscheduler.schedulers.background import BackgroundScheduler
+try:
+    from apscheduler.schedulers.background import BackgroundScheduler
+except BaseException:
+    BackgroundScheduler = None
 
 token_dir = os.path.expanduser('~/.tfstudio/keys')
 hour = 3600
