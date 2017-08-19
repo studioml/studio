@@ -141,8 +141,6 @@ def get_experiment():
 @app.route('/api/get_user_experiments', methods=['POST'])
 def get_user_experiments():
     tic = time.time()
-    import pdb
-    pdb.set_trace()
     myuser_id = get_and_verify_user(request)
     if request.json and 'user' in request.json.keys():
         user = request.json['user']
@@ -288,6 +286,7 @@ def get_and_verify_user(request):
     auth_token = request.headers['Authorization'].split(' ')[-1]
     claims = google.oauth2.id_token.verify_firebase_token(
         auth_token, _grequest)
+
     if not claims:
         return None
     else:
