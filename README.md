@@ -1,4 +1,4 @@
-# Studio
+# StudioML
 
 [![Hex.pm](https://img.shields.io/hexpm/l/plug.svg)](https://github.com/studioml/studio/blob/master/LICENSE)
 
@@ -92,7 +92,7 @@ gpu cloud worker test in EC2 cloud (takes about 500 seconds due to installation 
 Both studio ui and studio runner use the same authentication tokens for a database backend. The tokens are valid for one hour, 
 but if Studio is running, it renews the tokens automatically. 
 
-Note that refresh tokens do not expire; this means you can use these tokens on multiple machines, e.g. when you want to use a Google account authentication on a remote server but don't want to open extra ports. Simply copy the contents of ~/.tfstudio/keys folder to the desired machine.
+Note that refresh tokens do not expire; this means you can use these tokens on multiple machines, e.g. when you want to use a Google account authentication on a remote server but don't want to open extra ports. Simply copy the contents of ~/.studioml/keys folder to the desired machine.
 
 Currently Studio supports 2 methods of authentication: email & password and using a Google account.
 To use studio runner and studio ui in guest mode, in studio/default_config.yaml, uncomment "guest: true" under the database section.

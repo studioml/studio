@@ -1,7 +1,7 @@
 # Setting up a database
 This page describes the process of setting up your own database / storage for the models. This puts you in full control of who has access to the experiment data. 
-For the moment, tfstudio only supports FireBase (https://firebase.google.com/) as a database/storage backend. 
-To configure tfstudio to work with firebase, do the following:
+For the moment, studioml only supports FireBase (https://firebase.google.com/) as a database/storage backend. 
+To configure studioml to work with firebase, do the following:
 
 ## Creating firebase project and configuring TensorFlow Studio
 1. Create a copy of studio/default_config.yaml file. Let's call it new_config.yaml

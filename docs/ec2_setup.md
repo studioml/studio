@@ -1,9 +1,9 @@
-# Configuring tfstudio to work with Amazon EC2 cloud
+# Configuring studioml to work with Amazon EC2 cloud
 This page describes the process of setting configuring studio to work with Amazon EC2
 We assume that you have an AWS account set up already, and AWS credentials. 
 
 ## Install boto3
-tfstudio interacts with AWS via boto3 API. Thus, in order to use EC2 cloud, you'll need to install boto3:
+studioml interacts with AWS via boto3 API. Thus, in order to use EC2 cloud, you'll need to install boto3:
 
     pip install boto3
 

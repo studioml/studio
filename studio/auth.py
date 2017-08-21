@@ -6,7 +6,7 @@ import shutil
 import atexit
 from apscheduler.schedulers.background import BackgroundScheduler
 
-token_dir = os.path.expanduser('~/.tfstudio/keys')
+token_dir = os.path.expanduser('~/.studioml/keys')
 hour = 3600
 
 
@@ -113,6 +113,6 @@ class FirebaseAuth(object):
 
 
 def remove_all_keys():
-    keypath = os.path.join(os.path.expanduser('~'), '.tfstudio', 'keys')
+    keypath = os.path.join(os.path.expanduser('~'), '.studioml', 'keys')
     if os.path.exists(keypath):
         shutil.rmtree(keypath)
