@@ -7,7 +7,7 @@ from setuptools.command.develop import develop
 
 VERSION = ""
 
-# This file contains metadata related to the tfstudio client and python base
+# This file contains metadata related to the studioml client and python base
 # server software
 
 
@@ -29,7 +29,7 @@ class MyInstall(install):
 
 
 def copyconfig():
-    config_path = os.path.expanduser('~/.tfstudio/config.yaml')
+    config_path = os.path.expanduser('~/.studioml/config.yaml')
     default_config_path = os.path.join(
         os.path.dirname(os.path.realpath(__file__)),
         "studio/default_config.yaml")
@@ -40,7 +40,7 @@ def copyconfig():
 
         shutil.copyfile(
             default_config_path,
-            os.path.expanduser('~/.tfstudio/config.yaml'))
+            os.path.expanduser('~/.studioml/config.yaml'))
 
 
 # Utility function to read the README file.
@@ -56,18 +56,18 @@ def read(fname):
 with open('requirements.txt') as f:
     required = f.read().splitlines()
 
-# projects using the tfstudio pthon APIs will need to use this installer
+# projects using the studioml pthon APIs will need to use this installer
 # to access the google and AWS cloud storage
 
 setup(
-    name='TFStudio',
+    name='studioml',
     version=VERSION,
     description='TensorFlow model and data management tool',
     packages=['studio'],
     long_description=read('README'),
-    url='https://github.com/ilblackdragon/studio',
+    url='https://github.com/studioml/studio',
     license='Apache License, Version 2.0',
-    keywords='TensorFlow TFStudio TensorFlowStudio Studio Keras scikit-learn',
+    keywords='TensorFlow studioml StudioML Studio Keras scikit-learn',
     author='Illia Polosukhin',
     author_email='ilblackdragon@XIX.ai',
     #        data_files=[('bin', ['studio/scripts/*'])],

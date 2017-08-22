@@ -11,13 +11,13 @@ To specify number of cpus or gpus needed, use flags --cpus and --gpus respective
 
     studio run --cloud={gcloud|ec2|gcspot|ec2spot} --cpus=8 --gpus=1 my_script.py 
 
-will create an instance with 8 cpus and 1 gpu. The top of the line gpu in Amazon EC2 is Tesla K80 at the moment, and that's the only one available through tfstudio; we might provide some gpu selection flags in the future as well.  
+will create an instance with 8 cpus and 1 gpu. The top of the line gpu in Amazon EC2 is Tesla K80 at the moment, and that's the only one available through studioml; we might provide some gpu selection flags in the future as well.  
 The amount of ram and hard drive space can be configured via --ram / --hdd flags (using standard suffixes like g(G,Gb,GiB), m(M,MiB)). Note that the amount of RAM will be rounded up to a next factor of 256 Mb. Also note that for now extended RAM for google cloud is not supported, which means amount of RAM per CPU should be between 1 and 6 Gb. For Amazon EC2, studio will find the cheapest instances with higher specs than required; or throw an exception for too extravagant of a request. 
 
 
 ## Running on EC2 spot instances
 ### Basics
-Amazon EC2 offers so-called spot instances that are provided with a substantial discount with the assumption that they can be removed from the user at any moment. Google Compute Engine has similar product called pre-emptible instances, but tfstudio does not support it just yet. 
+Amazon EC2 offers so-called spot instances that are provided with a substantial discount with the assumption that they can be removed from the user at any moment. Google Compute Engine has similar product called pre-emptible instances, but studioml does not support it just yet. 
 In short, for spot instances user specifies max price to pay for the instance-hour. 
 As long as the instance-hour price is below the specified limit (bid), user is paying current price and uses the instance.
 Otherwise, the instance shuts down and is being given to the higher bidder. For more detailed explanation, refer to spot instnces user guide https://aws.amazon.com/ec2/spot/. 

@@ -118,7 +118,7 @@ We can run it via
 
 Flag reuse tells studio run that artifact `weights` from experiment `linear_regression` will be used in the current experiment with a tag `w`. 
 There is a bit of a catch - for download optimization, all artifacts from other experiments are considered immutable, and cached as such. If you re-run the experiment with the same name and would like to use new artifacts from it, 
-clean the cache folder `~/.tfstudio/blobcache/`. 
+clean the cache folder `~/.studioml/blobcache/`. 
 
 ## Default artifacts
 

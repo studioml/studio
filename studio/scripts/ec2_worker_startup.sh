@@ -5,10 +5,10 @@ mkdir .aws
 echo "[default]" > .aws/config
 echo "region = {region}" >> .aws/config
 
-mkdir -p .tfstudio/keys
+mkdir -p .studioml/keys
 key_name="{auth_key}"
 queue_name="{queue_name}"
-echo "{auth_data}" | base64 --decode > .tfstudio/keys/$key_name
+echo "{auth_data}" | base64 --decode > .studioml/keys/$key_name
 echo "{google_app_credentials}" | base64 --decode > /credentials.json
 
 export GOOGLE_APPLICATION_CREDENTIALS=/credentials.json
@@ -17,7 +17,7 @@ export AWS_ACCESS_KEY_ID="{aws_access_key}"
 export AWS_SECRET_ACCESS_KEY="{aws_secret_key}"
 
 code_url_base="https://storage.googleapis.com/studio-ed756.appspot.com/src"
-code_ver="tfstudio-64_config_location-2017-08-04_1.tgz"
+code_ver="studioml-64_config_location-2017-08-04_1.tgz"
 
 autoscaling_group="{autoscaling_group}"
 

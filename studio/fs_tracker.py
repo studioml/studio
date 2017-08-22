@@ -7,22 +7,22 @@ import json
 import re
 
 
-TFSTUDIO_EXPERIMENT = 'TFSTUDIO_EXPERIMENT'
-TFSTUDIO_HOME = 'TFSTUDIO_HOME'
+STUDIOML_EXPERIMENT = 'STUDIOML_EXPERIMENT'
+STUDIOML_HOME = 'STUDIOML_HOME'
 
 
 def get_experiment_key():
-    if TFSTUDIO_EXPERIMENT not in os.environ.keys():
+    if STUDIOML_EXPERIMENT not in os.environ.keys():
         key = str(uuid.uuid4())
         setup_experiment(os.environ, key)
-    return os.environ[TFSTUDIO_EXPERIMENT]
+    return os.environ[STUDIOML_EXPERIMENT]
 
 
 def get_studio_home():
-    if TFSTUDIO_HOME in os.environ.keys():
-        return os.environ[TFSTUDIO_HOME]
+    if STUDIOML_HOME in os.environ.keys():
+        return os.environ[STUDIOML_HOME]
     else:
-        return os.path.join(os.path.expanduser('~'), '.tfstudio')
+        return os.path.join(os.path.expanduser('~'), '.studioml')
 
 
 def setup_experiment(env, experiment, clean=True):
@@ -33,7 +33,7 @@ def setup_experiment(env, experiment, clean=True):
         key = experiment
         artifacts = {}
 
-    env[TFSTUDIO_EXPERIMENT] = key
+    env[STUDIOML_EXPERIMENT] = key
 
     _setup_model_directory(key, clean)
 
@@ -101,7 +101,7 @@ def get_blob_cache(blobkey):
 
 def _get_artifact_mapping_path(experiment_name=None):
     experiment_name = experiment_name if experiment_name else \
-        os.environ[TFSTUDIO_EXPERIMENT]
+        os.environ[STUDIOML_EXPERIMENT]
 
     basepath = os.path.join(
         get_studio_home(),

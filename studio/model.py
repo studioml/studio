@@ -646,7 +646,7 @@ def get_config(config_file=None):
     if config_file:
         config_paths.append(os.path.expanduser(config_file))
 
-    config_paths.append(os.path.expanduser('~/.tfstudio/config.yaml'))
+    config_paths.append(os.path.expanduser('~/.studioml/config.yaml'))
     config_paths.append(
         os.path.join(
             os.path.dirname(os.path.realpath(__file__)),
