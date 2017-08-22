@@ -7,8 +7,8 @@ to the experiment data. For the moment, studioml only supports FireBase
 (https://firebase.google.com/) as a database/storage backend. To
 configure studioml to work with firebase, do the following:
 
-Creating firebase project and configuring TensorFlow Studio
------------------------------------------------------------
+Creating firebase project and configuring StudioML
+--------------------------------------------------
 
 1. Create a copy of studio/default\_config.yaml file. Let's call it
    new\_config.yaml

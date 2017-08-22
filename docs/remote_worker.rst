@@ -2,7 +2,7 @@ Setting up a remote worker
 ==========================
 
 This page describes a procedure for setting up a remote worker for
-studio. Remote workers are listening to the queue; once a worker
+StudioML. Remote workers are listening to the queue; once a worker
 receives a message from the queue, it starts the experiments
 
 I. Getting credentials
@@ -52,21 +52,18 @@ III. Setting up remote worker
 -----------------------------
 
 If you don't have your own docker container to run jobs in, follow the
-instructions below. Otherwise, jump to the next section. 1. Install
-docker, and nvidia-docker to use gpus 2. Clone the repo
+instructions below. Otherwise, jump to the next section. 
 
-::
+1. Install docker, and nvidia-docker to use gpus 
+
+2. Clone the repo ::
 
         git clone https://github.com/ilblackdragon/studio && cd studio && pip install -e .
 
-To check success of installation, you can run
-``python $(which nosetests) --processes=10 --process-timeout=600`` to
-run the tests (may take about 10 min to finish)
+ To check success of installation, you can run ``python $(which nosetests) --processes=10 --process-timeout=600`` to run the tests (may take about 10 min to finish)
 
 3. Start worker (queue name is a name of the queue that will define
-   where submit work to)
-
-   ::
+   where submit work to) ::
 
        studio start remote worker --queue=<queue-name>
 
@@ -82,35 +79,21 @@ wink Antoine :).
    from from the studioml Dockerfile (located in the studio root
    directory). Otherwise, copy relevant contents of studioml Dockerfile
    into yours.
-2. Bake the credentials into your image. Run
-
-   ::
+2. Bake the credentials into your image. Run ::
 
        studio add credentials [--base_image=<image>] [--tag=<tag>] [--check-gpu]
 
-where ``<image>`` is name of your image (default is
-peterzhokhoff/studioml); ``<tag>`` is the tag of the image with
-credentials (default is ``<image>_creds``). Add option check-gpu if you
-are planning to use image on the same machine you are running the script
-from. This will check for presence of CUDA toolbox and uninstall
-tensorflow-gpu if not found.
+ where ``<image>`` is name of your image (default is peterzhokhoff/studioml); ``<tag>`` is the tag of the image with credentials (default is ``<image>_creds``). Add option check-gpu if you are planning to use image on the same machine you are running the script from. This will check for presence of CUDA toolbox and uninstall tensorflow-gpu if not found.
 
-3. Start remote worker passing ``--image=<tag>``:
-
-   ::
+3. Start remote worker passing ``--image=<tag>``: ::
 
        studio start remote worker --image=<tag> --queue=<queue-name>
 
-You can also start the container and remote worker within it manually,
-by running:
-
-::
+ You can also start the container and remote worker within it manually, by running: ::
 
         studio remote worker --queue=<queue-name> 
 
-within the container - that is essentially what
-``studio-start-remote-worker`` script does, plus mounting cache
-directories ``~/.studioml/experiments`` and ``~/.studioml/blobcache``
+ within the container - that is essentially what ``studio-start-remote-worker`` script does, plus mounting cache directories ``~/.studioml/experiments`` and ``~/.studioml/blobcache``
 
 V. Submitting work
 ------------------

@@ -1,7 +1,7 @@
 Trained model pipelines
 =======================
 
-Both keras and tensorflow handle the data that has been packaged into
+Both Keras and TensorFlow handle the data that has been packaged into
 tensors gracefully. But the real-world data, especially at the time of
 predictions, is often not. Sometimes it may come as a collection (a list
 or a set or a generator) of urls, sometimes it can have non-numeric
@@ -86,13 +86,13 @@ into the generator, but filtering out bad values will ruin the mapping
 from url to label, rendering values after exception just as useless as
 if script were to stop.
 
-The least ugly solution that I could think of using keras is add another
+The least ugly solution that I could think of using Keras is add another
 input to the model, so that model applies to a key:tensor value; and
 then after prediction sort out which ones were successfull. But this
 process really does not have to be that complicated.
 
-TensorFlow Studio provides primitives that make this job (that is
-conceptually very simple) simple in code; and similar in usage to keras.
+StudioML provides primitives that make this job (that is
+conceptually very simple) simple in code; and similar in usage to Keras.
 The code above becomes (see unit test
 ``ModelPipeTest.test_model_pipe_mnist_urls`` in
 ``studio/tests/model_util_test.py``)

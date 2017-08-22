@@ -1,7 +1,7 @@
 Hyperparameter search
 =====================
 
-This page describes facilities that TensorFlow Studio provides for
+This page describes facilities that StudioML provides for
 hyperparameter search and optimization.
 
 Basics
@@ -37,7 +37,7 @@ Consider the following code snippet (code in
             epochs=int(sys.argv[1]),
             callbacks=[tbcallback])
 
-We compile a keras model with the specified learning rate for stochastic
+We compile a Keras model with the specified learning rate for stochastic
 gradient descent. What if we want to search a range of learning rates to
 determine best? (as a side note, in the ``train_mnist_keras.py`` you can
 simply use adaptive learning rate optimizer such as adam with better

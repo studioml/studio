@@ -18,13 +18,14 @@ framework (`Keras <https://github.com/fchollet/keras>`__,
 `scikit-learn <https://github.com/scikit-learn/scikit-learn>`__, etc);
 some extra features are available for Keras and TensorFlow.
 
-**Use Studio to:** \* Capture experiment information- Python
-environment, files, dependencies and logs- without modifying the
-experiment code. \* Monitor and organize experiments using a web
-dashboard that integrates with TensorBoard. \* Run experiments locally,
-remotely, or in the cloud (Google Cloud or Amazon EC2) \* Manage
-artifacts \* Perform hyperparameter search \* Create customizable Python
-environments for remote workers.
+**Use Studio to:** 
+
+* Capture experiment information- Python environment, files, dependencies and logs- without modifying the experiment code. 
+* Monitor and organize experiments using a web dashboard that integrates with TensorBoard. 
+* Run experiments locally, remotely, or in the cloud (Google Cloud or Amazon EC2) 
+* Manage artifacts
+* Perform hyperparameter search
+* Create customizable Python environments for remote workers.
 
 Example usage
 -------------
@@ -50,8 +51,13 @@ Installation
 Installation Packaging
 ~~~~~~~~~~~~~~~~~~~~~~
 
-Once open sourced, we'll publish package to PyPI. For now, pip install
-it from the git project directory:
+pip install studioml from the master pypi repositry:
+
+::
+
+    pip install studioml
+
+or, install the source and development environment for StudioML from the git project directory:
 
 ::
 
@@ -207,10 +213,15 @@ Further reading and cool features
 ---------------------------------
 
 -  `Running experiments remotely <docs/remote_worker.md>`__
--  `Custom Python environments for remote workers <docs/customenv.md>`__
+
+ -  `Custom Python environments for remote workers <docs/customenv.md>`__
+
 -  `Running experiments in the cloud <docs/cloud.md>`__
--  `Google Cloud setup instructions <docs/gcloud_setup.md>`__
--  `Amazon EC2 setup instructions <docs/ec2_setup.md>`__
+
+ -  `Google Cloud setup instructions <docs/gcloud_setup.md>`__
+
+ -  `Amazon EC2 setup instructions <docs/ec2_setup.md>`__
+
 -  `Artifacts management <docs/artifacts.md>`__
 -  `Hyperparameter search <docs/hyperparams.md>`__
 -  `Pipelines for trained models <docs/model_pipelines.md>`__

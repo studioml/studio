@@ -8,12 +8,13 @@ by google cloud storage.
 Basic usage
 -----------
 
-The idea behind artifact management is three-fold: 1. With no coding
-overhead capture the data that experiment depends on (e.g. dataset) 2.
-With no coding overhead save and with minimal overhead visualize the
-results of the experiment (neural network weights, etc). 3. With minimal
-coding overhead make experiments reproducible on any machine (without
-manual data download, path correction etc).
+The idea behind artifact management is three-fold: 
+
+1. With no coding overhead capture the data that experiment depends on (e.g. dataset). 
+
+2. With no coding overhead save and with minimal overhead visualize the results of the experiment (neural network weights, etc). 
+
+3. With minimal coding overhead make experiments reproducible on any machine (without manual data download, path correction etc).
 
 Below we provide the examples of each use case.
 
@@ -196,17 +197,13 @@ Each experiment gets default artifacts that it can use via
 ``fs_tracker.get_artifact()`` even without --reuse or --capture(-once)
 flags. Those are:
 
-1. ``workspace`` - this artifact always gets cached to/from ``.``
-   folder, thus creating a copy of working directory on a remote
-   machine; and saving state of the scripts
-2. ``output`` - this artifact is a file with stdout and stderr of the
-   script run
-3. ``modeldir`` - it is recommended to save weights in this directory,
-   because studio will try to do some analysis on it, such as number of
-   checkpoints etc.
-4. ``tb`` - it is recommended to save tensorboard logs into this
-   directory, this way studio will be able to automatically feed them
-   into tensorboard
+1. ``workspace``- this artifact always gets cached to/from ``.`` folder, thus creating a copy of working directory on a remote machine; and saving state of the scripts
+
+#. ``output``- this artifact is a file with stdout and stderr of the script run
+
+#. ``modeldir``- it is recommended to save weights in this directory, because studio will try to do some analysis on it, such as number of checkpoints etc.
+
+#. ``tb``- it is recommended to save tensorboard logs into this directory, this way studio will be able to automatically feed them into tensorboard
 
 All of the default artifacts are considered mutable (i.e. are stored
 continously). The default artifacts can be overwritten by
@@ -217,10 +214,11 @@ Custom storage
 
 Firebase API is great for small projects, but it is easy to grow beyond
 limits of free storage in it (5 Gb as of 08/02/2017), after which it
-becomes really expensive. TensorFlow Studio can utilize google cloud
+becomes really expensive. StudioML can utilize google cloud
 storage for artifact storage directly if your projects don't fit into
-firebase (support of Amazon S3 is on the way). For now the downside of
-using google cloud storage is that google service account credentials
+firebase (support of Amazon S3 is on the way). 
+
+For now the downside of using google cloud storage is that google service account credentials
 are used, which means that all users in possession of the credentials
 file have read/write access to the objects in the storage, so in
 principle one user can delete experiments of another. See

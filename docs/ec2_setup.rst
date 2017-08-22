@@ -8,7 +8,7 @@ and AWS credentials.
 Install boto3
 -------------
 
-studioml interacts with AWS via boto3 API. Thus, in order to use EC2
+StudioML interacts with AWS via boto3 API. Thus, in order to use EC2
 cloud, you'll need to install boto3:
 
 ::

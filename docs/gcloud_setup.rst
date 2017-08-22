@@ -2,7 +2,7 @@ Setting up google cloud compute
 ===============================
 
 This page describes the process of setting up google cloud and
-configuring TensorFlow Studio to integrate with it.
+configuring StudioML to integrate with it.
 
 Setting up google cloud compute
 -------------------------------
