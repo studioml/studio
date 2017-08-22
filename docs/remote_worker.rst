@@ -83,7 +83,7 @@ wink Antoine :).
 
        studio add credentials [--base_image=<image>] [--tag=<tag>] [--check-gpu]
 
- where ``<image>`` is name of your image (default is peterzhokhoff/studioml); ``<tag>`` is the tag of the image with credentials (default is ``<image>_creds``). Add option check-gpu if you are planning to use image on the same machine you are running the script from. This will check for presence of CUDA toolbox and uninstall tensorflow-gpu if not found.
+   where ``<image>`` is name of your image (default is peterzhokhoff/studioml); ``<tag>`` is the tag of the image with credentials (default is ``<image>_creds``). Add option check-gpu if you are planning to use image on the same machine you are running the script from. This will check for presence of CUDA toolbox and uninstall tensorflow-gpu if not found.
 
 3. Start remote worker passing ``--image=<tag>``: ::
 
