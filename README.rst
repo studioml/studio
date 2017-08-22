@@ -213,15 +213,10 @@ Further reading and cool features
 ---------------------------------
 
 -  `Running experiments remotely <docs/remote_worker.md>`__
-
- -  `Custom Python environments for remote workers <docs/customenv.md>`__
-
+-  `Custom Python environments for remote workers <docs/customenv.md>`__
 -  `Running experiments in the cloud <docs/cloud.md>`__
-
- -  `Google Cloud setup instructions <docs/gcloud_setup.md>`__
-
- -  `Amazon EC2 setup instructions <docs/ec2_setup.md>`__
-
+-  `Google Cloud setup instructions <docs/gcloud_setup.md>`__
+-  `Amazon EC2 setup instructions <docs/ec2_setup.md>`__
 -  `Artifacts management <docs/artifacts.md>`__
 -  `Hyperparameter search <docs/hyperparams.md>`__
 -  `Pipelines for trained models <docs/model_pipelines.md>`__
