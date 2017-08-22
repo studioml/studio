@@ -6,7 +6,6 @@ import shutil
 import json
 import re
 
-from model import Experiment
 
 STUDIOML_EXPERIMENT = 'STUDIOML_EXPERIMENT'
 STUDIOML_HOME = 'STUDIOML_HOME'
@@ -26,7 +25,7 @@ def get_studio_home():
         return os.path.join(os.path.expanduser('~'), '.studioml')
 
 def setup_experiment(env, experiment, clean=True):
-    if isinstance(experiment, Experiment):
+    if not isinstance(experiment, str):
         key = experiment.key
         artifacts = experiment.artifacts
     else:
