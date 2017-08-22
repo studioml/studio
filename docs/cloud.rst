@@ -4,8 +4,8 @@ Cloud computing for StudioML
 StudioML can be configured to submit jobs to the cloud. Right
 now, only google cloud is supported (CPU only), as well as Amazon EC2
 (CPU and GPU) Specifically, once configured (see
-`here <gcloud_setup.md>`__ for configuration instructions for Google
-Cloud, and `here <ec2_setup.md>`__ for EC2) command line
+`here <gcloud_setup.rst>`__ for configuration instructions for Google
+Cloud, and `here <ec2_setup.rst>`__ for EC2) command line
 
 ::
 

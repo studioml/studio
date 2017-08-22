@@ -186,7 +186,7 @@ mode, in studio/default\_config.yaml, uncomment "guest: true" under the
 database section.
 
 Alternatively, you can set up your own database and configure Studio to
-use it. See `setting up database <docs/setup_database.md>`__. This is a
+use it. See `setting up database <docs/setup_database.rst>`__. This is a
 preferred option if you want to keep your models and artifacts private.
 
 Email / password authentication
@@ -212,19 +212,19 @@ authentication token.
 Further reading and cool features
 ---------------------------------
 
--  `Running experiments remotely <docs/remote_worker.md>`__
+-  `Running experiments remotely <docs/remote_worker.rst>`__
    
-   -  `Custom Python environments for remote workers <docs/customenv.md>`__
+   -  `Custom Python environments for remote workers <docs/customenv.rst>`__
 
--  `Running experiments in the cloud <docs/cloud.md>`__
+-  `Running experiments in the cloud <docs/cloud.rst>`__
 
-   -  `Google Cloud setup instructions <docs/gcloud_setup.md>`__
+   -  `Google Cloud setup instructions <docs/gcloud_setup.rst>`__
 
-   -  `Amazon EC2 setup instructions <docs/ec2_setup.md>`__
+   -  `Amazon EC2 setup instructions <docs/ec2_setup.rst>`__
 
--  `Artifacts management <docs/artifacts.md>`__
--  `Hyperparameter search <docs/hyperparams.md>`__
--  `Pipelines for trained models <docs/model_pipelines.md>`__
+-  `Artifacts management <docs/artifacts.rst>`__
+-  `Hyperparameter search <docs/hyperparams.rst>`__
+-  `Pipelines for trained models <docs/model_pipelines.rst>`__
 
 .. |Hex.pm| image:: https://img.shields.io/hexpm/l/plug.svg
    :target: https://github.com/studioml/studio/blob/master/LICENSE
