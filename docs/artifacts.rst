@@ -1,4 +1,4 @@
-Artifact management
+Artifacts management
 ===================
 
 This page describes facilities that StudioML provides for
