@@ -43,12 +43,14 @@ class Experiment(object):
                  time_last_checkpoint=None,
                  time_finished=None,
                  info={},
+                 env={},
                  git=None,
                  metric=None):
 
         self.key = key
         self.filename = filename
         self.args = args if args else []
+        self.env = env if env else {}
         self.pythonenv = pythonenv
         self.project = project
 
@@ -82,6 +84,7 @@ class Experiment(object):
         self.time_last_checkpoint = time_last_checkpoint
         self.time_finished = time_finished
         self.info = info
+        self.env = env
         self.git = git
         self.metric = metric
 
@@ -110,6 +113,7 @@ def create_experiment(
         experiment_name=None,
         project=None,
         artifacts={},
+        env={},
         resources_needed=None,
         metric=None):
     key = str(uuid.uuid4()) if not experiment_name else experiment_name
@@ -123,6 +127,7 @@ def create_experiment(
         pythonenv=packages,
         project=project,
         artifacts=artifacts,
+        env=env,
         resources_needed=resources_needed,
         metric=metric)
 

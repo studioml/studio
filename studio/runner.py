@@ -192,6 +192,8 @@ def main(args=sys.argv):
     logger.debug('resources requested: ')
     logger.debug(str(resources_needed))
 
+    env = config['env']
+
     artifacts = {}
     artifacts.update(parse_artifacts(runner_args.capture, mutable=True))
     artifacts.update(parse_artifacts(runner_args.capture_once, mutable=False))
@@ -203,6 +205,7 @@ def main(args=sys.argv):
             other_args,
             runner_args,
             artifacts,
+            env,
             resources_needed)
     else:
         experiments = [model.create_experiment(
@@ -211,6 +214,7 @@ def main(args=sys.argv):
             experiment_name=runner_args.experiment,
             project=runner_args.project,
             artifacts=artifacts,
+            env=env,
             resources_needed=resources_needed,
             metric=runner_args.metric)]
 
@@ -354,6 +358,7 @@ def add_hyperparam_experiments(
         other_args,
         runner_args,
         artifacts,
+        env,
         resources_needed):
 
     experiment_name_base = runner_args.experiment if runner_args.experiment \
@@ -412,6 +417,7 @@ def add_hyperparam_experiments(
             experiment_name=experiment_name,
             project=project,
             artifacts=current_artifacts,
+            env=env,
             resources_needed=resources_needed,
             metric=runner_args.metric))
 
