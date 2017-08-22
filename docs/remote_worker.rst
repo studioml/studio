@@ -60,7 +60,7 @@ instructions below. Otherwise, jump to the next section.
 
         git clone https://github.com/ilblackdragon/studio && cd studio && pip install -e .
 
-To check success of installation, you can run ``python $(which nosetests) --processes=10 --process-timeout=600`` to run the tests (may take about 10 min to finish)
+   To check success of installation, you can run ``python $(which nosetests) --processes=10 --process-timeout=600`` to run the tests (may take about 10 min to finish)
 
 3. Start worker (queue name is a name of the queue that will define
    where submit work to) ::
@@ -89,11 +89,11 @@ wink Antoine :).
 
        studio start remote worker --image=<tag> --queue=<queue-name>
 
- You can also start the container and remote worker within it manually, by running: ::
+   You can also start the container and remote worker within it manually, by running: ::
 
         studio remote worker --queue=<queue-name> 
 
- within the container - that is essentially what ``studio-start-remote-worker`` script does, plus mounting cache directories ``~/.studioml/experiments`` and ``~/.studioml/blobcache``
+   within the container - that is essentially what ``studio-start-remote-worker`` script does, plus mounting cache directories ``~/.studioml/experiments`` and ``~/.studioml/blobcache``
 
 V. Submitting work
 ------------------
