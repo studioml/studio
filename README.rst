@@ -1,6 +1,4 @@
-=========
 |logo.pm|
-=========
 
 StudioML
 ========
@@ -232,6 +230,5 @@ Further reading and cool features
 
 .. |Hex.pm| image:: https://img.shields.io/hexpm/l/plug.svg
    :target: https://github.com/studioml/studio/blob/master/LICENSE
-
 .. |logo.pm| image:: logo.svg
-   :target: https://studio.ml
+   :target: http://studio.ml
