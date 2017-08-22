@@ -14,8 +14,8 @@ echo Group name is $group_name
 
 cd ~
 
-mkdir -p .tfstudio/keys
-curl "${metadata_url}/attributes/auth_data" -H  "Metadata-Flavor: Google" > .tfstudio/keys/${key_name}
+mkdir -p .studioml/keys
+curl "${metadata_url}/attributes/auth_data" -H  "Metadata-Flavor: Google" > .studioml/keys/${key_name}
 curl "${metadata_url}/attributes/credentials" -H  "Metadata-Flavor: Google" > /credentials.json
 export GOOGLE_APPLICATION_CREDENTIALS=/credentials.json
 
@@ -37,7 +37,7 @@ branch="master"
 #            studio-rworker --queue=$queue_name"
 
 code_url_base="https://storage.googleapis.com/studio-ed756.appspot.com/src"
-code_ver="tfstudio-64_config_location-2017-08-04_1.tgz"
+code_ver="studioml-64_config_location-2017-08-04_1.tgz"
 
 sudo apt -y update 
 sudo apt install -y wget python-pip git python-dev

@@ -33,12 +33,12 @@ If you don't have your own docker container to run jobs in, follow the instructi
 ## IV. Setting up a remote worker with exising docker image
 This section applies to the cases when you already have a docker image/container, and would like studio remote worker to run in it (wink wink Antoine :). 
 
-1. Make sure that the image has python-dev, python-pip, git installed, as well as studio. The easiest way is to make your Dockerfile inherit from from the tfstudio Dockerfile (located in the studio root directory). Otherwise, copy relevant contents of tfstudio Dockerfile into yours. 
+1. Make sure that the image has python-dev, python-pip, git installed, as well as studio. The easiest way is to make your Dockerfile inherit from from the studioml Dockerfile (located in the studio root directory). Otherwise, copy relevant contents of studioml Dockerfile into yours. 
 2. Bake the credentials into your image. Run
 
         studio add credentials [--base_image=<image>] [--tag=<tag>] [--check-gpu]
   
-  where `<image>` is name of your image (default is peterzhokhoff/tfstudio); `<tag>` is the tag of the image with credentials (default is `<image>_creds`). Add option check-gpu if you are planning to use image on the same machine you are running the script from.
+  where `<image>` is name of your image (default is peterzhokhoff/studioml); `<tag>` is the tag of the image with credentials (default is `<image>_creds`). Add option check-gpu if you are planning to use image on the same machine you are running the script from.
   This will check for presence of CUDA toolbox and uninstall tensorflow-gpu if not found. 
 
 3. Start remote worker passing `--image=<tag>`:
@@ -49,7 +49,7 @@ This section applies to the cases when you already have a docker image/container
     
         studio remote worker --queue=<queue-name> 
  
-  within the container - that is essentially what `studio-start-remote-worker` script does, plus mounting cache directories `~/.tfstudio/experiments` and `~/.tfstudio/blobcache`
+  within the container - that is essentially what `studio-start-remote-worker` script does, plus mounting cache directories `~/.studioml/experiments` and `~/.studioml/blobcache`
 
 
 ## V. Submitting work

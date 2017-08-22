@@ -34,7 +34,7 @@ We can add the following argument to `studio run` call:
 
     studio run --hyperparam=lr=0.01:0.01:0.1 train_mnist_keras.py 30
 
-This will create a new project with 10 experiments. For each experiment, a copy of working directory will be put in the tfstudio cache, and within in each working directory copy, in the script `train_mnist_keras.py` regex substitution of `lr` not followed by `=` (i.e. located in right-hand side of expression) will be performed to a respective value (from 0.01 with step 0.01 to 0.1). Those experiments will then be submitted to the queue (in the version of the call above to the local queue), and executed. The progress of the experiments can be seen in studio WebUI. Last argument 30 refers to number of epochs as can be seen in the code snippet above. 
+This will create a new project with 10 experiments. For each experiment, a copy of working directory will be put in the studioml cache, and within in each working directory copy, in the script `train_mnist_keras.py` regex substitution of `lr` not followed by `=` (i.e. located in right-hand side of expression) will be performed to a respective value (from 0.01 with step 0.01 to 0.1). Those experiments will then be submitted to the queue (in the version of the call above to the local queue), and executed. The progress of the experiments can be seen in studio WebUI. Last argument 30 refers to number of epochs as can be seen in the code snippet above. 
 
 
 ## Metrics
