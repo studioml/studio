@@ -69,7 +69,7 @@ setup(
     license='Apache License, Version 2.0',
     keywords='TensorFlow studioml StudioML Studio Keras scikit-learn',
     author='Illia Polosukhin',
-    author_email='ilblackdragon@XIX.ai',
+    author_email='illia.polosukhin@gmail.com',
     #        data_files=[('bin', ['studio/scripts/*'])],
     scripts=[
             'studio/scripts/studio',
