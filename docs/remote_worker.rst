@@ -71,8 +71,7 @@ IV. Setting up a remote worker with exising docker image
 --------------------------------------------------------
 
 This section applies to the cases when you already have a docker
-image/container, and would like studio remote worker to run in it (wink
-wink Antoine :).
+image/container, and would like studio remote worker to run in it.
 
 1. Make sure that the image has python-dev, python-pip, git installed,
    as well as studio. The easiest way is to make your Dockerfile inherit
