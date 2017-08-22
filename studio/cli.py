@@ -15,7 +15,7 @@ def print_help():
     print('Usage: studio runs [command] arguments')
     print('\ncommand can be one of the following:')
     print('')
-    print('\tlist [filter] [username] - display experiments')
+    print('\tlist [username] - display experiments')
     print('\tstop [experiment] - stop running experiment')
     print('\tkill [experiment] - stop and delete experiment')
     print('')
