@@ -7,6 +7,7 @@ import logging
 import json
 import socket
 import subprocess
+import traceback
 from urlparse import urlparse
 
 import google.oauth2.id_token
@@ -277,6 +278,29 @@ def stop_experiment():
                 .format(toc - tic))
 
     return json.dumps({'status': status})
+
+@app.route('/api/add_experiment', methods=['POST'])
+def add_experiment():
+    tic = time.time()
+    userid = get_and_verify_user(request)
+    artifacts = []
+    try:
+        experiment = request.json['experiment']
+        #for art in experiment.artifacts:
+        #    art.pop('local', None)
+        
+        get_db().add_experiment(model.experiment_from_dict(experiment))
+        status = 'ok'
+       
+    
+    except BaseException as e:
+        status = traceback.format_exc()
+    toc = time.time()
+    getlogger().info('Processed add_experiment request in {} s'
+                .format(toc - tic))
+
+    return json.dumps({'status':status, 'artifacts':artifacts})
+
 
 
 def get_and_verify_user(request):

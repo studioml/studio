@@ -33,6 +33,7 @@ from auth import FirebaseAuth
 from artifact_store import get_artifact_store
 from firebase_artifact_store import FirebaseArtifactStore
 
+from http_provider import HTTPProvider
 
 logging.basicConfig()
 
@@ -132,6 +133,26 @@ def create_experiment(
         artifacts=artifacts,
         resources_needed=resources_needed,
         metric=metric)
+
+
+def experiment_from_dict(data, info={}):
+        return Experiment(
+            key=data['key'],
+            filename=data['filename'],
+            args=data.get('args'),
+            pythonenv=data['pythonenv'],
+            project=data.get('project'),
+            status=data['status'],
+            artifacts=data.get('artifacts'),
+            resources_needed=data.get('resources_needed'),
+            time_added=data['time_added'],
+            time_started=data.get('time_started'),
+            time_last_checkpoint=data.get('time_last_checkpoint'),
+            time_finished=data.get('time_finished'),
+            info=info,
+            git=data.get('git'),
+            metric=data.get('metric')
+        )
 
 
 class FirebaseProvider(object):
@@ -357,25 +378,6 @@ class FirebaseProvider(object):
         else:
             return checkpoint_threads
 
-    def _experiment(self, key, data, info={}):
-        return Experiment(
-            key=key,
-            filename=data['filename'],
-            args=data.get('args'),
-            pythonenv=data['pythonenv'],
-            project=data.get('project'),
-            status=data['status'],
-            artifacts=data.get('artifacts'),
-            resources_needed=data.get('resources_needed'),
-            time_added=data['time_added'],
-            time_started=data.get('time_started'),
-            time_last_checkpoint=data.get('time_last_checkpoint'),
-            time_finished=data.get('time_finished'),
-            info=info,
-            git=data.get('git'),
-            metric=data.get('metric')
-        )
-
     def _get_experiment_info(self, experiment):
         info = {}
         type_found = False
@@ -446,8 +448,9 @@ class FirebaseProvider(object):
         data = self.__getitem__(self._get_experiments_keybase() + key)
         assert data, "data at path %s not found! " % (
             self._get_experiments_keybase() + key)
+        data['key'] = key
 
-        experiment_stub = self._experiment(key, data, {})
+        experiment_stub = experiment_from_dict(data)
 
         if getinfo:
             self._start_info_download(experiment_stub)
@@ -455,7 +458,7 @@ class FirebaseProvider(object):
         info = self._experiment_info_cache.get(key)[0] \
             if self._experiment_info_cache.get(key) else None
 
-        return self._experiment(key, data, info)
+        return experiment_from_dict(data, info)
 
     def _start_info_download(self, experiment):
         key = experiment.key
@@ -662,7 +665,11 @@ def get_config(config_file=None):
             def replace_with_env(config):
                 for key, value in config.iteritems():
                     if isinstance(value, str) and value.startswith('$'):
-                        config[key] = os.environ.get(value[1:])
+                        if value[1:] in os.environ.keys():
+                            config[key] = os.environ[value[1:]]
+                        else:
+                            config[key] = "None"
+
                     elif isinstance(value, dict):
                         replace_with_env(value)
 
@@ -688,12 +695,14 @@ def get_db_provider(config=None, blocking_auth=True):
 
     assert 'database' in config.keys()
     db_config = config['database']
-    if db_config['type'].lower() == 'firebase'.lower():
+    if db_config['type'].lower() == 'firebase':
         return FirebaseProvider(
             db_config,
             blocking_auth,
             verbose=verbose,
             store=artifact_store)
+    elif db_config['type'].lower() == 'http':
+        return HTTPProvider(db_config)
     else:
         raise ValueError('Unknown type of the database ' + db_config['type'])
 
