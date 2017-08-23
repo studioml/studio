@@ -230,5 +230,8 @@ Further reading and cool features
 
 .. |Hex.pm| image:: https://img.shields.io/hexpm/l/plug.svg
    :target: https://github.com/studioml/studio/blob/master/LICENSE
-.. |logo.pm| image:: logo.svg
+.. |logo.pm| image:: https://github.com/studioml/studio/raw/master/logo.svg
+   :alt: StudioML
+   :align: center
+   :width: 100%
    :target: http://studio.ml
