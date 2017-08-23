@@ -133,11 +133,7 @@
             response_data = JSON.parse(data)
             if (response_data.status == 'ok') {
                 
-                table = $('#experimentTable').DataTable()
-                if (clearTable) {
-                    table.clear()
-                }
-                addExperimentsToTable(response_data.experiments)                
+                addExperimentsToTable(response_data.experiments, clearTable)                
                 
                 if (response_data.experiments.length > 0) {
                     $('#buttonContainer').show()
@@ -146,8 +142,11 @@
             return response_data
         }
 
-        function addExperimentsToTable(experiments) {
+        function addExperimentsToTable(experiments, clearTable=true) {
             table = $('#experimentTable').DataTable()
+            if (clearTable) {
+                table.clear()
+            }
             console.log(experiments)
             for (var i=0; i < experiments.length; i++) {
                 experiment = experiments[i]

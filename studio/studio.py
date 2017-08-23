@@ -117,7 +117,7 @@ def tensorboard(logdir):
 def get_experiment():
     tic = time.time()
     key = request.json['key']
-    logger.info('Getting experiment {} '.format(key))
+    getlogger().info('Getting experiment {} '.format(key))
     try:
         experiment = get_db().get_experiment(key).__dict__
         artifacts = get_db().get_artifacts(key)
@@ -132,7 +132,7 @@ def get_experiment():
     retval = json.dumps({'status': status, 'experiment': experiment})
 
     toc = time.time()
-    logger.info('Processed get_experiment request in {} s'
+    getlogger().info('Processed get_experiment request in {} s'
                 .format(toc - tic))
 
     return retval
@@ -149,7 +149,7 @@ def get_user_experiments():
 
     # TODO check is myuser_id is authorized to do that
 
-    logger.info('Getting experiments of user {}'
+    getlogger().info('Getting experiments of user {}'
                 .format(user))
 
     experiments = get_db().get_user_experiments(user, blocking=True)
@@ -159,7 +159,7 @@ def get_user_experiments():
         "experiments": [e.__dict__ for e in experiments]
     })
     toc = time.time()
-    logger.info('Processed get_user_experiments request in {} s'
+    getlogger().info('Processed get_user_experiments request in {} s'
                 .format(toc - tic))
     return retval
 
@@ -180,7 +180,7 @@ def get_projects():
     })
 
     toc = time.time()
-    logger.info('Processed get_projects request in {} s'
+    getlogger().info('Processed get_projects request in {} s'
                 .format(toc - tic))
     return retval
 
@@ -200,7 +200,7 @@ def get_users():
         "users": users
     })
     toc = time.time()
-    logger.info('Processed get_user_experiments request in {} s'
+    getlogger().info('Processed get_user_experiments request in {} s'
                 .format(toc - tic))
     return retval
 
@@ -217,7 +217,7 @@ def get_project_experiments():
     else:
         # TODO check is myuser_id is authorized to do that
 
-        logger.info('Getting experiments in project {}'
+        getlogger().info('Getting experiments in project {}'
                     .format(project))
 
         experiments = get_db().get_project_experiments(project)
@@ -228,7 +228,7 @@ def get_project_experiments():
         "experiments": [e.__dict__ for e in experiments]
     })
     toc = time.time()
-    logger.info('Processed get_project_experiments request in {} s'
+    getlogger().info('Processed get_project_experiments request in {} s'
                 .format(toc - tic))
     return retval
 
@@ -240,7 +240,7 @@ def delete_experiment():
     try:
         key = request.json['key']
         if get_db().can_write_experiment(key, userid):
-            logger.info('Deleting experiment {} '.format(key))
+            getlogger().info('Deleting experiment {} '.format(key))
             get_db().delete_experiment(key)
             status = 'ok'
         else:
@@ -250,7 +250,7 @@ def delete_experiment():
         status = e.message
 
     toc = time.time()
-    logger.info('Processed delete_experiment request in {} s'
+    getlogger().info('Processed delete_experiment request in {} s'
                 .format(toc - tic))
 
     return json.dumps({'status': status})
@@ -263,7 +263,7 @@ def stop_experiment():
     try:
         key = request.json['key']
         if get_db().can_write_experiment(userid, key):
-            logger.info('Stopping experiment {} '.format(key))
+            getlogger().info('Stopping experiment {} '.format(key))
             get_db().stop_experiment(key)
             status = 'ok'
         else:
@@ -273,7 +273,7 @@ def stop_experiment():
         status = e.message
 
     toc = time.time()
-    logger.info('Processed stop_experiment request in {} s'
+    getlogger().info('Processed stop_experiment request in {} s'
                 .format(toc - tic))
 
     return json.dumps({'status': status})

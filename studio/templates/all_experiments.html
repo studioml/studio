@@ -20,7 +20,6 @@
                     for (user in userdata.users) {
                         console.log(user)
                         deferreds.push(data_ajax('get_user_experiments', data={"user":user}))
-                            
                     }
                     console.log(deferreds)
 
@@ -31,9 +30,12 @@
 
             function flattenExperiments() {
                 var allExperiments = []
-                
                 for (var i=0; i < arguments.length; i++) {
-                    response = arguments[i][0]
+                    var response = arguments[i];
+                    if (!(typeof response === 'string')) {
+                        response = response[0]
+                    }
+                    console.log(response)
                     data = JSON.parse(response)
                     if (data.status == 'ok') {
                         for (var j = 0; j < data.experiments.length; j++) {
