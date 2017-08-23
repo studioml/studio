@@ -5,6 +5,7 @@
       <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
       <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
       <link href="https://cdnjs.cloudflare.com/ajax/libs/datatables/1.10.12/css/dataTables.bootstrap.min.css" rel="stylesheet"/>
+      <!--link type="text/css" href="firebaseui.css" rel="stylesheet"/-->
       <link href="https://cdn.datatables.net/select/1.2.2/css/select.dataTables.css" rel="stylesheet"/> <div class="container">
 
         
@@ -18,6 +19,15 @@
       <script src="https://cdnjs.cloudflare.com/ajax/libs/datatables/1.10.12/js/jquery.dataTables.min.js"></script>
       <script src="https://cdnjs.cloudflare.com/ajax/libs/datatables/1.10.12/js/dataTables.bootstrap.min.js"></script>
       <script src="https://cdn.datatables.net/select/1.2.2/js/dataTables.select.js"></script>
+
+      <style>
+        .firebaseui-idp-icon {
+          display: inline-block;
+          height: 18px;
+          vertical-align: middle;
+          width: 18px;
+        }
+      </style>
 
       {% block head %}
       {% endblock %}
@@ -41,16 +51,15 @@
               <li><a href="/projects">Projects</a></li>
               <li><a href="/users">Users</a></li>
               <li><a href="/all">All</a></li>
-              <li><a href="" id="sign-out" hidden>Sign out</a>
+              <li><a href="" id="sign-in-button" hidden>Sign in</a>
+              <li><a href="" id="sign-out-button" hidden>Sign out</a>
             </ul>
           </div>
         </div>
       </nav>
 
-
-    <div id="logged-out" hidden>
-        <h1>Studio UI</h1>
-        <h3>Sign in to access your experiments</h3>
+    <div id="sign-in-container" hidden>
+        <h3>Sign in to view your experiments</h3>
         <div id="firebaseui-auth-container"></div>
     </div>
 
@@ -210,7 +219,8 @@
                 // [START onAuthStateChanged]
                 firebase.auth().onAuthStateChanged(function(user) {
                 if (user) {
-                    $('#logged-out').hide();
+                    $('#sign-in-container').hide();
+                    $('#sign-in-button').hide()
                     user.getToken().then(function(idToken) {
                         authWidget.userIdToken = idToken;
 
@@ -224,15 +234,27 @@
                         
                         $('#logged-in').show();
                         var name = user.displayName ? user.displayName : user.email;
-                        $('#sign-out').html('Sign out of ' + name)
-                        $('#sign-out').show();
+                        $('#sign-out-button').html('Sign out of ' + name)
+                        $('#sign-out-button').show();
 
                     });
 
                     } else {
-                        $('#logged-in').hide();
-                        $('#sign-out').hide();
-                        $('#logged-out').show();
+                        // $('#logged-in').hide();
+                        $('#logged-in').show();
+                        //$('#sign-in-container').show();
+                        $('#sign-out-button').hide();
+                        $('#sign-in-button').show()
+        
+                        console.log('adjusting sign-in-button button text')
+                        $('.firebaseui-idp-text-long').html('')
+                        $('.firebaseui-idp-text-short').html('Sign in')
+
+                        if (afterAuthCallback) {
+                            authWidget.userIdToken = null;
+                            authWidget.userRefreshToken = null;
+                            afterAuthCallback()
+                        }
                     }
                 // [END onAuthStateChanged]
                 });
@@ -261,7 +283,7 @@
         }
 
         // Sign out a user
-        $('#sign-out').click(function(event) {
+        $('#sign-out-button').click(function(event) {
             event.preventDefault();
 
             firebase.auth().signOut().then(function() {
@@ -269,6 +291,13 @@
             }, function(error) {
                 console.log(error);
             });
+        });
+
+        $('#sign-in-button').click(function(event) {
+            event.preventDefault(); 
+            
+            $('#logged-in').hide();
+            $('#sign-in-container').show();
         });
 
 

@@ -284,6 +284,9 @@ def get_and_verify_user(request):
         return None
 
     auth_token = request.headers['Authorization'].split(' ')[-1]
+    if not auth_token or auth_token == 'null':
+        return None
+
     claims = google.oauth2.id_token.verify_firebase_token(
         auth_token, _grequest)
 
