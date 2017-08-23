@@ -1,12 +1,11 @@
 StudioML
 ========
 
-.. raw:: html
-
-   <p align="center">
-      <img src="logo.svg">
-   </p>
-
+.. image:: /studioml/studio/raw/docs/new_logo/logo.png
+   :target: http://studio.ml
+   :width: 40% 
+   :align: center
+   :alt: StudioML
 
 |Hex.pm|
 
