@@ -1,10 +1,10 @@
 StudioML
 ========
 
-.. image:: https://github.com/studioml/studio/blob/docs/new_logo/logo.svg
-        :align: center
-        :width: 100%
-        :target: http://studio.ml
+.. image:: logo.svg
+   :align: center
+   :width: 100%
+   :target: http://studio.ml
 
 
 |Hex.pm|
