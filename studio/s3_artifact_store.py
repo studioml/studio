@@ -50,3 +50,6 @@ class S3ArtifactStore(TartifactStore):
 
     def get_qualified_location(self, key):
         return 's3://' + self.bucket + '/' + key
+
+    def get_bucket(self):
+        return self.bucket
