@@ -232,7 +232,6 @@
                             afterAuthCallback()
                         }
                         
-                        $('#logged-in').show();
                         var name = user.displayName ? user.displayName : user.email;
                         $('#sign-out-button').html('Sign out of ' + name)
                         $('#sign-out-button').show();
@@ -240,22 +239,16 @@
                     });
 
                     } else {
-                        // $('#logged-in').hide();
-                        $('#logged-in').show();
-                        //$('#sign-in-container').show();
                         $('#sign-out-button').hide();
-                        $('#sign-in-button').show()
+                        $('#sign-in-button').show();
         
-                        console.log('adjusting sign-in-button button text')
-                        $('.firebaseui-idp-text-long').html('')
-                        $('.firebaseui-idp-text-short').html('Sign in')
-
                         if (afterAuthCallback) {
                             authWidget.userIdToken = null;
                             authWidget.userRefreshToken = null;
                             afterAuthCallback()
                         }
                     }
+                    hideSignIn();
                 // [END onAuthStateChanged]
                 });
             }
@@ -282,6 +275,18 @@
              ui.start('#firebaseui-auth-container', uiConfig);
         }
 
+        function showSignIn() {
+            $('#logged-in').hide()
+            $('.firebaseui-idp-text-long').html('')
+            $('.firebaseui-idp-text-short').html(' Sign in with google ')
+            $('#sign-in-container').show();
+        }
+        
+        function hideSignIn() {
+            $('#logged-in').show()
+            $('#sign-in-container').hide();
+        }
+
         // Sign out a user
         $('#sign-out-button').click(function(event) {
             event.preventDefault();
@@ -295,10 +300,11 @@
 
         $('#sign-in-button').click(function(event) {
             event.preventDefault(); 
-            
-            $('#logged-in').hide();
-            $('#sign-in-container').show();
+            showSignIn()   
         });
+
+
+        
 
 
 
