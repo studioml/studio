@@ -1,7 +1,7 @@
 StudioML
 ========
 
-.. image:: /studioml/studio/raw/docs/new_logo/logo.png
+.. image:: logo.png
    :target: http://studio.ml
    :width: 40% 
    :align: center
