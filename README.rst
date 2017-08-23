@@ -3,7 +3,7 @@ StudioML
 
 .. class:: no-web
 
-    .. image:: https://github.com/studioml/studio/raw/master/logo.svg
+    .. image:: logo.svg
         :alt: StudioML
         :align: center
         :width: 100%
