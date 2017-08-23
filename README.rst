@@ -1,10 +1,7 @@
 StudioML
 ========
 
-.. class:: no-web
-
-    .. image:: https://github.com/studioml/studio/blob/docs/new_logo/logo.svg
-        :alt: StudioML
+.. image:: https://github.com/studioml/studio/blob/docs/new_logo/logo.svg
         :align: center
         :width: 100%
         :target: http://studio.ml
