@@ -2,7 +2,13 @@ import unittest
 import subprocess
 import time
 
+from random import randint
+from threading import Thread
+from multiprocessing import Process
+from subprocess import Popen
+
 from studio import model
+from studio import studio
 from model_test import get_test_experiment
 
 class HTTPProviderTest(unittest.TestCase):
@@ -10,20 +16,33 @@ class HTTPProviderTest(unittest.TestCase):
     @classmethod   
     def setUpClass(self):
         print "Setting up"
-        self.serverp = subprocess.Popen(['studio','ui', '--port=5123'])
+        self.port = randint(5000, 9000)        
+            
+        # self.app.run(port=self.port, debug=True)
+        # self.serverp.start()
+                
+        self.serverp = subprocess.Popen([
+                'studio-ui',
+                '--port=' + str(self.port),
+                '--verbose=debug',
+                '--host=localhost'])
+        
         time.sleep(10)
 
     @classmethod
     def tearDownClass(self):      
         print "Tearing down"
+        
         self.serverp.kill()
 
     def get_db_provider(self):
-        return model.get_db_provider(model.get_config('test_config_http.yaml'))       
+        config = model.get_config('test_config_http.yaml')
+        config['database']['serverUrl'] = 'http://localhost:' + str(self.port)
+        return model.get_db_provider(config)       
 
     def test_add_get_experiment(self):
-        db = self.get_db_provider()
         experiment_tuple = get_test_experiment()
+        db = self.get_db_provider()
         db.add_experiment(experiment_tuple[0])
 
         experiment = db.get_experiment(experiment_tuple[0].key)
