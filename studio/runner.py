@@ -340,6 +340,7 @@ def submit_experiments(experiments, config, runner_args, logger):
     else:
         if queue_name == 'local':
             queue = LocalQueue()
+            queue.clean()
         elif queue_name.startswith('sqs_'):
             queue = SQSQueue(queue_name, verbose=verbose)
         else:
