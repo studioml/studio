@@ -13,6 +13,9 @@ VERSION = ""
 
 class MyDevelop(develop):
     def run(self):
+        if "TRAVIS_TAG" in os.environ:
+          global VERSION
+          VERSION = os.environ["TRAVIS_TAG"]
         call(["pip install -r requirements.txt --no-clean"], shell=True)
         copyconfig()
         develop.run(self)
