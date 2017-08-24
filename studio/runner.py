@@ -248,11 +248,11 @@ def main(args=sys.argv):
                     config)
 
                 optimizer.tell(hyperparam_tuples, fitnesses)
-                if config['verbose'] == "info" or config['verbose'] == "debug":
-                    try:
-                        optimizer.disp()
-                    except:
-                        logger.warn('Optimizer has no disp() method')
+                # if config['verbose'] == "info" or config['verbose'] == "debug":
+                try:
+                    optimizer.disp()
+                except:
+                    logger.warn('Optimizer has no disp() method')
     else:
         experiments = [model.create_experiment(
             filename=exec_filename,
