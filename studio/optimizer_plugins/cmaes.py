@@ -42,7 +42,9 @@ class Optimizer(object):
                 np.max(values)))
 
         self.opts = cma.CMAOptions()
-        self.opts.update(OPTIMIZER_CONFIG)
+        for param, value in OPTIMIZER_CONFIG.iteritems():
+            if param in self.opts and value is not None:
+                self.opts[param] = value
         self.es = cma.CMAEvolutionStrategy(np.array(self.init), self.sigma,
             self.opts)
 
