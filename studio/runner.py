@@ -370,10 +370,10 @@ def get_experiment_fitnesses(experiments, optimizer, config, logger):
     db_provider = model.get_db_provider()
     has_result = [False] * len(experiments)
     fitnesses = [0.0] * len(experiments)
-    skip_gen_thres = optimizer.get_configs()['termination_criterion']\
-        ['skip_gen_thres']
-    skip_gen_timeout = optimizer.get_configs()['termination_criterion']\
-        ['skip_gen_timeout']
+    term_criterion = optimizer.get_configs()['termination_criterion']
+    skip_gen_thres = term_criterion['skip_gen_thres']
+    skip_gen_timeout = term_criterion['skip_gen_timeout']
+
     result_timestamp = time.time()
     while (float(sum(has_result))/len(experiments) < skip_gen_thres or \
         time.time() - result_timestamp) < skip_gen_timeout:
