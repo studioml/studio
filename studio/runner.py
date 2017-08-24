@@ -227,13 +227,12 @@ def main(args=sys.argv):
 
             hyperparam_values, log_scale_dict = get_hyperparam_values(
                 runner_args)
-            # print hyperparam_values
+
             optimizer = getattr(opt_module, "Optimizer")(hyperparam_values,
                 log_scale_dict)
 
             while not optimizer.stop():
                 hyperparam_tuples = optimizer.ask()
-                # print hyperparam_tuples
 
                 experiments = add_hyperparam_experiments(
                     exec_filename,
