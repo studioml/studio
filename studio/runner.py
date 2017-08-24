@@ -380,7 +380,7 @@ def get_experiment_fitnesses(experiments, optimizer, config, logger):
             if float(sum(has_result))/len(experiments) > skip_gen_thres \
                 and time.time() - result_timestamp > skip_gen_timeout:
                 logger.warn("Skipping to next gen with %s of fitnesses evaled" %
-                    float(sum(has_result))/len(experiments))
+                    (float(sum(has_result))/len(experiments)))
                 has_result = [True] * len(experiments)
                 break
             if has_result[i]:
