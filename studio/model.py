@@ -251,7 +251,8 @@ class FirebaseProvider(object):
         experiment.time_added = time.time()
         experiment.status = 'waiting'
 
-        if os.path.exists(experiment.artifacts['workspace']['local']):
+        if 'local' in experiment.artifacts['workspace'].keys() and \
+                os.path.exists(experiment.artifacts['workspace']['local']):
             experiment.git = git_util.get_git_info(
                 experiment.artifacts['workspace']['local'])
 
@@ -366,7 +367,7 @@ class FirebaseProvider(object):
                 target=self.store.put_artifact,
                 args=(art,))
             for _, art in experiment.artifacts.iteritems()
-            if art['mutable']]
+            if art['mutable'] and art.get('local')]
 
         for t in checkpoint_threads:
             t.start()

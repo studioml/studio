@@ -286,13 +286,17 @@ def add_experiment():
     userid = get_and_verify_user(request)
     artifacts = []
     try:
-        experiment = request.json['experiment']
-        for art in experiment.artifacts:
-            get_db().store.grant_write(art['key'], userid)
+        experiment = model.experiment_from_dict(request.json['experiment'])
+        for tag,art in experiment.artifacts.iteritems():
             art.pop('local', None)
-            artifacts.append(art)
         
-        get_db().add_experiment(model.experiment_from_dict(experiment))
+        get_db().add_experiment(experiment)
+        added_experiment = get_db().get_experiment(experiment.key)
+        
+        for tag, art in added_experiment.artifacts.iteritems():
+            if 'key' in art.keys():
+                get_db().store.grant_write(art['key'], userid)
+                artifacts.append(art)
         status = 'ok'
        
     
