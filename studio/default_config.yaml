@@ -1,4 +1,4 @@
-database: 
+database:
     type: FireBase
 
     apiKey: AIzaSyCLQbp5X2B4SWzBw-sz9rUnGHNSdMl0Yx8
@@ -12,7 +12,7 @@ database:
     # serviceAccount: "/path/to/serviceAccount.json"
     # guest: true
     # use_email_auth: true
-            
+
 
 
 # storage:
@@ -33,3 +33,5 @@ cloud:
     hdd:  10g
     gpus: 0
 
+optimizer_sleep_time: 1
+woker_timeout: 30

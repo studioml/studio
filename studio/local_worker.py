@@ -16,7 +16,6 @@ from gpu_util import get_available_gpus, get_gpu_mapping
 
 logging.basicConfig()
 
-
 class LocalExecutor(object):
     """Runs job while capturing environment and logging results.
     """
@@ -175,8 +174,16 @@ def worker_loop(queue, parsed_args,
     logger = logging.getLogger('worker_loop')
 
     hold_period = 4
+    job_start_time = time.time()
+    while True:
+        if not queue.has_next() and (time.time() - job_start_time()) > \
+            self.config['worker_timeout']:
+            break
+        else:
+            time.sleep(0.1)
+            continue
 
-    while queue.has_next():
+        job_start_time = time.time()
         first_exp, ack_key = queue.dequeue(acknowledge=False)
         # first_exp = min([(p, os.path.getmtime(p)) for p in queue],
         #                key=lambda t: t[1])[0]

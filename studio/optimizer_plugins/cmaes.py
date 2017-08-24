@@ -3,9 +3,12 @@ import numpy as np
 import cma
 import math
 
+SIGMA0 = 0.25
+EPSILON = 1e-9
+
 # Overwrite the parameters of CMAES
 OPTIMIZER_CONFIG = {
-    'popsize': 10
+    'popsize': 2,
 }
 
 # Termination criterion for stopping CMAES
@@ -21,10 +24,10 @@ class Optimizer(object):
         self.log_scale_dict = log_scale_dict
         self.nametoi = {}; self.itoname = {}
         self.init = []
-        self.sigma = []
+        self.sigma = SIGMA0
         self.bounds = []
         self.gen = 0
-        self.best_fitness = -1e308
+        self.best_fitness = 0.0
 
         for i, name in enumerate(hyperparam_dict):
             self.itoname[i] = name
@@ -33,14 +36,14 @@ class Optimizer(object):
                 values = np.log(hyperparam_dict[name])
             else:
                 values = hyperparam_dict[name]
-            self.init.append(np.mean(values))
-            self.sigma.append(np.std(values))
             self.bounds.append((np.min(values), np.max(values)))
+            self.init.append(self.scale_var(np.median(values), np.min(values),
+                np.max(values)))
 
         self.opts = cma.CMAOptions()
         self.opts.update(OPTIMIZER_CONFIG)
-        self.es = cma.CMAEvolutionStrategy(np.array(self.init),
-            np.array(self.sigma), self.opts)
+        self.es = cma.CMAEvolutionStrategy(np.array(self.init), self.sigma,
+            self.opts)
 
     def get_config(self):
         return OPTIMIZER_CONFIG
@@ -48,7 +51,10 @@ class Optimizer(object):
     def get_term_criterion(self):
         return TERM_CRITERION
 
-    def __unpack_solution(solution):
+    def scale_var(self, var, min_value, max_value):
+        return (var - min_value) / max((max_value - min_value), EPSILON)
+
+    def __unpack_solution(self, solution):
         solution_dict = {}
         for i in xrange(len(solution)):
             name = self.itoname[i]
@@ -62,7 +68,7 @@ class Optimizer(object):
                 solution_dict[name]))
         return solution_dict
 
-    def __pack_solution(hyperparam_dict):
+    def __pack_solution(self, hyperparam_dict):
         solution = np.empty(len(hyperparam_dict))
         for name in hyperparam_dict:
             index = self.nametoi[name]
@@ -83,7 +89,7 @@ class Optimizer(object):
 
     def tell(self, hyperparam_dicts, fitnesses):
         adjusted_fitnesses = -1 * np.array(fitnesses)
-        self.best_fitness = float(np.max(adjusted_fitnesses))
+        self.best_fitness = -1 * float(np.max(adjusted_fitnesses))
         solutions = [self.__pack_solution(h) for h in hyperparam_dicts]
         self.es.tell(solutions, adjusted_fitnesses)
         self.gen += 1

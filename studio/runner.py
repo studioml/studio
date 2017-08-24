@@ -125,7 +125,7 @@ def main(args=sys.argv):
         default=None)
 
     parser.add_argument(
-        '--hyperparam',
+        '--hyperparam', '-hp',
         help='Try out multiple values of a certain parameter. ' +
              'For example, --hyperparam=learning_rate:0.01:0.1:l10 ' +
              'will instantiate 10 versions of the script, replace ' +
@@ -176,12 +176,6 @@ def main(args=sys.argv):
 
     config = model.get_config(runner_args.config)
 
-    queue_name = 'local'
-    if 'queue' in config.keys():
-        queue_name = config['queue']
-    if runner_args.queue:
-        queue_name = runner_args.queue
-
     if runner_args.verbose:
         config['verbose'] = runner_args.verbose
 
@@ -206,98 +200,6 @@ def main(args=sys.argv):
     artifacts.update(parse_artifacts(runner_args.capture_once, mutable=False))
     artifacts.update(parse_external_artifacts(runner_args.reuse, db))
 
-    def submit_experiments(experiments):
-        for e in experiments:
-            e.pythonenv = add_packages(e.pythonenv, runner_args.python_pkg)
-            db.add_experiment(e)
-            logger.info("Added experiment " + e.key)
-
-        if runner_args.cloud is not None:
-            assert runner_args.cloud in ['gcloud', 'gcspot', 'ec2', 'ec2spot']
-
-            assert runner_args.queue is None, \
-                '--queue argument cannot be provided with --cloud argument'
-            auth_cookie = None if config['database'].get('guest') \
-                else os.path.join(
-                auth.token_dir,
-                config['database']['apiKey']
-            )
-
-            if runner_args.cloud in ['gcloud', 'gcspot']:
-
-                queue_name = 'pubsub_' + str(uuid.uuid4())
-
-                queue = PubsubQueue(queue_name, verbose=verbose)
-                worker_manager = GCloudWorkerManager(
-                    auth_cookie=auth_cookie,
-                    zone=config['cloud']['zone']
-                )
-
-            if runner_args.cloud in ['ec2', 'ec2spot']:
-
-                queue_name = 'sqs_' + str(uuid.uuid4())
-
-                queue = SQSQueue(queue_name, verbose=verbose)
-                worker_manager = EC2WorkerManager(
-                    auth_cookie=auth_cookie
-                )
-
-            if runner_args.cloud == 'gcloud' or \
-               runner_args.cloud == 'ec2':
-
-                num_workers = int(
-                    runner_args.num_workers) if runner_args.num_workers else 1
-                for i in range(num_workers):
-                    worker_manager.start_worker(
-                        queue_name, resources_needed,
-                        ssh_keypair=runner_args.ssh_keypair)
-            else:
-                assert runner_args.bid is not None
-                if runner_args.num_workers:
-                    start_workers = runner_args.num_workers
-                    queue_upscaling = False
-                else:
-                    start_workers = 1
-                    queue_upscaling = True
-
-                worker_manager.start_spot_workers(
-                    queue_name,
-                    runner_args.bid,
-                    resources_needed,
-                    start_workers=start_workers,
-                    queue_upscaling=queue_upscaling,
-                    ssh_keypair=runner_args.ssh_keypair)
-
-        else:
-            if queue_name == 'local':
-                queue = LocalQueue()
-            elif queue_name.startswith('sqs_'):
-                queue = SQSQueue(queue_name, verbose=verbose)
-            else:
-                queue = PubsubQueue(queue_name, verbose=verbose)
-
-        for e in experiments:
-            queue.enqueue(json.dumps({
-                'experiment': e.__dict__,
-                'config': config}))
-
-        if queue_name == 'local':
-            worker_args = ['studio-local-worker']
-
-            if runner_args.config:
-                worker_args += ['--config=' + runner_args.config]
-            if runner_args.guest:
-                worker_args += ['--guest']
-
-            logger.info('worker args: {}'.format(worker_args))
-            if not runner_args.num_workers or int(runner_args.num_workers) == 1:
-                local_worker.main(worker_args)
-            else:
-                raise NotImplementedError("Multiple local workers are not " +
-                                          "implemeted yet")
-        db = None
-        return
-
     if any(runner_args.hyperparam):
         if runner_args.optimizer is "grid":
             experiments = add_hyperparam_experiments(
@@ -306,17 +208,21 @@ def main(args=sys.argv):
                 runner_args,
                 artifacts,
                 resources_needed)
-            submit_experiments(experiments)
+            submit_experiments(experiments, config, runner_args, logger)
         else:
             opt_modulepath = os.path.join(
                 os.path.dirname(os.path.abspath(__file__)),
-                "plugins",
+                "optimizer_plugins",
                 runner_args.optimizer + ".py")
+            # logger.info('optimizer path: %s' % opt_modulepath)
             if not os.path.exists(opt_modulepath):
                 opt_modulepath = os.path.abspath(
                     os.path.expanduser(runner_args.optimizer))
+            logger.info('optimizer path: %s' % opt_modulepath)
             assert os.path.exists(opt_modulepath)
-            opt_module = importlib.import_module(opt_modulepath)
+            sys.path.append(os.path.dirname(opt_modulepath))
+            opt_module = importlib.import_module(
+                os.path.basename(opt_modulepath.replace(".py", '')))
 
             hyperparam_values, log_scale_dict = get_hyperparam_values(
                 runner_args)
@@ -325,6 +231,7 @@ def main(args=sys.argv):
 
             while not optimizer.stop():
                 hyperparam_tuples = optimizer.ask()
+
                 experiments = add_hyperparam_experiments(
                     exec_filename,
                     other_args,
@@ -333,9 +240,14 @@ def main(args=sys.argv):
                     resources_needed,
                     optimizer=optimizer,
                     hyperparam_tuples=hyperparam_tuples)
-                skip_gen_thres = optimizer.get_term_criterion()['skip_gen_thres']
-                fitnesses = get_experiment_fitnesses(experiments, skip_gen_thres)
+                submit_experiments(experiments, config, runner_args, logger)
+
+                fitnesses = get_experiment_fitnesses(experiments,
+                    optimizer.get_term_criterion()['skip_gen_thres'],
+                    config)
+
                 optimizer.tell(hyperparam_tuples, fitnesses)
+
                 try:
                     optimizer.disp()
                 except:
@@ -349,19 +261,123 @@ def main(args=sys.argv):
             artifacts=artifacts,
             resources_needed=resources_needed,
             metric=runner_args.metric)]
-        submit_experiments(experiments)
+        submit_experiments(experiments, config, runner_args, logger)
 
+    db = None
+    return
 
-def get_experiment_fitnesses(experiments, skip_gen_thres):
+def submit_experiments(experiments, config, runner_args, logger):
+    db = model.get_db_provider(config)
+
+    queue_name = 'local'
+    if 'queue' in config.keys():
+        queue_name = config['queue']
+    if runner_args.queue:
+        queue_name = runner_args.queue
+
+    for e in experiments:
+        e.pythonenv = add_packages(e.pythonenv, runner_args.python_pkg)
+        db.add_experiment(e)
+        logger.info("Added experiment " + e.key)
+
+    if runner_args.cloud is not None:
+        assert runner_args.cloud in ['gcloud', 'gcspot', 'ec2', 'ec2spot']
+
+        assert runner_args.queue is None, \
+            '--queue argument cannot be provided with --cloud argument'
+        auth_cookie = None if config['database'].get('guest') \
+            else os.path.join(
+            auth.token_dir,
+            config['database']['apiKey']
+        )
+
+        if runner_args.cloud in ['gcloud', 'gcspot']:
+
+            queue_name = 'pubsub_' + str(uuid.uuid4())
+
+            queue = PubsubQueue(queue_name, verbose=verbose)
+            worker_manager = GCloudWorkerManager(
+                auth_cookie=auth_cookie,
+                zone=config['cloud']['zone']
+            )
+
+        if runner_args.cloud in ['ec2', 'ec2spot']:
+
+            queue_name = 'sqs_' + str(uuid.uuid4())
+
+            queue = SQSQueue(queue_name, verbose=verbose)
+            worker_manager = EC2WorkerManager(
+                auth_cookie=auth_cookie
+            )
+
+        if runner_args.cloud == 'gcloud' or \
+           runner_args.cloud == 'ec2':
+
+            num_workers = int(
+                runner_args.num_workers) if runner_args.num_workers else 1
+            for i in range(num_workers):
+                worker_manager.start_worker(
+                    queue_name, resources_needed,
+                    ssh_keypair=runner_args.ssh_keypair)
+        else:
+            assert runner_args.bid is not None
+            if runner_args.num_workers:
+                start_workers = runner_args.num_workers
+                queue_upscaling = False
+            else:
+                start_workers = 1
+                queue_upscaling = True
+
+            worker_manager.start_spot_workers(
+                queue_name,
+                runner_args.bid,
+                resources_needed,
+                start_workers=start_workers,
+                queue_upscaling=queue_upscaling,
+                ssh_keypair=runner_args.ssh_keypair)
+
+    else:
+        if queue_name == 'local':
+            queue = LocalQueue()
+        elif queue_name.startswith('sqs_'):
+            queue = SQSQueue(queue_name, verbose=verbose)
+        else:
+            queue = PubsubQueue(queue_name, verbose=verbose)
+
+    for e in experiments:
+        queue.enqueue(json.dumps({
+            'experiment': e.__dict__,
+            'config': config}))
+
+    if queue_name == 'local':
+        worker_args = ['studio-local-worker']
+
+        if runner_args.config:
+            worker_args += ['--config=' + runner_args.config]
+        if runner_args.guest:
+            worker_args += ['--guest']
+
+        logger.info('worker args: {}'.format(worker_args))
+        if not runner_args.num_workers or int(runner_args.num_workers) == 1:
+            local_worker.main(worker_args)
+        else:
+            raise NotImplementedError("Multiple local workers are not " +
+                                      "implemeted yet")
+    return
+
+def get_experiment_fitnesses(experiments, skip_gen_thres, config):
     db_provider = model.get_db_provider()
     has_result = [False] * len(experiments)
     fitnesses = [0.0] * len(experiments)
+
     while float(sum(has_result))/len(experiments) < skip_gen_thres:
         for i, experiment in enumerate(experiments):
             if has_result[i]:
                 continue
             returned_experiment = db_provider.get_experiment(experiment.key,
                 getinfo=True)
+            if 'logtail' not in returned_experiment.info:
+                continue
             experiment_output = returned_experiment.info['logtail']
             for line in experiment_output:
                 if line.startswith("Fitness") or line.startswith("fitness"):
@@ -373,7 +389,9 @@ def get_experiment_fitnesses(experiments, skip_gen_thres):
                             % line)
                     fitness[i] = fitness
                     has_result[i] = True
-        time.sleep(5)
+                    break
+
+        time.sleep(config['optimizer_sleep_time'])
     return fitnesses
 
 def parse_artifacts(art_list, mutable):
@@ -436,13 +454,23 @@ def add_hyperparam_experiments(
 
     def create_experiments(hyperparam_tuples):
         experiments = []
+        experiment_names = {}
         for hyperparam_tuple in hyperparam_tuples:
             experiment_name = experiment_name_base
             for param_name, param_value in hyperparam_tuple.iteritems():
                 experiment_name = experiment_name + '__' + \
                     param_name + '__' + str(param_value)
-
             experiment_name = experiment_name.replace('.', '_')
+
+            # if experiments uses a previously used name, change it
+            if experiment_name in experiment_names:
+                new_experiment_name = experiment_name
+                counter = 1
+                while new_experiment_name in experiment_names:
+                    counter += 1
+                    new_experiment_name = "%s_v%s" % (experiment_name, counter)
+                experiment_name = new_experiment_name
+            experiment_names[experiment_name] = True
 
             workspace_orig = artifacts['workspace']['local'] \
                 if 'workspace' in artifacts.keys() else '.'
@@ -502,9 +530,10 @@ def get_hyperparam_values(runner_args):
 
 def parse_range(range_str):
     is_log = False
+    return_val = None
     if ',' in range_str:
         # return numpy array for consistency with other cases
-        return np.array([float(s) for s in range_str.split(',')])
+        return_val = np.array([float(s) for s in range_str.split(',')])
     elif ':' in range_str:
         range_limits = range_str.split(':')
         assert len(range_limits) > 1
@@ -514,7 +543,7 @@ def parse_range(range_str):
             except ValueError:
                 limit1 = 0.0
             limit2 = float(range_limits[1])
-            return np.arange(limit1, limit2 + 1)
+            return_val = np.arange(limit1, limit2 + 1)
         else:
             try:
                 limit1 = float(range_limits[0])
@@ -526,15 +555,15 @@ def parse_range(range_str):
             try:
                 limit2 = float(range_limits[1])
                 if int(limit2) == limit2 and limit2 > abs(limit3 - limit1):
-                    return np.linspace(limit1, limit3, int(limit2))
+                    return_val = np.linspace(limit1, limit3, int(limit2))
                 else:
-                    return np.arange(limit1, limit3 + 0.5 * limit2, limit2)
+                    return_val = np.arange(limit1, limit3 + 0.5 * limit2, limit2)
 
             except ValueError:
                 if 'l' in range_limits[1]:
                     is_log = True
                     limit2 = int(range_limits[1].replace('l', ''))
-                    return np.exp(
+                    return_val = np.exp(
                         np.linspace(
                             np.log(limit1),
                             np.log(limit3),
@@ -545,7 +574,8 @@ def parse_range(range_str):
                         range_limits[1])
 
     else:
-        return [float(range_str)], is_log
+        return_val = [float(range_str)]
+    return return_val, is_log
 
 
 def unfold_tuples(hyperparam_values):
