@@ -228,10 +228,10 @@ class FirebaseProvider(object):
             dbobj.remove()
 
     def _get_userid(self):
+        userid = None
         if not self.auth:
-            userid = 'guest'
-        else:
             userid = self.auth.get_user_id()
+        userid = userid if userid else 'guest'
         return userid
 
     def _get_user_keybase(self, userid=None):
@@ -665,16 +665,20 @@ def get_config(config_file=None):
             def replace_with_env(config):
                 for key, value in config.iteritems():
                     if isinstance(value, str) and value.startswith('$'):
-                        if value[1:] in os.environ.keys():
-                            config[key] = os.environ[value[1:]]
-                        else:
-                            config[key] = "None"
+                        config[key] = os.environ.get(value[1:])
 
                     elif isinstance(value, dict):
                         replace_with_env(value)
 
+            def scrub_dict(d):
+                if type(d) is dict:
+                    return dict((k, scrub_dict(v)) for k, v in d.iteritems() if v and scrub_dict(v))
+                else:
+                    return d
+
             replace_with_env(config)
-            return config
+            
+            return scrub_dict(config)
 
     raise ValueError('None of the config paths {} exits!'
                      .format(config_paths))

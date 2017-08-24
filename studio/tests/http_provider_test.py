@@ -16,7 +16,7 @@ class HTTPProviderTest(unittest.TestCase):
     @classmethod
     def tearDownClass(self):      
         print "Tearing down"
-        #self.serverp.kill()
+        self.serverp.kill()
 
     def get_db_provider(self):
         return model.get_db_provider(model.get_config('test_config_http.yaml'))       
@@ -30,7 +30,6 @@ class HTTPProviderTest(unittest.TestCase):
         self.assertEquals(experiment.key, experiment_tuple[0].key)
         self.assertEquals(experiment.filename, experiment_tuple[0].filename)
         self.assertEquals(experiment.args, experiment_tuple[0].args)
-        
         
 
 
