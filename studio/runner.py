@@ -233,7 +233,7 @@ def main(args=sys.argv):
 
             while not optimizer.stop():
                 hyperparam_tuples = optimizer.ask()
-                print hyperparam_tuples
+                # print hyperparam_tuples
 
                 experiments = add_hyperparam_experiments(
                     exec_filename,
