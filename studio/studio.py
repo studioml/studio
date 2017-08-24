@@ -1,4 +1,5 @@
 import time
+import sys
 from flask import Flask, render_template, request, redirect
 import model
 import argparse
@@ -331,7 +332,7 @@ def get_and_verify_user(request):
 def get_db():
     global _db_provider
     if not _db_provider:
-        _db_provider = model.get_db_provider()
+        _db_provider = model.get_db_provider(blocking_auth=False)
 
     return _db_provider
 
@@ -366,7 +367,7 @@ def _render(page, **kwargs):
     return retval
 
 
-def main():
+def main(args=sys.argv[1:]):
     parser = argparse.ArgumentParser(
         description='Studio WebUI server. \
                      Usage: studio \
@@ -382,6 +383,10 @@ def main():
                         type=int,
                         default=5000)
 
+    parser.add_argument('--host',
+                        help='host name.',
+                        default='0.0.0.0')
+
     parser.add_argument(
         '--verbose', '-v',
         help='Verbosity level. Allowed vaules: ' +
@@ -389,7 +394,7 @@ def main():
              'or numerical value of logger levels.',
         default=None)
 
-    args = parser.parse_args()
+    args = parser.parse_args(args)
     config = model.get_config()
     if args.config:
         with open(args.config) as f:
@@ -410,7 +415,7 @@ def main():
     _save_auth_cookie = True
 
     print('Starting Studio UI on port {0}'.format(args.port))
-    app.run(host='0.0.0.0', port=args.port, debug=True)
+    app.run(host=args.host, port=args.port)
 
 
 if __name__ == "__main__":

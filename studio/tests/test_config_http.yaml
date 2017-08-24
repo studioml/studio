@@ -4,7 +4,7 @@ database:
     apiKey: AIzaSyCLQbp5X2B4SWzBw-sz9rUnGHNSdMl0Yx8
     authDomain: "studio-ed756.firebaseapp.com"
     projectId: studio-ed756
-    serverUrl: "http://localhost:5123"
+    serverUrl: "http://localhost:5000"
 log:
     name: output.log
 
