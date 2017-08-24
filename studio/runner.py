@@ -245,9 +245,7 @@ def main(args=sys.argv):
                 submit_experiments(experiments, config, runner_args, logger)
 
                 fitnesses = get_experiment_fitnesses(experiments, \
-                    optimizer.get_configs() \
-                    ['termination_criterion']['skip_gen_thres'], \
-                    config)
+                    optimizer, config, logger)
 
                 optimizer.tell(hyperparam_tuples, fitnesses)
                 # if config['verbose'] == "info" or config['verbose'] == "debug":
@@ -368,10 +366,11 @@ def submit_experiments(experiments, config, runner_args, logger):
                                       "implemented yet")
     return
 
-def get_experiment_fitnesses(experiments, skip_gen_thres, config):
+def get_experiment_fitnesses(experiments, optimizer, config, logger):
     db_provider = model.get_db_provider()
     has_result = [False] * len(experiments)
     fitnesses = [0.0] * len(experiments)
+    skip_gen_thres = optimizer.get_configs()['termination_criterion']['skip_gen']
 
     while float(sum(has_result))/len(experiments) < skip_gen_thres:
         for i, experiment in enumerate(experiments):
