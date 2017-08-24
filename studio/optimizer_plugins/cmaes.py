@@ -37,7 +37,7 @@ class Optimizer(object):
             else:
                 values = hyperparam_dict[name]
             self.bounds.append((np.min(values), np.max(values)))
-            self.init.append(self.scale_var(np.median(values), np.min(values),
+            self.init.append(self.__scale_var(np.median(values), np.min(values),
                 np.max(values)))
 
         self.opts = cma.CMAOptions()
@@ -45,16 +45,14 @@ class Optimizer(object):
         self.es = cma.CMAEvolutionStrategy(np.array(self.init), self.sigma,
             self.opts)
 
-    def get_config(self):
-        return OPTIMIZER_CONFIG
+    def get_configs(self):
+        return {'termination_criterion': TERM_CRITERION,
+        'optimizer_config': OPTIMIZER_CONFIG}
 
-    def get_term_criterion(self):
-        return TERM_CRITERION
-
-    def scale_var(self, var, min_value, max_value):
+    def __scale_var(self, var, min_value, max_value):
         return (var - min_value) / max((max_value - min_value), EPSILON)
 
-    def unscale_var(self, var, min_value, max_value):
+    def __unscale_var(self, var, min_value, max_value):
         return (var * (max_value - min_value)) + min_value
 
     def __unpack_solution(self, solution):
@@ -63,7 +61,7 @@ class Optimizer(object):
             name = self.itoname[i]
             solution_dict[name] = solution[i]
             solution_dict[name] = min(1.0, max(0.0, solution_dict[name]))
-            solution_dict[name] = self.unscale_var(solution_dict[name],
+            solution_dict[name] = self.__unscale_var(solution_dict[name],
                 self.bounds[i][0], self.bounds[i][1])
             if self.log_scale_dict[name]:
                 solution_dict[name] = math.exp(solution_dict[name])
@@ -76,7 +74,7 @@ class Optimizer(object):
             solution[i] = hyperparam_dict[name]
             if self.log_scale_dict[name]:
                 solution[i] = math.log(solution[i] + EPSILON)
-            solution[i] = self.scale_var(solution[i],
+            solution[i] = self.__scale_var(solution[i],
                 self.bounds[i][0], self.bounds[i][1])
 
         return solution

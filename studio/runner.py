@@ -243,8 +243,9 @@ def main(args=sys.argv):
                     hyperparam_tuples=hyperparam_tuples)
                 submit_experiments(experiments, config, runner_args, logger)
 
-                fitnesses = get_experiment_fitnesses(experiments,
-                    optimizer.get_term_criterion()['skip_gen_thres'],
+                fitnesses = get_experiment_fitnesses(experiments, \
+                    optimizer.get_configs() \
+                    ['temination_criterion']['skip_gen_thres'], \
                     config)
 
                 optimizer.tell(hyperparam_tuples, fitnesses)
