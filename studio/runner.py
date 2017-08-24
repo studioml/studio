@@ -373,16 +373,18 @@ def get_experiment_fitnesses(experiments, skip_gen_thres, config):
     has_result = [False] * len(experiments)
     fitnesses = [0.0] * len(experiments)
 
-    # logger.info("experiments: %s" % experiments)
     while float(sum(has_result))/len(experiments) < skip_gen_thres:
         for i, experiment in enumerate(experiments):
             if has_result[i]:
                 continue
             returned_experiment = db_provider.get_experiment(experiment.key,
                 getinfo=True)
-            output = db_provider._get_experiment_logtail(returned_experiment)
-            # experiment_output = returned_experiment.info['logtail']
-            # logger.info("experiment output: %s" % experiment_output)
+            try:
+                experiment_output = returned_experiment.info['logtail']
+            except:
+                logger.warn('Cannot access "logtail" field in experiment.info')
+                output = db_provider._get_experiment_logtail(returned_experiment)
+
             for line in output:
                 if line.startswith("Fitness") or line.startswith("fitness"):
                     try:
@@ -391,11 +393,10 @@ def get_experiment_fitnesses(experiments, skip_gen_thres, config):
                     except:
                         logger.warn('Error parsing or invalid fitness (%s)'
                             % line)
-                    fitnesses[i] = fitness
-                    has_result[i] = True
-                    # logger.info("PERCENTAGE RETURNED: %s" % \
-                        # float(sum(has_result))/len(experiments))
-                    break
+                    else:
+                        fitnesses[i] = fitness
+                        has_result[i] = True
+                        break
 
         time.sleep(config['sleep_time'])
     return fitnesses
