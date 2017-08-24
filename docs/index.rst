@@ -1,7 +1,7 @@
 .. raw:: html
    
    <p align="center">
-      <img src="../logo.png">
+      <img src="logo.png">
    </p>
 
 studio.ml
@@ -11,7 +11,6 @@ studio.ml
 `PyPI <https://pypi.org/project/studioml/>`_ |
 
 .. toctree::
-   :hidden:
    :maxdepth: 1
    :caption: Introduction
 
