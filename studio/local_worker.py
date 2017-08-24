@@ -1,3 +1,4 @@
+import copy
 import os
 import sys
 import subprocess
@@ -52,7 +53,8 @@ class LocalExecutor(object):
 
         """ Override env variables with those inside the queued message
         """
-        env = dict(os.environ, self.config)
+        env = copy.copy(os.environ)
+        env.update(self.config)
 
         fs_tracker.setup_experiment(env, experiment, clean=True)
         log_path = fs_tracker.get_artifact_cache('output', experiment.key)
