@@ -33,5 +33,5 @@ cloud:
     hdd:  10g
     gpus: 0
 
-optimizer_sleep_time: 1
-woker_timeout: 30
+sleep_time: 1
+worker_timeout: 30

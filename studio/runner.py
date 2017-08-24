@@ -8,6 +8,7 @@ import uuid
 import shutil
 import pprint
 import importlib
+import time
 import numpy as np
 
 from local_queue import LocalQueue
@@ -247,11 +248,11 @@ def main(args=sys.argv):
                     config)
 
                 optimizer.tell(hyperparam_tuples, fitnesses)
-
-                try:
-                    optimizer.disp()
-                except:
-                    logger.warn('Optimizer has no disp() method')
+                if config['verbose'] == "info" or config['verbose'] == "debug":
+                    try:
+                        optimizer.disp()
+                    except:
+                        logger.warn('Optimizer has no disp() method')
     else:
         experiments = [model.create_experiment(
             filename=exec_filename,
@@ -362,7 +363,7 @@ def submit_experiments(experiments, config, runner_args, logger):
             local_worker.main(worker_args)
         else:
             raise NotImplementedError("Multiple local workers are not " +
-                                      "implemeted yet")
+                                      "implemented yet")
     return
 
 def get_experiment_fitnesses(experiments, skip_gen_thres, config):
@@ -370,16 +371,17 @@ def get_experiment_fitnesses(experiments, skip_gen_thres, config):
     has_result = [False] * len(experiments)
     fitnesses = [0.0] * len(experiments)
 
+    # logger.info("experiments: %s" % experiments)
     while float(sum(has_result))/len(experiments) < skip_gen_thres:
         for i, experiment in enumerate(experiments):
             if has_result[i]:
                 continue
             returned_experiment = db_provider.get_experiment(experiment.key,
                 getinfo=True)
-            if 'logtail' not in returned_experiment.info:
-                continue
-            experiment_output = returned_experiment.info['logtail']
-            for line in experiment_output:
+            output = db_provider._get_experiment_logtail(returned_experiment)
+            # experiment_output = returned_experiment.info['logtail']
+            # logger.info("experiment output: %s" % experiment_output)
+            for line in output:
                 if line.startswith("Fitness") or line.startswith("fitness"):
                     try:
                         fitness = float(line.rstrip().split(':')[1])
@@ -387,11 +389,13 @@ def get_experiment_fitnesses(experiments, skip_gen_thres, config):
                     except:
                         logger.warn('Error parsing or invalid fitness (%s)'
                             % line)
-                    fitness[i] = fitness
+                    fitnesses[i] = fitness
                     has_result[i] = True
+                    # logger.info("PERCENTAGE RETURNED: %s" % \
+                        # float(sum(has_result))/len(experiments))
                     break
 
-        time.sleep(config['optimizer_sleep_time'])
+        time.sleep(config['sleep_time'])
     return fitnesses
 
 def parse_artifacts(art_list, mutable):
