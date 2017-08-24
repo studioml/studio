@@ -4,16 +4,16 @@ import cma
 import math
 
 SIGMA0 = 0.25
-EPSILON = 1e-9
+EPSILON = 1e-12
 
 # Overwrite the parameters of CMAES
 OPTIMIZER_CONFIG = {
-    'popsize': 2,
+    'popsize': 10,
 }
 
 # Termination criterion for stopping CMAES
 TERM_CRITERION = {
-    'generation': 2, # Number of generation to run to
+    'generation': 20, # Number of generation to run to
     'fitness': 999, # Threshold fitness to reach
     'skip_gen_thres': 0.95, # Fraction of results to get back before moving on
 }
@@ -33,7 +33,7 @@ class Optimizer(object):
             self.itoname[i] = name
             self.nametoi[name] = i
             if log_scale_dict[name]:
-                values = np.log(hyperparam_dict[name])
+                values = math.log(hyperparam_dict[name] + EPSILON)
             else:
                 values = hyperparam_dict[name]
             self.bounds.append((np.min(values), np.max(values)))
@@ -54,28 +54,31 @@ class Optimizer(object):
     def scale_var(self, var, min_value, max_value):
         return (var - min_value) / max((max_value - min_value), EPSILON)
 
+    def unscale_var(self, var, min_value, max_value):
+        return (var * (max_value - min_value)) + min_value
+
     def __unpack_solution(self, solution):
         solution_dict = {}
         for i in xrange(len(solution)):
             name = self.itoname[i]
+            solution_dict[name] = solution[i]
+            solution_dict[name] = min(1.0, max(0.0, solution_dict[name]))
+            solution_dict[name] = self.unscale_var(solution_dict[name],
+                self.bounds[i][0], self.bounds[i][1])
             if self.log_scale_dict[name]:
-                solution_dict[name] = math.exp(solution[i])
-            else:
-                solution_dict[name] = float(solution[i])
-            min_value, max_value = self.bounds[i]
-
-            solution_dict[name] = min(max_value, max(min_value,
-                solution_dict[name]))
+                solution_dict[name] = math.exp(solution_dict[name])
         return solution_dict
 
     def __pack_solution(self, hyperparam_dict):
         solution = np.empty(len(hyperparam_dict))
         for name in hyperparam_dict:
-            index = self.nametoi[name]
+            i = self.nametoi[name]
+            solution[i] = hyperparam_dict[name]
             if self.log_scale_dict[name]:
-                solution[index] = math.log(hyperparam_dict[name])
-            else:
-                solution[index] = hyperparam_dict[name]
+                solution[i] = math.log(solution[i] + EPSILON)
+            solution[i] = self.scale_var(solution[i],
+                self.bounds[i][0], self.bounds[i][1])
+
         return solution
 
     def stop(self):
