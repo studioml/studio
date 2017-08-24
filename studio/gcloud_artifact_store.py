@@ -42,9 +42,18 @@ class GCloudArtifactStore(TartifactStore):
             return None
 
     def grant_write(self, key, user):
-        self.bucket.get_blob(key).acl.user(user).grant_write()
-        self.bucket.get_blob(key).acl.save()
+        blob = self.bucket.get_blob(key)
+        if not blob:
+            blob = self.bucket.blob(key)
+            blob.upload_from_string("dummy")
         
+        acl = blob.acl
+        if user:
+            acl.user(user).grant_owner()
+        else:
+            acl.all().grant_owner()
+            
+        acl.save()
 
 
     def get_qualified_location(self, key):

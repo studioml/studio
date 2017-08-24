@@ -25,6 +25,7 @@ class HTTPProviderTest(unittest.TestCase):
                 'studio-ui',
                 '--port=' + str(self.port),
                 '--verbose=debug',
+                '--config=test_config_http_server.yaml',
                 '--host=localhost'])
         
         time.sleep(10)
@@ -43,6 +44,8 @@ class HTTPProviderTest(unittest.TestCase):
     def test_add_get_experiment(self):
         experiment_tuple = get_test_experiment()
         db = self.get_db_provider()
+        import pdb
+        pdb.set_trace()
         db.add_experiment(experiment_tuple[0])
 
         experiment = db.get_experiment(experiment_tuple[0].key)

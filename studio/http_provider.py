@@ -24,7 +24,11 @@ class HTTPProvider(object):
         )
 
         self._raise_detailed_error(request)       
+        import pdb
+        pdb.set_trace()
+        print request
 
+            
 
     def delete_experiment(self, experiment):
         if isinstance(experiment, str):
