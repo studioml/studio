@@ -372,8 +372,11 @@ def get_experiment_fitnesses(experiments, optimizer, config, logger):
     fitnesses = [0.0] * len(experiments)
     skip_gen_thres = optimizer.get_configs()['termination_criterion']\
         ['skip_gen_thres']
-
-    while float(sum(has_result))/len(experiments) < skip_gen_thres:
+    skip_gen_timeout = optimizer.get_configs()['termination_criterion']\
+        ['skip_gen_timeout']
+    result_timestamp = time.time()
+    while (float(sum(has_result))/len(experiments) < skip_gen_thres or \
+        time.time() - result_timestamp) < skip_gen_timeout:
         for i, experiment in enumerate(experiments):
             if has_result[i]:
                 continue
@@ -396,6 +399,7 @@ def get_experiment_fitnesses(experiments, optimizer, config, logger):
                     else:
                         fitnesses[i] = fitness
                         has_result[i] = True
+                        result_timestamp = time.time()
                         break
 
         time.sleep(config['sleep_time'])

@@ -16,6 +16,7 @@ TERM_CRITERION = {
     'generation': 20, # Number of generation to run to
     'fitness': 999, # Threshold fitness to reach
     'skip_gen_thres': 0.95, # Fraction of results to get back before moving on
+    'skip_gen_timeout:': 30 # Timeout when skip_gen_thres activates
 }
 
 class Optimizer(object):
