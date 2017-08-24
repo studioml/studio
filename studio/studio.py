@@ -287,8 +287,10 @@ def add_experiment():
     artifacts = []
     try:
         experiment = request.json['experiment']
-        #for art in experiment.artifacts:
-        #    art.pop('local', None)
+        for art in experiment.artifacts:
+            get_db().store.grant_write(art['key'], userid)
+            art.pop('local', None)
+            artifacts.append(art)
         
         get_db().add_experiment(model.experiment_from_dict(experiment))
         status = 'ok'
