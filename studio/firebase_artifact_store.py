@@ -175,3 +175,6 @@ class FirebaseArtifactStore(TartifactStore):
 
     def get_qualified_location(self, key):
         return 'gs://' + self.app.storage_bucket + '/' + key
+
+    def get_bucket(self):
+        return self.app.storage_bucket

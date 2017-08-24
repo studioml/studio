@@ -246,7 +246,7 @@ class ModelPipeTest(unittest.TestCase):
 
         pipe = model_util.ModelPipe()
 
-        pipe.add(lambda url: urllib.urlopen(url).read(), num_workers=2)
+        pipe.add(lambda url: urllib.urlopen(url).read(), num_workers=2, timeout=10)
         pipe.add(lambda img: Image.open(BytesIO(img)))
         pipe.add(model_util.resize_to_model_input(model))
         pipe.add(lambda x: 1 - x)
@@ -259,7 +259,8 @@ class ModelPipeTest(unittest.TestCase):
 
         expected_output = {url5: 5, url2: 2}
         output = pipe({url5: url5, url2: url2, urlb: urlb})
-
+        output = {k:v for k,v in output.iteritems() if v}
+        
         self.assertEquals(output, expected_output)
 
 

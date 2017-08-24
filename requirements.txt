@@ -20,6 +20,8 @@ python_jwt
 sseclient
 timeout_decorator
 
+terminaltables
+
 google-api-python-client
 google-cloud-storage
 google-cloud-pubsub

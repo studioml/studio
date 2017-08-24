@@ -43,3 +43,6 @@ class GCloudArtifactStore(TartifactStore):
 
     def get_qualified_location(self, key):
         return 'gs://' + self.bucket.name + '/' + key
+
+    def get_bucket(self):
+        return self.bucket.name

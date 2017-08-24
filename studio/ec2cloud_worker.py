@@ -199,14 +199,14 @@ class EC2WorkerManager(object):
         return startup_script
 
     def _generate_instance_name(self):
-        return 'tfstudio_worker_' + str(uuid.uuid4())
+        return 'studioml_worker_' + str(uuid.uuid4())
 
     def _create_security_group(self, ssh_keypair):
         group_name = str(uuid.uuid4())
 
         response = self.client.create_security_group(
             GroupName=group_name,
-            Description='group to provide ssh access to tfstudio workers')
+            Description='group to provide ssh access to studioml workers')
         groupid = response['GroupId']
 
         response = self.client.authorize_security_group_ingress(
@@ -239,7 +239,7 @@ class EC2WorkerManager(object):
 
         instance_type = self._select_instance_type(resources_needed)
 
-        asg_name = "tfstudio-" + str(uuid.uuid4())
+        asg_name = "studioml-" + str(uuid.uuid4())
         launch_config_name = asg_name + "_launch_config"
 
         startup_script = self._get_startup_script(

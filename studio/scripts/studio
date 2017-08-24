@@ -6,6 +6,7 @@ function print_help {
     echo " "
     echo "  studio ui  -- launches WebUI"
     echo "  studio run -- runs an experiment from a python script"
+    echo "  studio runs -- CLI to view and manipulate existing experiments"
     echo "  studio start remote worker -- orchestrates (re)-starts of worker that listens to the remote queue in a docker container"
     echo "  studio remote worker -- start a worker that listens to remote queue"
     echo "  studio add credentials -- create a docker image with credentials baked in"
@@ -38,6 +39,10 @@ function parse_command {
 case $1 in
     run)
     parse_command "run" $*
+    ;;
+
+    runs)
+    parse_command "runs" $*
     ;;
 
     ui)
