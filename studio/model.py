@@ -236,6 +236,8 @@ class FirebaseProvider(object):
                 art['qualified'] = self.store.get_qualified_location(
                     art['key'])
 
+            art['bucket'] = self.store.get_bucket()
+
         experiment_dict = experiment.__dict__.copy()
         experiment_dict['owner'] = self._get_userid()
 
