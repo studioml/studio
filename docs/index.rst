@@ -1,8 +1,14 @@
-.. tfstudio documentation master file, created by
-   sphinx-quickstart on Fri Aug  4 15:18:14 2017.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
+.. raw:: html
+   
+   <p align="center">
+      <img src="../logo.png">
+   </p>
 
+studio.ml
+========
+
+`Github <https://github.com/pypa/pip>`_ |
+`PyPI <https://pypi.org/project/studioml/>`_ |
 
 .. toctree::
    :hidden:
