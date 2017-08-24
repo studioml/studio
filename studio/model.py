@@ -229,7 +229,7 @@ class FirebaseProvider(object):
 
     def _get_userid(self):
         userid = None
-        if not self.auth:
+        if self.auth:
             userid = self.auth.get_user_id()
         userid = userid if userid else 'guest'
         return userid
