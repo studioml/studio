@@ -245,7 +245,7 @@ def main(args=sys.argv):
 
                 fitnesses = get_experiment_fitnesses(experiments, \
                     optimizer.get_configs() \
-                    ['temination_criterion']['skip_gen_thres'], \
+                    ['termination_criterion']['skip_gen_thres'], \
                     config)
 
                 optimizer.tell(hyperparam_tuples, fitnesses)
