@@ -3,7 +3,6 @@ import sys
 import subprocess
 import argparse
 import yaml
-import copy
 import logging
 import time
 import json
@@ -53,8 +52,7 @@ class LocalExecutor(object):
 
         """ Override env variables with those inside the queued message
         """
-        env = copy.copy(os.environ)
-        env.update(self.config.env)
+        env = dict(os.environ, self.config['env'])
 
         fs_tracker.setup_experiment(env, experiment, clean=True)
         log_path = fs_tracker.get_artifact_cache('output', experiment.key)
