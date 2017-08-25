@@ -4,6 +4,9 @@
       <img src="logo.png">
    </p>
 
+What is Studio?
+---------------
+
 |Hex.pm|
 
 Studio is a model management framework written in Python to help
