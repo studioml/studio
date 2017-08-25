@@ -29,7 +29,9 @@ Most of the features are compatible with any Python machine learning framework (
    :hidden:
    :caption: Introduction
 
-   Home <README>
+   Getting Started  <README>
+   installation
+   authentication   
 
 .. toctree::
    :hidden:
