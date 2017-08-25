@@ -54,13 +54,12 @@ pip install studioml from the master pypi repositry:
 
     pip install studioml
 
-Find more `details <docs/installation.rst>`__ on installation and the release process. 
+Find more `details <docs/installation.rst>`__ on installation methods and the release process. 
 
 Authentication
 --------------
 
-Currently Studio supports 2 methods of authentication: email / password
-and using a Google account. To use studio runner and studio ui in guest
+Currently Studio supports 2 methods of authentication: `email / password <docs/authentication.rst#email--password-authentication>`__ and using a `Google account. <docs/authentication.rst#google-account-authentication>`__ To use studio runner and studio ui in guest
 mode, in studio/default\_config.yaml, uncomment "guest: true" under the
 database section.
 
@@ -68,20 +67,6 @@ Alternatively, you can set up your own database and configure Studio to
 use it. See `setting up database <docs/setup_database.rst>`__. This is a
 preferred option if you want to keep your models and artifacts private.
 
-Email / password authentication
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-If you have an email & password account set up, you can use this method.
-Read more about `email / password authentication <docs/authentication.rst>`__.
-
-Google account authentication
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-If you don't have an email & password account set up, don't despair! Any
-user with a Google account can use Studio as a first-class citizen. If a
-token is not found when you run studio, the Web UI will redirect you to
-the Google account authentication app where you will be issued a new
-authentication token.
 
 Further reading and cool features
 ---------------------------------
