@@ -195,6 +195,14 @@ def main(args=sys.argv):
     artifacts = {}
     artifacts.update(parse_artifacts(runner_args.capture, mutable=True))
     artifacts.update(parse_artifacts(runner_args.capture_once, mutable=False))
+    # 
+    #
+    with open('aaa.txt', 'w') as f:
+        f.write('bbb')
+    #
+    #
+    artifacts['data'] = {'local':'./aaa.txt', 'mutable' : False}
+    # 
     artifacts.update(parse_external_artifacts(runner_args.reuse, db))
 
     if any(runner_args.hyperparam):
