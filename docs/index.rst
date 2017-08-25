@@ -36,20 +36,20 @@ Most of the features are compatible with any Python machine learning framework (
 
 .. toctree::
    :hidden:
-   :caption: Main Features
+   :caption: Main Documentation
 
+   customenv
    artifacts
+   cloud
+   hyperparams
+   model_pipelines
+   setup_database
 
 .. toctree::
    :hidden:
-   :caption: Main Documentation
+   :caption: Cloud computation
 
-   cloud
-   customenv
    ec2_setup
    gcloud_setup
-   hyperparams
-   model_pipelines
    remote_worker
-   setup_database
 

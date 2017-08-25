@@ -1,7 +1,7 @@
-Configuring StudioML to work with Amazon EC2 cloud
-==================================================
+Setting up Amazon EC2 
+=====================
 
-This page describes the process of setting configuring StudioML to work
+This page describes the process of setting configuring Studio to work
 with Amazon EC2 We assume that you have an AWS account set up already,
 and AWS credentials.
 
