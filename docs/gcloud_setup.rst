@@ -1,13 +1,13 @@
-Setting up google cloud compute
+Setting up Google cloud compute
 ===============================
 
 This page describes the process of setting up google cloud and
 configuring StudioML to integrate with it.
 
-Setting up google cloud compute
--------------------------------
+Configuring Google cloud compute
+--------------------------------
 
-Create / select a new google cloud project
+Create and select a new Google cloud project
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Go to google cloud console (https://console.cloud.google.com), and
@@ -52,8 +52,8 @@ these credentials in other applications. When done, click "Create".
 Google cloud console should generate a json credentials file and save it
 to your computer.
 
-Setting up studio
------------------
+Configuring Studio
+------------------
 
 Adding credentials
 ~~~~~~~~~~~~~~~~~~

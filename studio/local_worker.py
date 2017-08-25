@@ -7,7 +7,11 @@ import yaml
 import logging
 import time
 import json
+<<<<<<< HEAD
 import yaml
+=======
+import copy
+>>>>>>> master
 
 from apscheduler.schedulers.background import BackgroundScheduler
 
@@ -56,7 +60,6 @@ class LocalExecutor(object):
         env = copy.copy(os.environ)
         for k,v in self.config.iteritems():
             env[str(k)] = str(v)
-        # env.update(self.config)
 
         fs_tracker.setup_experiment(env, experiment, clean=True)
         log_path = fs_tracker.get_artifact_cache('output', experiment.key)

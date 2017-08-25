@@ -1,8 +1,5 @@
-.. raw:: html
-   
-   <p align="center">
-      <img src="logo.png">
-   </p>
+What is Studio?
+===============
 
 |Hex.pm|
 
@@ -12,17 +9,17 @@ Most of the features are compatible with any Python machine learning
 framework (`Keras <https://github.com/fchollet/keras>`__,
 `TensorFlow <https://github.com/tensorflow/tensorflow>`__,
 `PyTorch <https://github.com/pytorch/pytorch>`__,
-`scikit-learn <https://github.com/scikit-learn/scikit-learn>`__, etc);
+`scikit-learn <https://github.com/scikit-learn/scikit-learn>`__, etc) without invasion of your code;
 some extra features are available for Keras and TensorFlow.
 
 **Use Studio to:** 
 
-* Capture experiment information- Python environment, files, dependencies and logs- without modifying the experiment code. 
-* Monitor and organize experiments using a web dashboard that integrates with TensorBoard. 
-* Run experiments locally, remotely, or in the cloud (Google Cloud or Amazon EC2) 
-* Manage artifacts
-* Perform hyperparameter search
-* Create customizable Python environments for remote workers.
+-  Capture experiment information- Python environment, files, dependencies and logs- without modifying the experiment code. 
+-  Monitor and organize experiments using a web dashboard that integrates with TensorBoard. 
+-  Run experiments locally, remotely, or in the cloud (Google Cloud or Amazon EC2) 
+-  Manage artifacts
+-  Perform hyperparameter search
+-  Create customizable Python environments for remote workers.
 
 Example usage
 -------------
