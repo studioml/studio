@@ -87,6 +87,14 @@ todo_include_todos = False
 # documentation.
 #
 # html_theme_options = {}
+html_theme_options = {
+   'collapse_navigation': True,
+   'display_version': True,
+   'navigation_depth': 3,
+   'sticky_navigation': True,
+   'logo_only': True,
+}
+
 html_show_copyright = False
 
 # Add any paths that contain custom static files (such as style sheets) here,
