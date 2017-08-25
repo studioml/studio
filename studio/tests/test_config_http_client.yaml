@@ -1,15 +1,28 @@
 database: 
     type: http
-
+    serverUrl: "http://localhost:5000"
     apiKey: AIzaSyCLQbp5X2B4SWzBw-sz9rUnGHNSdMl0Yx8
     authDomain: "studio-ed756.firebaseapp.com"
-    projectId: studio-ed756
-    serverUrl: "http://localhost:5000"
+    guest: true
 
 log:
     name: output.log
 
 saveWorkspaceFrequencyMinutes: 1 #how often is workspace being saved (minutes)
+
+storage:
+    type: firebase
+
+    databaseURL: "https://{}.firebaseio.com"
+    apiKey: AIzaSyCLQbp5X2B4SWzBw-sz9rUnGHNSdMl0Yx8
+    authDomain: "studio-ed756.firebaseapp.com"
+    projectId: studio-ed756
+    storageBucket: "studio-ed756.appspot.com"
+    
+    guest: true    
+    #use_email_auth: true
+    #email: authtest@sentient.ai
+    #password: HumptyDumptyS@tOnAWall
 
 cloud:
     type: google
