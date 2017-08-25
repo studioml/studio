@@ -388,11 +388,11 @@ def get_experiment_fitnesses(experiments, optimizer, config, logger):
                 continue
             returned_experiment = db_provider.get_experiment(experiment.key,
                 getinfo=True)
-            try:
-                experiment_output = returned_experiment.info['logtail']
-            except:
-                logger.warn('Cannot access "logtail" field in experiment.info')
-                output = db_provider._get_experiment_logtail(returned_experiment)
+            # try:
+            #     experiment_output = returned_experiment.info['logtail']
+            # except:
+            #     logger.warn('Cannot access "logtail" field in experiment.info')
+            output = db_provider._get_experiment_logtail(returned_experiment)
 
             for line in output:
                 if line.startswith("Fitness") or line.startswith("fitness"):
