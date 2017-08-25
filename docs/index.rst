@@ -12,11 +12,9 @@ studio.ml
 `pip <https://pypi.org/project/studioml/>`_ |
 
 
-Studio is a model management framework written in Python to help simplify and expedite your model building experience. It was developed to minimize any overhead involved with the scheduling, running, monitoring or management of artifacts of your machine learning experiments in Python without invasion of your code. No one wants to spend their time configuring different machines, setting up dependencies, or playing archeology to track down previous model artifacts.
+Studio is a model management framework written in Python to help simplify and expedite your model building experience. It was developed to minimize the overhead involved with scheduling, running, monitoring and managing artifacts of your machine learning experiments. No one wants to spend their time configuring different machines, setting up dependencies, or playing archeology to track down previous model artifacts.
 
-Most of the features are compatible with any Python machine learning framework (Keras, TensorFlow, scikit-learn, etc); some extra features are available for Keras and TensorFlow.
-
-Most of the features are compatible with any Python machine learning framework (`Keras <https://github.com/fchollet/keras>`__, `TensorFlow <https://github.com/tensorflow/tensorflow>`__, `scikit-learn <https://github.com/scikit-learn/scikit-learn>`__, etc); some extra features are available for Keras and TensorFlow.
+Most of the features are compatible with any Python machine learning framework (`Keras <https://github.com/fchollet/keras>`__, `TensorFlow <https://github.com/tensorflow/tensorflow>`__, `scikit-learn <https://github.com/scikit-learn/scikit-learn>`__, etc) without invasion of your code; some extra features are available for Keras and TensorFlow.
 
 **Use Studio to:**
 
