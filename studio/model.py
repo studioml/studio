@@ -314,16 +314,22 @@ class FirebaseProvider(object):
                          "stopped")
 
     def finish_experiment(self, experiment):
-        self.checkpoint_experiment(experiment, blocking=True)
-        experiment.status = 'finished'
-        experiment.time_finished = time.time()
+        time_finished = time.time()
+        if isinstance(experiment, basestring):
+            key = experiment
+        else:
+            key = experiment.key
+            self.checkpoint_experiment(experiment, blocking=True)
+            experiment.status = 'finished'
+            experiment.time_finished = time_finished
+
         self.__setitem__(self._get_experiments_keybase() +
-                         experiment.key + "/status",
+                         key + "/status",
                          "finished")
 
         self.__setitem__(self._get_experiments_keybase() +
-                         experiment.key + "/time_finished",
-                         experiment.time_finished)
+                         key + "/time_finished",
+                         time_finished)
 
     def delete_experiment(self, experiment):
         if isinstance(experiment, basestring):
@@ -362,18 +368,24 @@ class FirebaseProvider(object):
         self._delete(self._get_experiments_keybase() + experiment.key)
 
     def checkpoint_experiment(self, experiment, blocking=False):
+        if isinstance(experiment, basestring):
+            key = experiment
+            experiment = self.get_experiment(key, getinfo=False)
+        else:
+            key = experiment.key
+
         checkpoint_threads = [
             Thread(
-                target=self.store.put_artifact,
-                args=(art,))
-            for _, art in experiment.artifacts.iteritems()
+               target=self.store.put_artifact,
+               args=(art,))
+        for _, art in experiment.artifacts.iteritems()
             if art['mutable'] and art.get('local')]
 
         for t in checkpoint_threads:
             t.start()
 
         self.__setitem__(self._get_experiments_keybase() +
-                         experiment.key + "/time_last_checkpoint",
+                         key + "/time_last_checkpoint",
                          time.time())
         if blocking:
             for t in checkpoint_threads:
@@ -667,7 +679,7 @@ def get_config(config_file=None):
 
             def replace_with_env(config):
                 for key, value in config.iteritems():
-                    if isinstance(value, str) and value.startswith('$'):
+                    if isinstance(value, basestring) and value.startswith('$'):
                         config[key] = os.environ.get(value[1:])
 
                     elif isinstance(value, dict):
@@ -703,7 +715,7 @@ def get_db_provider(config=None, blocking_auth=True):
             verbose=verbose,
             store=artifact_store)
     elif db_config['type'].lower() == 'http':
-        return HTTPProvider(db_config)
+        return HTTPProvider(db_config, store=artifact_store)
     else:
         raise ValueError('Unknown type of the database ' + db_config['type'])
 

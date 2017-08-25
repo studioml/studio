@@ -42,10 +42,10 @@ class Firebase:
     """ Firebase Interface """
 
     def __init__(self, config):
-        self.api_key = config["apiKey"]
-        self.auth_domain = config["authDomain"]
-        self.database_url = config["databaseURL"]
-        self.storage_bucket = config["storageBucket"]
+        self.api_key = config.get("apiKey")
+        self.auth_domain = config.get("authDomain")
+        self.database_url = config.get("databaseURL")
+        self.storage_bucket = config.get("storageBucket")
         self.credentials = None
         self.requests = requests.Session()
         if config.get("serviceAccount"):
