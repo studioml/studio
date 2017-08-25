@@ -80,7 +80,7 @@ Further reading and cool features
 
 -  `Artifacts management <docs/artifacts.rst>`__
 -  `Hyperparameter search <docs/hyperparams.rst>`__
--  `Pipelines for trained models <docs/model_pipelines.rst>`__
+-  `Pipeline for trained models <docs/model_pipelines.rst>`__
 
 .. |Hex.pm| image:: https://img.shields.io/hexpm/l/plug.svg
    :target: https://github.com/studioml/studio/blob/master/LICENSE

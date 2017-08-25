@@ -1,7 +1,7 @@
 Artifact management
 ===================
 
-This page describes facilities that StudioML provides for
+This page describes facilities that Studio provides for
 management of experiment artifacts. For now, artifact storage is backed
 by google cloud storage.
 
