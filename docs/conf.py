@@ -180,7 +180,7 @@ man_pages = [
 #  dir menu entry, description, category)
 texinfo_documents = [
     (master_doc, 'studioml', u'studioml Documentation',
-     author, 'studioml', 'One line description of project.',
+     author, 'studioml', 'Python model management tool to simplify and expedite your model building process.',
      'Miscellaneous'),
 ]
 
