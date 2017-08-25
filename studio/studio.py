@@ -264,7 +264,7 @@ def stop_experiment():
     userid = get_and_verify_user(request)
     try:
         key = request.json['key']
-        if get_db().can_write_experiment(userid, key):
+        if get_db().can_write_experiment(key, userid):
             getlogger().info('Stopping experiment {} '.format(key))
             get_db().stop_experiment(key)
             status = 'ok'
@@ -280,11 +280,59 @@ def stop_experiment():
 
     return json.dumps({'status': status})
 
+@app.route('/api/start_experiment', methods=['POST'])
+def start_experiment():
+    tic = time.time()
+    userid = get_and_verify_user(request)
+    try:
+        key = request.json['key']
+        if get_db().can_write_experiment(key, userid):
+            getlogger().info('Starting experiment {} '.format(key))
+            experiment = get_db().get_experiment(key)
+            get_db().start_experiment(experiment)
+            status = 'ok'
+        else:
+            raise ValueError('Unauthorized')
+
+    except BaseException as e:
+        status = e.message
+
+    toc = time.time()
+    getlogger().info('Processed start_experiment request in {} s'
+                .format(toc - tic))
+
+    return json.dumps({'status': status})
+
+@app.route('/api/finish_experiment', methods=['POST'])
+def finish_experiment():
+    tic = time.time()
+    userid = get_and_verify_user(request)
+    try:
+        key = request.json['key']
+        if get_db().can_write_experiment(key, userid):
+            getlogger().info('Finishing experiment {} '.format(key))
+            get_db().finish_experiment(key)
+            status = 'ok'
+        else:
+            raise ValueError('Unauthorized')
+
+    except BaseException as e:
+        status = e.message
+
+    toc = time.time()
+    getlogger().info('Processed start_experiment request in {} s'
+                .format(toc - tic))
+
+    return json.dumps({'status': status})
+
 @app.route('/api/add_experiment', methods=['POST'])
 def add_experiment():
     tic = time.time()
     userid = get_and_verify_user(request)
-    artifacts = []
+
+    # TODO check if user has access 
+
+    artifacts = {}
     try:
         experiment = model.experiment_from_dict(request.json['experiment'])
         for tag,art in experiment.artifacts.iteritems():
@@ -296,7 +344,7 @@ def add_experiment():
         for tag, art in added_experiment.artifacts.iteritems():
             if 'key' in art.keys():
                 get_db().store.grant_write(art['key'], userid)
-                artifacts.append(art)
+                artifacts[tag] = art
         status = 'ok'
        
     
@@ -307,6 +355,36 @@ def add_experiment():
                 .format(toc - tic))
 
     return json.dumps({'status':status, 'artifacts':artifacts})
+
+
+@app.route('/api/checkpoint_experiment', methods=['POST'])
+def checkpoint_experiment():
+    tic = time.time()
+    userid = get_and_verify_user(request)
+
+    artifacts = {}
+    try:
+        key = request.json['key']
+        experiment = get_db().get_experiment(key)
+        get_db().checkpoint_experiment(experiment)
+
+        for tag, art in experiment.artifacts.iteritems():
+            if 'key' in art.keys():
+                get_db().store.grant_write(art['key'], userid)
+                artifacts[tag] = art
+        status = 'ok'
+
+    except BaseException as e:
+        status = traceback.format_exc()
+
+    toc = time.time()
+    getlogger().info('Processed add_experiment request in {} s'
+                .format(toc - tic))
+
+    return json.dumps({'status':status, 'artifacts':artifacts})
+
+ 
+
 
 
 

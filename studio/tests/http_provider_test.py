@@ -71,7 +71,7 @@ class HTTPProviderTest(unittest.TestCase):
         self.assertEquals(experiment.filename, experiment_tuple[0].filename)
         self.assertEquals(experiment.args, experiment_tuple[0].args)
         
-        db.finish_experiment(experiment_tuple[1])
+        db.finish_experiment(experiment_tuple[0])
         db.delete_experiment(experiment_tuple[1])
 
 
