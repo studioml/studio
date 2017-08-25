@@ -37,7 +37,7 @@ Run your jobs:
 
 ::
 
-    studio run myfile.py
+    studio run train_mnist.py
 
 You can see results of your job at http://127.0.0.1:5000. Run
 ``studio {ui|run} --help`` for a full list of ui / runner options
