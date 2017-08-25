@@ -685,15 +685,9 @@ def get_config(config_file=None):
                     elif isinstance(value, dict):
                         replace_with_env(value)
 
-            def scrub_dict(d):
-                if type(d) is dict:
-                    return dict((k, scrub_dict(v)) for k, v in d.iteritems() if v and scrub_dict(v))
-                else:
-                    return d
-
             replace_with_env(config)
             
-            return scrub_dict(config)
+            return config
 
     raise ValueError('None of the config paths {} exits!'
                      .format(config_paths))
