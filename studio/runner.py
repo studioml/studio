@@ -6,6 +6,9 @@ import re
 import os
 import uuid
 import shutil
+import pprint
+import importlib
+import time
 import numpy as np
 
 from local_queue import LocalQueue
@@ -123,7 +126,7 @@ def main(args=sys.argv):
         default=None)
 
     parser.add_argument(
-        '--hyperparam',
+        '--hyperparam', '-hp',
         help='Try out multiple values of a certain parameter. ' +
              'For example, --hyperparam=learning_rate:0.01:0.1:l10 ' +
              'will instantiate 10 versions of the script, replace ' +
@@ -150,6 +153,13 @@ def main(args=sys.argv):
              'instances directly',
         default=None)
 
+    parser.add_argument(
+        '--optimizer', '-opt',
+        help='Name of optimizer to use, by default is grid search. ' +
+        'The name of the optimizer must either be in studio/optimizer_plugins ' +
+        'directory or the path to the optimizer source file must be supplied. ',
+        default='grid')
+
     # detect which argument is the script filename
     # and attribute all arguments past that index as related to the script
     py_suffix_args = [i for i, arg in enumerate(args) if arg.endswith('.py')]
@@ -166,12 +176,6 @@ def main(args=sys.argv):
     # TODO: Queue the job based on arguments and only then execute.
 
     config = model.get_config(runner_args.config)
-
-    queue_name = 'local'
-    if 'queue' in config.keys():
-        queue_name = config['queue']
-    if runner_args.queue:
-        queue_name = runner_args.queue
 
     if runner_args.verbose:
         config['verbose'] = runner_args.verbose
@@ -198,12 +202,57 @@ def main(args=sys.argv):
     artifacts.update(parse_external_artifacts(runner_args.reuse, db))
 
     if any(runner_args.hyperparam):
-        experiments = add_hyperparam_experiments(
-            exec_filename,
-            other_args,
-            runner_args,
-            artifacts,
-            resources_needed)
+        if runner_args.optimizer is "grid":
+            experiments = add_hyperparam_experiments(
+                exec_filename,
+                other_args,
+                runner_args,
+                artifacts,
+                resources_needed)
+            submit_experiments(experiments, config, runner_args, logger)
+        else:
+            opt_modulepath = os.path.join(
+                os.path.dirname(os.path.abspath(__file__)),
+                "optimizer_plugins",
+                runner_args.optimizer + ".py")
+            # logger.info('optimizer path: %s' % opt_modulepath)
+            if not os.path.exists(opt_modulepath):
+                opt_modulepath = os.path.abspath(
+                    os.path.expanduser(runner_args.optimizer))
+            logger.info('optimizer path: %s' % opt_modulepath)
+            assert os.path.exists(opt_modulepath)
+            sys.path.append(os.path.dirname(opt_modulepath))
+            opt_module = importlib.import_module(
+                os.path.basename(opt_modulepath.replace(".py", '')))
+
+            hyperparam_values, log_scale_dict = get_hyperparam_values(
+                runner_args)
+
+            optimizer = getattr(opt_module, "Optimizer")(hyperparam_values,
+                log_scale_dict)
+
+            while not optimizer.stop():
+                hyperparam_tuples = optimizer.ask()
+
+                experiments = add_hyperparam_experiments(
+                    exec_filename,
+                    other_args,
+                    runner_args,
+                    artifacts,
+                    resources_needed,
+                    optimizer=optimizer,
+                    hyperparam_tuples=hyperparam_tuples)
+                submit_experiments(experiments, config, runner_args, logger)
+
+                fitnesses = get_experiment_fitnesses(experiments, \
+                    optimizer, config, logger)
+
+                optimizer.tell(hyperparam_tuples, fitnesses)
+                # if config['verbose'] == "info" or config['verbose'] == "debug":
+                try:
+                    optimizer.disp()
+                except:
+                    logger.warn('Optimizer has no disp() method')
     else:
         experiments = [model.create_experiment(
             filename=exec_filename,
@@ -213,6 +262,19 @@ def main(args=sys.argv):
             artifacts=artifacts,
             resources_needed=resources_needed,
             metric=runner_args.metric)]
+        submit_experiments(experiments, config, runner_args, logger)
+
+    db = None
+    return
+
+def submit_experiments(experiments, config, runner_args, logger):
+    db = model.get_db_provider(config)
+
+    queue_name = 'local'
+    if 'queue' in config.keys():
+        queue_name = config['queue']
+    if runner_args.queue:
+        queue_name = runner_args.queue
 
     for e in experiments:
         e.pythonenv = add_packages(e.pythonenv, runner_args.python_pkg)
@@ -278,6 +340,7 @@ def main(args=sys.argv):
     else:
         if queue_name == 'local':
             queue = LocalQueue()
+            queue.clean()
         elif queue_name.startswith('sqs_'):
             queue = SQSQueue(queue_name, verbose=verbose)
         else:
@@ -301,10 +364,58 @@ def main(args=sys.argv):
             local_worker.main(worker_args)
         else:
             raise NotImplementedError("Multiple local workers are not " +
-                                      "implemeted yet")
+                                      "implemented yet")
+    return
 
-    db = None
+def get_experiment_fitnesses(experiments, optimizer, config, logger):
+    db_provider = model.get_db_provider()
+    has_result = [False] * len(experiments)
+    fitnesses = [0.0] * len(experiments)
+    try:
+        term_criterion = config['optimizer']['termination_criterion']
+    except:
+        logger.warn("Cannot find termination criterion in config.yaml, looking"
+            "in optimizer source code instead")
+        term_criterion = optimizer.get_configs()['termination_criterion']
 
+    skip_gen_thres = term_criterion['skip_gen_thres']
+    skip_gen_timeout = term_criterion['skip_gen_timeout']
+
+    result_timestamp = time.time()
+    while sum(has_result) < len(experiments):
+        for i, experiment in enumerate(experiments):
+            if float(sum(has_result))/len(experiments) > skip_gen_thres \
+                and time.time() - result_timestamp > skip_gen_timeout:
+                logger.warn("Skipping to next gen with %s of solutions evaled" %
+                    (float(sum(has_result))/len(experiments)))
+                has_result = [True] * len(experiments)
+                break
+            if has_result[i]:
+                continue
+            returned_experiment = db_provider.get_experiment(experiment.key,
+                getinfo=True)
+            # try:
+            #     experiment_output = returned_experiment.info['logtail']
+            # except:
+            #     logger.warn('Cannot access "logtail" field in experiment.info')
+            output = db_provider._get_experiment_logtail(returned_experiment)
+
+            for line in output:
+                if line.startswith("Fitness") or line.startswith("fitness"):
+                    try:
+                        fitness = float(line.rstrip().split(':')[1])
+                        assert fitness >= 0.0
+                    except:
+                        logger.warn('Error parsing or invalid fitness (%s)'
+                            % line)
+                    else:
+                        fitnesses[i] = fitness
+                        has_result[i] = True
+                        result_timestamp = time.time()
+                        break
+
+        time.sleep(config['sleep_time'])
+    return fitnesses
 
 def parse_artifacts(art_list, mutable):
     retval = {}
@@ -354,7 +465,9 @@ def add_hyperparam_experiments(
         other_args,
         runner_args,
         artifacts,
-        resources_needed):
+        resources_needed,
+        optimizer=None,
+        hyperparam_tuples=None):
 
     experiment_name_base = runner_args.experiment if runner_args.experiment \
         else str(uuid.uuid4())
@@ -362,66 +475,88 @@ def add_hyperparam_experiments(
     project = runner_args.project if runner_args.project else \
         ('hyperparam_' + experiment_name_base)
 
-    experiments = []
+    def create_experiments(hyperparam_tuples):
+        experiments = []
+        experiment_names = {}
+        for hyperparam_tuple in hyperparam_tuples:
+            experiment_name = experiment_name_base
+            for param_name, param_value in hyperparam_tuple.iteritems():
+                experiment_name = experiment_name + '__' + \
+                    param_name + '__' + str(param_value)
+            experiment_name = experiment_name.replace('.', '_')
+
+            # if experiments uses a previously used name, change it
+            if experiment_name in experiment_names:
+                new_experiment_name = experiment_name
+                counter = 1
+                while new_experiment_name in experiment_names:
+                    counter += 1
+                    new_experiment_name = "%s_v%s" % (experiment_name, counter)
+                experiment_name = new_experiment_name
+            experiment_names[experiment_name] = True
+
+            workspace_orig = artifacts['workspace']['local'] \
+                if 'workspace' in artifacts.keys() else '.'
+            workspace_new = fs_tracker.get_artifact_cache(
+                'workspace', experiment_name)
+
+            current_artifacts = artifacts.copy()
+            current_artifacts.update({
+                'workspace': {
+                    'local': workspace_new,
+                    'mutable': True
+                }
+            })
+
+            shutil.copytree(workspace_orig, workspace_new)
+
+            with open(os.path.join(workspace_new, exec_filename), 'r') as f:
+                script_text = f.read()
+
+            for param_name, param_value in hyperparam_tuple.iteritems():
+                script_text = re.sub('\\b' + param_name + '\\b(?=[^=]*\\n)',
+                                     str(param_value), script_text)
+
+            with open(os.path.join(workspace_new, exec_filename), 'w') as f:
+                f.write(script_text)
+
+            experiments.append(model.create_experiment(
+                filename=exec_filename,
+                args=other_args,
+                experiment_name=experiment_name,
+                project=project,
+                artifacts=current_artifacts,
+                resources_needed=resources_needed,
+                metric=runner_args.metric))
+        return experiments
+
+    if optimizer is not None:
+        experiments = create_experiments(hyperparam_tuples)
+    else:
+        hyperparam_values, log_scale_dict = get_hyperparam_values(runner_args)
+        hyperparam_tuples = unfold_tuples(hyperparam_values)
+        experiments = create_experiments(hyperparam_tuples)
+
+    return experiments
+
+def get_hyperparam_values(runner_args):
     hyperparam_values = {}
+    log_scale_dict = {}
     for hyperparam in runner_args.hyperparam:
         param_name = hyperparam.split('=')[0]
         param_values_str = hyperparam.split('=')[1]
 
-        param_values = parse_range(param_values_str)
+        param_values, is_log = parse_range(param_values_str)
         hyperparam_values[param_name] = param_values
-
-    hyperparam_tuples = unfold_tuples(hyperparam_values)
-
-    for hyperparam_tuple in hyperparam_tuples:
-        experiment_name = experiment_name_base
-        for param_name, param_value in hyperparam_tuple.iteritems():
-            experiment_name = experiment_name + '__' + \
-                param_name + '__' + str(param_value)
-
-        experiment_name = experiment_name.replace('.', '_')
-
-        workspace_orig = artifacts['workspace']['local'] \
-            if 'workspace' in artifacts.keys() else '.'
-        workspace_new = fs_tracker.get_artifact_cache(
-            'workspace', experiment_name)
-
-        current_artifacts = artifacts.copy()
-        current_artifacts.update({
-            'workspace': {
-                'local': workspace_new,
-                'mutable': True
-            }
-        })
-
-        shutil.copytree(workspace_orig, workspace_new)
-
-        with open(os.path.join(workspace_new, exec_filename), 'r') as f:
-            script_text = f.read()
-
-        for param_name, param_value in hyperparam_tuple.iteritems():
-            script_text = re.sub('\\b' + param_name + '\\b(?=[^=]*\\n)',
-                                 str(param_value), script_text)
-
-        with open(os.path.join(workspace_new, exec_filename), 'w') as f:
-            f.write(script_text)
-
-        experiments.append(model.create_experiment(
-            filename=exec_filename,
-            args=other_args,
-            experiment_name=experiment_name,
-            project=project,
-            artifacts=current_artifacts,
-            resources_needed=resources_needed,
-            metric=runner_args.metric))
-
-    return experiments
-
+        log_scale_dict[param_name] = is_log
+    return hyperparam_values, log_scale_dict
 
 def parse_range(range_str):
+    is_log = False
+    return_val = None
     if ',' in range_str:
         # return numpy array for consistency with other cases
-        return np.array([float(s) for s in range_str.split(',')])
+        return_val = np.array([float(s) for s in range_str.split(',')])
     elif ':' in range_str:
         range_limits = range_str.split(':')
         assert len(range_limits) > 1
@@ -431,7 +566,7 @@ def parse_range(range_str):
             except ValueError:
                 limit1 = 0.0
             limit2 = float(range_limits[1])
-            return np.arange(limit1, limit2 + 1)
+            return_val = np.arange(limit1, limit2 + 1)
         else:
             try:
                 limit1 = float(range_limits[0])
@@ -443,14 +578,15 @@ def parse_range(range_str):
             try:
                 limit2 = float(range_limits[1])
                 if int(limit2) == limit2 and limit2 > abs(limit3 - limit1):
-                    return np.linspace(limit1, limit3, int(limit2))
+                    return_val = np.linspace(limit1, limit3, int(limit2))
                 else:
-                    return np.arange(limit1, limit3 + 0.5 * limit2, limit2)
+                    return_val = np.arange(limit1, limit3 + 0.5 * limit2, limit2)
 
             except ValueError:
                 if 'l' in range_limits[1]:
+                    is_log = True
                     limit2 = int(range_limits[1].replace('l', ''))
-                    return np.exp(
+                    return_val = np.exp(
                         np.linspace(
                             np.log(limit1),
                             np.log(limit3),
@@ -461,7 +597,8 @@ def parse_range(range_str):
                         range_limits[1])
 
     else:
-        return [float(range_str)]
+        return_val = [float(range_str)]
+    return return_val, is_log
 
 
 def unfold_tuples(hyperparam_values):
