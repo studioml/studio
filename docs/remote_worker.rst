@@ -2,13 +2,13 @@ Setting up a remote worker
 ==========================
 
 This page describes a procedure for setting up a remote worker for
-StudioML. Remote workers are listening to the queue; once a worker
-receives a message from the queue, it starts the experiments
+Studio. Remote workers are listening to the queue; once a worker
+receives a message from the queue, it starts the experiments.
 
 I. Getting credentials
 ----------------------
 
-1. Remote workers work by listening to distributed queue. Right now the
+1. Remote workers work by listening to a distributed queue. Right now the
    distributed queue is backed by Google PubSub; so to access it, you'll
    need application credentials from Google. (in the future, it may be
    implemented via firebase itself, in which case this step should
