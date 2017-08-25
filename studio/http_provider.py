@@ -24,8 +24,6 @@ class HTTPProvider(object):
         )
 
         self._raise_detailed_error(request)       
-        import pdb
-        pdb.set_trace()
         print request
 
             

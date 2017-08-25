@@ -151,9 +151,11 @@ class BufferedPipe:
 
             try:
                 return zip(batch_index, batch_output)
-            except BaseException:
-                import pdb
-                pdb.set_trace()
+            except BaseException as e:
+                self.logger.warn('Applying function to {} raised exception {}'
+                                 .format(x, e.message))
+                self.logger.exception(e)
+                return None
 
         else:
             try:
