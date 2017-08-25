@@ -26,7 +26,6 @@ Most of the features are compatible with any Python machine learning framework (
 
 
 .. toctree::
-   :maxdepth: 1
    :hidden:
    :caption: Introduction
 
