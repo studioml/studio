@@ -38,15 +38,20 @@ Most of the features are compatible with any Python machine learning framework (
    artifacts
    hyperparams
    model_pipelines
-   cloud
+   setup_database
+
+.. toctree::
+   :hidden:
+   :caption: Remote computing
+
    remote_worker
    customenv
-   setup_database
 
 .. toctree::
    :hidden:
    :caption: Cloud computing
 
+   cloud
    ec2_setup
    gcloud_setup
 
