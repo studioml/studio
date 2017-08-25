@@ -11,6 +11,7 @@ Studio is a model management framework written in Python to help simplify and ex
 Most of the features are compatible with any Python machine learning
 framework (`Keras <https://github.com/fchollet/keras>`__,
 `TensorFlow <https://github.com/tensorflow/tensorflow>`__,
+`PyTorch <https://github.com/pytorch/pytorch>`__,
 `scikit-learn <https://github.com/scikit-learn/scikit-learn>`__, etc);
 some extra features are available for Keras and TensorFlow.
 
