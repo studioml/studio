@@ -45,9 +45,6 @@ You can see results of your job at http://127.0.0.1:5000. Run
 Installation
 ------------
 
-Installation Packaging
-~~~~~~~~~~~~~~~~~~~~~~
-
 pip install studioml from the master pypi repositry:
 
 ::
