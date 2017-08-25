@@ -1,11 +1,14 @@
+Custom environments
+===================
+
 Using custom environment variables at runtime
-=============================================
+---------------------------------------------
 
 You can add an env section to your yaml configuration file in order to send environment variables into your runner environment variables table.  Variables can be prefix with a $ sign if you wish to substitute local environment variables into your run configuration.  Be aware that all values are stored in clear text.  If you wish to exchange secrets you will need to encrypt them into your configuration file and then decrypt your secrets within your python code used during the experiment.
 
 
 Customization of python environment for the workers
-===================================================
+---------------------------------------------------
 
 Sometimes your experiment relies on an older / custom version of some
 python package. For example, Keras API has changed quite a bit between
