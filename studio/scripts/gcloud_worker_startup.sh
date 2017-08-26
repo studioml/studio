@@ -39,7 +39,7 @@ branch="master"
 #code_url_base="https://storage.googleapis.com/studio-ed756.appspot.com/src"
 #code_ver="tfstudio-64_config_location-2017-08-04_1.tgz"
 repo_url="https://github.com/studioml/studio"
-branch="87_api_server"
+branch="87_apiserver"
 sudo apt -y update 
 sudo apt install -y wget python-pip git python-dev
 
