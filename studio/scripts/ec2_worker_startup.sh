@@ -16,8 +16,11 @@ export GOOGLE_APPLICATION_CREDENTIALS=/credentials.json
 export AWS_ACCESS_KEY_ID="{aws_access_key}"
 export AWS_SECRET_ACCESS_KEY="{aws_secret_key}"
 
-code_url_base="https://storage.googleapis.com/studio-ed756.appspot.com/src"
-code_ver="tfstudio-64_config_location-2017-08-04_1.tgz"
+#code_url_base="https://storage.googleapis.com/studio-ed756.appspot.com/src"
+#code_ver="tfstudio-64_config_location-2017-08-04_1.tgz"
+
+repo_url="https://github.com/studioml/studio"
+branch="87_apiserver"
 
 autoscaling_group="{autoscaling_group}"
 
@@ -29,9 +32,12 @@ sudo apt install -y wget python-pip git python-dev jq
 sudo pip install --upgrade pip 
 sudo pip install --upgrade awscli
 
-wget $code_url_base/$code_ver 
-tar -xzf $code_ver 
-cd studio 
+#wget $code_url_base/$code_ver 
+#tar -xzf $code_ver 
+#cd studio 
+git clone $repo_url
+cd studio
+git checkout $branch
 
 if [[ "{use_gpus}" -eq 1 ]]; then
     cudnn="libcudnn5_5.1.10-1_cuda8.0_amd64.deb"
