@@ -45,6 +45,7 @@ class HyperparameterParser(object):
 
     def __init__(self, runner_args, logger):
         self.runner_args = runner_args
+        self.logger = logger
 
     def convert_to_tuples(self, hyperparameters):
         if self.runner_args.optimizer == "grid":
@@ -84,9 +85,9 @@ class HyperparameterParser(object):
                 hyperparameters.append(self.__parse_opt(param_name,
                     param_values_str))
         if self.runner_args.verbose:
-            logger.info("Parsed the following hyperparameters:")
+            self.logger.info("Parsed the following hyperparameters:")
             for h in hyperparameters:
-                logger.info(str(h))
+                self.logger.info(str(h))
         return hyperparameters
 
     def __parse_opt(self, param_name, range_str):
@@ -122,6 +123,10 @@ class HyperparameterParser(object):
         except ValueError:
             raise ValueError("Hyperparameter values (%s) are incorrect for %s" %
                 (range_str, self.runner_args.optimizer))
+
+        if min_range > max_range:
+            raise ValueError("Min range (%s) is larger than max range (%s) " %
+                (min_range, max_range))
 
         unbounded = True if "u" in flags else False
         is_log = True if "l" in flags else False

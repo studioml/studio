@@ -5,12 +5,15 @@ import math
 import random
 import copy
 
-SIGMA0 = 0.25
-EPSILON = 1e-12
-
-# Overwrite the parameters of CMAES
-OPTIMIZER_CONFIG = {
+# Overwrite the parameters of CMAES implementation
+OPT_CONFIG = {
     'popsize': 3,
+}
+
+# Misc configuration for this wrapper class only
+MISC_CONFIG = {
+    'epsilon': 1e-12,
+    'sigma0': 0.25
 }
 
 # Termination criterion for stopping CMAES
@@ -22,11 +25,12 @@ TERM_CRITERION = {
 }
 
 class Optimizer(object):
-    def __init__(self, hyperparameters):
+    def __init__(self, hyperparameters, logger):
         self.hyperparameters = hyperparameters
+        self.logger = logger
 
         self.opts = cma.CMAOptions()
-        for param, value in OPTIMIZER_CONFIG.iteritems():
+        for param, value in OPT_CONFIG.iteritems():
             if param in self.opts and value is not None:
                 self.opts[param] = value
         self.dim = 0
@@ -35,7 +39,8 @@ class Optimizer(object):
             self.dim += h.array_length if h.array_length is not None else 1
 
         self.init = np.empty(self.dim)
-        self.sigma = SIGMA0
+        # self.sigma = np.random.random(self.dim) # not allowed
+        self.sigma = MISC_CONFIG['sigma0']
         self.gen = 0; self.best_fitness = 0.0; self.mean_fitness = 0.0
 
         for h in self.hyperparameters:
@@ -55,7 +60,13 @@ class Optimizer(object):
                         np.ones(h.array_length) * (h.max_range + h.min_range) \
                         / 2.0
 
-        # print self.init
+        # If min range and max range are exactly the same, use a sigma calculated
+        # from mean of init
+        if max([h.max_range for h in hyperparameters]) - \
+            min([h.min_range for h in hyperparameters]) < MISC_CONFIG['epsilon']:
+            self.logger.warn("min range == max range, overwriting sigma0")
+            self.sigma = np.mean(self.init) * MISC_CONFIG['sigma0']
+
         self.es = cma.CMAEvolutionStrategy(self.init, self.sigma, self.opts)
         self.best_fitness = None
         self.best_solution = None
@@ -63,15 +74,18 @@ class Optimizer(object):
 
     def get_configs(self):
         return {'termination_criterion': TERM_CRITERION,
-        'optimizer_config': OPTIMIZER_CONFIG}
+            'optimizer_config': self.opts,
+            'misc_config': MISC_CONFIG}
 
     def __scale_var(self, var, min_range, max_range):
-        return (var - min_range) / max((max_range - min_range), EPSILON)
+        return (var - min_range) / max((max_range - min_range),
+            MISC_CONFIG['epsilon'])
 
     def __unscale_var(self, var, min_range, max_range):
         return (var * (max_range - min_range)) + min_range
 
     def __unpack_solution(self, solution):
+        # print solution
         new_hyperparameters = []
         for h in self.hyperparameters:
             h = copy.copy(h)
@@ -81,7 +95,8 @@ class Optimizer(object):
                 h.values = solution[h.index: h.index + h.array_length]
             if not h.unbounded:
                 h.values = np.clip(h.values, h.min_range, h.max_range)
-            h.values = self.__unscale_var(h.values, h.min_range, h.max_range)
+            if h.max_range - h.min_range < MISC_CONFIG['epsilon']:
+                h.values = self.__unscale_var(h.values, h.min_range, h.max_range)
             if h.is_log:
                 h.values = np.exp(h.values)
             if h.array_length is None:
@@ -95,14 +110,15 @@ class Optimizer(object):
             values = copy.copy(h.values)
             if h.is_log:
                 values = np.log(values)
-            values = self.__scale_var(values, h.min_range, h.max_range)
+            if h.max_range - h.min_range < MISC_CONFIG['epsilon']:
+                values = self.__scale_var(values, h.min_range, h.max_range)
             if not h.unbounded:
                 values = np.clip(values, h.min_range, h.max_range)
             if h.array_length is None:
                 solution[h.index] = values
             else:
                 solution[h.index: h.index + h.array_length] = values
-
+        # print solution
         return solution
 
     def stop(self):
@@ -116,9 +132,9 @@ class Optimizer(object):
 
     def tell(self, hyperparameter_pop, fitnesses):
         adjusted_fitnesses = -1 * np.array(fitnesses)
-        self.best_fitness = float(np.max(adjusted_fitnesses))
-        self.mean_fitness = float(np.mean(adjusted_fitnesses))
-        self.best_solution = np.argmax(adjusted_fitnesses)
+        self.best_fitness = float(np.max(fitnesses))
+        self.mean_fitness = float(np.mean(fitnesses))
+        self.best_solution = np.argmax(fitnesses)
 
         solutions = [self.__pack_solution(hyperparameters) for hyperparameters \
             in hyperparameter_pop]
@@ -126,6 +142,5 @@ class Optimizer(object):
         self.gen += 1
 
     def disp(self):
-        print "best_fitness: %s mean fitness: %s" % (self.best_fitness,
-            self.mean_fitness)
-        self.es.disp()
+        print "CMAES gen: %s pop size: %s best fitness: %s mean fitness: %s" % \
+        (self.opts['popsize'], self.gen, self.best_fitness, self.mean_fitness)

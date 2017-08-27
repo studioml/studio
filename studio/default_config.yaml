@@ -35,3 +35,10 @@ cloud:
 
 sleep_time: 1
 worker_timeout: 30
+
+optimizer:
+    termination criterion:
+        generation: 20
+        fitness: 999
+        skip_gen_thres: 1.0
+        skip_gen_timeout: 30

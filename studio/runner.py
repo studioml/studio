@@ -231,7 +231,7 @@ def main(args=sys.argv):
 
             h = HyperparameterParser(runner_args, logger)
             hyperparams = h.parse()
-            optimizer = getattr(opt_module, "Optimizer")(hyperparams)
+            optimizer = getattr(opt_module, "Optimizer")(hyperparams, logger)
 
             while not optimizer.stop():
                 hyperparam_pop = optimizer.ask()
@@ -251,10 +251,10 @@ def main(args=sys.argv):
                 fitnesses = get_experiment_fitnesses(experiments, \
                     optimizer, config, logger)
 
-                for i, hh in enumerate(hyperparam_pop):
-                    print fitnesses[i]
-                    for hhh in hh:
-                        print hhh
+                # for i, hh in enumerate(hyperparam_pop):
+                #     print fitnesses[i]
+                #     for hhh in hh:
+                #         print hhh
                 optimizer.tell(hyperparam_pop, fitnesses)
                 try:
                     optimizer.disp()
