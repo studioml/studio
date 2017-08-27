@@ -17,8 +17,8 @@ OPTIMIZER_CONFIG = {
 TERM_CRITERION = {
     'generation': 20, # Number of generation to run to
     'fitness': 999, # Threshold fitness to reach
-    'skip_gen_thres': 0.5, # Fraction of results to get back before moving on
-    'skip_gen_timeout': 0.0 # Timeout when skip_gen_thres activates
+    'skip_gen_thres': 1.0, # Fraction of results to get back before moving on
+    'skip_gen_timeout': 999 # Timeout when skip_gen_thres activates
 }
 
 class Optimizer(object):
