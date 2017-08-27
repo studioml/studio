@@ -115,7 +115,7 @@ Other options are:
 
 4. ``no_layers=2,5,6`` will generate three values - 2,5 and 6
 
-Note that option ``--hyperparam/--hp`` can be used several times for
+Note that option ``--hyperparam/-hp`` can be used several times for
 different hyperparameters; however, keep in mind that grid size grows
 exponentially with number of hyperparameters to try.
 
@@ -127,8 +127,13 @@ can be specified as argument. The format is slightly different for plugin
 optimizers. Below are some examples:
 
 ::
+
     --hyperparam=lr=0:1:10:urla
+::
+
     --hyperparam=lr=0:5:l
+::
+
     --hp=lr=5:5:10:alu
 
 The general format is [min range]:[max range]:{array length}:{flags},
