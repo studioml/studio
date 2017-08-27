@@ -171,6 +171,11 @@ class Optimizer(object):
         self.gen += 1
 
     def disp(self):
-        self.logger.info("CMAES gen: %s pop size: %s best fitness: "
+        print "*****************************************************************"
+        print "CMAES gen: %s pop size: %s best fitness: "
             "%s mean fitness: %s" % (self.gen, self.es.popsize,
-            self.best_fitness, self.mean_fitness))
+            self.best_fitness, self.mean_fitness)
+        print "*****************************************************************"
+        # self.logger.info("CMAES gen: %s pop size: %s best fitness: "
+        #     "%s mean fitness: %s" % (self.gen, self.es.popsize,
+        #     self.best_fitness, self.mean_fitness))
