@@ -258,7 +258,6 @@ def main(args=sys.argv):
                 #     for hhh in hh:
                 #         print hhh
                 optimizer.tell(hyperparam_pop, fitnesses)
-                optimizer.save_checkpoint()
                 try:
                     optimizer.disp()
                 except:

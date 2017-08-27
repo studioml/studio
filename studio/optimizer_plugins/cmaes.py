@@ -162,6 +162,7 @@ class Optimizer(object):
             in hyperparameter_pop]
         self.es.tell(solutions, adjusted_fitnesses)
         self.gen += 1
+        self.__save_checkpoint()
 
     def disp(self):
         print "*****************************************************************"
@@ -174,7 +175,7 @@ class Optimizer(object):
         #     "%s mean fitness: %s" % (self.gen, self.es.popsize,
         #     self.best_fitness, self.mean_fitness))
 
-    def save_checkpoint(self):
+    def __save_checkpoint(self):
         if (self.config['optimizer']['checkpoint_interval'] >= 1 and self.gen % \
             self.config['optimizer']['checkpoint_interval'] == 0) or \
             self.stop():
