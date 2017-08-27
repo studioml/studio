@@ -151,6 +151,17 @@ flags are supported:
    hyperparameter is a numpy array, then the {array length} field must be
    present as well.
 
+In addition, the python script whose hyperparameters is being optimized must
+contain a line with the fitness printed to stdout as show below. For
+numpy arrays, they must be loaded using the ``fs_tracker.get_artifact``
+function call.
+
+::
+    from studio import fs_tracker
+    lr = np.load(fs_tracker.get_artifact('lr'))
+    print "fitness: %s" % np.sum(lr)
+
+
 Cloud workers
 -------------
 
