@@ -99,10 +99,8 @@ class HyperparameterParser(object):
         if len(raw_fields) > 2:
             flags = raw_fields[-1]
             allowed_flags = 'ualr'
-            if len(flags) > len(allowed_flags):
-                correct_format = False
             for letter in flags:
-                if letter not in allowed_flags:
+                if letter not in allowed_flags or flags.count(letter) != 1:
                     correct_format = False
             proper_field_length = 4 if "a" in flags else 3
             if len(raw_fields) != proper_field_length:

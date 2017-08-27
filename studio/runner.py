@@ -231,7 +231,8 @@ def main(args=sys.argv):
 
             h = HyperparameterParser(runner_args, logger)
             hyperparams = h.parse()
-            optimizer = getattr(opt_module, "Optimizer")(hyperparams, logger)
+            optimizer = getattr(opt_module, "Optimizer")(hyperparams, config,
+                logger)
 
             while not optimizer.stop():
                 hyperparam_pop = optimizer.ask()

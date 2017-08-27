@@ -1,9 +1,8 @@
-import copy
-import numpy as np
 import cma
-import math
 import random
 import copy
+
+import numpy as np
 
 # Overwrite the parameters of CMAES implementation
 OPT_CONFIG = {
@@ -25,8 +24,9 @@ TERM_CRITERION = {
 }
 
 class Optimizer(object):
-    def __init__(self, hyperparameters, logger):
+    def __init__(self, hyperparameters, config, logger):
         self.hyperparameters = hyperparameters
+        self.config = config
         self.logger = logger
 
         self.opts = cma.CMAOptions()
@@ -122,8 +122,20 @@ class Optimizer(object):
         return solution
 
     def stop(self):
-        return self.gen >= TERM_CRITERION['generation'] or \
-            self.best_fitness >= TERM_CRITERION['fitness']
+        try:
+            term_criterion = self.config['optimizer']['terminationCriterion']
+        except:
+            term_criterion = TERM_CRITERION
+
+        if self.gen >= term_criterion['generation']:
+            self.logger.info("Reached target generation %s, terminating" % \
+                term_criterion['generation'])
+            return True
+        elif self.best_fitness >= term_criterion['fitness']:
+            self.logger.info("Reached target fitness %s, terminating" % \
+                term_criterion['fitness'])
+            return True
+        return False
         # return self.es.stop()
 
     def ask(self):
@@ -142,5 +154,6 @@ class Optimizer(object):
         self.gen += 1
 
     def disp(self):
-        print "CMAES gen: %s pop size: %s best fitness: %s mean fitness: %s" % \
-        (self.gen, self.opts['popsize'], self.best_fitness, self.mean_fitness)
+        self.logger.info("CMAES gen: %s pop size: %s best fitness: "
+            "%s mean fitness: %s" % (self.gen, self.opts['popsize'],
+            self.best_fitness, self.mean_fitness))
