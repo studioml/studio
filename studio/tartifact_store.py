@@ -111,7 +111,8 @@ class TartifactStore(object):
 
             tarp = subprocess.Popen(['/bin/bash', '-c', tarcmd],
                                     stdout=subprocess.PIPE,
-                                    stderr=subprocess.STDOUT)
+                                    stderr=subprocess.STDOUT,
+                                    close_fds=True)
 
             tarout, _ = tarp.communicate()
             if tarp.returncode != 0:

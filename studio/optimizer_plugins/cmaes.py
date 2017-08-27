@@ -6,13 +6,13 @@ import numpy as np
 
 # Overwrite the parameters of CMAES implementation
 OPT_CONFIG = {
-    'popsize': 3,
+    'popsize': None,
 }
 
 # Misc configuration for this wrapper class only
 MISC_CONFIG = {
     'epsilon': 1e-12,
-    'sigma0': 0.25
+    'sigma0': 0.5
 }
 
 # Termination criterion for stopping CMAES
@@ -41,6 +41,7 @@ class Optimizer(object):
         self.init = np.empty(self.dim)
         # self.sigma = np.random.random(self.dim) # not allowed
         self.sigma = MISC_CONFIG['sigma0']
+        self.opts['CMA_stds'] = np.ones(self.dim)
         self.gen = 0; self.best_fitness = 0.0; self.mean_fitness = 0.0
 
         for h in self.hyperparameters:
@@ -60,17 +61,30 @@ class Optimizer(object):
                         np.ones(h.array_length) * (h.max_range + h.min_range) \
                         / 2.0
 
+            if h.array_length is None:
+                if h.max_range - h.min_range < MISC_CONFIG['epsilon']:
+                    self.opts['CMA_stds'][h.index] *= h.max_range
+                else:
+                    self.opts['CMA_stds'][h.index] *= h.max_range - h.min_range
+            else:
+                if h.max_range - h.min_range < MISC_CONFIG['epsilon']:
+                    self.opts['CMA_stds'][h.index: h.index + h.array_length] *= \
+                        h.max_range
+                else:
+                    self.opts['CMA_stds'][h.index: h.index + h.array_length] *= \
+                        h.max_range - h.min_range
+
         # If min range and max range are exactly the same, use a sigma calculated
         # from mean of init
-        if max([h.max_range for h in hyperparameters]) - \
-            min([h.min_range for h in hyperparameters]) < MISC_CONFIG['epsilon']:
-            self.logger.warn("min range == max range, overwriting sigma0")
-            self.sigma = np.mean(self.init) * MISC_CONFIG['sigma0']
-
+        # if max([h.max_range for h in hyperparameters]) - \
+        #     min([h.min_range for h in hyperparameters]) < MISC_CONFIG['epsilon']:
+        #     self.logger.warn("min range == max range, overwriting sigma0")
+        #     self.sigma = np.mean(self.init) * MISC_CONFIG['sigma0']
         self.es = cma.CMAEvolutionStrategy(self.init, self.sigma, self.opts)
         self.best_fitness = None
         self.best_solution = None
 
+        self.logger.info(self.get_configs())
 
     def get_configs(self):
         return {'termination_criterion': TERM_CRITERION,
@@ -155,5 +169,5 @@ class Optimizer(object):
 
     def disp(self):
         self.logger.info("CMAES gen: %s pop size: %s best fitness: "
-            "%s mean fitness: %s" % (self.gen, self.opts['popsize'],
+            "%s mean fitness: %s" % (self.gen, self.es.popsize,
             self.best_fitness, self.mean_fitness))
