@@ -2,6 +2,7 @@ import os
 import sys
 import traceback
 import itertools
+import math
 
 import numpy as np
 
@@ -127,8 +128,13 @@ class HyperparameterParser(object):
                 (min_range, max_range))
 
         unbounded = True if "u" in flags else False
-        is_log = True if "l" in flags else False
         rand_init = True if "r" in flags else False
+        if "l" in flags:
+            is_log = True
+            min_range = math.log(min_range)
+            max_range = math.log(max_range)
+        else:
+            is_log = False
 
         h = Hyperparameter(param_name, index=self.index, min_range=min_range,
             max_range=max_range, array_length=array_length, unbounded=unbounded,

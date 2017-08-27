@@ -12,7 +12,7 @@ OPT_CONFIG = {
 # Misc configuration for this wrapper class only
 MISC_CONFIG = {
     'epsilon': 1e-12,
-    'sigma0': 0.5
+    'sigma0': 0.33
 }
 
 # Termination criterion for stopping CMAES
@@ -45,6 +45,7 @@ class Optimizer(object):
         self.gen = 0; self.best_fitness = 0.0; self.mean_fitness = 0.0
 
         for h in self.hyperparameters:
+
             if h.array_length is None:
                 if h.rand_init:
                     self.init[h.index] = random.random() * (h.max_range - \
@@ -80,6 +81,8 @@ class Optimizer(object):
         #     min([h.min_range for h in hyperparameters]) < MISC_CONFIG['epsilon']:
         #     self.logger.warn("min range == max range, overwriting sigma0")
         #     self.sigma = np.mean(self.init) * MISC_CONFIG['sigma0']
+        # print self.init
+        # print self.sigma
         self.es = cma.CMAEvolutionStrategy(self.init, self.sigma, self.opts)
         self.best_fitness = None
         self.best_solution = None
