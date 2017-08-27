@@ -182,6 +182,11 @@ class Optimizer(object):
 
             with open(os.path.join(os.path.abspath( \
                 os.path.expanduser(self.config['optimizer']['result_dir'])), \
-                "G%s_F%s_hyperparam.pkl" % (self.gen, self.best_fitness)), \
+                "G%s_F%s_best_hyperparam.pkl" % (self.gen, self.best_fitness)), \
                 'wb') as f:
                 pickle.dump(self.best_hyperparam, f, protocol=-1)
+
+            with open(os.path.join(os.path.abspath( \
+                os.path.expanduser(self.config['optimizer']['result_dir'])), \
+                "G%s_optimizer_state.pkl" % self.gen), 'wb') as f:
+                pickle.dump(self, f, protocol=-1)
