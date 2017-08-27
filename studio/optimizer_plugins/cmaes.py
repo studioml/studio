@@ -6,7 +6,7 @@ import numpy as np
 
 # Overwrite the parameters of CMAES implementation
 OPT_CONFIG = {
-    'popsize': None,
+    'popsize': 2,
 }
 
 # Misc configuration for this wrapper class only
@@ -42,7 +42,9 @@ class Optimizer(object):
         # self.sigma = np.random.random(self.dim) # not allowed
         self.sigma = MISC_CONFIG['sigma0']
         self.opts['CMA_stds'] = np.ones(self.dim)
-        self.gen = 0; self.best_fitness = 0.0; self.mean_fitness = 0.0
+        self.gen = 0
+        self.best_fitness = self.mean_fitness = 0.0
+        self.best_hyperparam = None
 
         for h in self.hyperparameters:
 
@@ -84,7 +86,6 @@ class Optimizer(object):
         # print self.init
         # print self.opts['CMA_stds']
         self.es = cma.CMAEvolutionStrategy(self.init, self.sigma, self.opts)
-        self.best_fitness = self.best_hyperparam = self.mean_fitness = None
 
         self.logger.info(self.get_configs())
 

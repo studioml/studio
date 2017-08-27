@@ -260,7 +260,8 @@ def main(args=sys.argv):
                 optimizer.tell(hyperparam_pop, fitnesses)
                 try:
                     gen, best_fitness, best_hyperparams = optimizer.disp()
-                    with open(os.path.join(config['optimizer']['result_dir'], \
+                    with open(os.path.join(os.path.abspath( \
+                        os.path.expanduser(config['optimizer']['result_dir'])), \
                         "g%s_f%s_hyperparam.pkl" % (gen, best_fitness)), \
                         'wb') as f:
                         pickle.dump(best_hyperparams, f, protocol=-1)
