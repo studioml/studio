@@ -189,4 +189,4 @@ class Optimizer(object):
             with open(os.path.join(os.path.abspath( \
                 os.path.expanduser(self.config['optimizer']['result_dir'])), \
                 "G%s_optimizer_state.pkl" % self.gen), 'wb') as f:
-                pickle.dump(self, f, protocol=-1)
+                pickle.dump(self.__dict__, f, protocol=-1)
