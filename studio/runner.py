@@ -258,13 +258,9 @@ def main(args=sys.argv):
                 #     for hhh in hh:
                 #         print hhh
                 optimizer.tell(hyperparam_pop, fitnesses)
+                optimizer.save_checkpoint()
                 try:
-                    gen, best_fitness, best_hyperparams = optimizer.disp()
-                    with open(os.path.join(os.path.abspath( \
-                        os.path.expanduser(config['optimizer']['result_dir'])), \
-                        "G%s_F%s_hyperparam.pkl" % (gen, best_fitness)), \
-                        'wb') as f:
-                        pickle.dump(best_hyperparams, f, protocol=-1)
+                    optimizer.disp()
                 except:
                     logger.warn('Optimizer has no disp() method')
     else:

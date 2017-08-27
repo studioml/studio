@@ -1,6 +1,7 @@
 import cma
 import random
 import copy
+import cPickle as pickle
 
 import numpy as np
 
@@ -65,15 +66,10 @@ class Optimizer(object):
                         / 2.0
 
             if h.array_length is None:
-                if h.max_range - h.min_range < MISC_CONFIG['epsilon']:
-                    self.opts['CMA_stds'][h.index] *= h.max_range
-                else:
+                if h.max_range - h.min_range > MISC_CONFIG['epsilon']:
                     self.opts['CMA_stds'][h.index] *= h.max_range - h.min_range
             else:
-                if h.max_range - h.min_range < MISC_CONFIG['epsilon']:
-                    self.opts['CMA_stds'][h.index: h.index + h.array_length] *= \
-                        h.max_range
-                else:
+                if h.max_range - h.min_range > MISC_CONFIG['epsilon']:
                     self.opts['CMA_stds'][h.index: h.index + h.array_length] *= \
                         h.max_range - h.min_range
 
@@ -83,8 +79,8 @@ class Optimizer(object):
         #     min([h.min_range for h in hyperparameters]) < MISC_CONFIG['epsilon']:
         #     self.logger.warn("min range == max range, overwriting sigma0")
         #     self.sigma = np.mean(self.init) * MISC_CONFIG['sigma0']
-        # print self.init
-        # print self.opts['CMA_stds']
+        self.logger.info("Init: %s" % self.init)
+        self.logger.info("CMA stds: %s" % self.opts['CMA_stds'])
         self.es = cma.CMAEvolutionStrategy(self.init, self.sigma, self.opts)
 
         self.logger.info(self.get_configs())
@@ -176,7 +172,18 @@ class Optimizer(object):
             "%s mean fitness: %s" % (self.gen, self.es.popsize, \
             self.best_fitness, self.mean_fitness)
         print "*****************************************************************"
-        return self.gen, self.best_fitness, self.best_hyperparam
+        # return self.gen, self.best_fitness, self.best_hyperparam
         # self.logger.info("CMAES gen: %s pop size: %s best fitness: "
         #     "%s mean fitness: %s" % (self.gen, self.es.popsize,
         #     self.best_fitness, self.mean_fitness))
+
+    def save_checkpoint(self):
+        if (self.config['optimizer']['checkpoint_interval'] >= 1 and self.gen % \
+            self.config['optimizer']['checkpoint_interval'] == 0) or \
+            self.stop():
+
+            with open(os.path.join(os.path.abspath( \
+                os.path.expanduser(self.config['optimizer']['result_dir'])), \
+                "G%s_F%s_hyperparam.pkl" % (self.gen, self.best_fitness)), \
+                'wb') as f:
+                pickle.dump(self.best_hyperparam, f, protocol=-1)
