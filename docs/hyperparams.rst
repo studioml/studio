@@ -143,13 +143,13 @@ flags are supported:
 1. u: whether or not to constrain hyperparameters to [min range]:[max range]
 
 2. r: whether to initialize hyperparameters with random value between
-[min range]:[max range] or right in the middle
+   [min range]:[max range] or right in the middle
 
 3. l: whether to use log scaling for the hyperparameter
 
 4. a: whether the hyperparameter is a numpy array or a scalar. If the
-hyperparameter is a numpy array, then the {array length} field must be
-present as well.
+   hyperparameter is a numpy array, then the {array length} field must be
+   present as well.
 
 Cloud workers
 -------------
