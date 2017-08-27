@@ -159,8 +159,11 @@ the ``fs_tracker.get_artifact`` function call as shown below:
 ```python
 
     from studio import fs_tracker
+
     lr = np.load(fs_tracker.get_artifact('lr'))
+
     print "fitness: %s" % np.sum(lr)
+
 ```
 
 Cloud workers
