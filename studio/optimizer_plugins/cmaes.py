@@ -2,6 +2,8 @@ import cma
 import random
 import copy
 import cPickle as pickle
+import os
+import pprint
 
 import numpy as np
 
@@ -17,12 +19,12 @@ MISC_CONFIG = {
 }
 
 # Termination criterion for stopping CMAES
-TERM_CRITERION = {
-    'generation': 20, # Number of generation to run to
-    'fitness': 999, # Threshold fitness to reach
-    'skip_gen_thres': 1.0, # Fraction of results to get back before moving on
-    'skip_gen_timeout': 999 # Timeout when skip_gen_thres activates
-}
+# TERM_CRITERION = {
+#     'generation': 20, # Number of generation to run to
+#     'fitness': 999, # Threshold fitness to reach
+#     'skip_gen_thres': 1.0, # Fraction of results to get back before moving on
+#     'skip_gen_timeout': 999 # Timeout when skip_gen_thres activates
+# }
 
 class Optimizer(object):
     def __init__(self, hyperparameters, config, logger):
@@ -83,12 +85,10 @@ class Optimizer(object):
         self.logger.info("CMA stds: %s" % self.opts['CMA_stds'])
         self.es = cma.CMAEvolutionStrategy(self.init, self.sigma, self.opts)
 
-        self.logger.info(self.get_configs())
+        self.logger.info(pprint.pformat(self.get_configs()))
 
     def get_configs(self):
-        return {'termination_criterion': TERM_CRITERION,
-            'optimizer_config': self.opts,
-            'misc_config': MISC_CONFIG}
+        return {'optimizer_config': self.opts, 'misc_config': MISC_CONFIG}
 
     def __scale_var(self, var, min_range, max_range):
         return (var - min_range) / max((max_range - min_range),
@@ -135,10 +135,7 @@ class Optimizer(object):
         return solution
 
     def stop(self):
-        try:
-            term_criterion = self.config['optimizer']['terminationCriterion']
-        except:
-            term_criterion = TERM_CRITERION
+        term_criterion = self.config['optimizer']['termination_criterion']
 
         if self.gen >= term_criterion['generation']:
             self.logger.info("Reached target generation %s, terminating" % \
