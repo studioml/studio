@@ -82,10 +82,9 @@ class Optimizer(object):
         #     self.logger.warn("min range == max range, overwriting sigma0")
         #     self.sigma = np.mean(self.init) * MISC_CONFIG['sigma0']
         # print self.init
-        # print self.sigma
+        # print self.opts['CMA_stds']
         self.es = cma.CMAEvolutionStrategy(self.init, self.sigma, self.opts)
-        self.best_fitness = None
-        self.best_solution = None
+        self.best_fitness = self.best_hyperparam = self.mean_fitness = None
 
         self.logger.info(self.get_configs())
 
@@ -163,7 +162,7 @@ class Optimizer(object):
         adjusted_fitnesses = -1 * np.array(fitnesses)
         self.best_fitness = float(np.max(fitnesses))
         self.mean_fitness = float(np.mean(fitnesses))
-        self.best_solution = np.argmax(fitnesses)
+        self.best_hyperparam = hyperparameter_pop[np.argmax(fitnesses)]
 
         solutions = [self.__pack_solution(hyperparameters) for hyperparameters \
             in hyperparameter_pop]
@@ -176,6 +175,7 @@ class Optimizer(object):
             "%s mean fitness: %s" % (self.gen, self.es.popsize, \
             self.best_fitness, self.mean_fitness)
         print "*****************************************************************"
+        return self.gen, self.best_fitness, self.best_hyperparam
         # self.logger.info("CMAES gen: %s pop size: %s best fitness: "
         #     "%s mean fitness: %s" % (self.gen, self.es.popsize,
         #     self.best_fitness, self.mean_fitness))

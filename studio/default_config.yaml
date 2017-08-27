@@ -37,8 +37,9 @@ sleep_time: 1
 worker_timeout: 30
 
 optimizer:
+    result_dir: "~/Desktop/"
     terminationCriterion:
-        generation: 20
+        generation: 1
         fitness: 999
         skip_gen_thres: 1.0
         skip_gen_timeout: 30

@@ -9,6 +9,7 @@ import shutil
 import pprint
 import importlib
 import time
+import cPickle as pickle
 
 import numpy as np
 
@@ -258,7 +259,11 @@ def main(args=sys.argv):
                 #         print hhh
                 optimizer.tell(hyperparam_pop, fitnesses)
                 try:
-                    optimizer.disp()
+                    gen, best_fitness, best_hyperparams = optimizer.disp()
+                    with open(os.path.join(config['optimizer']['result_dir'], \
+                        "g%s_f%s_hyperparam.pkl" % (gen, best_fitness)), \
+                        'wb') as f:
+                        pickle.dump(best_hyperparams, f, protocol=-1)
                 except:
                     logger.warn('Optimizer has no disp() method')
     else:
