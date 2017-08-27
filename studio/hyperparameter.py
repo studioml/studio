@@ -4,45 +4,72 @@ import traceback
 import numpy as np
 
 class Hyperparameter(object):
-    def __init__(self, name, values=None, min_range=None, max_range=None,
-        array_length=None, unbounded=False, is_log=False, rand_init=False):
+    def __init__(self, name, index=None, values=None, min_range=None,
+        max_range=None, array_length=None, unbounded=None, is_log=None,
+        rand_init=None):
 
         self.name = name
+        self.index = index
         self.values = values
         self.min_range = min_range
         self.max_range = max_range
         self.unbounded = unbounded
         self.is_log = is_log
         self.rand_init = rand_init
-        self.length = array_length
+        self.array_length = array_length
 
 class HyperparameterParser(object):
   '''Class for parsing hyperparameters'''
 
-    def __init__(self, optimizer_type, hyperparam_list):
-        self.optimizer_type = optimizer_type
-        self.hyperparam_list = hyperparam_list
-        self.hyperparameters = []
+    def __init__(self, runner_args):
+        self.runner_args = runner_args
 
-        for hyperparam in runner_args.hyperparam:
+    def convert_to_tuples(self, hyperparameters):
+        hyperparam_values = {}
+        for hyperparameter in hyperparameters:
+            assert hyperparameter.values is not None
+            hyperparam_values[hyperparameter.name] = hyperparameter.values
+
+        if runner_args.optimizer_type == "grid":
+            hyperparam_tuples = []
+            for param_name, param_values in hyperparam_values.iteritems():
+                hyperparam_tuples_new = []
+                for value in param_values:
+                    if any(hyperparam_tuples):
+                        for hyperparam_tuple in hyperparam_tuples:
+                            hyperparam_tuple_new = hyperparam_tuple.copy()
+                            hyperparam_tuple_new[param_name] = value
+                            hyperparam_tuples_new.append(hyperparam_tuple_new)
+                    else:
+                        hyperparam_tuples_new.append({param_name: value})
+            hyperparam_tuples = hyperparam_tuples_new
+            return hyperparam_tuples
+        else:
+            return hyperparam_values.items()
+
+
+    def parse(self):
+        self.index = 0
+        hyperparameters = []
+        for hyperparam in self.runner_args.hyperparam:
             param_name = hyperparam.split('=')[0]
             param_values_str = hyperparam.split('=')[1]
-            if self.optimizer_type == "grid":
-                self.hyperparameters.append(self.parse_grid(param_name,
+            if self.runner_args.optimizer_type == "grid":
+                hyperparameters.append(self.__parse_grid(param_name,
                     param_values_str))
             else:
-                self.hyperparameters.append(self.parse_opt(param_name,
+                hyperparameters.append(self.__parse_opt(param_name,
                     param_values_str))
+        return hyperparameters
 
-    def parse_opt(self, param_name, range_str):
+    def __parse_opt(self, param_name, range_str):
         unbounded = is_log = rand_init = False
         min_value = max_value = array_length = None
         raw_fields = range_str.split(":")
 
-        correct_format = True
+        correct_format = True; flags = ""
         if length(raw_fields) > 2
-            flags = raw_fields[0]
-
+            flags = raw_fields[-1]
             allowed_flags = 'ualr'
             if len(flags) > len(allowed_flags):
                 correct_format = False
@@ -52,28 +79,34 @@ class HyperparameterParser(object):
             proper_field_length = 4 if "a" in flags else 3
             if len(raw_fields) != proper_field_length:
                 correct_format = False
-
         elif length(raw_fields) < 2:
             correct_format = False
-        else:
-            flags = ""
+
         if not correct_format:
-            raise ValueError("Hyperparameter format (%s) is incorrect for %s",
+            raise ValueError("Hyperparameter flags (%s) are incorrect for %s",
                         (range_str, self.optimizer_type))
 
-        min_value = float(raw_fields[1])
-        max_value = float(raw_fields[2])
-        array_length = int(raw_fields[3]) if "a" in flags else None
+        try:
+            min_value = float(raw_fields[1])
+            max_value = float(raw_fields[2])
+            array_length = int(raw_fields[3]) if "a" in flags else None
+            if array_length is not None and array_length <= 0:
+                raise ValueError
+        except ValueError:
+            raise ValueError("Hyperparameter values (%s) are incorrect for %s",
+                        (range_str, self.optimizer_type))
 
         unbounded = True if "u" in flags else False
         is_log = True if "l" in flags else False
         rand_init = True if "r" in flags else False
 
-        return Hyperparameter(param_name, min_value=min_value,
+        h = Hyperparameter(param_name, index=self.index, min_value=min_value,
             max_value=max_value, array_length=array_length, unbounded=unbounded,
             is_log=is_log, rand_init=rand_init)
+        self.index += array_length if array_length is not None else 1
+        return h
 
-    def parse_grid(self, param_name, range_str):
+    def __parse_grid(self, param_name, range_str):
         return_val = None
         if ',' in range_str:
             # return numpy array for consistency with other cases
@@ -118,4 +151,8 @@ class HyperparameterParser(object):
 
         else:
             return_val = [float(range_str)]
-        return Hyperparameter(param_name, values=return_val)
+        if type(return_val) is not list:
+            return_val = return_val.tolist()
+        h = Hyperparameter(param_name, index=self.index, values=return_val)
+        self.index += 1
+        return h

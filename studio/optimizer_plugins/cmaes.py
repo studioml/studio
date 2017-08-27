@@ -2,6 +2,7 @@ import copy
 import numpy as np
 import cma
 import math
+import random
 
 SIGMA0 = 0.25
 EPSILON = 1e-12
@@ -20,33 +21,41 @@ TERM_CRITERION = {
 }
 
 class Optimizer(object):
-    def __init__(self, hyperparam_dict, log_scale_dict):
-        self.hyperparam_dict = hyperparam_dict
-        self.log_scale_dict = log_scale_dict
-        self.nametoi = {}; self.itoname = {}
-        self.init = []
-        self.sigma = SIGMA0
-        self.bounds = []
-        self.gen = 0
-        self.best_fitness = 0.0
-
-        for i, name in enumerate(hyperparam_dict):
-            self.itoname[i] = name
-            self.nametoi[name] = i
-            if log_scale_dict[name]:
-                values = math.log(hyperparam_dict[name] + EPSILON)
-            else:
-                values = hyperparam_dict[name]
-            self.bounds.append((np.min(values), np.max(values)))
-            self.init.append(self.__scale_var(np.median(values), np.min(values),
-                np.max(values)))
+    def __init__(self, hyperparameters):
+        self.hyperparameters = hyperparameters
 
         self.opts = cma.CMAOptions()
         for param, value in OPTIMIZER_CONFIG.iteritems():
             if param in self.opts and value is not None:
                 self.opts[param] = value
-        self.es = cma.CMAEvolutionStrategy(np.array(self.init), self.sigma,
-            self.opts)
+        self.dim = 0
+        for h in self.hyperparameters:
+            assert self.dim == h.index
+            self.dim += h.array_length if h.array_length is not None else 1
+
+        self.init = np.empty(self.dim)
+        self.sigma = SIGMA0
+        for h in self.hyperparmeters:
+            if h.array_length is None:
+                if h.rand_init:
+                    self.init[h.index] = random.random() * (h.max_value - \
+                        h.min_value) + h.min_value
+                else:
+                    self.init[h.index] = (h.max_value + h.min_value) / 2.0
+            else:
+                if h.rand_init:
+                    self.init[h.index, h.index + h.array_length] = \
+                        np.random.random(h.array_length) * (h.max_value - \
+                        h.min_value) + h.min_value
+                else:
+                    self.init[h.index, h.index + h.array_length] = \
+                        np.ones(h.array_length) * (h.max_value + h.min_value) \
+                        / 2.0
+
+        self.es = cma.CMAEvolutionStrategy(self.init, self.sigma, self.opts)
+        self.best_fitness = None
+        self.best_solution = None
+
 
     def get_configs(self):
         return {'termination_criterion': TERM_CRITERION,
@@ -59,26 +68,34 @@ class Optimizer(object):
         return (var * (max_value - min_value)) + min_value
 
     def __unpack_solution(self, solution):
-        solution_dict = {}
-        for i in xrange(len(solution)):
-            name = self.itoname[i]
-            solution_dict[name] = solution[i]
-            solution_dict[name] = min(1.0, max(0.0, solution_dict[name]))
-            solution_dict[name] = self.__unscale_var(solution_dict[name],
-                self.bounds[i][0], self.bounds[i][1])
-            if self.log_scale_dict[name]:
-                solution_dict[name] = math.exp(solution_dict[name])
-        return solution_dict
+        for h in self.hyperparameters:
+            if h.array_length is None:
+                h.values = solution[h.index]
+            else:
+                h.values = solutution[h.index: h.index + h.array_length]
+            if not h.unbounded:
+                h.values = np.clip(h.values, h.min_value, h.max_value)
+            h.values = self.__unscale_var(h.values, h.min_value, h.max_value)
+            if h.is_log:
+                h.values = np.exp(h.values)
+            if h.array_length is None:
+                h.values = float(h.values)
+
+        return self.hyperparameters
 
     def __pack_solution(self, hyperparam_dict):
-        solution = np.empty(len(hyperparam_dict))
-        for name in hyperparam_dict:
-            i = self.nametoi[name]
-            solution[i] = hyperparam_dict[name]
-            if self.log_scale_dict[name]:
-                solution[i] = math.log(solution[i] + EPSILON)
-            solution[i] = self.__scale_var(solution[i],
-                self.bounds[i][0], self.bounds[i][1])
+        solution = np.empty(self.dim)
+        for h in self.hyperparameters:
+            values = copy.copy(h.values)
+            if h.is_log:
+                values = np.log(values)
+            values = self.__scale_var(values, h.min_value, h.max_value)
+            if not h.unbounded:
+                values = np.clip(values, h.min_value, h.max_value)
+            if h.array_length is None:
+                solution[h.index] = values
+            else:
+                solution[h.index: h.index + h.array_length] = values
 
         return solution
 
@@ -91,10 +108,12 @@ class Optimizer(object):
         solutions = self.es.ask()
         return [self.__unpack_solution(s) for s in solutions]
 
-    def tell(self, hyperparam_dicts, fitnesses):
+    def tell(self, hyperparameters, fitnesses):
         adjusted_fitnesses = -1 * np.array(fitnesses)
-        self.best_fitness = -1 * float(np.max(adjusted_fitnesses))
-        solutions = [self.__pack_solution(h) for h in hyperparam_dicts]
+        self.best_fitness = float(np.max(adjusted_fitnesses))
+        self.best_solution = np.argmx(adjusted_fitnesses)
+
+        solutions = [self.__pack_solution(h) for h in hyperparameters]
         self.es.tell(solutions, adjusted_fitnesses)
         self.gen += 1
 

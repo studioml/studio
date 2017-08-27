@@ -1,7 +1,8 @@
 import hashlib
 import StringIO
 import re
-
+import binascii
+import random
 
 def remove_backspaces(line):
     splitline = re.split('(\x08+)', line)
@@ -21,3 +22,7 @@ def sha256_checksum(filename, block_size=65536):
         for block in iter(lambda: f.read(block_size), b''):
             sha256.update(block)
     return sha256.hexdigest()
+
+def randstring(length):
+    return "".join([random.choice(string.ascii_letters + string.digits) \
+        for n in xrange(30)])
