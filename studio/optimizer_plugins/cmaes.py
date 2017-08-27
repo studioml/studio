@@ -109,8 +109,8 @@ class Optimizer(object):
                 h.values = solution[h.index: h.index + h.array_length]
             if not h.unbounded:
                 h.values = np.clip(h.values, h.min_range, h.max_range)
-            if h.max_range - h.min_range < MISC_CONFIG['epsilon']:
-                h.values = self.__unscale_var(h.values, h.min_range, h.max_range)
+            # if h.max_range - h.min_range < MISC_CONFIG['epsilon']:
+            #     h.values = self.__unscale_var(h.values, h.min_range, h.max_range)
             if h.is_log:
                 h.values = np.exp(h.values)
             if h.array_length is None:
@@ -124,8 +124,8 @@ class Optimizer(object):
             values = copy.copy(h.values)
             if h.is_log:
                 values = np.log(values)
-            if h.max_range - h.min_range < MISC_CONFIG['epsilon']:
-                values = self.__scale_var(values, h.min_range, h.max_range)
+            # if h.max_range - h.min_range < MISC_CONFIG['epsilon']:
+            #     values = self.__scale_var(values, h.min_range, h.max_range)
             if not h.unbounded:
                 values = np.clip(values, h.min_range, h.max_range)
             if h.array_length is None:
