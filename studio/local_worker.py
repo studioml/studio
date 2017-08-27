@@ -7,11 +7,8 @@ import yaml
 import logging
 import time
 import json
-<<<<<<< HEAD
 import yaml
-=======
 import copy
->>>>>>> master
 
 from apscheduler.schedulers.background import BackgroundScheduler
 
