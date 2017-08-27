@@ -18,7 +18,7 @@ from sqs_queue import SQSQueue
 from gcloud_worker import GCloudWorkerManager
 from ec2cloud_worker import EC2WorkerManager
 from hyperparameter import HyperparameterParser
-from util import randstring
+from util import rand_string
 
 import model
 import auth
@@ -211,7 +211,8 @@ def main(args=sys.argv):
                 other_args,
                 runner_args,
                 artifacts,
-                resources_needed)
+                resources_needed,
+                logger)
             submit_experiments(experiments, config, runner_args, logger)
         else:
             opt_modulepath = os.path.join(
@@ -228,13 +229,13 @@ def main(args=sys.argv):
             opt_module = importlib.import_module(
                 os.path.basename(opt_modulepath.replace(".py", '')))
 
-            h = HyperparameterParser(runner_args)
+            h = HyperparameterParser(runner_args, logger)
             hyperparams = h.parse()
             optimizer = getattr(opt_module, "Optimizer")(hyperparams)
 
             while not optimizer.stop():
-                hyperparams = optimizer.ask()
-                hyperparam_tuples = h.convert_to_tuples(hyperparams)
+                hyperparam_pop = optimizer.ask()
+                hyperparam_tuples = h.convert_to_tuples(hyperparam_pop)
 
                 experiments = add_hyperparam_experiments(
                     exec_filename,
@@ -242,6 +243,7 @@ def main(args=sys.argv):
                     runner_args,
                     artifacts,
                     resources_needed,
+                    logger,
                     optimizer=optimizer,
                     hyperparam_tuples=hyperparam_tuples)
                 submit_experiments(experiments, config, runner_args, logger)
@@ -249,7 +251,11 @@ def main(args=sys.argv):
                 fitnesses = get_experiment_fitnesses(experiments, \
                     optimizer, config, logger)
 
-                optimizer.tell(hyperparams, fitnesses)
+                for i, hh in enumerate(hyperparam_pop):
+                    print fitnesses[i]
+                    for hhh in hh:
+                        print hhh
+                optimizer.tell(hyperparam_pop, fitnesses)
                 try:
                     optimizer.disp()
                 except:
@@ -467,6 +473,7 @@ def add_hyperparam_experiments(
         runner_args,
         artifacts,
         resources_needed,
+        logger,
         optimizer=None,
         hyperparam_tuples=None):
 
@@ -481,21 +488,9 @@ def add_hyperparam_experiments(
         # experiment_names = {}
         for hyperparam_tuple in hyperparam_tuples:
             experiment_name = experiment_name_base
-            for param_name, param_value in hyperparam_tuple.iteritems():
-                experiment_name = experiment_name + '__' + \
-                    param_name + '__' + str(param_value)
-            experiment_name += "__%s" % time.time()
+            experiment_name += "__opt__%s__%s" % (rand_string(32),
+                int(time.time()))
             experiment_name = experiment_name.replace('.', '_')
-
-            # if experiments uses a previously used name, change it
-            # if experiment_name in experiment_names:
-            #     new_experiment_name = experiment_name
-            #     counter = 1
-            #     while new_experiment_name in experiment_names:
-            #         counter += 1
-            #         new_experiment_name = "%s_v%s" % (experiment_name, counter)
-            #     experiment_name = new_experiment_name
-            # experiment_names[experiment_name] = True
 
             workspace_orig = artifacts['workspace']['local'] \
                 if 'workspace' in artifacts.keys() else '.'
@@ -517,7 +512,7 @@ def add_hyperparam_experiments(
 
             for param_name, param_value in hyperparam_tuple.iteritems():
                 if type(param_value) is np.ndarray:
-                    array_filepath = '/tmp/%s.npy' % randstring(30)
+                    array_filepath = '/tmp/%s.npy' % rand_string(32)
                     np.save(array_filepath, param_value)
                     assert param_name not in current_artifacts
                     current_artifacts[param_name] = {'local': array_filepath,
@@ -542,7 +537,7 @@ def add_hyperparam_experiments(
     if optimizer is not None:
         experiments = create_experiments(hyperparam_tuples)
     else:
-        h = HyperparameterParser(runner_args)
+        h = HyperparameterParser(runner_args, logger)
         hyperparam_tuples = h.convert_to_tuples(h.parse())
         experiments = create_experiments(hyperparam_tuples)
 
