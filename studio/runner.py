@@ -379,10 +379,10 @@ def get_experiment_fitnesses(experiments, optimizer, config, logger):
     has_result = [False] * len(experiments)
     fitnesses = [0.0] * len(experiments)
     try:
-        term_criterion = config['optimizer']['termination_criterion']
+        term_criterion = config['optimizer']['terminationCriterion']
     except:
         logger.warn("Cannot find termination criterion in config.yaml, looking"
-            "in optimizer source code instead")
+            " in optimizer source code instead")
         term_criterion = optimizer.get_configs()['termination_criterion']
 
     skip_gen_thres = term_criterion['skip_gen_thres']

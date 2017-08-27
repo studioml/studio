@@ -23,21 +23,21 @@ class Hyperparameter(object):
     def __str__(self):
         my_str = "Hyperparameter: %s \n" % self.name
         if self.index is not None:
-            my_str += "Index: %s \n" % self.index
+            my_str += "Index: %s " % self.index
         if self.values is not None:
-            my_str += "Value: %s \n" % self.values
+            my_str += "Value: %s " % self.values
         if self.min_range is not None:
-            my_str += "Min range: %s \n" % self.min_range
+            my_str += "Min range: %s " % self.min_range
         if self.max_range is not None:
-            my_str += "Max range: %s \n" % self.max_range
+            my_str += "Max range: %s " % self.max_range
         if self.array_length is not None:
-            my_str += "Array length: %s \n" % self.array_length
+            my_str += "Array length: %s " % self.array_length
         if self.unbounded is not None:
-            my_str += "Unbounded: %s \n" % self.unbounded
+            my_str += "Unbounded: %s " % self.unbounded
         if self.is_log is not None:
-            my_str += "Log scale: %s \n" % self.is_log
+            my_str += "Log scale: %s " % self.is_log
         if self.rand_init is not None:
-            my_str += "Rand init %s \n" % self.rand_init
+            my_str += "Rand init %s " % self.rand_init
         return my_str
 
 class HyperparameterParser(object):

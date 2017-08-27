@@ -37,7 +37,7 @@ sleep_time: 1
 worker_timeout: 30
 
 optimizer:
-    termination criterion:
+    terminationCriterion:
         generation: 20
         fitness: 999
         skip_gen_thres: 1.0

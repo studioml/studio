@@ -143,4 +143,4 @@ class Optimizer(object):
 
     def disp(self):
         print "CMAES gen: %s pop size: %s best fitness: %s mean fitness: %s" % \
-        (self.opts['popsize'], self.gen, self.best_fitness, self.mean_fitness)
+        (self.gen, self.opts['popsize'], self.best_fitness, self.mean_fitness)
