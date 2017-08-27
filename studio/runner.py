@@ -262,7 +262,7 @@ def main(args=sys.argv):
                     gen, best_fitness, best_hyperparams = optimizer.disp()
                     with open(os.path.join(os.path.abspath( \
                         os.path.expanduser(config['optimizer']['result_dir'])), \
-                        "g%s_f%s_hyperparam.pkl" % (gen, best_fitness)), \
+                        "G%s_F%s_hyperparam.pkl" % (gen, best_fitness)), \
                         'wb') as f:
                         pickle.dump(best_hyperparams, f, protocol=-1)
                 except:
