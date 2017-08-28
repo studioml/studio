@@ -1,14 +1,33 @@
 <html>
   <head>
-      <link rel="icon" href="{{ url_for('static', filename='tfs_small.png') }}">
+      <link rel="icon" href="{{ url_for('static', filename='Studio.ml-icon-std-1000.png') }}">
 
       <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
       <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
-      <link href="https://cdnjs.cloudflare.com/ajax/libs/datatables/1.10.12/css/dataTables.bootstrap.min.css" rel="stylesheet"/><div class="container">  
-     
+      <link href="https://cdnjs.cloudflare.com/ajax/libs/datatables/1.10.12/css/dataTables.bootstrap.min.css" rel="stylesheet"/>
+      <!--link type="text/css" href="firebaseui.css" rel="stylesheet"/-->
+      <link href="https://cdn.datatables.net/select/1.2.2/css/select.dataTables.css" rel="stylesheet"/> <div class="container">
+
+        
+
+      <script src="https://www.gstatic.com/firebasejs/3.2.1/firebase.js"></script>
+      <script src="https://www.gstatic.com/firebasejs/3.1.0/firebase-app.js"></script>
+      <script src="https://www.gstatic.com/firebasejs/3.1.0/firebase-auth.js"></script>
+      <script src="https://www.gstatic.com/firebasejs/ui/live/0.5/firebase-ui-auth.js"></script>    
+
       <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
       <script src="https://cdnjs.cloudflare.com/ajax/libs/datatables/1.10.12/js/jquery.dataTables.min.js"></script>
       <script src="https://cdnjs.cloudflare.com/ajax/libs/datatables/1.10.12/js/dataTables.bootstrap.min.js"></script>
+      <script src="https://cdn.datatables.net/select/1.2.2/js/dataTables.select.js"></script>
+
+      <style>
+        .firebaseui-idp-icon {
+          display: inline-block;
+          height: 18px;
+          vertical-align: middle;
+          width: 18px;
+        }
+      </style>
 
       {% block head %}
       {% endblock %}
@@ -24,7 +43,7 @@
               <span class="icon-bar"></span>
               <span class="icon-bar"></span>
             </button>
-            <a class="navbar-brand" href="/">TF Studio</a>
+            <a class="navbar-brand" href="/">Studio</a>
           </div>
 
           <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
@@ -32,112 +51,323 @@
               <li><a href="/projects">Projects</a></li>
               <li><a href="/users">Users</a></li>
               <li><a href="/all">All</a></li>
+              <li><a href="" id="sign-in-button" hidden>Sign in</a>
+              <li><a href="" id="sign-out-button" hidden>Sign out</a>
             </ul>
           </div>
         </div>
       </nav>
 
-      {% macro experimenttable(experiments,showproject=true) -%}
-            <table class="table table-striped" id=experimentTable>
-                <thead> 
-                        <tr>
-                            <th>Time added </th>
-                            <th>Key</th>
-                            <th>Metric Type</th>
-                            <th>Metric Value</th>
-                            {% if showproject %}
-                                <th>Project</th>
-                            {% endif %}
-                            <th>Filename</th>
-                            <th>Status</th>
-                        </tr>
-                </thead>
-                    
-            {% for experiment in experiments %}
-                <tr>
-                    <td>{{ experiment.time_added | format_time }}</td>
-                    <td><a href="/experiments/{{ experiment.key }}">{{ experiment.key }}</a></td>
-                    <td>{{ experiment.metric }}</td>
+    <div id="sign-in-container" hidden>
+        <h3>Sign in to view your experiments</h3>
+        <div id="firebaseui-auth-container"></div>
+    </div>
 
-                    {% if experiment.info and experiment.info.get('metric_value') %}
-                        <td>{{ '%.4f' | format(experiment.info['metric_value']|float) }}</td>
-                    {% else %}
-                        <td> None </td>
-                    {% endif %}
-                     
-                    {% if showproject %}   
-                        <td><a href="/project/{{ experiment.project }}">{{ experiment.project }}</a></td>
-                    {% endif %}
+    <div id="logged-in">     	 
 
-                    <td>{{ experiment.filename }}</td>
-                    <td>{{ experiment.status }}</td>
-                </tr>
-            {% endfor %}
-            </table>
-            <script>
-                $(document).ready(function() {
-                        $('#experimentTable').DataTable({
-                            "order":[[0, "desc"]],
-                            "paging":false,
-                            "stateSave": true
-                        } );
+    {% macro experimenttable(showproject=true, delete_button=true) -%}
+        <table class="table table-striped" id="experimentTable"> </table>
+        <div id=buttonContainer hidden>
+            <button onclick='toggleSelectAll()' type="button" class="btn btn-default" id=selectAllButton>Select All</button>
+            {% if delete_button %}
+                <button onclick='deleteExperiments()' type="button" class="btn btn-danger" id=deleteButton>Delete</button>
+            {%- endif %}
+        </div>
 
-                        loadExperiments()
-                });
+        <script>
+            $(function() {
+                $('#experimentTable').DataTable({
+                    select: {
+                        style: "multi"
+                    },
 
-                function loadExperiments() {
-                    var maxTimeout = 120
-                    var xhttp = new XMLHttpRequest();
-                    if ( typeof loadExperiments.oldResponse == 'undefined') {
-                        loadExperiments.oldResponse = ""
-                        loadExperiments.timeout = 1
-                        loadExperiments.docHeader = document.getElementsByTagName('h1').item(0)
-                        loadExperiments.docHeaderValue = loadExperiments.docHeader.innerHTML
-                    }
-
-                    xhttp.onreadystatechange = function() {
-                        if (this.readyState == 4 && this.status == 200) {
-                            // console.log( "Server sent the document:\n" + this.response )
-                            // console.log( "oldResponse = " + loadExperiments.oldResponse)
-
-                            if (this.response == loadExperiments.oldResponse) {
-                                loadExperiments.docHeader.innerHTML = loadExperiments.docHeaderValue
-                                loadExperiments.timeout *= 2
-                                console.log("The document has not changed, timeout increased to " + loadExperiments.timeout)
-                            } else {
-                                loadExperiments.docHeader.innerHTML = loadExperiments.docHeaderValue + " <i class='fa fa-cog fa-spin'></i>"
-                                        
-                                var html = document.createElement('html')
-                                html.innerHTML = this.response
-                                rows = html.getElementsByTagName("tr")
-                                console.log("Document has changed, updating the table ")
-                                updateTable(rows)
-                                loadExperiments.oldResponse = this.response 
-                                loadExperiments.timeout = 1
+                    "order":[[2, "desc"]],
+                    "paging":false,
+                    "stateSave": true,
+                    "columns": [
+                        {
+                            "title":"Key",
+                            "render":function(data, type, row) {
+                                return '<a href="/experiment/' + data + '">' + data + '</a>' 
+                            }  
+                        },
+                        {"title": "Script"},
+                        {
+                            "title":"Time added",
+                            "render":function(data, type, row) {
+                                return new Date(data * 1000)
+                            }   
+                        },
+                        {"title":"Metric"},
+                        {
+                            "title":"Metric Value",
+                            "render":function(data, type, row) {
+                                if (typeof data == 'number') {
+                                    return data.toFixed(4);
+                                } else {
+                                    return 'None';
+                                }
                             }
-                            loadExperiments.timeout = Math.min(loadExperiments.timeout, maxTimeout)
-                            setTimeout(loadExperiments, loadExperiments.timeout * 1000)
-                       }
+                        },
+                        {
+                            "title":"Project",
+                            "render":function(data, type, row) {
+                                if (data) {
+                                    return '<a href="/project/' + data + '">' + data + '</a>';
+                                } else {    
+                                    return 'None';
+                                }
+                            }  
+                        },
+                        {"title":"Status"}
+                    ]
+                });
+        });
+
+
+        $('#experimentTable tbody').on( 'click', 'tr', function () {
+        	$(this).toggleClass('selected');
+	    });
+
+        function fillExperimentTable(data, clearTable=true) {
+            response_data = JSON.parse(data)
+            if (response_data.status == 'ok') {
+                
+                addExperimentsToTable(response_data.experiments, clearTable)                
+                
+                if (response_data.experiments.length > 0) {
+                    $('#buttonContainer').show()
+                }
+            }
+            return response_data
+        }
+
+        function addExperimentsToTable(experiments, clearTable=true) {
+            table = $('#experimentTable').DataTable()
+            if (clearTable) {
+                table.clear()
+            }
+            console.log(experiments)
+            for (var i=0; i < experiments.length; i++) {
+                experiment = experiments[i]
+                new_row = [
+                    experiment.key,
+                    experiment.filename,
+                    experiment.time_added,
+                    experiment.metric,
+                    experiment.info.metric_value,
+                    experiment.project,
+                    experiment.status,
+                ]
+                table.row.add(new_row)
+            }
+            table.draw()
+        }
+
+        function deleteExperiments() {
+            if (!confirm("Delete experiments?")) {
+                return 
+            }
+            keys = []
+            selectedData = $('#experimentTable').DataTable().rows('.selected').data()
+            console.log(selectedData)
+            for (var i = 0; i < selectedData.length; i++) {
+                console.log('Deleting experiment with key ' + selectedData[i][0])
+                data_ajax('delete_experiment', data={"key":selectedData[i][0]}).then((response) => {
+                    data = JSON.parse(response);
+                    if (data.status != 'ok') {
+                        alert(data.status);
+                    }       
+                });                   
+            }            
+        }
+
+        function toggleSelectAll() {
+            btn = $('#selectAllButton')
+            table = $('#experimentTable').DataTable()
+            if (btn.html() == 'Select All') {
+                table.rows({page:'current'}).select()
+                btn.html('Deselect All')
+            } else {
+                table.rows({page:'current'}).deselect()
+                btn.html('Select All')
+            }
+        }
+
+        </script>
+    {%- endmacro %}
+    
+    
+    <script>
+        function authWidget(afterAuthCallback) {
+            var config = {
+                apiKey: "{{ api_key }}",
+                authDomain: "{{ project_id }}.firebaseapp.com",
+                //databaseURL: "https://{{ project_id }}.firebaseio.com",
+                //storageBucket: "{{ project_id }}.appspot.com",
+            };
+
+            authWidget.userIdToken = null;
+            authWidget.userRefreshToken = null;
+
+            // Firebase log-in
+            function configureFirebaseLogin() {
+
+                firebase.initializeApp(config);
+
+                // [START onAuthStateChanged]
+                firebase.auth().onAuthStateChanged(function(user) {
+                if (user) {
+                    $('#sign-in-container').hide();
+                    $('#sign-in-button').hide()
+                    user.getToken().then(function(idToken) {
+                        authWidget.userIdToken = idToken;
+
+                        {% if send_refresh_token %}
+                            authWidget.userRefreshToken = user.refreshToken;
+                        {% endif %}
+
+                        if (afterAuthCallback) {
+                            afterAuthCallback()
+                        }
+                        
+                        var name = user.displayName ? user.displayName : user.email;
+                        $('#sign-out-button').html('Sign out of ' + name)
+                        $('#sign-out-button').show();
+
+                    });
+
+                    } else {
+                        $('#sign-out-button').hide();
+                        $('#sign-in-button').show();
+        
+                        if (afterAuthCallback) {
+                            authWidget.userIdToken = null;
+                            authWidget.userRefreshToken = null;
+                            afterAuthCallback()
+                        }
                     }
+                    hideSignIn();
+                // [END onAuthStateChanged]
+                });
+            }
+            configureFirebaseLogin();
+            configureFirebaseLoginWidget();
+        }
 
-                    console.log("Requesting new dashboard data");
-                    xhttp.open("GET", window.location, true);
-                    xhttp.send();
+        function configureFirebaseLoginWidget() {
+            var uiConfig = {
+                'signInSuccessUrl': '/',
+                'signInOptions': [
+                    // Leave the lines as is for the providers you want to offer your users.
+                    firebase.auth.GoogleAuthProvider.PROVIDER_ID,
+                    // firebase.auth.FacebookAuthProvider.PROVIDER_ID,
+                    // firebase.auth.TwitterAuthProvider.PROVIDER_ID,
+                    // firebase.auth.GithubAuthProvider.PROVIDER_ID,
+                    // firebase.auth.EmailAuthProvider.PROVIDER_ID
+                 ],
+                 // Terms of service url
+                 //`'tosUrl': '<your-tos-url>',
+             };
+
+             var ui = new firebaseui.auth.AuthUI(firebase.auth());
+             ui.start('#firebaseui-auth-container', uiConfig);
+        }
+
+        function showSignIn() {
+            $('#logged-in').hide()
+            $('.firebaseui-idp-text-long').html('')
+            $('.firebaseui-idp-text-short').html(' Sign in with google ')
+            $('#sign-in-container').show();
+        }
+        
+        function hideSignIn() {
+            $('#logged-in').show()
+            $('#sign-in-container').hide();
+        }
+
+        // Sign out a user
+        $('#sign-out-button').click(function(event) {
+            event.preventDefault();
+
+            firebase.auth().signOut().then(function() {
+                console.log("Sign out successful");
+            }, function(error) {
+                console.log(error);
+            });
+        });
+
+        $('#sign-in-button').click(function(event) {
+            event.preventDefault(); 
+            showSignIn()   
+        });
+
+
+        
+
+
+
+
+    </script>
+
+        
+    <script>
+
+        function reload(loader, thenFunc, minTimeout=1, maxTimeout=120) {
+            var timeout = minTimeout
+            var oldData = null
+            
+            var headerData = $('#header').html()
+
+            function reload() {
+                $('#header').html(headerData + ' <i class="fa fa-cog fa-spin"></i>');
+                loader().then(function(data) {
+                    console.log(data)
+                    if (oldData == JSON.stringify(data)) {
+                        timeout = timeout * 2
+                        $('#header').html(headerData)
+                    } else {
+                        timeout = minTimeout;
+                        thenFunc(data);
+                        oldData = JSON.stringify(data)
+                    }
+                    timeout = Math.min(timeout, maxTimeout);
+                    console.log("Timeout = " + timeout)
+                    setTimeout(reload, timeout * 1000);
+                });               
+            }
+            reload(); 
+        }
+
+        function data_ajax(apiMethod, data={}) {
+            if ( authWidget.userRefreshToken != null ) {
+                data["refreshToken"] = authWidget.userRefreshToken
+            }
+
+            console.log('Sending POST request to ' + apiMethod + ' with data')
+            console.log(data)
+
+            return $.ajax(
+                '/api/' + apiMethod,
+                {
+                    headers: {
+                        "Authorization": "Bearer " + authWidget.userIdToken
+                    },
+                    method: 'POST',
+                    data: JSON.stringify(data),
+                    contentType:"application/json"
                 }
+            )
+        }
 
-                function updateTable(rows) {
-                    $('#experimentTable').DataTable().clear()
-                    for (var i = 1; i < rows.length; i++) {
-                        $('#experimentTable').DataTable().row.add(rows.item(i))
-                     }
-                     $('#experimentTable').DataTable().draw()
-                }
-            </script>
-      {%- endmacro %}
 
-      {% block content %}
-      {% endblock %}
-      <p></p>
+    </script>
+  
+   {% block content %}
+   {% endblock %}
+   <p></p>
+
+    </div>
       
       <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
   </body>

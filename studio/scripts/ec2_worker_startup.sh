@@ -17,7 +17,10 @@ export AWS_ACCESS_KEY_ID="{aws_access_key}"
 export AWS_SECRET_ACCESS_KEY="{aws_secret_key}"
 
 code_url_base="https://storage.googleapis.com/studio-ed756.appspot.com/src"
-code_ver="studioml-64_config_location-2017-08-04_1.tgz"
+#code_ver="tfstudio-64_config_location-2017-08-04_1.tgz"
+
+repo_url="https://github.com/studioml/studio"
+branch="87_apiserver"
 
 autoscaling_group="{autoscaling_group}"
 
@@ -29,12 +32,16 @@ sudo apt install -y wget python-pip git python-dev jq
 sudo pip install --upgrade pip 
 sudo pip install --upgrade awscli
 
-wget $code_url_base/$code_ver 
-tar -xzf $code_ver 
-cd studio 
+#wget $code_url_base/$code_ver 
+#tar -xzf $code_ver 
+#cd studio 
+git clone $repo_url
+cd studio
+git checkout $branch
 
 if [[ "{use_gpus}" -eq 1 ]]; then
-    cudnn="libcudnn5_5.1.10-1_cuda8.0_amd64.deb"
+    cudnn5="libcudnn5_5.1.10-1_cuda8.0_amd64.deb"
+    cudnn6="libcudnn6_6.0.21-1_cuda8.0_amd64.deb"
     cuda_base="https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1604/x86_64/"
     cuda_ver="cuda-repo-ubuntu1604_8.0.61-1_amd64.deb"
 
@@ -45,12 +52,15 @@ if [[ "{use_gpus}" -eq 1 ]]; then
     sudo apt install -y cuda
 
     # install cudnn
-    wget $code_url_base/$cudnn
-    sudo dpkg -i $cudnn
-    sudo pip install tensorflow tensorflow-gpu
-fi
+    wget $code_url_base/$cudnn5
+    wget $code_url_base/$cudnn6
+    sudo dpkg -i $cudnn5
+    sudo dpkg -i $cudnn6
 
+    sudo pip install tensorflow tensorflow-gpu --upgrade
+fi
 sudo pip install -e . --upgrade 
+
 mkdir /workspace && cd /workspace 
 studio remote worker --queue=$queue_name  --verbose=debug --timeout=300
 

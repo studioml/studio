@@ -54,9 +54,11 @@ class LocalExecutor(object):
 
         """ Override env variables with those inside the queued message
         """
-        env = copy.copy(os.environ)
-        for k,v in self.config.iteritems():
-            env[str(k)] = str(v)
+        env = dict(os.environ)
+        if 'env' in self.config.keys():
+            for k,v in self.config['env'].iteritems():
+                    if v is not None:
+                        env[str(k)] = str(v)
 
         fs_tracker.setup_experiment(env, experiment, clean=True)
         log_path = fs_tracker.get_artifact_cache('output', experiment.key)

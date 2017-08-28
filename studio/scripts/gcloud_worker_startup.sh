@@ -36,15 +36,20 @@ branch="master"
 #            mkdir /workspace && cd /workspace && \
 #            studio-rworker --queue=$queue_name"
 
-code_url_base="https://storage.googleapis.com/studio-ed756.appspot.com/src"
-code_ver="studioml-64_config_location-2017-08-04_1.tgz"
-
+#code_url_base="https://storage.googleapis.com/studio-ed756.appspot.com/src"
+#code_ver="tfstudio-64_config_location-2017-08-04_1.tgz"
+repo_url="https://github.com/studioml/studio"
+branch="87_apiserver"
 sudo apt -y update 
 sudo apt install -y wget python-pip git python-dev
 
-wget $code_url_base/$code_ver 
-tar -xzf $code_ver 
-cd studio 
+git clone $repo_url
+cd studio
+git checkout $branch 
+#wget $code_url_base/$code_ver 
+#tar -xzf $code_ver 
+#cd studio 
+
 sudo pip install --upgrade pip 
 sudo pip install -e . --upgrade 
 mkdir /workspace && cd /workspace 

@@ -1,18 +1,18 @@
 import time
+import sys
 from flask import Flask, render_template, request, redirect
 import model
 import argparse
 import yaml
 import logging
 import json
-from functools import wraps
 import socket
 import subprocess
+import traceback
 from urlparse import urlparse
-from requests.exceptions import HTTPError
-from multiprocessing.pool import ThreadPool
 
-import fs_tracker
+import google.oauth2.id_token
+import google.auth.transport.requests
 
 logging.basicConfig()
 
@@ -21,117 +21,74 @@ app = Flask(__name__)
 
 _db_provider = None
 _tensorboard_dirs = {}
+_grequest = google.auth.transport.requests.Request()
+_save_auth_cookie = False
+
 logger = None
 
 
-def authenticated(redirect_after):
-    def auth_decorator(func):
-        @wraps(func)
-        def auth_wrapper(**kwargs):
-            if _db_provider.auth and _db_provider.auth.expired:
-                formatted_redirect = redirect_after
-                for k, v in kwargs.iteritems():
-                    formatted_redirect = formatted_redirect.replace(
-                        '<' + k + '>', v)
-                logger.debug(get_auth_url() + formatted_redirect)
-                return redirect(get_auth_url() + formatted_redirect)
-
-            try:
-                return func(**kwargs)
-            except HTTPError as e:
-                return render_template('error.html', errormsg=str(e))
-
-        return auth_wrapper
-    return auth_decorator
-
-
-@app.template_filter('format_time')
-def format_time(timestamp):
-    return time.strftime(
-        '%Y-%m-%d %H:%M:%S', time.localtime(timestamp))
-
-
-@app.route('/auth_response', methods=['POST'])
-def auth_response():
-    auth_dict = json.loads(request.form['data'])
-    logger.debug(auth_dict.keys())
-    expires = auth_dict['stsTokenManager']['expirationTime'] / 1000
-    logger.debug("Authentication successful. Token duration (s): {}"
-                 .format(expires - time.time()))
-    logger.debug("auth_dict = " + str(auth_dict))
-
-    refresh_token = auth_dict['stsTokenManager']['refreshToken']
-    email = auth_dict['email']
-
-    logger.debug('refresh_token = ' + refresh_token)
-    logger.debug('email = ' + email)
-
-    _db_provider.refresh_auth_token(email, refresh_token)
-    logger.debug("Authentication successfull, response" + str(request.form))
-    return redirect(request.form['redirect'])
-
-
 @app.route('/')
-@authenticated('/')
 def dashboard():
-    tic = time.time()
-    global logger
+    return _render('dashboard.html')
 
-    experiments = _db_provider.get_user_experiments(blocking=False)
-    toc = time.time()
-    logger.debug('Dashboard (/) prepared in {} s'.format(toc - tic))
-    return render_template("dashboard.html", experiments=experiments)
+
+@app.route('/projects')
+def projects():
+    return _render('projects.html')
+
+
+@app.route('/users')
+def users():
+    return _render('users.html')
 
 
 @app.route('/all')
-@authenticated('/all')
 def all_experiments():
-    tic = time.time()
-    global logger
-
-    experiments = []
-    users = _db_provider.get_users()
-    for user in users:
-        experiments += _db_provider.get_user_experiments(user, blocking=False)
-
-    toc = time.time()
-    logger.debug(
-        'All experiments page (/all) prepared in {} s'.format(toc - tic))
-    return render_template("all_experiments.html", experiments=experiments)
+    return _render('all_experiments.html')
 
 
-@app.route('/experiments/<key>')
-@authenticated('/experiments/<key>')
+@app.route('/project/<key>')
+def project_details(key):
+    return _render('project_details.html', project=key)
+
+
+@app.route('/user/<key>')
+def user_experiments(key):
+    return _render("user_details.html", user=key)
+
+
+@app.route('/experiment/<key>')
 def experiment(key):
-    experiment = _db_provider.get_experiment(key, getinfo=True)
-    artifacts_urls = _db_provider.get_artifacts(key)
-    logtail = experiment.info.get('logtail')
-    info = experiment.info
-    return render_template("experiment_details.html",
-                           experiment=experiment,
-                           artifacts=artifacts_urls,
-                           logtail=logtail,
-                           info=info)
+    return _render("experiment_details.html", experiment=key)
 
 
 @app.route('/tensorboard_exp/<key>')
-@authenticated('/tensorboard_exp/<key>')
 def tensorboard_exp(key):
-    experiment = _db_provider.get_experiment(key, getinfo=False)
-    tb_path = _db_provider.store.get_artifact(experiment.artifacts['tb'])
+    if get_allow_tensorboard():
+        experiment = _db_provider.get_experiment(key, getinfo=False)
+        tb_path = _db_provider.store.get_artifact(experiment.artifacts['tb'])
 
-    return tensorboard(tb_path)
+        return tensorboard(tb_path)
+    else:
+        return render_template(
+            'error.html',
+            errormsg="Tensorboard is not allowed in hosted mode yet")
 
 
 @app.route('/tensorboard_proj/<key>')
-@authenticated('/tensorboard_proj/<key>')
 def tensorboard_proj(key):
-    experiments = _db_provider.get_project_experiments(key)
-    logdir = ','.join(
-        [e.key + ":" + fs_tracker.get_tensorboard_dir(e.key)
-         for e in experiments])
+    if get_allow_tensorboard():
+        experiments = get_db().get_project_experiments(key)
 
-    return tensorboard(logdir)
+        logdir = ','.join(
+            [e.key + ":" + get_db().store.get_artifact(e.artifacts['tb'])
+             for e in experiments])
+
+        return tensorboard(logdir)
+    else:
+        return render_template(
+            'error.html',
+            errormsg="TensorBoard is not allowed in hosted mode yet")
 
 
 def tensorboard(logdir):
@@ -158,80 +115,345 @@ def tensorboard(logdir):
     return redirect(redirect_url)
 
 
-@app.route('/projects')
-@authenticated('/projects')
-def projects():
-    projects = _db_provider.get_projects()
-    if not projects:
-        projects = {}
-    return render_template("projects.html", projects=projects)
+@app.route('/api/get_experiment', methods=['POST'])
+def get_experiment():
+    tic = time.time()
+    key = request.json['key']
+    getlogger().info('Getting experiment {} '.format(key))
+    try:
+        experiment = get_db().get_experiment(key).__dict__
+        artifacts = get_db().get_artifacts(key)
+        for art, url in artifacts.iteritems():
+            experiment['artifacts'][art]['url'] = url
+
+        status = 'ok'
+    except BaseException as e:
+        experiment = {}
+        status = e.message
+
+    retval = json.dumps({'status': status, 'experiment': experiment})
+
+    toc = time.time()
+    getlogger().info('Processed get_experiment request in {} s'
+                .format(toc - tic))
+
+    return retval
 
 
-@app.route('/project/<key>')
-@authenticated('/project/<key>')
-def project_details(key):
-    experiments = _db_provider.get_project_experiments(key)
-    return render_template(
-        "project_details.html",
-        project_name=key,
-        experiments=experiments,
-        key_list=json.dumps([e.key for e in experiments]))
+@app.route('/api/get_user_experiments', methods=['POST'])
+def get_user_experiments():
+    tic = time.time()
+    myuser_id = get_and_verify_user(request)
+    if request.json and 'user' in request.json.keys():
+        user = request.json['user']
+    else:
+        user = myuser_id
+
+    # TODO check is myuser_id is authorized to do that
+
+    getlogger().info('Getting experiments of user {}'
+                .format(user))
+
+    experiments = get_db().get_user_experiments(user, blocking=True)
+    status = "ok"
+    retval = json.dumps({
+        "status": status,
+        "experiments": [e.__dict__ for e in experiments]
+    })
+    toc = time.time()
+    getlogger().info('Processed get_user_experiments request in {} s'
+                .format(toc - tic))
+    return retval
 
 
-@app.route('/users')
-@authenticated('/users')
-def users():
-    users = _db_provider.get_users()
-    return render_template("users.html", users=users)
+@app.route('/api/get_projects', methods=['POST'])
+def get_projects():
+    tic = time.time()
+    myuser_id = get_and_verify_user(request)
+
+    # TODO check / filter access
+
+    projects = get_db().get_projects()
+    status = "ok"
+
+    retval = json.dumps({
+        "status": status,
+        "projects": projects
+    })
+
+    toc = time.time()
+    getlogger().info('Processed get_projects request in {} s'
+                .format(toc - tic))
+    return retval
 
 
-@app.route('/user/<key>')
-@authenticated('/user/<key>')
-def user_experiments(key):
-    experiments = _db_provider.get_user_experiments(key)
-    users = _db_provider.get_users()
-    email = users[key]['email'] if 'email' in users[key].keys() else None
-    return render_template(
-        "user_details.html",
-        user=key,
-        email=email,
-        experiments=experiments)
+@app.route('/api/get_users', methods=['POST'])
+def get_users():
+    tic = time.time()
+    myuser_id = get_and_verify_user(request)
+
+    # TODO check / filter access
+
+    users = get_db().get_users()
+    status = "ok"
+
+    retval = json.dumps({
+        "status": status,
+        "users": users
+    })
+    toc = time.time()
+    getlogger().info('Processed get_user_experiments request in {} s'
+                .format(toc - tic))
+    return retval
 
 
-@app.route('/delete_experiment/<key>')
-@authenticated('/delete_experiment/<key>')
-def delete_experiment(key):
-    _db_provider.delete_experiment(key)
-    return redirect('/')
+@app.route('/api/get_project_experiments', methods=['POST'])
+def get_project_experiments():
+    tic = time.time()
+    myuser_id = get_and_verify_user(request)
+
+    project = request.json.get('project')
+    if not project:
+        status = "Project is none!"
+        experiments = []
+    else:
+        # TODO check is myuser_id is authorized to do that
+
+        getlogger().info('Getting experiments in project {}'
+                    .format(project))
+
+        experiments = get_db().get_project_experiments(project)
+
+    status = "ok"
+    retval = json.dumps({
+        "status": status,
+        "experiments": [e.__dict__ for e in experiments]
+    })
+    toc = time.time()
+    getlogger().info('Processed get_project_experiments request in {} s'
+                .format(toc - tic))
+    return retval
 
 
-@app.route('/stop_experiment/<key>')
-@authenticated('/stop_experiment/<key>')
-def stop_experiment(key):
-    _db_provider.stop_experiment(key)
-    return redirect('/experiments/' + key)
+@app.route('/api/delete_experiment', methods=['POST'])
+def delete_experiment():
+    tic = time.time()
+    userid = get_and_verify_user(request)
+    try:
+        key = request.json['key']
+        if get_db().can_write_experiment(key, userid):
+            getlogger().info('Deleting experiment {} '.format(key))
+            get_db().delete_experiment(key)
+            status = 'ok'
+        else:
+            raise ValueError('Unauthorized')
+
+    except BaseException as e:
+        status = e.message
+
+    toc = time.time()
+    getlogger().info('Processed delete_experiment request in {} s'
+                .format(toc - tic))
+
+    return json.dumps({'status': status})
 
 
-@app.route('/delete_all/')
-@authenticated('/delete_all/')
-def delete_all_experiments():
-    pool = ThreadPool(128)
-    experiments = _db_provider.get_user_experiments()
-    pool.map(_db_provider.delete_experiment, experiments)
+@app.route('/api/stop_experiment', methods=['POST'])
+def stop_experiment():
+    tic = time.time()
+    userid = get_and_verify_user(request)
+    try:
+        key = request.json['key']
+        if get_db().can_write_experiment(key, userid):
+            getlogger().info('Stopping experiment {} '.format(key))
+            get_db().stop_experiment(key)
+            status = 'ok'
+        else:
+            raise ValueError('Unauthorized')
 
-    return redirect('/')
+    except BaseException as e:
+        status = e.message
+
+    toc = time.time()
+    getlogger().info('Processed stop_experiment request in {} s'
+                .format(toc - tic))
+
+    return json.dumps({'status': status})
+
+@app.route('/api/start_experiment', methods=['POST'])
+def start_experiment():
+    tic = time.time()
+    userid = get_and_verify_user(request)
+    try:
+        key = request.json['key']
+        if get_db().can_write_experiment(key, userid):
+            getlogger().info('Starting experiment {} '.format(key))
+            experiment = get_db().get_experiment(key)
+            get_db().start_experiment(experiment)
+            status = 'ok'
+        else:
+            raise ValueError('Unauthorized')
+
+    except BaseException as e:
+        status = e.message
+
+    toc = time.time()
+    getlogger().info('Processed start_experiment request in {} s'
+                .format(toc - tic))
+
+    return json.dumps({'status': status})
+
+@app.route('/api/finish_experiment', methods=['POST'])
+def finish_experiment():
+    tic = time.time()
+    userid = get_and_verify_user(request)
+    try:
+        key = request.json['key']
+        if get_db().can_write_experiment(key, userid):
+            getlogger().info('Finishing experiment {} '.format(key))
+            get_db().finish_experiment(key)
+            status = 'ok'
+        else:
+            raise ValueError('Unauthorized')
+
+    except BaseException as e:
+        status = e.message
+
+    toc = time.time()
+    getlogger().info('Processed start_experiment request in {} s'
+                .format(toc - tic))
+
+    return json.dumps({'status': status})
+
+@app.route('/api/add_experiment', methods=['POST'])
+def add_experiment():
+    tic = time.time()
+    userid = get_and_verify_user(request)
+
+    # TODO check if user has access 
+
+    artifacts = {}
+    try:
+        experiment = model.experiment_from_dict(request.json['experiment'])
+        for tag,art in experiment.artifacts.iteritems():
+            art.pop('local', None)
+        
+        get_db().add_experiment(experiment)
+        added_experiment = get_db().get_experiment(experiment.key)
+        
+        for tag, art in added_experiment.artifacts.iteritems():
+            if 'key' in art.keys():
+                get_db().store.grant_write(art['key'], userid)
+                artifacts[tag] = art
+        status = 'ok'
+       
+    
+    except BaseException as e:
+        status = traceback.format_exc()
+    toc = time.time()
+    getlogger().info('Processed add_experiment request in {} s'
+                .format(toc - tic))
+
+    return json.dumps({'status':status, 'artifacts':artifacts})
 
 
-def get_auth_url():
-    return ("https://{}/index.html?" +
-            "authurl=http://{}/auth_response&redirect=").format(
-        _db_provider.get_auth_domain(),
-        request.host)
+@app.route('/api/checkpoint_experiment', methods=['POST'])
+def checkpoint_experiment():
+    tic = time.time()
+    userid = get_and_verify_user(request)
+
+    artifacts = {}
+    try:
+        key = request.json['key']
+        experiment = get_db().get_experiment(key)
+        get_db().checkpoint_experiment(experiment)
+
+        for tag, art in experiment.artifacts.iteritems():
+            if 'key' in art.keys():
+                get_db().store.grant_write(art['key'], userid)
+                artifacts[tag] = art
+        status = 'ok'
+
+    except BaseException as e:
+        status = traceback.format_exc()
+
+    toc = time.time()
+    getlogger().info('Processed add_experiment request in {} s'
+                .format(toc - tic))
+
+    return json.dumps({'status':status, 'artifacts':artifacts})
+
+ 
 
 
-def main():
+
+
+def get_and_verify_user(request):
+    if not request.headers or 'Authorization' not in request.headers.keys():
+        return None
+
+    auth_token = request.headers['Authorization'].split(' ')[-1]
+    if not auth_token or auth_token == 'null':
+        return None
+
+    claims = google.oauth2.id_token.verify_firebase_token(
+        auth_token, _grequest)
+
+    if not claims:
+        return None
+    else:
+        global _save_auth_cookie
+        if _save_auth_cookie and request.json and \
+                'refreshToken' in request.json.keys():
+            get_db().refresh_auth_token(
+                claims['email'],
+                request.json['refreshToken']
+            )
+
+        return claims['user_id']
+
+
+def get_db():
+    global _db_provider
+    if not _db_provider:
+        _db_provider = model.get_db_provider(blocking_auth=False)
+
+    return _db_provider
+
+
+def get_allow_tensorboard():
+    global _save_auth_cookie
+    return _save_auth_cookie
+
+
+def getlogger():
+    global logger
+    if logger is None:
+        logger = logging.getLogger('studio_server')
+        logger.setLevel(10)
+
+    return logger
+
+
+def _render(page, **kwargs):
+    tic = time.time()
+    retval = render_template(
+        page,
+        api_key=get_db().app.api_key,
+        project_id='studio-ed756',
+        send_refresh_token="true",
+        allow_tensorboard=get_allow_tensorboard(),
+        **kwargs
+    )
+    toc = time.time()
+    getlogger().info('page {} rendered in {} s'.
+                     format(page, toc - tic))
+    return retval
+
+
+def main(args=sys.argv[1:]):
     parser = argparse.ArgumentParser(
-        description='TensorFlow Studio WebUI server. \
+        description='Studio WebUI server. \
                      Usage: studio \
                      <arguments>')
 
@@ -245,6 +467,10 @@ def main():
                         type=int,
                         default=5000)
 
+    parser.add_argument('--host',
+                        help='host name.',
+                        default='0.0.0.0')
+
     parser.add_argument(
         '--verbose', '-v',
         help='Verbosity level. Allowed vaules: ' +
@@ -252,7 +478,7 @@ def main():
              'or numerical value of logger levels.',
         default=None)
 
-    args = parser.parse_args()
+    args = parser.parse_args(args)
     config = model.get_config()
     if args.config:
         with open(args.config) as f:
@@ -267,12 +493,13 @@ def main():
     global _db_provider
     _db_provider = model.get_db_provider(config, blocking_auth=False)
 
-    global logger
-    logger = logging.getLogger('studio')
-    logger.setLevel(model.parse_verbosity(config.get('verbose')))
+    getlogger().setLevel(model.parse_verbosity(config.get('verbose')))
 
-    print('Starting TensorFlow Studio on port {0}'.format(args.port))
-    app.run(host='0.0.0.0', port=args.port, debug=True)
+    global _save_auth_cookie
+    _save_auth_cookie = True
+
+    print('Starting Studio UI on port {0}'.format(args.port))
+    app.run(host=args.host, port=args.port)
 
 
 if __name__ == "__main__":

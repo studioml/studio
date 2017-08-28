@@ -6,16 +6,32 @@ from google.cloud import storage
 from tartifact_store import TartifactStore
 logging.basicConfig()
 
+from auth import FirebaseAuth
+import pyrebase
+
 
 class GCloudArtifactStore(TartifactStore):
     def __init__(self, config, verbose=10, measure_timestamp_diff=True):
         self.logger = logging.getLogger('GCloudArtifactStore')
         self.logger.setLevel(verbose)
-        self.client = storage.Client()
+        
+        auth_config = config.get('auth')
+        if not auth_config:
+            self.client = storage.Client()
+        else:
+            assert auth_config['type'].lower() == 'firebase'
+            app = pyrebase.initialize_app(auth_config)
+            self.auth = FirebaseAuth(app,
+                                     auth_config.get("use_email_auth"),
+                                     auth_config.get("email"),
+                                     auth_config.get("password"))
+
+            self.client = storage.Client(credentials = self.auth.get_token())
 
         try:
             self.bucket = self.client.get_bucket(config['bucket'])
-        except BaseException:
+        except BaseException as e:
+            self.logger.exception(e)
             self.bucket = self.client.create_bucket(config['bucket'])
 
         super(GCloudArtifactStore, self).__init__(measure_timestamp_diff)
@@ -40,6 +56,21 @@ class GCloudArtifactStore(TartifactStore):
             return timestamp
         else:
             return None
+
+    def grant_write(self, key, user):
+        blob = self.bucket.get_blob(key)
+        if not blob:
+            blob = self.bucket.blob(key)
+            blob.upload_from_string("dummy")
+        
+        acl = blob.acl
+        if user:
+            acl.user(user).grant_owner()
+        else:
+            acl.all().grant_owner()
+            
+        acl.save()
+
 
     def get_qualified_location(self, key):
         return 'gs://' + self.bucket.name + '/' + key

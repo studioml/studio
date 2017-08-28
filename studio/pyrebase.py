@@ -21,7 +21,10 @@ from requests_toolbelt.adapters import appengine
 import certifi
 
 import python_jwt as jwt
-from Crypto.PublicKey import RSA
+try:
+    from Crypto.PublicKey import RSA
+except BaseException:
+    RSA = None
 import datetime
 
 
@@ -39,10 +42,10 @@ class Firebase:
     """ Firebase Interface """
 
     def __init__(self, config):
-        self.api_key = config["apiKey"]
-        self.auth_domain = config["authDomain"]
-        self.database_url = config["databaseURL"]
-        self.storage_bucket = config["storageBucket"]
+        self.api_key = config.get("apiKey")
+        self.auth_domain = config.get("authDomain")
+        self.database_url = config.get("databaseURL")
+        self.storage_bucket = config.get("storageBucket")
         self.credentials = None
         self.requests = requests.Session()
         if config.get("serviceAccount"):

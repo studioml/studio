@@ -16,7 +16,7 @@ logging.basicConfig()
 class RemoteWorkerTest(unittest.TestCase):
     _multiprocess_can_split_ = True
 
-    @timeout(120)
+    @timeout(300)
     @unittest.skipIf(
         'GOOGLE_APPLICATION_CREDENTIALS' not in
         os.environ.keys(),
@@ -33,7 +33,7 @@ class RemoteWorkerTest(unittest.TestCase):
             ['studio-start-remote-worker',
              '--queue=' + queue_name,
              '--single-run',
-             '--image=peterzhokhoff/tfstudio_test'],
+             '--image=peterzhokhoff/studioml_test'],
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT)
 
@@ -51,7 +51,7 @@ class RemoteWorkerTest(unittest.TestCase):
         if workerout:
             logger.debug("studio-start-remote-worker output: \n" + workerout)
 
-    @timeout(120)
+    @timeout(300)
     @unittest.skipIf(
         'GOOGLE_APPLICATION_CREDENTIALS' not in
         os.environ.keys(),
@@ -77,7 +77,7 @@ class RemoteWorkerTest(unittest.TestCase):
             ['studio-start-remote-worker',
              '--queue=' + queue_name,
              '--single-run',
-             '--image=peterzhokhoff/tfstudio_test'],
+             '--image=peterzhokhoff/studioml_test'],
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT)
 
@@ -115,7 +115,7 @@ class RemoteWorkerTest(unittest.TestCase):
         os.remove(tmppath)
         db.delete_experiment(experiment_name)
 
-    @timeout(120)
+    @timeout(300)
     @unittest.skipIf(
         'GOOGLE_APPLICATION_CREDENTIALS' not in
         os.environ.keys(),
@@ -139,7 +139,7 @@ class RemoteWorkerTest(unittest.TestCase):
             ['studio-start-remote-worker',
              '--queue=' + queue_name,
              '--single-run',
-             '--image=peterzhokhoff/tfstudio_test'],
+             '--image=peterzhokhoff/studioml_test'],
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT)
 
@@ -161,7 +161,7 @@ class RemoteWorkerTest(unittest.TestCase):
 
         os.remove(tmpfile)
 
-    @timeout(120)
+    @timeout(300)
     @unittest.skipIf(
         'GOOGLE_APPLICATION_CREDENTIALS' not in
         os.environ.keys(),
@@ -195,7 +195,7 @@ class RemoteWorkerTest(unittest.TestCase):
             [
                 'studio-add-credentials',
                 '--tag=' + image,
-                '--base-image=peterzhokhoff/tfstudio_test'],
+                '--base-image=peterzhokhoff/studioml_test'],
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT)
 

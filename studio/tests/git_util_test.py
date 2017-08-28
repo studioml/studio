@@ -24,7 +24,7 @@ class GitUtilTest(unittest.TestCase):
 
     def test_repo_url(self):
         expected = re.compile(
-            'https{0,1}://github\.com/ilblackdragon/studio(\.git){0,1}')
+            'https{0,1}://github\.com/studioml/studio(\.git){0,1}')
         actual = git_util.get_repo_url(remove_user=True)
         self.assertTrue(expected.match(actual) is not None)
 
