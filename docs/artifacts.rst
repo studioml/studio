@@ -136,8 +136,8 @@ remote worker will set up a cache directory that corresponds to the artifact
 tagged as ``weights`` and copy existing data from storage into it (so that
 data can be read from that directory as well). The call
 ``fs_tracker.get_artifact('weights')`` will return the path to that
-directory. In both cases, --experiment flag is not mandatory, if you
-don't speco
+directory. In both cases, ``--experiment`` flag is not mandatory; if you don’t specify a name, 
+a random uuid will be generated.
 
 Re-using artifacts from other experiments
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
