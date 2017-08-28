@@ -59,7 +59,7 @@ if [[ "{use_gpus}" -eq 1 ]]; then
 fi
 
 sudo pip install -e . --upgrade 
-# sudo pip install tensorflow tensorflow-gpu --upgrade
+sudo pip install tensorflow tensorflow-gpu --upgrade
 
 mkdir /workspace && cd /workspace 
 studio remote worker --queue=$queue_name  --verbose=debug --timeout=300
