@@ -451,6 +451,8 @@ class FirebaseProvider(object):
     def _get_experiment_logtail(self, experiment):
         try:
             tarf = self.store.stream_artifact(experiment.artifacts['output'])
+            if not tarf:
+                return None
 
             logdata = tarf.extractfile(tarf.members[0]).read()
             logdata = util.remove_backspaces(logdata).split('\n')

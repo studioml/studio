@@ -250,5 +250,12 @@ class TartifactStore(object):
             self._delete_file(artifact['key'])
 
     def stream_artifact(self, artifact):
+        if url is None:
+            return None
+
         url = self.get_artifact_url(artifact)
-        return tarfile.open(fileobj=urllib.urlopen(url), mode='r|gz')
+        fileobj=urllib.urlopen(url)
+        if fileobj: 
+            return tarfile.open(fileobj=fileobj, mode='r|gz')
+        else:
+            return None

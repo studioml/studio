@@ -93,4 +93,4 @@ if [ -n $autoscaling_group ]; then
 
 fi
 echo "Shutting the instance down!"
-# sudo shutdown now
+sudo shutdown now
