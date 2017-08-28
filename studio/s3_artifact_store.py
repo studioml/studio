@@ -1,5 +1,4 @@
 import logging
-import time
 import calendar
 
 try:
@@ -23,7 +22,7 @@ class S3ArtifactStore(TartifactStore):
         self.bucket = config['bucket']
         buckets = self.client.list_buckets()
 
-        if not self.bucket in [b['Name'] for b in buckets['Buckets']]:
+        if self.bucket not in [b['Name'] for b in buckets['Buckets']]:
             self.client.create_bucket(Bucket=self.bucket)
 
         super(S3ArtifactStore, self).__init__(measure_timestamp_diff)
@@ -38,8 +37,8 @@ class S3ArtifactStore(TartifactStore):
         self.client.delete_object(Bucket=self.bucket, Key=key)
 
     def _get_file_url(self, key):
-        return self.client.generate_presigned_url('get_object', 
-                Params={'Bucket': self.bucket, 'Key': key})
+        return self.client.generate_presigned_url(
+            'get_object', Params={'Bucket': self.bucket, 'Key': key})
 
     def _get_file_timestamp(self, key):
         obj = boto3.resource('s3').Object(self.bucket, key)

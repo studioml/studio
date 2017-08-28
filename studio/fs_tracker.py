@@ -24,6 +24,7 @@ def get_studio_home():
     else:
         return os.path.join(os.path.expanduser('~'), '.studioml')
 
+
 def setup_experiment(env, experiment, clean=True):
     if not isinstance(experiment, str):
         key = experiment.key

@@ -62,7 +62,7 @@ class EC2WorkerTest(unittest.TestCase):
         stubtest_worker(
             self,
             experiment_name=experiment_name,
-            runner_args=['--cloud=ec2', '--force-git', '--gpus=1'],
+            runner_args=['--cloud=ec2', '--force-git', '--gpus=1', '--ssh-keypair=peterz-k1'],
             config_name='test_config.yaml',
             test_script='tf_hello_world.py',
             script_args=['arg0'],
