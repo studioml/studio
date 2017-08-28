@@ -21,7 +21,10 @@ class SQSQueue(object):
 
         self._queue_url = create_q_response['QueueUrl']
         self.logger = logging.getLogger('SQSQueue')
-        self.logger.setLevel(verbose)
+        try:
+            self.logger.setLevel(verbose)
+        except:
+            pass
         self._name = name
         self.logger.info('Creating SQS queue with name ' + name)
         self.logger.info('Queue url = ' + self._queue_url)

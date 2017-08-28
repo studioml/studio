@@ -8,11 +8,14 @@ class PubsubQueue(object):
     def __init__(self, queue_name, project_name='studio-ed756', sub_name=None, verbose=10):
         assert 'GOOGLE_APPLICATION_CREDENTIALS' in os.environ.keys()
         self.logger = logging.getLogger(self.__class__.__name__)
-        self.logger.setLevel(verbose)
+        try:
+            self.logger.setLevel(verbose)
+        except:
+            pass
 
-        self.pubclient = pubsub.PublisherClient() 
-        self.subclient = pubsub.SubscriberClient() 
- 
+        self.pubclient = pubsub.PublisherClient()
+        self.subclient = pubsub.SubscriberClient()
+
         self.project = project_name
         self.topic_name = self.pubclient.topic_path(project_name, queue_name)
         self.logger.info("Topic name = {}".format(self.topic_name))
@@ -32,7 +35,7 @@ class PubsubQueue(object):
         except BaseException as e:
             self.logger.warn(e)
             self.subclient.create_subscription(self.sub_name, self.topic_name)
-            
+
         self.logger.info('subscription {} created'.format(sub_name))
 
     def clean(self):
@@ -62,13 +65,13 @@ class PubsubQueue(object):
     def dequeue(self, acknowledge=True):
 
         response = self.subclient.api.pull(
-                self.sub_name, 
+                self.sub_name,
                 return_immediately=True, max_messages=1)
         msgs = response.received_messages
 
         if not any(msgs):
             return None
-        
+
         retval = msgs[0]
 
         if acknowledge:

@@ -305,7 +305,7 @@ def submit_experiments(experiments, config, runner_args, logger):
 
             queue_name = 'pubsub_' + str(uuid.uuid4())
 
-            queue = PubsubQueue(queue_name, verbose=verbose)
+            queue = PubsubQueue(queue_name, verbose=runner_args.verbose)
             worker_manager = GCloudWorkerManager(
                 auth_cookie=auth_cookie,
                 zone=config['cloud']['zone']
@@ -315,7 +315,7 @@ def submit_experiments(experiments, config, runner_args, logger):
 
             queue_name = 'sqs_' + str(uuid.uuid4())
 
-            queue = SQSQueue(queue_name, verbose=verbose)
+            queue = SQSQueue(queue_name, verbose=runner_args.verbose)
             worker_manager = EC2WorkerManager(
                 auth_cookie=auth_cookie
             )

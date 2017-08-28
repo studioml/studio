@@ -9,7 +9,7 @@ import numpy as np
 
 # Overwrite the parameters of CMAES implementation
 OPT_CONFIG = {
-    'popsize': 2,
+    'popsize': 3,
 }
 
 # Misc configuration for this wrapper class only
