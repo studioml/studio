@@ -7,10 +7,10 @@ hyperparameter search and optimization.
 Basics
 ------
 
-For now, studio can launch a batch of experiments with a regex
-substitution of variables inside the script. Those experiments are
+For now, studio can launch a batch of experiments using regex
+substitution of variables inside the script. These experiments are
 launched in a separate project, and can be compared in tensorboard or by
-the value of some scalar metrics reported in tensorboard logs
+the value of some scalar metrics reported in tensorboard logs.
 
 Consider the following code snippet (code in
 `here <../studio/helloworld/train_mnist_keras.py>`__):
@@ -39,9 +39,9 @@ Consider the following code snippet (code in
 
 We compile a Keras model with the specified learning rate for stochastic
 gradient descent. What if we want to search a range of learning rates to
-determine best? (as a side note, in the ``train_mnist_keras.py`` you can
-simply use adaptive learning rate optimizer such as adam with better
-results, but let's forget about that for the demonstration purposes)
+determine the best value? (as a side note, in the ``train_mnist_keras.py`` you can
+simply use an adaptive learning rate optimizer such as adam to get better
+results, but let's forget about that for demonstration purposes)
 
 We can add the following argument to ``studio run`` call:
 
@@ -50,25 +50,25 @@ We can add the following argument to ``studio run`` call:
     studio run --hyperparam=lr=0.01:0.01:0.1 train_mnist_keras.py 30
 
 This will create a new project with 10 experiments. For each experiment,
-a copy of working directory will be put in the studioml cache, and
-within in each working directory copy, in the script
+a copy of the working directory will be put in the studioml cache, and
+within each copy of the script
 ``train_mnist_keras.py`` regex substitution of ``lr`` not followed by
-``=`` (i.e. located in right-hand side of expression) will be performed
-to a respective value (from 0.01 with step 0.01 to 0.1). Those
-experiments will then be submitted to the queue (in the version of the
-call above to the local queue), and executed. The progress of the
-experiments can be seen in studio WebUI. Last argument 30 refers to
-number of epochs as can be seen in the code snippet above.
+``=`` (i.e. located in right-hand side of an expression) will be performed
+to for values from 0.01 to 0.1 with a step size of 0.01. Those
+experiments will then be submitted to the queue (to the local queue in the version of the
+call above) and executed. The progress of the
+experiments can be seen in studio WebUI. The last argument ``30`` refers to
+number of training epochs, as can be seen in the code snippet above.
 
 Metrics
 -------
 
 But wait, do you have to go and check each experiment individually to
-figure out which one has done best? Would not it be nice if we could
+figure out which one has done best? Wouldn't it be nice if we could
 look at the project and immediately figure out which experiments have
-done better than the others? And there is such a feature indeed. We can
+done better than the others? There is indeed such a feature. We can
 specify an option ``--metric`` to ``studio run`` to specify which
-tensorflow / tensorboard variable to report as metric, and how to
+tensorflow / tensorboard variable to report as a metric, and how to
 accumulate it throughout experiment. For keras experiments, that would
 most often be ``val_loss``, but in principle any scalar reported in
 tensorboard can be used. Note that tensorboard logs need to be written
@@ -78,13 +78,13 @@ for this feature to work. Let's modify the command line above a bit:
 
     studio run --hyperparam=lr=0.01:0.01:0.1 --metric=val_loss:min train_mnist_keras.py
 
-will report smallest value of ``val_loss`` so far in the projects page
-or in dashboard in WebUI. Together with column sorting feature of the
-dashboard it allows you to immediately figure out the best experiment.
+This will report the smallest value of ``val_loss`` so far in the projects page
+or in the WebUI dashboard. Together with the column sorting feature of the
+dashboard you can immediately figure out the best experiment.
 The reason why this option is given to the runner and not in the WebUI
-after the run is because we are planning to have a more complicated
-hyperparameter search that where new experiments actually depend on
-previously seen values of metric. Other options allowed values for
+after the run is because we are planning to incorporate more complicated
+hyperparameter search where new experiments actually depend on
+previously seen values of metric. Other allowed values for the
 ``--metric`` parameter suffix are ":max" for maximum value seen
 throughout experiment, or empty for the last value.
 
@@ -111,7 +111,7 @@ Other options are:
    grid with a step 1 (0,1,2,3 - endpoints are handled in matlab style,
    not numpy style)
 
-3. ``lr=0.1`` will simply substitute lr by 0.1
+3. ``lr=0.1`` will simply substitute lr with 0.1
 
 4. ``no_layers=2,5,6`` will generate three values - 2,5 and 6
 
@@ -170,7 +170,7 @@ Cloud workers
 -------------
 
 Waiting till your local machine runs all experiments one after another
-can be daunting. Fortunately, we can outsource the compute to google
+can be time consuming. Fortunately, we can outsource the compute to google
 cloud or Amazon EC2. Please refer to `this page <cloud.rst>`__ for setup
 instructions; all the custom hardware configuration options can be
 applied to the hyperparameter search as well.
