@@ -258,6 +258,7 @@ class TartifactStore(object):
         if fileobj: 
             try:
                 retval = tarfile.open(fileobj=fileobj, mode='r|gz')
+                return retval
             except BaseException as e:
                 self.logger.info('Streaming artifact error:\n' + e.message)
         return None
