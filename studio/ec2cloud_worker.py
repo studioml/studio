@@ -317,7 +317,7 @@ class EC2WorkerManager(object):
             )
 
     def _get_ondemand_prices(self, instances=_instance_specs.keys()):
-        price_path = os.path.join(os.path.expanduser('~'), '.studioml', 'awsprices.json'))
+        price_path = os.path.join(os.path.expanduser('~'), '.studioml', 'awsprices.json')
         if not os.path.exists(price_path):
             self.logger.info(
                 'Getting prices info from AWS (this may take a moment...)')
