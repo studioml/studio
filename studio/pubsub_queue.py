@@ -8,10 +8,8 @@ class PubsubQueue(object):
     def __init__(self, queue_name, project_name='studio-ed756', sub_name=None, verbose=10):
         assert 'GOOGLE_APPLICATION_CREDENTIALS' in os.environ.keys()
         self.logger = logging.getLogger(self.__class__.__name__)
-        try:
+        if verbose is not None:
             self.logger.setLevel(verbose)
-        except:
-            pass
 
         self.pubclient = pubsub.PublisherClient()
         self.subclient = pubsub.SubscriberClient()

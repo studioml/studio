@@ -214,7 +214,8 @@ def main(args=sys.argv):
                 artifacts,
                 resources_needed,
                 logger)
-            submit_experiments(experiments, config, runner_args, logger)
+            submit_experiments(experiments, resources_needed, config,
+                runner_args, logger)
         else:
             opt_modulepath = os.path.join(
                 os.path.dirname(os.path.abspath(__file__)),
@@ -248,7 +249,8 @@ def main(args=sys.argv):
                     logger,
                     optimizer=optimizer,
                     hyperparam_tuples=hyperparam_tuples)
-                submit_experiments(experiments, config, runner_args, logger)
+                submit_experiments(experiments, resources_needed,
+                    config, runner_args, logger)
 
                 fitnesses = get_experiment_fitnesses(experiments, \
                     optimizer, config, logger)
@@ -271,12 +273,14 @@ def main(args=sys.argv):
             artifacts=artifacts,
             resources_needed=resources_needed,
             metric=runner_args.metric)]
-        submit_experiments(experiments, config, runner_args, logger)
+        submit_experiments(experiments, resources_needed,
+            config, runner_args, logger)
 
     db = None
     return
 
-def submit_experiments(experiments, config, runner_args, logger):
+def submit_experiments(experiments, resources_needed, config, runner_args,
+    logger):
     db = model.get_db_provider(config)
 
     queue_name = 'local'
