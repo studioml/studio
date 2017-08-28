@@ -91,7 +91,7 @@ input to the model, so that model applies to a key:tensor value; and
 then after prediction sort out which ones were successfull. But this
 process really does not have to be that complicated.
 
-StudioML provides primitives that make this job (that is
+Studio provides primitives that make this job (that is
 conceptually very simple) simple in code; and similar in usage to Keras.
 The code above becomes (see unit test
 ``ModelPipeTest.test_model_pipe_mnist_urls`` in
