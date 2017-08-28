@@ -33,7 +33,7 @@ class RemoteWorkerTest(unittest.TestCase):
             ['studio-start-remote-worker',
              '--queue=' + queue_name,
              '--single-run',
-             '--image=peterzhokhoff/tfstudio_test'],
+             '--image=peterzhokhoff/studioml_test'],
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT)
 
@@ -77,7 +77,7 @@ class RemoteWorkerTest(unittest.TestCase):
             ['studio-start-remote-worker',
              '--queue=' + queue_name,
              '--single-run',
-             '--image=peterzhokhoff/tfstudio_test'],
+             '--image=peterzhokhoff/studioml_test'],
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT)
 
@@ -139,7 +139,7 @@ class RemoteWorkerTest(unittest.TestCase):
             ['studio-start-remote-worker',
              '--queue=' + queue_name,
              '--single-run',
-             '--image=peterzhokhoff/tfstudio_test'],
+             '--image=peterzhokhoff/studioml_test'],
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT)
 
@@ -195,7 +195,7 @@ class RemoteWorkerTest(unittest.TestCase):
             [
                 'studio-add-credentials',
                 '--tag=' + image,
-                '--base-image=peterzhokhoff/tfstudio_test'],
+                '--base-image=peterzhokhoff/studioml_test'],
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT)
 
