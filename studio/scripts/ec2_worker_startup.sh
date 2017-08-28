@@ -56,10 +56,10 @@ if [[ "{use_gpus}" -eq 1 ]]; then
     wget $code_url_base/$cudnn6
     sudo dpkg -i $cudnn5
     sudo dpkg -i $cudnn6
-fi
 
+    sudo pip install tensorflow tensorflow-gpu --upgrade
+fi
 sudo pip install -e . --upgrade 
-sudo pip install tensorflow tensorflow-gpu --upgrade
 
 mkdir /workspace && cd /workspace 
 studio remote worker --queue=$queue_name  --verbose=debug --timeout=300

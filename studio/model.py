@@ -458,7 +458,8 @@ class FirebaseProvider(object):
             logdata = util.remove_backspaces(logdata).split('\n')
             return logdata
         except BaseException as e:
-            self.logger.exception(e)
+            self.logger.info('Getting experiment logtail raised an exception:')
+            self.logger.info(e)
             return None
 
     def get_experiment(self, key, getinfo=True):

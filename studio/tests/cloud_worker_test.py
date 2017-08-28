@@ -75,7 +75,7 @@ class EC2WorkerTest(unittest.TestCase):
             self,
             experiment_name=experiment_name,
             runner_args=['--cloud=ec2spot', '--force-git',
-                         '--bid=25%'],
+                         '--bid=100%', '--ssh-keypair=peterz-k1'],
             config_name='test_config.yaml',
             test_script='tf_hello_world.py',
             script_args=['arg0'],
