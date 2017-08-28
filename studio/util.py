@@ -21,8 +21,6 @@ def remove_backspaces(line):
 
 def sha256_checksum(filename, block_size=65536):
     sha256 = hashlib.sha256()
-    # import pdb
-    # pdb.set_trace()
     with open(filename, 'rb') as f:
         for block in iter(lambda: f.read(block_size), b''):
             sha256.update(block)

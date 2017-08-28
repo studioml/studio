@@ -223,8 +223,8 @@ def stubtest_worker(
                           '--force-git',
                           '--experiment=' + experiment_name,
                           test_script] + script_args,
-                         #stdout=subprocess.PIPE,
-                         #stderr=subprocess.STDOUT,
+                         stdout=subprocess.PIPE,
+                         stderr=subprocess.STDOUT,
                          cwd=my_path)
 
     pout, _ = p.communicate()
