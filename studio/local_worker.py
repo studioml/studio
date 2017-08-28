@@ -1,3 +1,4 @@
+import copy
 import os
 import sys
 import subprocess
@@ -6,6 +7,8 @@ import yaml
 import logging
 import time
 import json
+import yaml
+import copy
 
 from apscheduler.schedulers.background import BackgroundScheduler
 
@@ -15,7 +18,6 @@ from local_queue import LocalQueue
 from gpu_util import get_available_gpus, get_gpu_mapping
 
 logging.basicConfig()
-
 
 class LocalExecutor(object):
     """Runs job while capturing environment and logging results.
@@ -182,14 +184,25 @@ def worker_loop(queue, parsed_args,
     logger = logging.getLogger('worker_loop')
 
     hold_period = 4
-
+    last_config = None
+    # job_start_time = time.time()
     while queue.has_next():
+        # if not queue.has_next():
+        #     timeout = 30 if last_config is None else \
+        #         last_config['worker_timeout']
+        #     if time.time() - job_start_time > timeout:
+        #         break
+        #     else:
+        #         time.sleep(config['sleep_time'])
+        #         continue
+        # job_start_time = time.time()
+
         first_exp, ack_key = queue.dequeue(acknowledge=False)
         # first_exp = min([(p, os.path.getmtime(p)) for p in queue],
         #                key=lambda t: t[1])[0]
 
         experiment_key = json.loads(first_exp)['experiment']['key']
-        config = json.loads(first_exp)['config']
+        last_config = config = json.loads(first_exp)['config']
         parsed_args.config = config
         verbose = model.parse_verbosity(config.get('verbose'))
         logger.setLevel(verbose)
@@ -244,7 +257,7 @@ def worker_loop(queue, parsed_args,
         else:
             logger.info('Cannot run experiment ' + experiment.key +
                         ' due lack of resources. Will retry')
-            time.sleep(5)
+            time.sleep(config['sleep_time'])
 
         # queue = glob.glob(fs_tracker.get_queue_directory() + "/*")
 

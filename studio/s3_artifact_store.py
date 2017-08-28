@@ -14,7 +14,10 @@ class S3ArtifactStore(TartifactStore):
     def __init__(self, config, verbose=10, measure_timestamp_diff=True):
         self.logger = logging.getLogger('S3ArtifactStore')
         self.logger.setLevel(verbose)
-        self.client = boto3.client('s3')
+
+        self.endpoint = config.get("endpoint", "s3-us-west-2.amazonaws.com")
+
+        self.client = boto3.client(service_name='s3', endpoint_url="https://" + self.endpoint)
 
         self.bucket = config['bucket']
         buckets = self.client.list_buckets()
@@ -48,7 +51,7 @@ class S3ArtifactStore(TartifactStore):
             return None
 
     def get_qualified_location(self, key):
-        return 's3://' + self.bucket + '/' + key
+        return 's3://' + self.endpoint + '/' + self.bucket + '/' + key
 
     def get_bucket(self):
         return self.bucket

@@ -333,7 +333,7 @@ class S3ArtifactStoreTest(ArtifactStoreTest, unittest.TestCase):
 
     def get_qualified_location_prefix(self):
         store = self.get_store()
-        return "s3://" + store.bucket + "/"
+        return "s3://s3.amazonaws.com/" + store.bucket + "/"
 
 
 if __name__ == "__main__":

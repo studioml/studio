@@ -1,4 +1,4 @@
-database: 
+database:
     type: FireBase
 
     apiKey: AIzaSyCLQbp5X2B4SWzBw-sz9rUnGHNSdMl0Yx8
@@ -12,5 +12,6 @@ database:
  
 storage:
     type: s3
+    endpoint: "s3-us-west-2.amazonaws.com"
     bucket: "studioml-artifacts"
 

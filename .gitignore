@@ -94,12 +94,16 @@ studio/.DS_Store
 auth/.firebaserc
 auth/firebase.json
 
-# Ignore directories used by the packaging tools, 
+# Ignore directories used by the packaging tools,
 # the go runner, and google tooling
 #
 bin/
 include/
-local/ 
+local/
 pkg/
 src/
 pip-selfcheck.json
+
+# ctags
+.tags
+.tags_sorted_by_file
