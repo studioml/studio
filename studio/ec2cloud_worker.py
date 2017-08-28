@@ -64,20 +64,21 @@ _instance_specs = {
 class EC2WorkerManager(object):
 
     def __init__(self, auth_cookie=None):
-        self.client = boto3.client('ec2')
-        self.asclient = boto3.client('autoscaling')
-        self.cwclient = boto3.client('cloudwatch')
+        self.region = 'us-east-1'
+        self.client = boto3.client('ec2', region_name=self.region)
+        self.asclient = boto3.client('autoscaling', region_name=self.region)
+        self.cwclient = boto3.client('cloudwatch', region_name=self.region)
 
         self.logger = logging.getLogger('EC2WorkerManager')
         self.logger.setLevel(10)
         self.auth_cookie = auth_cookie
-        self.region = 'us-east-1'
 
         self.prices = self._get_ondemand_prices(_instance_specs.keys())
 
     def _get_image_id(self):
-        # vanilla ubuntu 14.04 image
-        return 'ami-d15a75c7'
+        # vanilla ubuntu 16.04 image
+        # return 'ami-d15a75c7'
+        return 'ami-cd0f5cb6'
 
     def _get_block_device_mappings(self, resources_needed):
         return [{

@@ -6,7 +6,6 @@ import re
 import os
 import uuid
 import shutil
-import pprint
 import importlib
 import time
 import numpy as np
@@ -229,7 +228,7 @@ def main(args=sys.argv):
                 runner_args)
 
             optimizer = getattr(opt_module, "Optimizer")(hyperparam_values,
-                log_scale_dict)
+                                                         log_scale_dict)
 
             while not optimizer.stop():
                 hyperparam_tuples = optimizer.ask()
@@ -242,16 +241,22 @@ def main(args=sys.argv):
                     resources_needed,
                     optimizer=optimizer,
                     hyperparam_tuples=hyperparam_tuples)
-                submit_experiments(experiments, config, runner_args, logger)
+                submit_experiments(
+                    experiments,
+                    config,
+                    runner_args,
+                    logger,
+                    resources_needed)
 
-                fitnesses = get_experiment_fitnesses(experiments, \
-                    optimizer, config, logger)
+                fitnesses = get_experiment_fitnesses(experiments,
+                                                     optimizer, config, logger)
 
                 optimizer.tell(hyperparam_tuples, fitnesses)
-                # if config['verbose'] == "info" or config['verbose'] == "debug":
+                # if config['verbose'] == "info" or config['verbose'] ==
+                # "debug":
                 try:
                     optimizer.disp()
-                except:
+                except BaseException:
                     logger.warn('Optimizer has no disp() method')
     else:
         experiments = [model.create_experiment(
@@ -262,12 +267,23 @@ def main(args=sys.argv):
             artifacts=artifacts,
             resources_needed=resources_needed,
             metric=runner_args.metric)]
-        submit_experiments(experiments, config, runner_args, logger)
+        submit_experiments(
+            experiments,
+            config,
+            runner_args,
+            logger,
+            resources_needed)
 
     db = None
     return
 
-def submit_experiments(experiments, config, runner_args, logger):
+
+def submit_experiments(
+        experiments,
+        config,
+        runner_args,
+        logger,
+        resources_needed):
     db = model.get_db_provider(config)
     verbose = model.parse_verbosity(config['verbose'])
 
@@ -368,15 +384,16 @@ def submit_experiments(experiments, config, runner_args, logger):
                                       "implemented yet")
     return
 
+
 def get_experiment_fitnesses(experiments, optimizer, config, logger):
     db_provider = model.get_db_provider()
     has_result = [False] * len(experiments)
     fitnesses = [0.0] * len(experiments)
     try:
         term_criterion = config['optimizer']['termination_criterion']
-    except:
+    except BaseException:
         logger.warn("Cannot find termination criterion in config.yaml, looking"
-            "in optimizer source code instead")
+                    "in optimizer source code instead")
         term_criterion = optimizer.get_configs()['termination_criterion']
 
     skip_gen_thres = term_criterion['skip_gen_thres']
@@ -385,20 +402,24 @@ def get_experiment_fitnesses(experiments, optimizer, config, logger):
     result_timestamp = time.time()
     while sum(has_result) < len(experiments):
         for i, experiment in enumerate(experiments):
-            if float(sum(has_result))/len(experiments) > skip_gen_thres \
-                and time.time() - result_timestamp > skip_gen_timeout:
-                logger.warn("Skipping to next gen with %s of solutions evaled" %
-                    (float(sum(has_result))/len(experiments)))
+            if float(sum(has_result)) / len(experiments) > skip_gen_thres \
+                    and time.time() - result_timestamp > skip_gen_timeout:
+                logger.warn(
+                    "Skipping to next gen with %s of solutions evaled" %
+                    (float(
+                        sum(has_result)) /
+                        len(experiments)))
                 has_result = [True] * len(experiments)
                 break
             if has_result[i]:
                 continue
             returned_experiment = db_provider.get_experiment(experiment.key,
-                getinfo=True)
+                                                             getinfo=True)
             # try:
             #     experiment_output = returned_experiment.info['logtail']
             # except:
-            #     logger.warn('Cannot access "logtail" field in experiment.info')
+            #     logger.warn('Cannot access "logtail" ' +
+            #                 'field in experiment.info')
             output = db_provider._get_experiment_logtail(returned_experiment)
 
             for line in output:
@@ -406,9 +427,9 @@ def get_experiment_fitnesses(experiments, optimizer, config, logger):
                     try:
                         fitness = float(line.rstrip().split(':')[1])
                         assert fitness >= 0.0
-                    except:
+                    except BaseException:
                         logger.warn('Error parsing or invalid fitness (%s)'
-                            % line)
+                                    % line)
                     else:
                         fitnesses[i] = fitness
                         has_result[i] = True
@@ -417,6 +438,7 @@ def get_experiment_fitnesses(experiments, optimizer, config, logger):
 
         time.sleep(config['sleep_time'])
     return fitnesses
+
 
 def parse_artifacts(art_list, mutable):
     retval = {}
@@ -540,6 +562,7 @@ def add_hyperparam_experiments(
 
     return experiments
 
+
 def get_hyperparam_values(runner_args):
     hyperparam_values = {}
     log_scale_dict = {}
@@ -551,6 +574,7 @@ def get_hyperparam_values(runner_args):
         hyperparam_values[param_name] = param_values
         log_scale_dict[param_name] = is_log
     return hyperparam_values, log_scale_dict
+
 
 def parse_range(range_str):
     is_log = False
@@ -581,7 +605,8 @@ def parse_range(range_str):
                 if int(limit2) == limit2 and limit2 > abs(limit3 - limit1):
                     return_val = np.linspace(limit1, limit3, int(limit2))
                 else:
-                    return_val = np.arange(limit1, limit3 + 0.5 * limit2, limit2)
+                    return_val = np.arange(
+                        limit1, limit3 + 0.5 * limit2, limit2)
 
             except ValueError:
                 if 'l' in range_limits[1]:
