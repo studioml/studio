@@ -7,7 +7,7 @@ hyperparameter search and optimization.
 Basics
 ------
 
-For now, studio can launch a batch of experiments using a regex
+For now, studio can launch a batch of experiments using regex
 substitution of variables inside the script. These experiments are
 launched in a separate project, and can be compared in tensorboard or by
 the value of some scalar metrics reported in tensorboard logs.
