@@ -15,9 +15,8 @@ class S3ArtifactStore(TartifactStore):
         self.logger = logging.getLogger('S3ArtifactStore')
         self.logger.setLevel(verbose)
 
-        self.endpoint = config.get("endpoint", "s3-us-west-2.amazonaws.com")
-
-        self.client = boto3.client(service_name='s3', endpoint_url="https://" + self.endpoint)
+        self.client = boto3.client(service_name='s3')
+        self.endpoint = self.client._endpoint.host
 
         self.bucket = config['bucket']
         buckets = self.client.list_buckets()

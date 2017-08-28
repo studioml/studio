@@ -282,6 +282,7 @@ def main(args=sys.argv):
 def submit_experiments(experiments, resources_needed, config, runner_args,
     logger):
     db = model.get_db_provider(config)
+    verbose = model.parse_verbosity(config['verbose'])
 
     queue_name = 'local'
     if 'queue' in config.keys():
