@@ -46,8 +46,9 @@ def get_gpu_mapping():
             stderr=subprocess.STDOUT)
 
         pstdout, _ = loadp.communicate()
-        assert loadp.returncode == 0, 'Error mapping gpus:' + \
-            pstdout
+        if loadp.returncode != 0:
+            return [i for i in range(0, no_gpus)]
+
         gpu_minor_number = pstdout.split('\n')[-2]
         gpu_mapping[gpu_minor_number] = i
 

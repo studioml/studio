@@ -317,17 +317,29 @@ class EC2WorkerManager(object):
             )
 
     def _get_ondemand_prices(self, instances=_instance_specs.keys()):
-        self.logger.info(
-            'Getting prices info from AWS (this may take a moment...)')
-        r = requests.get(
-            'https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/' +
-            'AmazonEC2/current/index.json')
-        if r.status_code != 200:
-            self.logger.error(
-                'Getting AWS offers returned code {}'.format(
-                    r.status_code))
+        price_path = os.path.join(os.path.expanduser('~'), '.studioml', 'awsprices.json'))
+        if not os.path.exists(price_path):
+            self.logger.info(
+                'Getting prices info from AWS (this may take a moment...)')
 
-        offer_dict = r.json()
+            r = requests.get(
+                'https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/' +
+                'AmazonEC2/current/index.json')
+            if r.status_code != 200:
+                self.logger.error(
+                    'Getting AWS offers returned code {}'.format(
+                        r.status_code))
+        
+
+            offer_dict = r.json()
+            with open(price_path, 'w') as f:
+                json.dump(f, offer_dict)
+        else:
+            self.logger.info('Reading AWS prices from cache...')           
+            with open(price_path, 'r') as f:
+                offer_dict = json.load(f)
+
+
         self.logger.info('Done!')
 
         region_name = 'US East (N. Virginia)'

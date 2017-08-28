@@ -16,7 +16,7 @@ export GOOGLE_APPLICATION_CREDENTIALS=/credentials.json
 export AWS_ACCESS_KEY_ID="{aws_access_key}"
 export AWS_SECRET_ACCESS_KEY="{aws_secret_key}"
 
-#code_url_base="https://storage.googleapis.com/studio-ed756.appspot.com/src"
+code_url_base="https://storage.googleapis.com/studio-ed756.appspot.com/src"
 #code_ver="tfstudio-64_config_location-2017-08-04_1.tgz"
 
 repo_url="https://github.com/studioml/studio"
@@ -53,10 +53,11 @@ if [[ "{use_gpus}" -eq 1 ]]; then
     # install cudnn
     wget $code_url_base/$cudnn
     sudo dpkg -i $cudnn
-    sudo pip install tensorflow tensorflow-gpu
 fi
 
 sudo pip install -e . --upgrade 
+# sudo pip install tensorflow tensorflow-gpu --upgrade
+
 mkdir /workspace && cd /workspace 
 studio remote worker --queue=$queue_name  --verbose=debug --timeout=300
 
@@ -89,4 +90,4 @@ if [ -n $autoscaling_group ]; then
 
 fi
 echo "Shutting the instance down!"
-sudo shutdown now
+# sudo shutdown now
