@@ -40,7 +40,8 @@ cd studio
 git checkout $branch
 
 if [[ "{use_gpus}" -eq 1 ]]; then
-    cudnn="libcudnn5_5.1.10-1_cuda8.0_amd64.deb"
+    cudnn5="libcudnn5_5.1.10-1_cuda8.0_amd64.deb"
+    cudnn6="libcudnn6_6.0.21-1_cuda8.0_amd64.deb"
     cuda_base="https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1604/x86_64/"
     cuda_ver="cuda-repo-ubuntu1604_8.0.61-1_amd64.deb"
 
@@ -51,8 +52,10 @@ if [[ "{use_gpus}" -eq 1 ]]; then
     sudo apt install -y cuda
 
     # install cudnn
-    wget $code_url_base/$cudnn
-    sudo dpkg -i $cudnn
+    wget $code_url_base/$cudnn5
+    wget $code_url_base/$cudnn6
+    sudo dpkg -i $cudnn5
+    sudo dpkg -i $cudnn6
 fi
 
 sudo pip install -e . --upgrade 

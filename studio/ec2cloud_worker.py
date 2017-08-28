@@ -8,6 +8,7 @@ import logging
 import os
 import base64
 import requests
+import json
 
 from gpu_util import memstr2int
 
@@ -318,7 +319,12 @@ class EC2WorkerManager(object):
 
     def _get_ondemand_prices(self, instances=_instance_specs.keys()):
         price_path = os.path.join(os.path.expanduser('~'), '.studioml', 'awsprices.json')
-        if not os.path.exists(price_path):
+        try:
+            self.logger.info('Reading AWS prices from cache...')           
+            with open(price_path, 'r') as f:
+                offer_dict = json.load(f)
+            
+        except BaseException as e:
             self.logger.info(
                 'Getting prices info from AWS (this may take a moment...)')
 
@@ -330,15 +336,9 @@ class EC2WorkerManager(object):
                     'Getting AWS offers returned code {}'.format(
                         r.status_code))
         
-
             offer_dict = r.json()
             with open(price_path, 'w') as f:
-                json.dump(f, offer_dict)
-        else:
-            self.logger.info('Reading AWS prices from cache...')           
-            with open(price_path, 'r') as f:
-                offer_dict = json.load(f)
-
+                f.write(json.dumps(offer_dict))
 
         self.logger.info('Done!')
 
