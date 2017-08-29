@@ -236,6 +236,7 @@ def main(args=sys.argv):
             optimizer = getattr(opt_module, "Optimizer")(hyperparams, config,
                 logger)
 
+            queue_name = None
             while not optimizer.stop():
                 hyperparam_pop = optimizer.ask()
                 hyperparam_tuples = h.convert_to_tuples(hyperparam_pop)
@@ -249,8 +250,8 @@ def main(args=sys.argv):
                     logger,
                     optimizer=optimizer,
                     hyperparam_tuples=hyperparam_tuples)
-                submit_experiments(experiments, resources_needed,
-                    config, runner_args, logger)
+                queue_name = submit_experiments(experiments, resources_needed,
+                    config, runner_args, logger, queue_name, queue_name is None)
 
                 fitnesses = get_experiment_fitnesses(experiments, \
                     optimizer, config, logger)
@@ -280,15 +281,16 @@ def main(args=sys.argv):
     return
 
 def submit_experiments(experiments, resources_needed, config, runner_args,
-    logger):
+    logger, queue_name=None, launch_workers=True):
     db = model.get_db_provider(config)
     verbose = model.parse_verbosity(config['verbose'])
 
-    queue_name = 'local'
-    if 'queue' in config.keys():
-        queue_name = config['queue']
-    if runner_args.queue:
-        queue_name = runner_args.queue
+    if runner_args.cloud is None:
+        queue_name = 'local'
+        if 'queue' in config.keys():
+            queue_name = config['queue']
+        if runner_args.queue:
+            queue_name = runner_args.queue
 
     for e in experiments:
         e.pythonenv = add_packages(e.pythonenv, runner_args.python_pkg)
@@ -307,49 +309,50 @@ def submit_experiments(experiments, resources_needed, config, runner_args,
         )
 
         if runner_args.cloud in ['gcloud', 'gcspot']:
-
-            queue_name = 'pubsub_' + str(uuid.uuid4())
-
+            if queue_name is None:
+                queue_name = 'pubsub_' + str(uuid.uuid4())
             queue = PubsubQueue(queue_name, verbose=runner_args.verbose)
+
             worker_manager = GCloudWorkerManager(
                 auth_cookie=auth_cookie,
                 zone=config['cloud']['zone']
             )
 
-        if runner_args.cloud in ['ec2', 'ec2spot']:
-
-            queue_name = 'sqs_' + str(uuid.uuid4())
-
+        elif runner_args.cloud in ['ec2', 'ec2spot']:
+            if queue_name is None:
+                queue_name = 'sqs_' + str(uuid.uuid4())
             queue = SQSQueue(queue_name, verbose=runner_args.verbose)
+
             worker_manager = EC2WorkerManager(
                 auth_cookie=auth_cookie
             )
 
-        if runner_args.cloud == 'gcloud' or \
-           runner_args.cloud == 'ec2':
+        if launch_workers:
+            if runner_args.cloud == 'gcloud' or \
+               runner_args.cloud == 'ec2':
 
-            num_workers = int(
-                runner_args.num_workers) if runner_args.num_workers else 1
-            for i in range(num_workers):
-                worker_manager.start_worker(
-                    queue_name, resources_needed,
-                    ssh_keypair=runner_args.ssh_keypair)
-        else:
-            assert runner_args.bid is not None
-            if runner_args.num_workers:
-                start_workers = runner_args.num_workers
-                queue_upscaling = False
+                num_workers = int(
+                    runner_args.num_workers) if runner_args.num_workers else 1
+                for i in range(num_workers):
+                    worker_manager.start_worker(
+                        queue_name, resources_needed,
+                        ssh_keypair=runner_args.ssh_keypair)
             else:
-                start_workers = 1
-                queue_upscaling = True
+                assert runner_args.bid is not None
+                if runner_args.num_workers:
+                    start_workers = runner_args.num_workers
+                    queue_upscaling = False
+                else:
+                    start_workers = 1
+                    queue_upscaling = True
 
-            worker_manager.start_spot_workers(
-                queue_name,
-                runner_args.bid,
-                resources_needed,
-                start_workers=start_workers,
-                queue_upscaling=queue_upscaling,
-                ssh_keypair=runner_args.ssh_keypair)
+                worker_manager.start_spot_workers(
+                    queue_name,
+                    runner_args.bid,
+                    resources_needed,
+                    start_workers=start_workers,
+                    queue_upscaling=queue_upscaling,
+                    ssh_keypair=runner_args.ssh_keypair)
 
     else:
         if queue_name == 'local':
@@ -379,7 +382,7 @@ def submit_experiments(experiments, resources_needed, config, runner_args,
         else:
             raise NotImplementedError("Multiple local workers are not " +
                                       "implemented yet")
-    return
+    return queue_name
 
 def get_experiment_fitnesses(experiments, optimizer, config, logger):
     db_provider = model.get_db_provider()
@@ -408,6 +411,8 @@ def get_experiment_fitnesses(experiments, optimizer, config, logger):
             # except:
             #     logger.warn('Cannot access "logtail" field in experiment.info')
             output = db_provider._get_experiment_logtail(returned_experiment)
+            if output is None:
+                continue
 
             for line in output:
                 if line.startswith("Fitness") or line.startswith("fitness"):
