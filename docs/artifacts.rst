@@ -10,7 +10,7 @@ Basic usage
 
 The idea behind artifact management is three-fold: 
 
-1. With no coding overhead capture the data the experiment depends on (e.g. dataset). 
+1. With no coding overhead capture data the experiment depends on (e.g. dataset). 
 
 2. With no coding overhead save, and with minimal overhead visualize, the results of the experiment (neural network weights, etc). 
 
