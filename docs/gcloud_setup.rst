@@ -1,4 +1,4 @@
-Setting up Google cloud compute
+Setting up Google Cloud Compute
 ===============================
 
 This page describes the process of setting up Google Cloud and
