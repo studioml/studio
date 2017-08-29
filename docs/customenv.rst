@@ -27,6 +27,6 @@ specific version of a package. You can also omit ``==<package_version>``
 to install the latest version of the package (which may not be
 equal to the version in your environment). Note that if a package with a
 custom version has dependencies conflicting with the current version, the situation
-gets tricky. For now, it is up to the pip to resolve conflicts. In some
-cases it may fail and you'll have to manually specify dependencies
+gets tricky. For now, it is up to pip to resolve conflicts. In some
+cases it may fail and you'll have to manually specify dependency
 versions by adding more ``--python-pkg`` arguments.
