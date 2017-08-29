@@ -83,8 +83,8 @@ Running on Google Cloud spot (preemptible) instances
 ----------------------------------------------------
 
 The Google Cloud analog of EC2 spot instances is called preemptible
-instances. Preemptible instances are similar to EC2 spot instances in the
-fact that they are much cheaper than regular (on-demand) ones, and that
+instances. Preemptible instances are similar to EC2 spot instances in 
+that they are much cheaper than regular (on-demand) ones, and that
 they can be taken away at any moment with little or no notice. They
 are different from EC2 spot instances in the bidding / market system -
 the prices on preemptible instances are fixed and depend only on
