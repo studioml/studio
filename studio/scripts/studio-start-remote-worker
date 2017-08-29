@@ -15,7 +15,7 @@
 
 
 docker_cmd=docker
-docker_img=peterzhokhoff/tfstudio
+docker_img=peterzhokhoff/studioml
 
 
 while [[ $# -gt 0 ]] 

@@ -7,8 +7,6 @@ import yaml
 import logging
 import time
 import json
-import yaml
-import copy
 
 from apscheduler.schedulers.background import BackgroundScheduler
 
@@ -18,6 +16,7 @@ from local_queue import LocalQueue
 from gpu_util import get_available_gpus, get_gpu_mapping
 
 logging.basicConfig()
+
 
 class LocalExecutor(object):
     """Runs job while capturing environment and logging results.
@@ -56,9 +55,9 @@ class LocalExecutor(object):
         """
         env = dict(os.environ)
         if 'env' in self.config.keys():
-            for k,v in self.config['env'].iteritems():
-                    if v is not None:
-                        env[str(k)] = str(v)
+            for k, v in self.config['env'].iteritems():
+                if v is not None:
+                    env[str(k)] = str(v)
 
         fs_tracker.setup_experiment(env, experiment, clean=True)
         log_path = fs_tracker.get_artifact_cache('output', experiment.key)
@@ -179,7 +178,8 @@ def main(args=sys.argv):
 def worker_loop(queue, parsed_args,
                 setup_pyenv=False,
                 single_experiment=False,
-                fetch_artifacts=False):
+                fetch_artifacts=False,
+                timeout=0):
 
     logger = logging.getLogger('worker_loop')
 
@@ -259,10 +259,33 @@ def worker_loop(queue, parsed_args,
                         ' due lack of resources. Will retry')
             time.sleep(config['sleep_time'])
 
+        wait_for_messages(queue, timeout, logger)
+
         # queue = glob.glob(fs_tracker.get_queue_directory() + "/*")
 
     logger.info("Queue in {} is empty, quitting"
                 .format(fs_tracker.get_queue_directory()))
+
+
+def wait_for_messages(queue, timeout, logger=None):
+    wait_time = 0
+    wait_step = 5
+    timeout = int(timeout)
+    if timeout == 0:
+        return
+
+    while not queue.has_next():
+        if logger:
+            logger.info(
+                'No messages found, sleeping for {} s (total wait time {} s)'
+                .format(wait_step, wait_time))
+        time.sleep(wait_step)
+        wait_time += wait_step
+        if timeout > 0 and timeout < wait_time:
+            if logger:
+                logger.info('No jobs found in the queue during {} s'.
+                            format(timeout))
+            return
 
 
 if __name__ == "__main__":
