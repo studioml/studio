@@ -1,13 +1,13 @@
 Hyperparameter search
 =====================
 
-This page describes facilities that StudioML provides for
+This page describes facilities that Studio provides for
 hyperparameter search and optimization.
 
 Basics
 ------
 
-For now, studio can launch a batch of experiments using regex
+For now, Studio can launch a batch of experiments using regex
 substitution of variables inside the script. These experiments are
 launched in a separate project, and can be compared in tensorboard or by
 the value of some scalar metrics reported in tensorboard logs.
@@ -37,7 +37,7 @@ Consider the following code snippet (code in
             epochs=int(sys.argv[1]),
             callbacks=[tbcallback])
 
-We compile a Keras model with the specified learning rate for stochastic
+We compile a keras model with the specified learning rate for stochastic
 gradient descent. What if we want to search a range of learning rates to
 determine the best value? (as a side note, in the ``train_mnist_keras.py`` you can
 simply use an adaptive learning rate optimizer such as adam to get better
@@ -50,14 +50,14 @@ We can add the following argument to ``studio run`` call:
     studio run --hyperparam=lr=0.01:0.01:0.1 train_mnist_keras.py 30
 
 This will create a new project with 10 experiments. For each experiment,
-a copy of the working directory will be put in the studioml cache, and
+a copy of the working directory will be put in the ``studioml`` cache, and
 within each copy of the script
 ``train_mnist_keras.py`` regex substitution of ``lr`` not followed by
 ``=`` (i.e. located in right-hand side of an expression) will be performed
 to for values from 0.01 to 0.1 with a step size of 0.01. Those
 experiments will then be submitted to the queue (to the local queue in the version of the
 call above) and executed. The progress of the
-experiments can be seen in studio WebUI. The last argument ``30`` refers to
+experiments can be seen in the Studio WebUI. The last argument ``30`` refers to
 number of training epochs, as can be seen in the code snippet above.
 
 Metrics
@@ -170,8 +170,8 @@ Cloud workers
 -------------
 
 Waiting till your local machine runs all experiments one after another
-can be time consuming. Fortunately, we can outsource the compute to google
-cloud or Amazon EC2. Please refer to `this page <http://studioml.readthedocs.io/en/latest/cloud.html>`__ for setup
+can be time consuming. Fortunately, we can outsource the compute to Google
+Cloud or Amazon EC2. Please refer to `this page <http://studioml.readthedocs.io/en/latest/cloud.html>`__ for setup
 instructions; all the custom hardware configuration options can be
 applied to the hyperparameter search as well.
 
