@@ -179,7 +179,8 @@ def main(args=sys.argv):
 def worker_loop(queue, parsed_args,
                 setup_pyenv=False,
                 single_experiment=False,
-                fetch_artifacts=False):
+                fetch_artifacts=False,
+                timeout=0):
 
     logger = logging.getLogger('worker_loop')
 
@@ -259,11 +260,34 @@ def worker_loop(queue, parsed_args,
                         ' due lack of resources. Will retry')
             time.sleep(config['sleep_time'])
 
+        wait_for_messages(queue, timeout, logger)
+
         # queue = glob.glob(fs_tracker.get_queue_directory() + "/*")
 
     logger.info("Queue in {} is empty, quitting"
                 .format(fs_tracker.get_queue_directory()))
 
+
+def wait_for_messages(queue, timeout, logger=None):
+   wait_time = 0
+   wait_step = 5
+   timeout = int(timeout)
+   if timeout == 0: 
+        return
+
+   while not queue.has_next():
+        if logger:
+            logger.info(
+                'No messages found, sleeping for {} s (total wait time {} s)'
+                .format(wait_step, wait_time))
+        time.sleep(wait_step)
+        wait_time += wait_step
+        if timeout > 0 and timeout < wait_time:
+            if logger:
+                logger.info('No jobs found in the queue during {} s'.
+                        format(parsed_args.timeout))
+            return
+ 
 
 if __name__ == "__main__":
     main()

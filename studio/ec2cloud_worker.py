@@ -63,14 +63,14 @@ _instance_specs = {
 
 class EC2WorkerManager(object):
 
-    def __init__(self, auth_cookie=None):
+    def __init__(self, auth_cookie=None, verbose=10):
         self.region = 'us-east-1'
         self.client = boto3.client('ec2', region_name=self.region)
         self.asclient = boto3.client('autoscaling', region_name=self.region)
         self.cwclient = boto3.client('cloudwatch', region_name=self.region)
 
         self.logger = logging.getLogger('EC2WorkerManager')
-        self.logger.setLevel(10)
+        self.logger.setLevel(verbose)
         self.auth_cookie = auth_cookie
 
         self.prices = self._get_ondemand_prices(_instance_specs.keys())
@@ -96,7 +96,8 @@ class EC2WorkerManager(object):
             queue_name,
             resources_needed={},
             blocking=True,
-            ssh_keypair=None):
+            ssh_keypair=None, 
+            timeout=300):
 
         imageid = self._get_image_id()
 
@@ -104,7 +105,8 @@ class EC2WorkerManager(object):
 
         instance_type = self._select_instance_type(resources_needed)
 
-        startup_script = self._get_startup_script(resources_needed, queue_name)
+        startup_script = self._get_startup_script(resources_needed, queue_name, 
+            timeout=timeout)
 
         if ssh_keypair is not None:
             groupid = self._create_security_group(ssh_keypair)
@@ -162,7 +164,8 @@ class EC2WorkerManager(object):
             self,
             resources_needed,
             queue_name,
-            autoscaling_group=None):
+            autoscaling_group=None, 
+            timeout=300):
         if self.auth_cookie is not None:
             auth_key = os.path.basename(self.auth_cookie)
             with open(self.auth_cookie, 'r') as f:
@@ -195,7 +198,8 @@ class EC2WorkerManager(object):
             aws_secret_key=self.client._request_signer._credentials.secret_key,
             autoscaling_group=autoscaling_group if autoscaling_group else "",
             region=self.region,
-            use_gpus=0 if resources_needed['gpus'] == 0 else 1
+            use_gpus=0 if resources_needed['gpus'] == 0 else 1,
+            timeout=timeout
         )
 
         self.logger.info('Startup script:')
@@ -236,7 +240,8 @@ class EC2WorkerManager(object):
             ssh_keypair=None,
             queue_upscaling=True,
             start_workers=1,
-            max_workers=100):
+            max_workers=100,
+            timeout=300):
 
         # TODO should be able to put bid price as None,
         # which means price of on-demand instance
@@ -248,7 +253,7 @@ class EC2WorkerManager(object):
         launch_config_name = asg_name + "_launch_config"
 
         startup_script = self._get_startup_script(
-            resources_needed, queue_name, asg_name)
+            resources_needed, queue_name, asg_name, timeout=timeout)
 
         if bid_price.endswith('%'):
             bid_price = str(self.prices[instance_type]

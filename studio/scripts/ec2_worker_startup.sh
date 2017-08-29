@@ -62,7 +62,7 @@ fi
 sudo pip install -e . --upgrade 
 
 mkdir /workspace && cd /workspace 
-studio remote worker --queue=$queue_name  --verbose=debug --timeout=300
+studio remote worker --queue=$queue_name  --verbose=debug --timeout={timeout}
 
 # shutdown the instance
 echo "Work done"
