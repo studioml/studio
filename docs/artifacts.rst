@@ -8,7 +8,7 @@ by Google Cloud storage.
 Basic usage
 -----------
 
-The idea behind artifact management is three-fold: 
+The goal of artifact management is three-fold: 
 
 1. With no coding overhead capture data the experiment depends on (e.g. dataset). 
 
