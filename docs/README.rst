@@ -3,7 +3,7 @@ What is Studio?
 
 |Hex.pm|
 
-Studio is a model management framework written in Python to help simplify and expedite your model building experience. It was developed to minimize the overhead involved with scheduling, running, monitoring and managing artifacts of your machine learning experiments. No one wants to spend their time configuring different machines, setting up dependencies, or playing archeology to track down previous model artifacts.
+Studio is a model management framework written in Python to help simplify and expedite your model building experience. It was developed to minimize the overhead involved with scheduling, running, monitoring and managing artifacts of your machine learning experiments. No one wants to spend their time configuring different machines, setting up dependencies, or playing archeologist to track down previous model artifacts.
 
 Most of the features are compatible with any Python machine learning
 framework (`Keras <https://github.com/fchollet/keras>`__,
@@ -30,13 +30,13 @@ Start visualizer:
 
     studio ui
 
-Run your jobs:
+Run your job:
 
 ::
 
     studio run train_mnist_keras.py
 
-You can see results of your job at http://127.0.0.1:5000. Run
+You can see the results of your job at http://127.0.0.1:5000. Run
 ``studio {ui|run} --help`` for a full list of ui / runner options
 
 Installation
@@ -48,36 +48,36 @@ pip install studioml from the master pypi repositry:
 
     pip install studioml
 
-Find more `details <docs/installation.rst>`__ on installation methods and the release process. 
+Find more `details <http://studioml.readthedocs.io/en/latest/installation.html>`__ on installation methods and the release process. 
 
 Authentication
 --------------
 
-Currently Studio supports 2 methods of authentication: `email / password <docs/authentication.rst#email--password-authentication>`__ and using a `Google account. <docs/authentication.rst#google-account-authentication>`__ To use studio runner and studio ui in guest
+Currently Studio supports 2 methods of authentication: `email / password <http://studioml.readthedocs.io/en/latest/authentication.html#email--password-authentication>`__ and using a `Google account. <http://studioml.readthedocs.io/en/latest/authentication.html#google-account-authentication>`__ To use studio runner and studio ui in guest
 mode, in studio/default\_config.yaml, uncomment "guest: true" under the
 database section.
 
 Alternatively, you can set up your own database and configure Studio to
-use it. See `setting up database <docs/setup_database.rst>`__. This is a
+use it. See `setting up database <http://studioml.readthedocs.io/en/latest/setup_database.html>`__. This is the
 preferred option if you want to keep your models and artifacts private.
 
 
 Further reading and cool features
 ---------------------------------
 
--  `Running experiments remotely <docs/remote_worker.rst>`__
+-  `Running experiments remotely <http://studioml.readthedocs.io/en/latest/remote_worker.html>`__
    
-   -  `Custom Python environments for remote workers <docs/customenv.rst>`__
+   -  `Custom Python environments for remote workers <http://studioml.readthedocs.io/en/latest/customenv.html>`__
 
--  `Running experiments in the cloud <docs/cloud.rst>`__
+-  `Running experiments in the cloud <http://studioml.readthedocs.io/en/latest/cloud.html>`__
 
-   -  `Google Cloud setup instructions <docs/gcloud_setup.rst>`__
+   -  `Google Cloud setup instructions <http://studioml.readthedocs.io/en/latest/gcloud_setup.html>`__
 
-   -  `Amazon EC2 setup instructions <docs/ec2_setup.rst>`__
+   -  `Amazon EC2 setup instructions <http://studioml.readthedocs.io/en/latest/ec2_setup.html>`__
 
--  `Artifacts management <docs/artifacts.rst>`__
--  `Hyperparameter search <docs/hyperparams.rst>`__
--  `Pipeline for trained models <docs/model_pipelines.rst>`__
+-  `Artifacts management <http://studioml.readthedocs.io/en/latest/artifacts.html>`__
+-  `Hyperparameter search <http://studioml.readthedocs.io/en/latest/hyperparams.html>`__
+-  `Pipeline for trained models <http://studioml.readthedocs.io/en/latest/model_pipelines.html>`__
 
 .. |Hex.pm| image:: https://img.shields.io/hexpm/l/plug.svg
    :target: https://github.com/studioml/studio/blob/master/LICENSE
