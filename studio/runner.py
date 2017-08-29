@@ -311,21 +311,21 @@ def submit_experiments(experiments, resources_needed, config, runner_args,
         if runner_args.cloud in ['gcloud', 'gcspot']:
             if queue_name is None:
                 queue_name = 'pubsub_' + str(uuid.uuid4())
-            queue = PubsubQueue(queue_name, verbose=runner_args.verbose)
+                worker_manager = GCloudWorkerManager(
+                    auth_cookie=auth_cookie,
+                    zone=config['cloud']['zone']
+                )
 
-            worker_manager = GCloudWorkerManager(
-                auth_cookie=auth_cookie,
-                zone=config['cloud']['zone']
-            )
+            queue = PubsubQueue(queue_name, verbose=runner_args.verbose)
 
         elif runner_args.cloud in ['ec2', 'ec2spot']:
             if queue_name is None:
                 queue_name = 'sqs_' + str(uuid.uuid4())
-            queue = SQSQueue(queue_name, verbose=runner_args.verbose)
+                worker_manager = EC2WorkerManager(
+                    auth_cookie=auth_cookie
+                )
 
-            worker_manager = EC2WorkerManager(
-                auth_cookie=auth_cookie
-            )
+            queue = SQSQueue(queue_name, verbose=runner_args.verbose)
 
         if launch_workers:
             if runner_args.cloud == 'gcloud' or \
