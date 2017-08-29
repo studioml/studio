@@ -20,7 +20,7 @@ code_url_base="https://storage.googleapis.com/studio-ed756.appspot.com/src"
 #code_ver="tfstudio-64_config_location-2017-08-04_1.tgz"
 
 repo_url="https://github.com/studioml/studio"
-branch="jason-array-hyperparam"
+branch="peterz-array-hyperparam"
 
 autoscaling_group="{autoscaling_group}"
 
