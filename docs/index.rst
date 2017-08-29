@@ -1,5 +1,5 @@
 =========
-studio.ml
+Studio.ml
 =========
 
 `Github <https://github.com/pypa/pip>`_ |
