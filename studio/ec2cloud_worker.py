@@ -171,11 +171,13 @@ class EC2WorkerManager(object):
             auth_key = None
             auth_data = None
 
+        credentials = ""
+
         if 'GOOGLE_APPLICATION_CREDENTIALS' in os.environ.keys():
             with open(os.environ['GOOGLE_APPLICATION_CREDENTIALS'], 'r') as f:
                 credentials = f.read()
         else:
-            credentials = ""
+            self.logger.info('credentials NOT found')
 
         startup_script_filename = 'scripts/ec2_worker_startup.sh'
 

@@ -313,7 +313,7 @@ def submit_experiments(
 
             queue_name = 'pubsub_' + str(uuid.uuid4())
 
-            queue = PubsubQueue(queue_name, verbose=verbose)
+            queue = PubsubQueue(queue_name, config['database']['projectId'], verbose=verbose)
             worker_manager = GCloudWorkerManager(
                 auth_cookie=auth_cookie,
                 zone=config['cloud']['zone']
@@ -361,7 +361,7 @@ def submit_experiments(
         elif queue_name.startswith('sqs_'):
             queue = SQSQueue(queue_name, verbose=verbose)
         else:
-            queue = PubsubQueue(queue_name, verbose=verbose)
+            queue = PubsubQueue(queue_name, config['database']['projectId'], verbose=verbose)
 
     for e in experiments:
         queue.enqueue(json.dumps({

@@ -45,13 +45,6 @@ def copyconfig():
             default_config_path,
             os.path.expanduser('~/.studioml/config.yaml'))
 
-
-# Utility function to read the README file.
-# Used for the long_description.  It's nice, because now 1) we have a top level
-# README file and 2) it's easier to type in the README file than to put a raw
-# string in below ...
-
-
 def read(fname):
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
 
@@ -67,7 +60,7 @@ setup(
     version=VERSION,
     description='TensorFlow model and data management tool',
     packages=['studio'],
-    long_description=read('README'),
+    long_description=read('README.rst'),
     url='https://github.com/studioml/studio',
     license='Apache License, Version 2.0',
     keywords='TensorFlow studioml StudioML Studio Keras scikit-learn',
