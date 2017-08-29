@@ -30,8 +30,8 @@ the data, we need to invoke ``studio run`` as follows:
     studio run --capture-once=~/data:data train_nn.py
 
 Flag ``--capture-once`` (or ``-co``) specifies that data at path ~/data
-needs to be captured once at the experiment startup. Additionally, tag
-``data`` (provided as a value after ``:``) allows script to access data
+needs to be captured once at experiment startup. Additionally, the tag
+``data`` (provided as a value after ``:``) allows the script to access data
 in a machine-independent way, and also distinguishes the dataset in the
 web-ui (Web UI page of the experiment will contain download link for
 tar-gzipped folder ``~/data``)
