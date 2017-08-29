@@ -3,7 +3,7 @@ What is Studio?
 
 |Hex.pm|
 
-Studio is a model management framework written in Python to help simplify and expedite your model building experience. It was developed to minimize the overhead involved with scheduling, running, monitoring and managing artifacts of your machine learning experiments. No one wants to spend their time configuring different machines, setting up dependencies, or playing archeology to track down previous model artifacts.
+Studio is a model management framework written in Python to help simplify and expedite your model building experience. It was developed to minimize the overhead involved with scheduling, running, monitoring and managing artifacts of your machine learning experiments. No one wants to spend their time configuring different machines, setting up dependencies, or playing archeologist to track down previous model artifacts.
 
 Most of the features are compatible with any Python machine learning
 framework (`Keras <https://github.com/fchollet/keras>`__,
@@ -36,7 +36,7 @@ Run your jobs:
 
     studio run train_mnist_keras.py
 
-You can see results of your job at http://127.0.0.1:5000. Run
+You can see the results of your job at http://127.0.0.1:5000. Run
 ``studio {ui|run} --help`` for a full list of ui / runner options
 
 Installation
@@ -58,7 +58,7 @@ mode, in studio/default\_config.yaml, uncomment "guest: true" under the
 database section.
 
 Alternatively, you can set up your own database and configure Studio to
-use it. See `setting up database <http://studioml.readthedocs.io/en/latest/setup_database.html>`__. This is a
+use it. See `setting up database <http://studioml.readthedocs.io/en/latest/setup_database.html>`__. This is the
 preferred option if you want to keep your models and artifacts private.
 
 
