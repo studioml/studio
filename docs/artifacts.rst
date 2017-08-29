@@ -103,7 +103,7 @@ local machine, and the only interaction with artifacts has been to save
 them for posterity's sake. But what if our experiments are growing a bit
 too big to be run locally? Fortunately, Studio comes with a dockerized
 worker that can run your jobs on a beefy gpu server, or on a cloud
-instance (cloud management is not provided just yet). But how do we make
+instance. But how do we make
 local data available to such a worker? Clearly, a local path along the
 lines of ``/Users/john.doe/weights/`` will not always be reproducible on
 a remote worker. Studio provides a way to access files in a
