@@ -7,8 +7,6 @@ import yaml
 import logging
 import time
 import json
-import yaml
-import copy
 
 from apscheduler.schedulers.background import BackgroundScheduler
 
@@ -18,6 +16,7 @@ from local_queue import LocalQueue
 from gpu_util import get_available_gpus, get_gpu_mapping
 
 logging.basicConfig()
+
 
 class LocalExecutor(object):
     """Runs job while capturing environment and logging results.
@@ -56,9 +55,9 @@ class LocalExecutor(object):
         """
         env = dict(os.environ)
         if 'env' in self.config.keys():
-            for k,v in self.config['env'].iteritems():
-                    if v is not None:
-                        env[str(k)] = str(v)
+            for k, v in self.config['env'].iteritems():
+                if v is not None:
+                    env[str(k)] = str(v)
 
         fs_tracker.setup_experiment(env, experiment, clean=True)
         log_path = fs_tracker.get_artifact_cache('output', experiment.key)
@@ -269,13 +268,13 @@ def worker_loop(queue, parsed_args,
 
 
 def wait_for_messages(queue, timeout, logger=None):
-   wait_time = 0
-   wait_step = 5
-   timeout = int(timeout)
-   if timeout == 0: 
+    wait_time = 0
+    wait_step = 5
+    timeout = int(timeout)
+    if timeout == 0:
         return
 
-   while not queue.has_next():
+    while not queue.has_next():
         if logger:
             logger.info(
                 'No messages found, sleeping for {} s (total wait time {} s)'
@@ -285,9 +284,9 @@ def wait_for_messages(queue, timeout, logger=None):
         if timeout > 0 and timeout < wait_time:
             if logger:
                 logger.info('No jobs found in the queue during {} s'.
-                        format(parsed_args.timeout))
+                            format(timeout))
             return
- 
+
 
 if __name__ == "__main__":
     main()

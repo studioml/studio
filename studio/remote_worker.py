@@ -1,7 +1,6 @@
 from local_worker import worker_loop, wait_for_messages
 import sys
 import logging
-import time
 import model
 
 
@@ -54,7 +53,6 @@ def main(args=sys.argv):
         queue = PubsubQueue(parsed_args.queue, verbose=verbose)
     logger.info('Waiting for the work in the queue...')
 
-
     timeout_before = parsed_args.timeout
     timeout_after = timeout_before if timeout_before > 0 else 0
     wait_for_messages(queue, timeout_before, logger)
@@ -63,7 +61,7 @@ def main(args=sys.argv):
     worker_loop(queue, parsed_args,
                 setup_pyenv=True,
                 single_experiment=parsed_args.single_run,
-                fetch_artifacts=True, 
+                fetch_artifacts=True,
                 timeout=timeout_after)
 
 
