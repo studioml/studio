@@ -30,7 +30,7 @@ Start visualizer:
 
     studio ui
 
-Run your jobs:
+Run your job:
 
 ::
 
@@ -42,7 +42,7 @@ You can see results of your job at http://127.0.0.1:5000. Run
 Installation
 ------------
 
-pip install studioml from the master pypi repositry:
+pip install ``studioml`` from the master pypi repositry:
 
 ::
 
@@ -53,12 +53,12 @@ Find more `details <docs/installation.rst>`__ on installation methods and the re
 Authentication
 --------------
 
-Currently Studio supports 2 methods of authentication: `email / password <docs/authentication.rst#email--password-authentication>`__ and using a `Google account. <docs/authentication.rst#google-account-authentication>`__ To use studio runner and studio ui in guest
+Currently Studio supports 2 methods of authentication: `email / password <docs/authentication.rst#email--password-authentication>`__ and using a `Google account. <docs/authentication.rst#google-account-authentication>`__ To use ``studio run`` and ``studio ui`` in guest
 mode, in studio/default\_config.yaml, uncomment "guest: true" under the
 database section.
 
 Alternatively, you can set up your own database and configure Studio to
-use it. See `setting up database <docs/setup_database.rst>`__. This is a
+use it. See `setting up database <docs/setup_database.rst>`__. This is the
 preferred option if you want to keep your models and artifacts private.
 
 
