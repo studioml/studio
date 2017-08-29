@@ -4,13 +4,13 @@ Installation
 Installation Packaging
 ----------------------
 
-pip install studioml from the master pypi repositry:
+pip install ``studioml`` from the master pypi repositry:
 
 ::
 
     pip install studioml
 
-or, install the source and development environment for StudioML from the git project directory:
+or, install the source and development environment for Studio from the git project directory:
 
 ::
 
@@ -33,7 +33,7 @@ with pip as follows:
 
     pip install studio-x.x.tar.gz
 
-Certain types of runners can make use of the studio software
+Certain types of runners can make use of the Studio software
 distribution to start projects without any intervention, i.e. devops-less
 runners. To include the software distribution, add the tar.gz file to
 your workspace directory under a dist subdirectory. Runners supporting
