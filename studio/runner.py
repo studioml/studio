@@ -212,8 +212,10 @@ def main(args=sys.argv):
                 other_args,
                 runner_args,
                 artifacts,
-                resources_needed, logger)
-            submit_experiments(experiments, config, runner_args, logger, resources_needed)
+                resources_needed,
+                logger)
+            submit_experiments(experiments, resources_needed, config,
+                runner_args, logger)
         else:
             opt_modulepath = os.path.join(
                 os.path.dirname(os.path.abspath(__file__)),
