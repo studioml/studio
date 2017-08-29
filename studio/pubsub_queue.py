@@ -1,12 +1,18 @@
 from google.cloud import pubsub
 import logging
 import os
+import json
 logging.basicConfig()
 
 
 class PubsubQueue(object):
-    def __init__(self, queue_name, project_name='studio-ed756', sub_name=None, verbose=10):
+    def __init__(self, queue_name, sub_name=None, verbose=10):
         assert 'GOOGLE_APPLICATION_CREDENTIALS' in os.environ.keys()
+        with open(os.environ['GOOGLE_APPLICATION_CREDENTIALS']) as f:
+            credentials = json.loads(f.read())
+        project_name = credentials['project_id']        
+
+
         self.logger = logging.getLogger(self.__class__.__name__)
         self.logger.setLevel(verbose)
 

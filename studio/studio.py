@@ -165,6 +165,28 @@ def get_user_experiments():
                 .format(toc - tic))
     return retval
 
+@app.route('/api/get_all_experiments', methods=['POST'])
+def get_all_experiments():
+    tic = time.time()
+    myuser_id = get_and_verify_user(request)
+
+    # TODO check is myuser_id is authorized to do that
+
+    getlogger().info('Getting all experiments')
+    users = get_db().get_users()
+    
+    experiments = [e for user in users 
+            for e in get_db().get_user_experiments(user, blocking=False)]
+
+    status = "ok"
+    retval = json.dumps({
+        "status": status,
+        "experiments": [e.__dict__ for e in experiments]
+    })
+    toc = time.time()
+    getlogger().info('Processed get_user_experiments request in {} s'
+                .format(toc - tic))
+    return retval
 
 @app.route('/api/get_projects', methods=['POST'])
 def get_projects():
