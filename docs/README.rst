@@ -30,7 +30,7 @@ Start visualizer:
 
     studio ui
 
-Run your jobs:
+Run your job:
 
 ::
 
