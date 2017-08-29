@@ -42,7 +42,7 @@ You can see the results of your job at http://127.0.0.1:5000. Run
 Installation
 ------------
 
-pip install studioml from the master pypi repositry:
+pip install ``studioml`` from the master pypi repositry:
 
 ::
 
@@ -53,7 +53,7 @@ Find more `details <http://studioml.readthedocs.io/en/latest/installation.html>`
 Authentication
 --------------
 
-Currently Studio supports 2 methods of authentication: `email / password <http://studioml.readthedocs.io/en/latest/authentication.html#email--password-authentication>`__ and using a `Google account. <http://studioml.readthedocs.io/en/latest/authentication.html#google-account-authentication>`__ To use studio runner and studio ui in guest
+Currently Studio supports 2 methods of authentication: `email / password <http://studioml.readthedocs.io/en/latest/authentication.html#email--password-authentication>`__ and using a `Google account. <http://studioml.readthedocs.io/en/latest/authentication.html#google-account-authentication>`__ To use ``studio runner`` and ``studio ui`` in guest
 mode, in studio/default\_config.yaml, uncomment "guest: true" under the
 database section.
 
