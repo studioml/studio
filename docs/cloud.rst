@@ -43,7 +43,7 @@ Basics
 ~~~~~~
 
 Amazon EC2 offers so-called spot instances that are provided for a
-substantial discount with the assumption that they can be removed from
+substantial discount with the assumption that they can be taken from
 the user at any moment. Google Compute Engine has a similar product called
 preemptible instances, but Studio does not support it just yet. In
 short, for spot instances the user specifies a max price to pay for the
