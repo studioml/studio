@@ -42,7 +42,7 @@ Running on EC2 spot instances
 Basics
 ~~~~~~
 
-Amazon EC2 offers so-called spot instances that are provided with a
+Amazon EC2 offers so-called spot instances that are provided for a
 substantial discount with the assumption that they can be removed from
 the user at any moment. Google Compute Engine has a similar product called
 preemptible instances, but Studio does not support it just yet. In
