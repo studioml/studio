@@ -45,7 +45,7 @@ class Optimizer(object):
         # self.sigma = np.random.random(self.dim) # not allowed
         self.sigma = MISC_CONFIG['sigma0']
         self.opts['CMA_stds'] = np.ones(self.dim)
-        self.gen = 0
+        self.gen = 0; self.start_time = time.time()
         self.best_fitness = self.mean_fitness = 0.0
         self.best_hyperparam = None
 
@@ -166,8 +166,9 @@ class Optimizer(object):
 
     def disp(self):
         print "*****************************************************************"
-        print "CMAES gen: %s pop size: %s best fitness: " \
-            "%s mean fitness: %s" % (self.gen, self.es.popsize, \
+        print "CMAES wall time: %s gen: %s pop size: %s best fitness: " \
+            "%s mean fitness: %s" % (int(time.time() - self.start_time), \
+            self.gen, self.es.popsize, \
             self.best_fitness, self.mean_fitness)
         print "*****************************************************************"
         # return self.gen, self.best_fitness, self.best_hyperparam
