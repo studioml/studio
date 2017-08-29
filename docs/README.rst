@@ -75,7 +75,7 @@ Further reading and cool features
 
    -  `Amazon EC2 setup instructions <http://studioml.readthedocs.io/en/latest/ec2_setup.html>`__
 
--  `Artifacts management <http://studioml.readthedocs.io/en/latest/artifacts.html>`__
+-  `Artifact management <http://studioml.readthedocs.io/en/latest/artifacts.html>`__
 -  `Hyperparameter search <http://studioml.readthedocs.io/en/latest/hyperparams.html>`__
 -  `Pipeline for trained models <http://studioml.readthedocs.io/en/latest/model_pipelines.html>`__
 

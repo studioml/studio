@@ -6,7 +6,7 @@
 
 |Hex.pm|
 
-Studio is a model management framework written in Python to help simplify and expedite your model building experience. It was developed to minimize the overhead involved with scheduling, running, monitoring and managing artifacts of your machine learning experiments. No one wants to spend their time configuring different machines, setting up dependencies, or playing archeology to track down previous model artifacts.
+Studio is a model management framework written in Python to help simplify and expedite your model building experience. It was developed to minimize the overhead involved with scheduling, running, monitoring and managing artifacts of your machine learning experiments. No one wants to spend their time configuring different machines, setting up dependencies, or playing archeologist to track down previous model artifacts.
 
 Most of the features are compatible with any Python machine learning
 framework (`Keras <https://github.com/fchollet/keras>`__,
@@ -78,7 +78,7 @@ Further reading and cool features
 
    -  `Amazon EC2 setup instructions <docs/ec2_setup.rst>`__
 
--  `Artifacts management <docs/artifacts.rst>`__
+-  `Artifact management <docs/artifacts.rst>`__
 -  `Hyperparameter search <docs/hyperparams.rst>`__
 -  `Pipeline for trained models <docs/model_pipelines.rst>`__
 
