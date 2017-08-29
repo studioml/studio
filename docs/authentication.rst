@@ -17,7 +17,7 @@ mode, in studio/default\_config.yaml, uncomment "guest: true" under the
 database section.
 
 Alternatively, you can set up your own database and configure Studio to
-use it. See `setting up database <http://studioml.readthedocs.io/en/latest/setup_database.html>`__. This is a
+use it. See `setting up a database <http://studioml.readthedocs.io/en/latest/setup_database.html>`__. This is a
 preferred option if you want to keep your models and artifacts private.
 
 Email / password authentication
