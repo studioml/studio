@@ -171,7 +171,7 @@ Cloud workers
 
 Waiting till your local machine runs all experiments one after another
 can be time consuming. Fortunately, we can outsource the compute to google
-cloud or Amazon EC2. Please refer to `this page <cloud.rst>`__ for setup
+cloud or Amazon EC2. Please refer to `this page <http://studioml.readthedocs.io/en/latest/cloud.html>`__ for setup
 instructions; all the custom hardware configuration options can be
 applied to the hyperparameter search as well.
 

@@ -222,7 +222,7 @@ For now the downside of using google cloud storage is that google service accoun
 are used, which means that all users in possession of the credentials
 file have read/write access to the objects in the storage, so in
 principle one user can delete experiments of another. See
-`here <gcloud_setup.rst>`__ for instructions on how to generate service
+`here <http://studioml.readthedocs.io/en/latest/gcloud_setup.html>`__ for instructions on how to generate service
 account credentials. Once you have credentials file generated, uncomment
 "storage" section in your config.yaml file, set type of storage to
 ``gcloud``, and specify storage bucket. Note that bucket name needs to
