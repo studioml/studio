@@ -165,6 +165,7 @@ class FirebaseArtifactStore(TartifactStore):
             if response.status_code != 200:
                 self.logger.info("Response error with code {}"
                                  .format(response.status_code))
+                return (None, None)
 
             return (json.loads(response.content), url)
 

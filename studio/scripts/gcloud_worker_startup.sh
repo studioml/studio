@@ -25,9 +25,6 @@ export GOOGLE_APPLICATION_CREDENTIALS=/credentials.json
 
 gac_path=${GOOGLE_APPLICATION_CREDENTIALS%/*}
 gac_name=${GOOGLE_APPLICATION_CREDENTIALS##*/}
-repo="https://github.com/ilblackdragon/studio"
-branch="master"
-
 #bash_cmd="git clone $repo && \
 #            cd studio && \
 #            git checkout $branch && \
@@ -39,7 +36,7 @@ branch="master"
 #code_url_base="https://storage.googleapis.com/studio-ed756.appspot.com/src"
 #code_ver="tfstudio-64_config_location-2017-08-04_1.tgz"
 repo_url="https://github.com/studioml/studio"
-branch="87_apiserver"
+branch="master"
 sudo apt -y update 
 sudo apt install -y wget python-pip git python-dev
 

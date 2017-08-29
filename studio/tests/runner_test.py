@@ -10,22 +10,22 @@ from local_worker_test import stubtest_worker
 class RunnerTest(unittest.TestCase):
 
     def test_parse_range(self):
-        self.assertTrue(np.isclose(runner.parse_range('1,2,3'),
+        self.assertTrue(np.isclose(runner.parse_range('1,2,3')[0],
                                    [1.0, 2.0, 3.0]).all())
 
-        self.assertTrue(np.isclose(runner.parse_range(':5'),
+        self.assertTrue(np.isclose(runner.parse_range(':5')[0],
                                    [0.0, 1.0, 2.0, 3.0, 4.0, 5.0]).all())
 
-        self.assertTrue(np.isclose(runner.parse_range('2:5'),
+        self.assertTrue(np.isclose(runner.parse_range('2:5')[0],
                                    [2.0, 3.0, 4.0, 5.0]).all())
 
-        self.assertTrue(np.isclose(runner.parse_range('0.1:0.05:0.3'),
+        self.assertTrue(np.isclose(runner.parse_range('0.1:0.05:0.3')[0],
                                    [0.1, 0.15, 0.2, 0.25, 0.3]).all())
 
-        self.assertTrue(np.isclose(runner.parse_range('0.1:3:0.3'),
+        self.assertTrue(np.isclose(runner.parse_range('0.1:3:0.3')[0],
                                    [0.1, 0.2, 0.3]).all())
 
-        self.assertTrue(np.isclose(runner.parse_range('0.01:4l:10'),
+        self.assertTrue(np.isclose(runner.parse_range('0.01:4l:10')[0],
                                    [0.01, 0.1, 1, 10]).all())
 
     def test_unfold_tuples(self):
