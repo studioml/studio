@@ -6,6 +6,8 @@ try:
 except BaseException:
     boto3 = None
 
+from model import parse_verbosity
+
 logging.basicConfig()
 
 
@@ -22,7 +24,7 @@ class SQSQueue(object):
         self._queue_url = create_q_response['QueueUrl']
         self.logger = logging.getLogger('SQSQueue')
         if verbose is not None:
-            self.logger.setLevel(verbose)
+            self.logger.setLevel(parse_verbosity(verbose))
         self._name = name
         self.logger.info('Creating SQS queue with name ' + name)
         self.logger.info('Queue url = ' + self._queue_url)
