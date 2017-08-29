@@ -48,17 +48,17 @@ pip install studioml from the master pypi repositry:
 
     pip install studioml
 
-Find more `details <docs/installation.rst>`__ on installation methods and the release process. 
+Find more `details <http://studioml.readthedocs.io/en/latest/installation.html>`__ on installation methods and the release process. 
 
 Authentication
 --------------
 
-Currently Studio supports 2 methods of authentication: `email / password <docs/authentication.rst#email--password-authentication>`__ and using a `Google account. <docs/authentication.rst#google-account-authentication>`__ To use studio runner and studio ui in guest
+Currently Studio supports 2 methods of authentication: `email / password <http://studioml.readthedocs.io/en/latest/authentication.html#email--password-authentication>`__ and using a `Google account. <http://studioml.readthedocs.io/en/latest/authentication.html#google-account-authentication>`__ To use studio runner and studio ui in guest
 mode, in studio/default\_config.yaml, uncomment "guest: true" under the
 database section.
 
 Alternatively, you can set up your own database and configure Studio to
-use it. See `setting up database <docs/setup_database.rst>`__. This is a
+use it. See `setting up database <http://studioml.readthedocs.io/en/latest/setup_database.html>`__. This is a
 preferred option if you want to keep your models and artifacts private.
 
 
