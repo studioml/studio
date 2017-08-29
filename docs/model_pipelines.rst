@@ -18,7 +18,6 @@ can handle missing data while retaining performance. As a concrete example, let 
 
 We are training a network to classify mnist digits, and then trying to
 predict images from urls. The simplest way to achieve this would be:
-
 ::
 
     from PIL import Image

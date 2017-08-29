@@ -31,7 +31,7 @@ and then run
 
     aws configure
 
-and enter AWS credentials and region. The output format cam be left as
+and enter your AWS credentials and region. The output format cam be left as
 None. Alternatively, use any method of letting boto3 know the
 credentials described here:
 http://boto3.readthedocs.io/en/latest/guide/configuration.html

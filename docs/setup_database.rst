@@ -31,11 +31,13 @@ uncomment the use\_email\_auth tag in your new\_config.yaml. Add
 users. By default, Firebase (both database and storage) grants read and
 write access to all authenticated users. Go to Authentication in the Firebase
 console (on left-hand pane), tab sign-in methods, and enable methods
-that you would like to use. For now, Studio supports Google account
+that you would like to use. 
+
+For now, Studio supports Google account
 authentication and email/password authentication. If you have choosen
 to use the email/password method for authentication, use the Users tab
 of the Authentication panel to manually add yourself with a password.
-This password is not shared by other google services. If this is what
+This password is not shared by other Google services. If this is what
 you want then Google account based authentication is needed, therefore
 you should always use a unique password. Further, you can customize the
 database / storage access rules (good resources are
@@ -44,6 +46,7 @@ https://firebase.google.com/docs/storage/security/start). The default
 rules allow read and write access to all authenticated users, to both
 storage and database. This might not be the behaviour you 
 want because then users can freely delete / modify each other's experiments. 
+
 To make experiments readable by everyone, but writeable only
 by the creator, slightly more sophisticated rules are needed. Examples of such
 rules (that are used at the default Studio Firebase app) are given in

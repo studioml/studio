@@ -1,8 +1,11 @@
 """Data providers."""
 
 import os
-import pip
 import uuid
+try:
+    import pip
+except BaseException:
+    pip = None
 
 import yaml
 import pyrebase
@@ -10,10 +13,14 @@ import logging
 import time
 import glob
 from threading import Thread
-from multiprocessing.pool import ThreadPool
-import subprocess
-
-import tensorflow as tf
+try:
+    from multiprocessing.pool import ThreadPool
+except BaseException:
+    ThreadPool = None
+try:
+    import tensorflow as tf
+except BaseException:
+    tf = None
 try:
     import keras
 except BaseException:
@@ -26,6 +33,7 @@ from auth import FirebaseAuth
 from artifact_store import get_artifact_store
 from firebase_artifact_store import FirebaseArtifactStore
 
+from http_provider import HTTPProvider
 
 logging.basicConfig()
 
@@ -127,6 +135,26 @@ def create_experiment(
         metric=metric)
 
 
+def experiment_from_dict(data, info={}):
+        return Experiment(
+            key=data['key'],
+            filename=data['filename'],
+            args=data.get('args'),
+            pythonenv=data['pythonenv'],
+            project=data.get('project'),
+            status=data['status'],
+            artifacts=data.get('artifacts'),
+            resources_needed=data.get('resources_needed'),
+            time_added=data['time_added'],
+            time_started=data.get('time_started'),
+            time_last_checkpoint=data.get('time_last_checkpoint'),
+            time_finished=data.get('time_finished'),
+            info=info,
+            git=data.get('git'),
+            metric=data.get('metric')
+        )
+
+
 class FirebaseProvider(object):
     """Data provider for Firebase."""
 
@@ -137,14 +165,14 @@ class FirebaseProvider(object):
         self.logger = logging.getLogger('FirebaseProvider')
         self.logger.setLevel(verbose)
 
-        if guest or 'serviceAccount' in db_config.keys():
-            self.auth = None
-        else:
+        self.auth = None
+        if not guest and 'serviceAccount' not in db_config.keys():
             self.auth = FirebaseAuth(self.app,
                                      db_config.get("use_email_auth"),
                                      db_config.get("email"),
                                      db_config.get("password"),
                                      blocking_auth)
+
 
         self.store = store if store else FirebaseArtifactStore(
             db_config, verbose=verbose, blocking_auth=blocking_auth)
@@ -153,7 +181,11 @@ class FirebaseProvider(object):
         self._experiment_cache = {}
 
         iothreads = 10
-        self.pool = ThreadPool(iothreads)
+
+        if ThreadPool:
+            self.pool = ThreadPool(iothreads)
+        else:
+            self.pool = None
 
         if self.auth and not self.auth.expired:
             self.__setitem__(self._get_user_keybase() + "email",
@@ -196,10 +228,10 @@ class FirebaseProvider(object):
             dbobj.remove()
 
     def _get_userid(self):
-        if not self.auth:
-            userid = 'guest'
-        else:
+        userid = None
+        if self.auth:
             userid = self.auth.get_user_id()
+        userid = userid if userid else 'guest'
         return userid
 
     def _get_user_keybase(self, userid=None):
@@ -219,7 +251,8 @@ class FirebaseProvider(object):
         experiment.time_added = time.time()
         experiment.status = 'waiting'
 
-        if os.path.exists(experiment.artifacts['workspace']['local']):
+        if 'local' in experiment.artifacts['workspace'].keys() and \
+                os.path.exists(experiment.artifacts['workspace']['local']):
             experiment.git = git_util.get_git_info(
                 experiment.artifacts['workspace']['local'])
 
@@ -281,16 +314,22 @@ class FirebaseProvider(object):
                          "stopped")
 
     def finish_experiment(self, experiment):
-        self.checkpoint_experiment(experiment, blocking=True)
-        experiment.status = 'finished'
-        experiment.time_finished = time.time()
+        time_finished = time.time()
+        if isinstance(experiment, basestring):
+            key = experiment
+        else:
+            key = experiment.key
+            self.checkpoint_experiment(experiment, blocking=True)
+            experiment.status = 'finished'
+            experiment.time_finished = time_finished
+
         self.__setitem__(self._get_experiments_keybase() +
-                         experiment.key + "/status",
+                         key + "/status",
                          "finished")
 
         self.__setitem__(self._get_experiments_keybase() +
-                         experiment.key + "/time_finished",
-                         experiment.time_finished)
+                         key + "/time_finished",
+                         time_finished)
 
     def delete_experiment(self, experiment):
         if isinstance(experiment, basestring):
@@ -329,43 +368,30 @@ class FirebaseProvider(object):
         self._delete(self._get_experiments_keybase() + experiment.key)
 
     def checkpoint_experiment(self, experiment, blocking=False):
+        if isinstance(experiment, basestring):
+            key = experiment
+            experiment = self.get_experiment(key, getinfo=False)
+        else:
+            key = experiment.key
+
         checkpoint_threads = [
             Thread(
-                target=self.store.put_artifact,
-                args=(art,))
-            for _, art in experiment.artifacts.iteritems()
-            if art['mutable']]
+               target=self.store.put_artifact,
+               args=(art,))
+        for _, art in experiment.artifacts.iteritems()
+            if art['mutable'] and art.get('local')]
 
         for t in checkpoint_threads:
             t.start()
 
         self.__setitem__(self._get_experiments_keybase() +
-                         experiment.key + "/time_last_checkpoint",
+                         key + "/time_last_checkpoint",
                          time.time())
         if blocking:
             for t in checkpoint_threads:
                 t.join()
         else:
             return checkpoint_threads
-
-    def _experiment(self, key, data, info={}):
-        return Experiment(
-            key=key,
-            filename=data['filename'],
-            args=data.get('args'),
-            pythonenv=data['pythonenv'],
-            project=data.get('project'),
-            status=data['status'],
-            artifacts=data.get('artifacts'),
-            resources_needed=data.get('resources_needed'),
-            time_added=data['time_added'],
-            time_started=data.get('time_started'),
-            time_last_checkpoint=data.get('time_last_checkpoint'),
-            time_finished=data.get('time_finished'),
-            info=info,
-            git=data.get('git'),
-            metric=data.get('metric')
-        )
 
     def _get_experiment_info(self, experiment):
         info = {}
@@ -395,13 +421,12 @@ class FirebaseProvider(object):
 
         info['logtail'] = self._get_experiment_logtail(experiment)
 
-        tbpath = self.store.get_artifact(experiment.artifacts['tb'])
-        eventfiles = glob.glob(os.path.join(tbpath, "*"))
-
         if experiment.metric is not None:
             metric_str = experiment.metric.split(':')
             metric_name = metric_str[0]
             metric_type = metric_str[1] if len(metric_str) > 1 else None
+
+            tbtar = self.store.stream_artifact(experiment.artifacts['tb'])
 
             if metric_type == 'min':
                 def metric_accum(x, y): return min(x, y) if x else y
@@ -411,36 +436,39 @@ class FirebaseProvider(object):
                 def metric_accum(x, y): return y
 
             metric_value = None
-            for f in eventfiles:
-                for e in tf.train.summary_iterator(f):
-                    for v in e.summary.value:
-                        if v.tag == metric_name:
-                            metric_value = metric_accum(
-                                metric_value, v.simple_value)
+            for f in tbtar:
+                if f.isreg():
+                    for e in util.event_reader(tbtar.extractfile(f)):
+                        for v in e.summary.value:
+                            if v.tag == metric_name:
+                                metric_value = metric_accum(
+                                    metric_value, v.simple_value)
 
             info['metric_value'] = metric_value
 
         return info
 
     def _get_experiment_logtail(self, experiment):
-        logpath = self.store.get_artifact(experiment.artifacts['output'])
+        try:
+            tarf = self.store.stream_artifact(experiment.artifacts['output'])
+            if not tarf:
+                return None
 
-        if os.path.exists(logpath):
-            tailp = subprocess.Popen(
-                ['tail', '-50', logpath], stdout=subprocess.PIPE)
-            stdoutdata = tailp.communicate()[0]
-            logtail = util.remove_backspaces(stdoutdata).split('\n')
-
-            return logtail
-        else:
+            logdata = tarf.extractfile(tarf.members[0]).read()
+            logdata = util.remove_backspaces(logdata).split('\n')
+            return logdata
+        except BaseException as e:
+            self.logger.info('Getting experiment logtail raised an exception:')
+            self.logger.info(e)
             return None
 
     def get_experiment(self, key, getinfo=True):
         data = self.__getitem__(self._get_experiments_keybase() + key)
         assert data, "data at path %s not found! " % (
             self._get_experiments_keybase() + key)
+        data['key'] = key
 
-        experiment_stub = self._experiment(key, data, {})
+        experiment_stub = experiment_from_dict(data)
 
         if getinfo:
             self._start_info_download(experiment_stub)
@@ -448,22 +476,12 @@ class FirebaseProvider(object):
         info = self._experiment_info_cache.get(key)[0] \
             if self._experiment_info_cache.get(key) else None
 
-        return self._experiment(key, data, info)
+        return experiment_from_dict(data, info)
 
     def _start_info_download(self, experiment):
         key = experiment.key
         if key not in self._experiment_info_cache.keys():
             self._experiment_info_cache[key] = ({}, time.time())
-
-        try:
-            pass
-            # self._experiment_info_cache[key]['logtail'] = \
-            #    self._get_experiment_logtail(experiment)
-
-            # self._experiment_info_cache[key] = \
-            #     self._get_experiment_info(experiment)
-        except Exception:
-            pass
 
         def download_info():
             try:
@@ -483,11 +501,19 @@ class FirebaseProvider(object):
 
             self.logger.debug("Starting info download for " + key)
             if self.pool:
-                self.pool.map_async(download_info, [None])
+                Thread(target=download_info).start()
             else:
                 download_info()
 
     def get_user_experiments(self, userid=None, blocking=True):
+        if userid and '@' in userid:
+            users = self.get_users()
+            user_ids = [u for u in users if users[u].get('email') == userid]
+            if len(user_ids) < 1:
+                return None
+            else:
+                userid = user_ids[0]
+
         experiment_keys = self.__getitem__(
             self._get_user_keybase(userid) + "/experiments")
         if not experiment_keys:
@@ -560,6 +586,17 @@ class FirebaseProvider(object):
         else:
             return False
 
+    def can_write_experiment(self, key=None, user=None):
+        assert key is not None
+        user = user if user else self._get_userid()
+
+        owner = self.__getitem__(
+            self._get_experiments_keybase() + key + "/owner")
+        if owner is None:
+            return True
+        else:
+            return (owner == user)
+
     def __enter__(self):
         return self
 
@@ -620,6 +657,9 @@ class PostgresProvider(object):
     def is_auth_expired(self):
         raise NotImplementedError()
 
+    def can_write_experiment(self, key=None, user=None):
+        raise NotImplementedError()
+
 
 def get_config(config_file=None):
 
@@ -642,12 +682,14 @@ def get_config(config_file=None):
 
             def replace_with_env(config):
                 for key, value in config.iteritems():
-                    if isinstance(value, str) and value.startswith('$'):
+                    if isinstance(value, basestring) and value.startswith('$'):
                         config[key] = os.environ.get(value[1:])
+
                     elif isinstance(value, dict):
                         replace_with_env(value)
 
             replace_with_env(config)
+            
             return config
 
     raise ValueError('None of the config paths {} exits!'
@@ -669,12 +711,14 @@ def get_db_provider(config=None, blocking_auth=True):
 
     assert 'database' in config.keys()
     db_config = config['database']
-    if db_config['type'].lower() == 'firebase'.lower():
+    if db_config['type'].lower() == 'firebase':
         return FirebaseProvider(
             db_config,
             blocking_auth,
             verbose=verbose,
             store=artifact_store)
+    elif db_config['type'].lower() == 'http':
+        return HTTPProvider(db_config, store=artifact_store)
     else:
         raise ValueError('Unknown type of the database ' + db_config['type'])
 

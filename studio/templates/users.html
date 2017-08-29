@@ -1,19 +1,49 @@
 {% extends "base.html" %}
 
 {% block content %}
-    <div class="container">
-        <h1>Users</h1>
-        <table class="table table-striped">
-            {% for user in users.keys() %}
-                <tr>
-                    {% if 'email' in users[user].keys() %}
-                        <td><a href="/user/{{ user }}">{{ users[user]['email'] }}</a></td>
-                    {% else %}
-                        <td><a href="/user/{{ user }}">{{ user }}</a></td>
-                    {% endif %}
-                    <td>{{ user }}</td>
-                </tr>
-            {% endfor %}
-        </table>
-    </div>
+    <h1>Users</h1>
+    <table class="table table-striped" id="usersTable"></table>
+
+    <script>
+        $(authWidget(function() {
+            reload(() => data_ajax('get_users'), fillUsersTable)
+        }));
+    
+        $(function() {
+            $('#usersTable').DataTable({
+                "paging":false,
+                "saveState":true,
+                "columns": [
+                    {
+                        "title":"Email",
+                        "render": function(data, type, row) {
+                            return '<a href=/user/'+ data + '>' + data + '</a>'
+                        }
+                    },
+                    {
+                        "title":"UserID",
+                        "render": function(data, type, row) {
+                            return '<a href=/user/'+ row[1] + '>' + data + '</a>'
+                        }
+                    }
+                ]
+            });
+        });
+        
+        function fillUsersTable(response) {
+            table = $('#usersTable').DataTable()
+            data = JSON.parse(response)
+            if (data.status == 'ok') {
+                table.clear()
+                for (var user in data.users) {
+                    table.row.add([
+                        data.users[user]['email'],
+                        user
+                    ]);
+                }
+                table.draw()
+            }
+        }
+        
+    </script>
 {% endblock %}

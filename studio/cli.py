@@ -10,14 +10,16 @@ logging.basicConfig()
 
 _my_logger = None
 
+
 def print_help():
- print('Usage: studio runs [command] arguments')
- print('\ncommand can be one of the following:')
- print('')
- print('\tlist [filter] [username] - display experiments')
- print('\tstop [experiment] - stop running experiment')
- print('\tkill [experiment] - stop and delete experiment')
- print('')
+    print('Usage: studio runs [command] arguments')
+    print('\ncommand can be one of the following:')
+    print('')
+    print('\tlist [username] - display experiments')
+    print('\tstop [experiment] - stop running experiment')
+    print('\tkill [experiment] - stop and delete experiment')
+    print('')
+
 
 def main():
     parser = argparse.ArgumentParser()
@@ -26,15 +28,15 @@ def main():
     cli_args, script_args = parser.parse_known_args(sys.argv)
 
     get_logger().setLevel(10)
- 
+
     if len(script_args) < 2:
-        logger.critical('No command provided!')
+        get_logger().critical('No command provided!')
         parser.print_help()
         print_help()
         return
 
     cmd = script_args[1]
-    
+
     if cmd == 'list':
         _list(script_args[2:], cli_args)
     elif cmd == 'stop':
@@ -48,6 +50,7 @@ def main():
         print_help()
         return
 
+
 def _list(args, cli_args):
     with model.get_db_provider(cli_args.config) as db:
         if len(args) == 0:
@@ -60,7 +63,7 @@ def _list(args, cli_args):
             users = db.get_users()
             for u in users.keys():
                 print users[u].get('email')
-            return 
+            return
         elif args[0] == 'user':
             assert len(args) == 2
             users = db.get_users()
@@ -81,14 +84,14 @@ def _list(args, cli_args):
 
     # TODO list experiments of other user or all
 
-    experiments.sort(key=lambda e:-e.time_added)
+    experiments.sort(key=lambda e: -e.time_added)
     table = [['Time added', 'Key', 'Project', 'Status']]
 
     for e in experiments:
         table.append([
-            time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(e.time_added)),
-            e.key, 
-            e.project, 
+            time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(e.time_added)),
+            e.key,
+            e.project,
             e.status])
 
     print AsciiTable(table).table
@@ -100,11 +103,13 @@ def _stop(args, cli_args):
             get_logger().info('Stopping experiment ' + e)
             db.stop_experiment(e)
 
+
 def _kill(args, cli_args):
     with model.get_db_provider(cli_args.config) as db:
         for e in args:
             get_logger().info('Deleting experiment ' + e)
             db.delete_experiment(e)
+
 
 def get_logger():
     global _my_logger
@@ -115,4 +120,3 @@ def get_logger():
 
 if __name__ == '__main__':
     main()
-

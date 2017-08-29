@@ -12,6 +12,5 @@ database:
  
 storage:
     type: s3
-    endpoint: "s3-us-west-2.amazonaws.com"
     bucket: "studioml-artifacts"
 

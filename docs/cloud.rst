@@ -4,8 +4,8 @@ Cloud computing
 Studio can be configured to submit jobs to the cloud. Right
 now, only Google Cloud is supported (CPU only), as well as Amazon EC2
 (CPU and GPU). Specifically, once configured (see
-`here <gcloud_setup.rst>`__ for configuration instructions for Google
-Cloud, and `here <ec2_setup.rst>`__ for EC2) the command
+`here <http://studioml.readthedocs.io/en/latest/gcloud_setup.html>`__ for configuration instructions for Google
+Cloud, and `here <http://studioml.readthedocs.io/en/latest/ec2_setup.html>`__ for EC2) the command
 
 ::
 
@@ -17,24 +17,18 @@ progress of the job in ``studio ui``. Different experiments might require
 different hardware. Fortunately, Google Cloud offers flexibility of
 instance configuration, and Amazon EC2 offers a variety of instances to
 select from; Studio can leverage either. To specify the number of
-cpus or gpus needed, use flags --cpus and --gpus respectively. That is,
-command
-
+cpus or gpus needed, use flags ``--cpus`` and ``--gpus`` respectively. That is,
+the command:
 ::
 
     studio run --cloud={gcloud|ec2|gcspot|ec2spot} --cpus=8 --gpus=1 my_script.py 
 
-| will create an instance with 8 cpus and 1 gpu. The top of the line gpu
-  in Amazon EC2 is Tesla K80 at the moment, and that's the only one
-  available through Studio; we might provide some gpu selection flags
-  in the future as well.
-| The amount of ram and hard drive space can be configured via the ``--ram`` /
-  ``--hdd`` flags (using standard suffixes like g(G,Gb,GiB), m(M,MiB)). Note
-  that the amount of RAM will be rounded up to the next factor of 256 Mb.
-  Also note that for now extended RAM for Google Cloud is not supported,
-  which means the amount of RAM per CPU should be between 1 and 6 Gb. For
-  Amazon EC2, Studio will find the cheapest instances with higher specs
-  than required, or throw an exception for too extravagant of a request.
+will create an instance with 8 cpus and 1 gpu. The top of the line gpu
+in Amazon EC2 is Tesla K80 at the moment, and that's the only one
+available through Studio; we might provide some gpu selection flags
+in the future as well.
+  
+The amount of ram and hard drive space can be configured via the ``--ram`` / ``--hdd`` flags (using standard suffixes like g(G,Gb,GiB), m(M,MiB)). Note that the amount of RAM will be rounded up to the next factor of 256 Mb. Also note that for now extended RAM for Google Cloud is not supported, which means the amount of RAM per CPU should be between 1 and 6 Gb. For Amazon EC2, Studio will find the cheapest instances with higher specs than required, or throw an exception for too extravagant of a request.
 
 Running on EC2 spot instances
 -----------------------------
@@ -51,7 +45,9 @@ instance-hour. As long as the instance-hour price is below the specified
 limit (bid), the user is pays the current price and uses the instance.
 Otherwise, the instance shuts down and is given to the higher
 bidder. For a more detailed explanation, refer to the spot instnces user guide
-https://aws.amazon.com/ec2/spot/. As you might have guessed,
+https://aws.amazon.com/ec2/spot/. 
+
+As you might have guessed,
 when running with the ``--cloud=ec2spot`` option the job is submitted to
 spot instances. You can additionally specify how much are you
 willing to pay for these instances via ``--bid=<bid_in_usd>`` or
@@ -73,7 +69,9 @@ called auto-scaling, and in the simplest setting it tries to keep number
 of running instances constant. Studio handles downsizing of the
 auto-scaling groups when some workers are done and there is no work left
 in the queue. You can specify this behaviour by setting the
-``--num-workers`` flag. Autoscaling allows more complex behaviour, such
+``--num-workers`` flag. 
+
+Autoscaling allows more complex behaviour, such
 as spinning up extra machines if there are too many messages in the queue.
 The default behaviour of Studio is as follows - start start with one spot
 worker, and scale up when the number of outstanding work messages in the
@@ -89,7 +87,9 @@ they can be taken away at any moment with very little or no notice. They
 are different from EC2 spot instances in the bidding / market system -
 the prices on preemptible instances are fixed and depend only on
 hardware configuration. Thus, ``--bid`` has no effect when running with
-``--cloud=gcspot``. Also, autoscaling on a queue for Google Cloud is in
+``--cloud=gcspot``. 
+
+Also, autoscaling on a queue for Google Cloud is in
 an alpha state and has some serious limitations; as such, we do not
 support it just yet. The required number of workers has to be
 specified via ``--num-workers`` (the default is 1), and Google group will

@@ -5,64 +5,82 @@ logging.basicConfig()
 
 
 class PubsubQueue(object):
-    def __init__(self, queue_name, sub_name=None, verbose=10):
+    def __init__(self, queue_name, project_name='studio-ed756', sub_name=None, verbose=10):
         assert 'GOOGLE_APPLICATION_CREDENTIALS' in os.environ.keys()
-        self.client = pubsub.Client()
-        self.topic = self.client.topic(queue_name)
         self.logger = logging.getLogger(self.__class__.__name__)
         self.logger.setLevel(verbose)
+
+        self.pubclient = pubsub.PublisherClient() 
+        self.subclient = pubsub.SubscriberClient() 
+ 
+        self.project = project_name
+        self.topic_name = self.pubclient.topic_path(project_name, queue_name)
+        self.logger.info("Topic name = {}".format(self.topic_name))
+        try:
+            self.pubtopic = self.pubclient.get_topic(self.topic_name)
+        except BaseException as e:
+            self.pubtopic = self.pubclient.create_topic(self.topic_name)
+            self.logger.info('topic {} created'.format(self.topic_name))
+
         sub_name = sub_name if sub_name else queue_name + "_sub"
         self.logger.info("Topic name = {}".format(queue_name))
         self.logger.info("Subscription name = {}".format(sub_name))
-        if queue_name not in [t.name for t in self.client.list_topics()]:
-            self.topic.create()
-            self.logger.info('topic {} created'.format(queue_name))
 
-        self.subscription = self.topic.subscription(sub_name)
-        if sub_name not in [s.name for s in self.topic.list_subscriptions()]:
-            self.subscription.create()
-            self.logger.info('subscription {} created'.format(sub_name))
+        self.sub_name = self.subclient.subscription_path(project_name, sub_name)
+        try:
+            self.subclient.get_subscription(self.sub_name)
+        except BaseException as e:
+            self.logger.warn(e)
+            self.subclient.create_subscription(self.sub_name, self.topic_name)
+            
+        self.logger.info('subscription {} created'.format(sub_name))
 
     def clean(self):
         while self.has_next():
             self.dequeue()
 
     def get_name(self):
-        return self.topic.name
+        return self.subclient.match_topic_from_topic_name(self.topic_name)
 
     def has_next(self):
-        messages = self.subscription.pull(
+        response = self.subclient.api.pull(
+            self.sub_name,
             return_immediately=True, max_messages=1)
+        messages = response.received_messages
         retval = any(messages)
 
         for m in messages:
-            self.hold(m[0], 0)
+            self.hold(m.ack_id, 0)
 
         return retval
 
     def enqueue(self, data):
         data = data.encode('utf-8')
-        msg_id = self.topic.publish(data)
+        msg_id = self.pubclient.publish(self.topic_name, data)
         self.logger.debug('Message with id {} published'.format(msg_id))
 
     def dequeue(self, acknowledge=True):
 
-        msgs = self.subscription.pull(return_immediately=True, max_messages=1)
+        response = self.subclient.api.pull(
+                self.sub_name, 
+                return_immediately=True, max_messages=1)
+        msgs = response.received_messages
+
         if not any(msgs):
             return None
-
+        
         retval = msgs[0]
 
         if acknowledge:
-            self.acknowledge(retval[0])
+            self.acknowledge(retval.ack_id)
             self.logger.debug("Message {} received and acknowledged"
-                              .format(retval[1].message_id))
+                              .format(retval.message.message_id))
 
-            return retval[1].data
+            return retval.message.data
         else:
             self.logger.debug("Message {} received, ack_id {}"
-                              .format(retval[1].message_id, retval[0]))
-            return (retval[1].data, retval[0])
+                              .format(retval.message.message_id, retval.ack_id))
+            return (retval.message.data, retval.ack_id)
 
     def hold(self, ack_key, delay=5):
         self.logger.debug(
@@ -70,8 +88,8 @@ class PubsubQueue(object):
              "min for {}").format(
                 delay,
                 ack_key))
-        self.subscription.modify_ack_deadline([ack_key], int(delay * 60))
+        self.subclient.modify_ack_deadline(self.sub_name, [ack_key], int(delay * 60))
 
     def acknowledge(self, ack_key):
         self.logger.debug("Message with key {} acknowledged".format(ack_key))
-        self.subscription.acknowledge([ack_key])
+        self.subclient.acknowledge(self.sub_name, [ack_key])

@@ -318,6 +318,7 @@ class GCloudArtifactStoreTest(ArtifactStoreTest, unittest.TestCase):
         store = self.get_store()
         return "gs://" + store.bucket.name + "/"
 
+
 @unittest.skipIf(
     boto3 is None,
     'boto3 module not found, '
@@ -332,7 +333,9 @@ class S3ArtifactStoreTest(ArtifactStoreTest, unittest.TestCase):
 
     def get_qualified_location_prefix(self):
         store = self.get_store()
-        return "s3://s3.amazonaws.com/" + store.bucket + "/"
+        endpoint = boto3.client('s3')._endpoint.host
+        return "s3://" + endpoint + "/" + store.bucket + "/"
+
 
 if __name__ == "__main__":
     unittest.main()

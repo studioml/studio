@@ -8,6 +8,7 @@ import logging
 import os
 import base64
 import requests
+import json
 
 from gpu_util import memstr2int
 
@@ -63,20 +64,21 @@ _instance_specs = {
 class EC2WorkerManager(object):
 
     def __init__(self, auth_cookie=None):
-        self.client = boto3.client('ec2')
-        self.asclient = boto3.client('autoscaling')
-        self.cwclient = boto3.client('cloudwatch')
+        self.region = 'us-east-1'
+        self.client = boto3.client('ec2', region_name=self.region)
+        self.asclient = boto3.client('autoscaling', region_name=self.region)
+        self.cwclient = boto3.client('cloudwatch', region_name=self.region)
 
         self.logger = logging.getLogger('EC2WorkerManager')
         self.logger.setLevel(10)
         self.auth_cookie = auth_cookie
-        self.region = 'us-east-1'
 
         self.prices = self._get_ondemand_prices(_instance_specs.keys())
 
     def _get_image_id(self):
-        # vanilla ubuntu 14.04 image
-        return 'ami-d15a75c7'
+        # vanilla ubuntu 16.04 image
+        # return 'ami-d15a75c7'
+        return 'ami-cd0f5cb6'
 
     def _get_block_device_mappings(self, resources_needed):
         return [{
@@ -169,8 +171,11 @@ class EC2WorkerManager(object):
             auth_key = None
             auth_data = None
 
-        with open(os.environ['GOOGLE_APPLICATION_CREDENTIALS'], 'r') as f:
-            credentials = f.read()
+        if 'GOOGLE_APPLICATION_CREDENTIALS' in os.environ.keys():
+            with open(os.environ['GOOGLE_APPLICATION_CREDENTIALS'], 'r') as f:
+                credentials = f.read()
+        else:
+            credentials = ""
 
         startup_script_filename = 'scripts/ec2_worker_startup.sh'
 
@@ -317,17 +322,29 @@ class EC2WorkerManager(object):
             )
 
     def _get_ondemand_prices(self, instances=_instance_specs.keys()):
-        self.logger.info(
-            'Getting prices info from AWS (this may take a moment...)')
-        r = requests.get(
-            'https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/' +
-            'AmazonEC2/current/index.json')
-        if r.status_code != 200:
-            self.logger.error(
-                'Getting AWS offers returned code {}'.format(
-                    r.status_code))
+        price_path = os.path.join(os.path.expanduser('~'), '.studioml',
+                                  'awsprices.json')
+        try:
+            self.logger.info('Reading AWS prices from cache...')
+            with open(price_path, 'r') as f:
+                offer_dict = json.load(f)
 
-        offer_dict = r.json()
+        except BaseException:
+            self.logger.info(
+                'Getting prices info from AWS (this may take a moment...)')
+
+            r = requests.get(
+                'https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/' +
+                'AmazonEC2/current/index.json')
+            if r.status_code != 200:
+                self.logger.error(
+                    'Getting AWS offers returned code {}'.format(
+                        r.status_code))
+
+            offer_dict = r.json()
+            with open(price_path, 'w') as f:
+                f.write(json.dumps(offer_dict))
+
         self.logger.info('Done!')
 
         region_name = 'US East (N. Virginia)'

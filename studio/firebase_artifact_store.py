@@ -20,12 +20,14 @@ class FirebaseArtifactStore(TartifactStore):
         guest = db_config.get('guest')
 
         self.app = pyrebase.initialize_app(db_config)
-        self.auth = FirebaseAuth(self.app,
-                                 db_config.get("use_email_auth"),
-                                 db_config.get("email"),
-                                 db_config.get("password"),
-                                 blocking_auth) \
-            if not guest else None
+
+        self.auth = None
+        if not guest and 'serviceAccount' not in db_config.keys():
+            self.auth = FirebaseAuth(self.app,
+                                     db_config.get("use_email_auth"),
+                                     db_config.get("email"),
+                                     db_config.get("password"),
+                                     blocking_auth)
 
         self.logger = logging.getLogger('FirebaseArtifactStore')
         self.logger.setLevel(verbose)
@@ -64,7 +66,7 @@ class FirebaseArtifactStore(TartifactStore):
                     self.app.storage().storage_bucket,
                     escaped_key)
 
-                response = requests.get(
+                response = self.app.requests.get(
                     url,
                     stream=True,
                     headers=headers,
@@ -102,7 +104,7 @@ class FirebaseArtifactStore(TartifactStore):
                 self.app.storage().storage_bucket,
                 escaped_key)
 
-            response = requests.delete(
+            response = self.app.requests.delete(
                 url, headers=headers, verify=certifi.old_where())
             if response.status_code != 204:
                 raise ValueError("Response error with code {}, text {}"
@@ -158,11 +160,12 @@ class FirebaseArtifactStore(TartifactStore):
                 self.app.storage().storage_bucket,
                 escaped_key)
 
-            response = requests.get(
+            response = self.app.requests.get(
                 url, headers=headers, verify=certifi.old_where())
             if response.status_code != 200:
-                raise ValueError("Response error with code {}"
+                self.logger.info("Response error with code {}"
                                  .format(response.status_code))
+                return (None, None)
 
             return (json.loads(response.content), url)
 
