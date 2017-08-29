@@ -65,19 +65,19 @@ preferred option if you want to keep your models and artifacts private.
 Further reading and cool features
 ---------------------------------
 
--  `Running experiments remotely <docs/remote_worker.rst>`__
+-  `Running experiments remotely <studioml.readthedocs.io/en/latest/remote_worker.html>`__
    
-   -  `Custom Python environments for remote workers <docs/customenv.rst>`__
+   -  `Custom Python environments for remote workers <studioml.readthedocs.io/en/latest/customenv.html>`__
 
--  `Running experiments in the cloud <docs/cloud.rst>`__
+-  `Running experiments in the cloud <studioml.readthedocs.io/en/latest/cloud.html>`__
 
-   -  `Google Cloud setup instructions <docs/gcloud_setup.rst>`__
+   -  `Google Cloud setup instructions <studioml.readthedocs.io/en/latest/gcloud_setup.html>`__
 
-   -  `Amazon EC2 setup instructions <docs/ec2_setup.rst>`__
+   -  `Amazon EC2 setup instructions <studioml.readthedocs.io/en/latest/ec2_setup.html>`__
 
--  `Artifacts management <docs/artifacts.rst>`__
--  `Hyperparameter search <docs/hyperparams.rst>`__
--  `Pipeline for trained models <docs/model_pipelines.rst>`__
+-  `Artifacts management <studioml.readthedocs.io/en/latest/artifacts.html>`__
+-  `Hyperparameter search <studioml.readthedocs.io/en/latest/hyperparams.html>`__
+-  `Pipeline for trained models <studioml.readthedocs.io/en/latest/model_pipelines.html>`__
 
 .. |Hex.pm| image:: https://img.shields.io/hexpm/l/plug.svg
    :target: https://github.com/studioml/studio/blob/master/LICENSE
