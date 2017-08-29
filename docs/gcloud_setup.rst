@@ -46,7 +46,7 @@ Account Actor", and then scroll down to "Compute Engine" and select "Compute
 Engine Admin (v1)". Then scroll down to "Pub/Sub", and add a role
 "Pub/Sub editor" (this is required to create queues, publish and read
 messages from them). If you are planning to use Google Cloud storage
-(directly, without the Firebase layer) for artifact storage, select Storage
+(directly, without the Firebase layer) for artifact storage, select the Storage
 Admin role as well. You can also add other roles if you are planning to use
 these credentials in other applications. When done, click "Create".
 Google Cloud console should generate a json credentials file and save it
