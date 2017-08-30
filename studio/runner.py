@@ -185,7 +185,8 @@ def main(args=sys.argv):
 
     parser.add_argument(
         '--branch',
-        help='Branch of studioml to run when running remotely',
+        help='Branch of studioml to use when running remote worker, useful ' +
+             'for debugging pull requests',
         default='master')
 
     # detect which argument is the script filename
