@@ -343,7 +343,7 @@ def submit_experiments(experiments, resources_needed, config, runner_args,
             if queue_name is None:
                 queue_name = 'pubsub_' + str(uuid.uuid4())
                 worker_manager = GCloudWorkerManager(
-                    user_startup_script=runner_args.user_startup_script,
+                    runner_args=runner_args,
                     auth_cookie=auth_cookie,
                     zone=config['cloud']['zone']
                 )
@@ -355,7 +355,7 @@ def submit_experiments(experiments, resources_needed, config, runner_args,
             if queue_name is None:
                 queue_name = 'sqs_' + str(uuid.uuid4())
                 worker_manager = EC2WorkerManager(
-                    user_startup_script=runner_args.user_startup_script,
+                    runner_args=runner_args,
                     auth_cookie=auth_cookie
                 )
 
