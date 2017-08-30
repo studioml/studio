@@ -271,7 +271,7 @@ def delete_experiment():
             raise ValueError('Unauthorized')
 
     except BaseException as e:
-        status = e.message
+        status = str(e)
 
     toc = time.time()
     getlogger().info('Processed delete_experiment request in {} s'
@@ -406,9 +406,6 @@ def checkpoint_experiment():
     return json.dumps({'status':status, 'artifacts':artifacts})
 
  
-
-
-
 
 def get_and_verify_user(request):
     if not request.headers or 'Authorization' not in request.headers.keys():

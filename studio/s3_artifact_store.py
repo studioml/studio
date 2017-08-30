@@ -38,7 +38,12 @@ class S3ArtifactStore(TartifactStore):
     def _get_file_url(self, key):
         return self.client.generate_presigned_url(
             'get_object', Params={'Bucket': self.bucket, 'Key': key})
-
+    
+    def _get_file_post(self, key):
+        return self.client.generate_presigned_post(
+            Bucket=self.bucket,
+            Key=key)
+    
     def _get_file_timestamp(self, key):
         obj = boto3.resource('s3').Object(self.bucket, key)
 

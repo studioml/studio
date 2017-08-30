@@ -245,6 +245,12 @@ class TartifactStore(object):
             return self._get_file_url(artifact['key'])
         return None
 
+    def get_artifact_post(self, artifact):
+        if 'key' in artifact.keys():
+            return self._get_file_post(artifact['key'])
+        return None
+    
+
     def delete_artifact(self, artifact):
         if 'key' in artifact.keys():
             self._delete_file(artifact['key'])

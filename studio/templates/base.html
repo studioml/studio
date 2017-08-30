@@ -176,7 +176,7 @@
                 data_ajax('delete_experiment', data={"key":selectedData[i][0]}).then((response) => {
                     data = JSON.parse(response);
                     if (data.status != 'ok') {
-                        alert(data.status);
+                        alert(response);
                     }       
                 });                   
             }            
