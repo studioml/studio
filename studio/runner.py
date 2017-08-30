@@ -183,6 +183,11 @@ def main(args=sys.argv):
         help='Path of script to run immediately before running the remote worker',
         default=None)
 
+    parser.add_argument(
+        '--branch',
+        help='Branch of studioml to run when running remotely',
+        default='master')
+
     # detect which argument is the script filename
     # and attribute all arguments past that index as related to the script
     py_suffix_args = [i for i, arg in enumerate(args) if arg.endswith('.py')]

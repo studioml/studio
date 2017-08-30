@@ -63,8 +63,8 @@ _instance_specs = {
 
 class EC2WorkerManager(object):
 
-    def __init__(self, user_startup_script, auth_cookie=None, verbose=10):
-        self.user_startup_script = user_startup_script
+    def __init__(self, runner_args, auth_cookie=None, verbose=10):
+        self.runner_args = runner_args
         self.startup_script_file = os.path.join(
             os.path.dirname(__file__),
             'scripts/ec2_worker_startup.sh')
@@ -112,7 +112,8 @@ class EC2WorkerManager(object):
 
         startup_script = self._get_startup_script(resources_needed, queue_name,
             timeout=timeout)
-        startup_script = insert_user_startup_script(self.user_startup_script,
+        startup_script = insert_user_startup_script(
+            self.runner_args.user_startup_script,
             startup_script, self.logger)
 
         if ssh_keypair is not None:
@@ -206,7 +207,8 @@ class EC2WorkerManager(object):
             autoscaling_group=autoscaling_group if autoscaling_group else "",
             region=self.region,
             use_gpus=0 if resources_needed['gpus'] == 0 else 1,
-            timeout=timeout
+            timeout=timeout,
+            studioml_branch=self.runner_args.branch
         )
 
         self.logger.info('Startup script:')
@@ -261,7 +263,8 @@ class EC2WorkerManager(object):
 
         startup_script = self._get_startup_script(
             resources_needed, queue_name, asg_name, timeout=timeout)
-        startup_script = insert_user_startup_script(self.user_startup_script,
+        startup_script = insert_user_startup_script(
+            self.runner_args.user_startup_script,
             startup_script, self.logger)
 
         if bid_price.endswith('%'):
