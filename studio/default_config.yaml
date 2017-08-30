@@ -11,7 +11,7 @@ database:
 
     # serviceAccount: $GOOGLE_APPLICATION_CREDENTIALS
     # guest: true
-    # use_email_auth: true
+    use_email_auth: false
 
 
 
