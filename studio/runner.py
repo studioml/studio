@@ -329,21 +329,19 @@ def submit_experiments(experiments, resources_needed, config, runner_args,
                 queue_name = 'pubsub_' + str(uuid.uuid4())
                 worker_manager = GCloudWorkerManager(
                     auth_cookie=auth_cookie,
-                    zone=config['cloud']['zone'],
-                    verbose=verbose
+                    zone=config['cloud']['zone']
                 )
 
-            queue = PubsubQueue(queue_name, verbose=runner_args.verbose)
+            queue = PubsubQueue(queue_name, config['database']['projectId'], verbose=verbose)
 
-        elif runner_args.cloud in ['ec2', 'ec2spot']:
+        if runner_args.cloud in ['ec2', 'ec2spot']:
             if queue_name is None:
                 queue_name = 'sqs_' + str(uuid.uuid4())
                 worker_manager = EC2WorkerManager(
-                    auth_cookie=auth_cookie,
-                    verbose=verbose
+                    auth_cookie=auth_cookie
                 )
 
-            queue = SQSQueue(queue_name, verbose=runner_args.verbose)
+            queue = SQSQueue(queue_name, verbose=verbose)
 
         if launch_workers:
             if runner_args.cloud == 'gcloud' or \
@@ -354,25 +352,29 @@ def submit_experiments(experiments, resources_needed, config, runner_args,
                 for i in range(num_workers):
                     worker_manager.start_worker(
                         queue_name, resources_needed,
-                        ssh_keypair=runner_args.ssh_keypair,
-                        timeout=runner_args.cloud_timeout)
+                        ssh_keypair=runner_args.ssh_keypair)
             else:
                 assert runner_args.bid is not None
                 if runner_args.num_workers:
                     start_workers = runner_args.num_workers
                     queue_upscaling = False
                 else:
-                    start_workers = 1
-                    queue_upscaling = True
+                    assert runner_args.bid is not None
+                    if runner_args.num_workers:
+                        start_workers = runner_args.num_workers
+                        queue_upscaling = False
+                    else:
+                        start_workers = 1
+                        queue_upscaling = True
 
-                worker_manager.start_spot_workers(
-                    queue_name,
-                    runner_args.bid,
-                    resources_needed,
-                    start_workers=start_workers,
-                    queue_upscaling=queue_upscaling,
-                    ssh_keypair=runner_args.ssh_keypair,
-                    timeout=runner_args.cloud_timeout)
+                    worker_manager.start_spot_workers(
+                        queue_name,
+                        runner_args.bid,
+                        resources_needed,
+                        start_workers=start_workers,
+                        queue_upscaling=queue_upscaling,
+                        ssh_keypair=runner_args.ssh_keypair,
+                        timeout=runner_args.cloud_timeout)
 
     else:
         if queue_name == 'local':
@@ -381,7 +383,7 @@ def submit_experiments(experiments, resources_needed, config, runner_args,
         elif queue_name.startswith('sqs_'):
             queue = SQSQueue(queue_name, verbose=verbose)
         else:
-            queue = PubsubQueue(queue_name, verbose=verbose)
+            queue = PubsubQueue(queue_name, config['database']['projectId'], verbose=verbose)
 
     for e in experiments:
         queue.enqueue(json.dumps({

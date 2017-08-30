@@ -7,8 +7,9 @@ from model import parse_verbosity
 logging.basicConfig()
 
 class PubsubQueue(object):
-    def __init__(self, queue_name, project_name='studio-ed756', sub_name=None, verbose=10):
+    def __init__(self, queue_name, project_name, sub_name=None, verbose=10):
         assert 'GOOGLE_APPLICATION_CREDENTIALS' in os.environ.keys()
+        assert project_name != ''
         self.logger = logging.getLogger(self.__class__.__name__)
         if verbose is not None:
             self.logger.setLevel(parse_verbosity(verbose))
