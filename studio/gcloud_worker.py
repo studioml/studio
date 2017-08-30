@@ -9,6 +9,7 @@ import math
 import json
 
 from gpu_util import memstr2int
+from cloud_worker_util import insert_user_startup_script
 
 logging.basicConfig()
 
@@ -125,40 +126,6 @@ class GCloudWorkerManager(object):
 
         self.logger.info('Managed groupd {} created'.format(group_name))
 
-    def _insert_user_startup_script(self, startup_script_str):
-        try:
-            with open(os.path.abspath(os.path.expanduser( \
-                self.user_startup_script))) as f:
-                user_startup_script_lines = f.read().splitlines()
-        except:
-            if self.user_startup_script is not None:
-                self.logger.warn("User startup script (%s) cannot be loaded" %
-                    self.user_startup_script)
-            return startup_script_str
-
-        startup_script_lines = startup_script_str.splitlines()
-        new_startup_script_lines = []
-        for line in startup_script_lines:
-
-            if line.startswith("studio remote worker") or \
-                line.startswith("studio-remote-worker"):
-                new_startup_script_lines.append("current_working_dir=$(pwd)\n")
-                new_startup_script_lines.append("cd\n")
-                for user_line in user_startup_script_lines:
-                    if user_line.startswith("#!"):
-                        continue
-                    new_startup_script_lines.append("%s\n" % user_line)
-                new_startup_script_lines.append("cd $current_working_dir\n")
-
-            new_startup_script_lines.append("%s\n" % line)
-
-        new_startup_script = "".join(new_startup_script_lines)
-        self.logger.info('Default startup script with user startup script'
-            ' inserted:')
-        self.logger.info(new_startup_script)
-
-        return new_startup_script
-
     def _get_instance_config(self, resources_needed, queue_name):
         image_response = self.compute.images().getFromFamily(
             project='debian-cloud', family='debian-9').execute()
@@ -170,7 +137,8 @@ class GCloudWorkerManager(object):
 
         with open(self.startup_script_file, 'r') as f:
             startup_script = f.read()
-        startup_script =  self._insert_user_startup_script(startup_script)
+        startup_script =  insert_user_startup_script(self.user_startup_script,
+            startup_script, self.logger)
 
         with open(os.environ['GOOGLE_APPLICATION_CREDENTIALS'], 'r') as f:
             credentials = f.read()

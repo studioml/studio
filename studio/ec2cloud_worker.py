@@ -11,7 +11,7 @@ import requests
 import json
 
 from gpu_util import memstr2int
-
+from cloud_worker_util import insert_user_startup_script
 
 logging.basicConfig()
 
@@ -112,7 +112,8 @@ class EC2WorkerManager(object):
 
         startup_script = self._get_startup_script(resources_needed, queue_name,
             timeout=timeout)
-        startup_script =  self._insert_user_startup_script(startup_script)
+        startup_script =  insert_user_startup_script(self.user_startup_script,
+            startup_script, self.logger)
 
         if ssh_keypair is not None:
             groupid = self._create_security_group(ssh_keypair)
@@ -213,40 +214,6 @@ class EC2WorkerManager(object):
 
         return startup_script
 
-    def _insert_user_startup_script(self, startup_script_str):
-        try:
-            with open(os.path.abspath(os.path.expanduser( \
-                self.user_startup_script))) as f:
-                user_startup_script_lines = f.read().splitlines()
-        except:
-            if self.user_startup_script is not None:
-                self.logger.warn("User startup script (%s) cannot be loaded" %
-                    self.user_startup_script)
-            return startup_script_str
-
-        startup_script_lines = startup_script_str.splitlines()
-        new_startup_script_lines = []
-        for line in startup_script_lines:
-
-            if line.startswith("studio remote worker") or \
-                line.startswith("studio-remote-worker"):
-                new_startup_script_lines.append("current_working_dir=$(pwd)\n")
-                new_startup_script_lines.append("cd\n")
-                for user_line in user_startup_script_lines:
-                    if user_line.startswith("#!"):
-                        continue
-                    new_startup_script_lines.append("%s\n" % user_line)
-                new_startup_script_lines.append("cd $current_working_dir\n")
-
-            new_startup_script_lines.append("%s\n" % line)
-
-        new_startup_script = "".join(new_startup_script_lines)
-        self.logger.info('Inserting the following user startup script'
-            ' into the default startup script:')
-        self.logger.info("\n".join(user_startup_script_lines))
-
-        return new_startup_script
-
     def _generate_instance_name(self):
         return 'studioml_worker_' + str(uuid.uuid4())
 
@@ -294,7 +261,8 @@ class EC2WorkerManager(object):
 
         startup_script = self._get_startup_script(
             resources_needed, queue_name, asg_name, timeout=timeout)
-        startup_script =  self._insert_user_startup_script(startup_script)
+        startup_script =  insert_user_startup_script(self.user_startup_script,
+            startup_script, self.logger)
 
         if bid_price.endswith('%'):
             bid_price = str(self.prices[instance_type]
