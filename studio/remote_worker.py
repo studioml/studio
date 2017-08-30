@@ -50,7 +50,7 @@ def main(args=sys.argv):
        parsed_args.queue.startswith('sqs_'):
         queue = SQSQueue(parsed_args.queue, verbose=verbose)
     else:
-        config = model.get_config(runner_args.config)
+        config = model.get_config(parsed_args.config)
         queue = PubsubQueue(parsed_args.queue, config['database']['projectId'], verbose=verbose)
     logger.info('Waiting for the work in the queue...')
 

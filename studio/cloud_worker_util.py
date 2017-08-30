@@ -41,4 +41,6 @@ def insert_user_startup_script(user_startup_script, startup_script_str,
 
     with open("/home/jason/Desktop/script.sh", 'wb') as f:
         f.write(new_startup_script)
+    sys.exit()
+
     return new_startup_script
