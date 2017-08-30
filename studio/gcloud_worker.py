@@ -145,10 +145,6 @@ class GCloudWorkerManager(object):
             self.runner_args.user_startup_script,
             startup_script, self.logger)
 
-        startup_script = startup_script.format(
-            timeout=timeout
-        )
-
         with open(os.environ['GOOGLE_APPLICATION_CREDENTIALS'], 'r') as f:
             credentials = f.read()
 
@@ -209,6 +205,9 @@ class GCloudWorkerManager(object):
                 }, {
                     'key': 'auth_data',
                     'value': auth_data
+                }, {
+                    'key': 'timeout',
+                    'value': str(timeout)
                 }]
             },
             "scheduling": {
