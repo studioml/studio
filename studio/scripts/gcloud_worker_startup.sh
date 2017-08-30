@@ -19,7 +19,7 @@ cd ~
 mkdir -p .studioml/keys
 curl "${metadata_url}/attributes/auth_data" -H  "Metadata-Flavor: Google" > .studioml/keys/${key_name}
 curl "${metadata_url}/attributes/credentials" -H  "Metadata-Flavor: Google" > credentials.json
-export GOOGLE_APPLICATION_CREDENTIALS=/credentials.json
+export GOOGLE_APPLICATION_CREDENTIALS=~/credentials.json
 
 
 : "${GOOGLE_APPLICATION_CREDENTIALS?Need to point GOOGLE_APPLICATION_CREDENTIALS to the google credentials file}"
@@ -52,8 +52,8 @@ git checkout $branch
 
 sudo pip install --upgrade pip
 sudo pip install -e . --upgrade
-mkdir ~/workspace && cd ~/workspace
-studio-remote-worker --queue=$queue_name --verbose=debug --timeout=300
+mkdir ~/workspace && cd ~/workspace 
+studio-remote-worker --queue=$queue_name --verbose=debug --timeout={timeout}
 
 # shutdown the instance
 not_spot=$(echo "$group_name" | grep "Error 404" | wc -l)

@@ -1,4 +1,3 @@
-import copy
 import os
 import sys
 import subprocess
@@ -184,25 +183,12 @@ def worker_loop(queue, parsed_args,
     logger = logging.getLogger('worker_loop')
 
     hold_period = 4
-    last_config = None
-    # job_start_time = time.time()
     while queue.has_next():
-        # if not queue.has_next():
-        #     timeout = 30 if last_config is None else \
-        #         last_config['worker_timeout']
-        #     if time.time() - job_start_time > timeout:
-        #         break
-        #     else:
-        #         time.sleep(config['sleep_time'])
-        #         continue
-        # job_start_time = time.time()
 
         first_exp, ack_key = queue.dequeue(acknowledge=False)
-        # first_exp = min([(p, os.path.getmtime(p)) for p in queue],
-        #                key=lambda t: t[1])[0]
 
         experiment_key = json.loads(first_exp)['experiment']['key']
-        last_config = config = json.loads(first_exp)['config']
+        config = json.loads(first_exp)['config']
         parsed_args.config = config
         verbose = model.parse_verbosity(config.get('verbose'))
         logger.setLevel(verbose)
@@ -214,7 +200,6 @@ def worker_loop(queue, parsed_args,
         experiment = executor.db.get_experiment(experiment_key)
 
         if allocate_resources(experiment, config, verbose=verbose):
-            # queue.acknowledge(ack_key)
             def hold_job():
                 queue.hold(ack_key, hold_period)
 

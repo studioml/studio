@@ -51,7 +51,9 @@ class GCloudWorkerManager(object):
 
         name = self._generate_instance_name()
 
-        config = self._get_instance_config(resources_needed, queue_name)
+        config = self._get_instance_config(
+            resources_needed, queue_name, timeout=timeout)
+
         config['name'] = name
 
         op = self.compute.instances().insert(
@@ -95,7 +97,8 @@ class GCloudWorkerManager(object):
         template_name = self._generate_template_name()
         group_name = self._generate_group_name()
 
-        config = self._get_instance_config(resources_needed, queue_name)
+        config = self._get_instance_config(
+            resources_needed, queue_name, timeout=timeout)
         config['scheduling']['preemptible'] = True
         config['machineType'] = config['machineType'].split('/')[-1]
         config['metadata']['items'].append(
@@ -126,7 +129,7 @@ class GCloudWorkerManager(object):
 
         self.logger.info('Managed groupd {} created'.format(group_name))
 
-    def _get_instance_config(self, resources_needed, queue_name):
+    def _get_instance_config(self, resources_needed, queue_name, timeout=300):
         image_response = self.compute.images().getFromFamily(
             project='debian-cloud', family='debian-9').execute()
         source_disk_image = image_response['selfLink']
@@ -141,6 +144,10 @@ class GCloudWorkerManager(object):
         startup_script = insert_user_startup_script(
             self.runner_args.user_startup_script,
             startup_script, self.logger)
+
+        startup_script = startup_script.format(
+            timeout=timeout
+        )
 
         with open(os.environ['GOOGLE_APPLICATION_CREDENTIALS'], 'r') as f:
             credentials = f.read()

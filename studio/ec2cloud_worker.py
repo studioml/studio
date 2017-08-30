@@ -110,8 +110,8 @@ class EC2WorkerManager(object):
 
         instance_type = self._select_instance_type(resources_needed)
 
-        startup_script = self._get_startup_script(resources_needed, queue_name,
-            timeout=timeout)
+        startup_script = self._get_startup_script(
+            resources_needed, queue_name, timeout=timeout)
         startup_script = insert_user_startup_script(
             self.runner_args.user_startup_script,
             startup_script, self.logger)
