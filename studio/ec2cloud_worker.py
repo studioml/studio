@@ -112,7 +112,7 @@ class EC2WorkerManager(object):
 
         startup_script = self._get_startup_script(resources_needed, queue_name,
             timeout=timeout)
-        startup_script =  insert_user_startup_script(self.user_startup_script,
+        startup_script =  insert_us*er_startup_script(self.user_startup_script,
             startup_script, self.logger)
 
         if ssh_keypair is not None:
