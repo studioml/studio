@@ -57,24 +57,28 @@ def main(args=sys.argv):
     parser.add_argument(
         '--gpus',
         help='Number of gpus needed to run the experiment',
+        type=int,
         default=None)
 
     parser.add_argument(
         '--cpus',
         help='Number of cpus needed to run the experiment' +
              ' (used to configure cloud instance)',
+        type=int,
         default=None)
 
     parser.add_argument(
         '--ram',
         help='Amount of RAM needed to run the experiment' +
              ' (used to configure cloud instance)',
+        type=int,
         default=None)
 
     parser.add_argument(
         '--hdd',
         help='Amount of hard drive space needed to run the experiment' +
              ' (used to configure cloud instance)',
+        type=int,
         default=None)
 
     parser.add_argument(
@@ -140,6 +144,7 @@ def main(args=sys.argv):
     parser.add_argument(
         '--num-workers',
         help='Number of local or cloud workers to spin up',
+        type=int,
         default=None)
 
     parser.add_argument(
@@ -172,6 +177,11 @@ def main(args=sys.argv):
              "Default value is %(default)",
         type=int,
         default=300)
+
+    parser.add_argument(
+        '--user-startup-script',
+        help='Path of script to run immediately before running the remote worker',
+        default=None)
 
     # detect which argument is the script filename
     # and attribute all arguments past that index as related to the script
@@ -328,16 +338,19 @@ def submit_experiments(experiments, resources_needed, config, runner_args,
             if queue_name is None:
                 queue_name = 'pubsub_' + str(uuid.uuid4())
                 worker_manager = GCloudWorkerManager(
+                    user_startup_script=runner_args.user_startup_script,
                     auth_cookie=auth_cookie,
                     zone=config['cloud']['zone']
                 )
 
-            queue = PubsubQueue(queue_name, config['database']['projectId'], verbose=verbose)
+            queue = PubsubQueue(queue_name, config['database']['projectId'],
+                verbose=verbose)
 
         if runner_args.cloud in ['ec2', 'ec2spot']:
             if queue_name is None:
                 queue_name = 'sqs_' + str(uuid.uuid4())
                 worker_manager = EC2WorkerManager(
+                    user_startup_script=runner_args.user_startup_script,
                     auth_cookie=auth_cookie
                 )
 
