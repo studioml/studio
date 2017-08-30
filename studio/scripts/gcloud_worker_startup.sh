@@ -1,6 +1,6 @@
 #!/bin/bash
 
-exec > >(tee -i gcloud_worker_logfile.txt)
+exec > >(tee -i ~/gcloud_worker_logfile.txt)
 exec 2>&1
 
 metadata_url="http://metadata.google.internal/computeMetadata/v1/instance"

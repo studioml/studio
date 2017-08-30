@@ -1,6 +1,6 @@
 #!/bin/bash
 
-exec > >(tee -i ec2_worker_logfile.txt)
+exec > >(tee -i ~/ec2_worker_logfile.txt)
 exec 2>&1
 
 cd ~
