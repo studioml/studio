@@ -1,6 +1,7 @@
 import os
 import sys
 
+from util import rand_string
 """
 Utility functions for anything shared in common by ec2cloud_worker and
 gcloud_worker
@@ -24,13 +25,19 @@ def insert_user_startup_script(user_startup_script, startup_script_str,
 
         if line.startswith("studio remote worker") or \
             line.startswith("studio-remote-worker"):
-            new_startup_script_lines.append("current_working_dir=$(pwd)\n")
+            curr_working_dir = "curr_working_dir_%s" % rand_string(32)
+            func_name = "user_script_%s" % rand_string(32)
+
+            new_startup_script_lines.append("%s=$(pwd)\n" % curr_working_dir)
             new_startup_script_lines.append("cd ~\n")
+            new_startup_script_lines.append("%s()(\n"  % func_name)
             for user_line in user_startup_script_lines:
                 if user_line.startswith("#!"):
                     continue
-                new_startup_script_lines.append("%s\n" % user_line)
-            new_startup_script_lines.append("cd $current_working_dir\n")
+                new_startup_script_lines.append("\t%s\n" % user_line)
+            new_startup_script_lines.append(")\n")
+            new_startup_script_lines.append("%s\n" % func_name)
+            new_startup_script_lines.append("cd $%s\n" % curr_working_dir)
 
         new_startup_script_lines.append("%s\n" % line)
 

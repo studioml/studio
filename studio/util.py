@@ -31,7 +31,7 @@ def sha256_checksum(filename, block_size=65536):
 
 def rand_string(length):
     return "".join([random.choice(string.ascii_letters + string.digits) \
-        for n in xrange(30)])
+        for n in xrange(length)])
 
 def event_reader(fileobj):
 
