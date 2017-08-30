@@ -25,7 +25,7 @@ def insert_user_startup_script(user_startup_script, startup_script_str,
         if line.startswith("studio remote worker") or \
             line.startswith("studio-remote-worker"):
             new_startup_script_lines.append("current_working_dir=$(pwd)\n")
-            new_startup_script_lines.append("cd\n")
+            new_startup_script_lines.append("cd ~\n")
             for user_line in user_startup_script_lines:
                 if user_line.startswith("#!"):
                     continue
