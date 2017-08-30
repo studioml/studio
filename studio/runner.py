@@ -463,7 +463,7 @@ def get_experiment_fitnesses(experiments, optimizer, config, logger):
 
             for j, line in enumerate(output):
 
-                if line.startswith("Traceback (most recent call last):") and
+                if line.startswith("Traceback (most recent call last):") and \
                     j not in bad_line_dicts[i]:
                     logger.warn("Experiment %s: error discovered in output" % \
                         returned_experiment.key)
