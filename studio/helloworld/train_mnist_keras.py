@@ -33,6 +33,7 @@ model.add(Dense(128, activation='relu'))
 model.add(Dense(128, activation='relu'))
 
 model.add(Dense(10, activation='softmax'))
+model.summary()
 
 
 batch_size = 128
