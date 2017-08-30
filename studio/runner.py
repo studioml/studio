@@ -17,7 +17,7 @@ from sqs_queue import SQSQueue
 from gcloud_worker import GCloudWorkerManager
 from ec2cloud_worker import EC2WorkerManager
 from hyperparameter import HyperparameterParser
-from util import rand_string
+from util import rand_string, Progbar
 
 import model
 import auth
@@ -407,14 +407,16 @@ def submit_experiments(experiments, resources_needed, config, runner_args,
 
 def get_experiment_fitnesses(experiments, optimizer, config, logger):
     db_provider = model.get_db_provider()
+    progbar = Progbar(len(experiments), interval=0.0)
+    logger.info("Waiting for fitnesses from %s experiments" % len(experiments))
+
     has_result = [False] * len(experiments)
     fitnesses = [0.0] * len(experiments)
-
     term_criterion = config['optimizer']['termination_criterion']
     skip_gen_thres = term_criterion['skip_gen_thres']
     skip_gen_timeout = term_criterion['skip_gen_timeout']
-
     result_timestamp = time.time()
+
     while sum(has_result) < len(experiments):
         for i, experiment in enumerate(experiments):
             if float(sum(has_result)) / len(experiments) >= skip_gen_thres \
@@ -449,6 +451,7 @@ def get_experiment_fitnesses(experiments, optimizer, config, logger):
                     else:
                         fitnesses[i] = fitness
                         has_result[i] = True
+                        progbar.add(1)
                         result_timestamp = time.time()
                         break
 
