@@ -37,18 +37,18 @@ gac_name=${GOOGLE_APPLICATION_CREDENTIALS##*/}
 #code_ver="tfstudio-64_config_location-2017-08-04_1.tgz"
 repo_url="https://github.com/studioml/studio"
 branch="master"
-sudo apt -y update
+sudo apt -y update 
 sudo apt install -y wget python-pip git python-dev
 
 git clone $repo_url
 cd studio
-git checkout $branch
-#wget $code_url_base/$code_ver
-#tar -xzf $code_ver
-#cd studio
+git checkout $branch 
+#wget $code_url_base/$code_ver 
+#tar -xzf $code_ver 
+#cd studio 
 
-sudo pip install --upgrade pip
-sudo pip install -e . --upgrade
+sudo pip install --upgrade pip 
+sudo pip install -e . --upgrade 
 mkdir ~/workspace && cd ~/workspace
 studio-remote-worker --queue=$queue_name --verbose=debug --timeout=300
 
@@ -74,4 +74,4 @@ if [[ "$not_spot" -eq "0" ]]; then
 
 fi
 echo "Shutting down"
-gcloud compute instances delete $instance_name --zone $zone --quiet
+gcloud compute instances delete $instance_name --zone $zone --quiet 
