@@ -50,7 +50,7 @@ git checkout $branch
 sudo pip install --upgrade pip 
 sudo pip install -e . --upgrade 
 mkdir /workspace && cd /workspace 
-studio-remote-worker --queue=$queue_name --verbose=debug --timeout=300
+studio-remote-worker --queue=$queue_name --verbose=debug --timeout={timeout}
 
 # shutdown the instance
 not_spot=$(echo "$group_name" | grep "Error 404" | wc -l)

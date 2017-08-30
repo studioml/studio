@@ -161,6 +161,18 @@ def main(args=sys.argv):
         'must be supplied. ',
         default='grid')
 
+    parser.add_argument(
+        '--cloud-timeout',
+        help="Time (in seconds) that cloud workers wait for messages. " +
+             "If negative, " +
+             "wait for the first message in the queue indefinitely " +
+             "and shut down " +
+             "as soon as no new messages are available. " +
+             "If zero, don't wait at all." +
+             "Default value is %(default)",
+        type=int,
+        default=300)
+
     # detect which argument is the script filename
     # and attribute all arguments past that index as related to the script
     py_suffix_args = [i for i, arg in enumerate(args) if arg.endswith('.py')]
@@ -343,7 +355,8 @@ def submit_experiments(
             for i in range(num_workers):
                 worker_manager.start_worker(
                     queue_name, resources_needed,
-                    ssh_keypair=runner_args.ssh_keypair)
+                    ssh_keypair=runner_args.ssh_keypair,
+                    timeout=runner_args.cloud_timeout)
         else:
             assert runner_args.bid is not None
             if runner_args.num_workers:
@@ -359,7 +372,8 @@ def submit_experiments(
                 resources_needed,
                 start_workers=start_workers,
                 queue_upscaling=queue_upscaling,
-                ssh_keypair=runner_args.ssh_keypair)
+                ssh_keypair=runner_args.ssh_keypair,
+                timeout=runner_args.cloud_timeout)
 
     else:
         if queue_name == 'local':
