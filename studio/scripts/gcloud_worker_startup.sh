@@ -4,6 +4,7 @@
 metadata_url="http://metadata.google.internal/computeMetadata/v1/instance"
 queue_name=$(curl "${metadata_url}/attributes/queue_name" -H  "Metadata-Flavor: Google")
 key_name=$(curl "${metadata_url}/attributes/auth_key" -H  "Metadata-Flavor: Google")
+timeout=$(curl "${metadata_url}/attributes/timeout" -H  "Metadata-Flavor: Google")
 
 zone=$(curl "${metadata_url}/zone" -H  "Metadata-Flavor: Google")
 instance_name=$(curl "${metadata_url}/name" -H  "Metadata-Flavor: Google")
@@ -50,7 +51,7 @@ git checkout $branch
 sudo pip install --upgrade pip 
 sudo pip install -e . --upgrade 
 mkdir /workspace && cd /workspace 
-studio-remote-worker --queue=$queue_name --verbose=debug --timeout={timeout}
+studio-remote-worker --queue=$queue_name --verbose=debug --timeout=${timeout}
 
 # shutdown the instance
 not_spot=$(echo "$group_name" | grep "Error 404" | wc -l)
