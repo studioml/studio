@@ -90,17 +90,16 @@ except ImportError:
     pass
 
 
-
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
 # documentation.
 #
 html_theme_options = {
-   'collapse_navigation': True,
-   'display_version': True,
-   'navigation_depth': 3,
-   'sticky_navigation': True,
-   'logo_only': True,
+    'collapse_navigation': True,
+    'display_version': True,
+    'navigation_depth': 3,
+    'sticky_navigation': True,
+    'logo_only': True,
 }
 
 html_show_copyright = False
@@ -179,10 +178,12 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    (master_doc, 'studioml', u'studioml Documentation',
-     author, 'studioml', 'Python model management tool to simplify and expedite your model building process.',
+    (master_doc,
+     'studioml',
+     u'studioml Documentation',
+     author,
+     'studioml',
+     'Python model management tool to simplify ' + 
+     'and expedite your model building process.',
      'Miscellaneous'),
 ]
-
-
-
