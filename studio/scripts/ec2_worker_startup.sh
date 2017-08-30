@@ -1,5 +1,8 @@
 #!/bin/bash
 
+exec > >(tee -i ec2_worker_logfile.txt)
+exec 2>&1
+
 cd ~
 mkdir .aws
 echo "[default]" > .aws/config
@@ -27,14 +30,14 @@ autoscaling_group="{autoscaling_group}"
 echo "Environment varibles:"
 env
 
-sudo apt -y update 
+sudo apt -y update
 sudo apt install -y wget python-pip git python-dev jq
-sudo pip install --upgrade pip 
+sudo pip install --upgrade pip
 sudo pip install --upgrade awscli
 
-#wget $code_url_base/$code_ver 
-#tar -xzf $code_ver 
-#cd studio 
+#wget $code_url_base/$code_ver
+#tar -xzf $code_ver
+#cd studio
 git clone $repo_url
 cd studio
 git checkout $branch
@@ -59,7 +62,7 @@ if [[ "{use_gpus}" -eq 1 ]]; then
 
     sudo pip install tensorflow tensorflow-gpu --upgrade
 fi
-sudo pip install -e . --upgrade 
+sudo pip install -e . --upgrade
 
 mkdir ~/workspace && cd ~/workspace
 studio remote worker --queue=$queue_name  --verbose=debug --timeout={timeout}
@@ -77,7 +80,7 @@ if [ -n $autoscaling_group ]; then
 
     echo "Launch config: $launch_config"
     echo "Current autoscaling group size (desired): $desired_size"
-        
+
     if [[ $desired_size -gt 1 ]]; then
         new_desired_size=$((desired_size - 1))
         echo "Decreasing ASG size to $new_desired_size"
@@ -88,8 +91,8 @@ if [ -n $autoscaling_group ]; then
         aws autoscaling delete-launch-configuration --launch-configuration-name $launch_config
     fi
     # if desired_size > 1 decrease desired size (with cooldown - so that it does not try to remove any other instances!)
-    # else delete the group - that should to the shutdown 
-    # 
+    # else delete the group - that should to the shutdown
+    #
 
 fi
 echo "Shutting the instance down!"
