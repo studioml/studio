@@ -35,11 +35,13 @@ def insert_user_startup_script(user_startup_script, startup_script_str,
                 if user_line.startswith("#!"):
                     continue
                 new_startup_script_lines.append("\t%s\n" % user_line)
+
+            new_startup_script_lines.append("\tcd $%s\n" % curr_working_dir)
+            new_startup_script_lines.append("\t%s\n" % line)
             new_startup_script_lines.append(")\n")
             new_startup_script_lines.append("%s\n" % func_name)
-            new_startup_script_lines.append("cd $%s\n" % curr_working_dir)
-
-        new_startup_script_lines.append("%s\n" % line)
+        else:
+            new_startup_script_lines.append("%s\n" % line)
 
     new_startup_script = "".join(new_startup_script_lines)
     logger.info('Inserting the following user startup script'
