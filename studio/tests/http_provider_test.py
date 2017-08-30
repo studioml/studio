@@ -1,46 +1,41 @@
 import unittest
 import subprocess
 import time
-import os
-
 from random import randint
-from threading import Thread
-from multiprocessing import Process
-from subprocess import Popen
 
 from studio import model
-from studio import studio
 from model_test import get_test_experiment
 
+
 class HTTPProviderTest(unittest.TestCase):
- 
-    @classmethod   
+
+    @classmethod
     def setUpClass(self):
         print "Setting up"
-        self.port = randint(5000, 9000)        
-            
+        self.port = randint(5000, 9000)
+
         # self.app.run(port=self.port, debug=True)
         # self.serverp.start()
-                
+
         self.serverp = subprocess.Popen([
-                'studio-ui',
-                '--port=' + str(self.port),
-                '--verbose=debug',
-                '--config=test_config_http_server.yaml',
-                '--host=localhost'])
-        
+            'studio-ui',
+            '--port=' + str(self.port),
+            '--verbose=debug',
+            '--config=test_config_http_server.yaml',
+            '--host=localhost'])
+
         time.sleep(10)
 
     @classmethod
-    def tearDownClass(self):      
+    def tearDownClass(self):
         print "Tearing down"
-        
+
         self.serverp.kill()
 
     def get_db_provider(self):
         config = model.get_config('test_config_http_client.yaml')
         config['database']['serverUrl'] = 'http://localhost:' + str(self.port)
-        return model.get_db_provider(config)       
+        return model.get_db_provider(config)
 
     def test_add_get_experiment(self):
         experiment_tuple = get_test_experiment()
@@ -53,7 +48,7 @@ class HTTPProviderTest(unittest.TestCase):
         self.assertEquals(experiment.args, experiment_tuple[0].args)
 
         db.delete_experiment(experiment_tuple[1])
-        
+
     def test_start_experiment(self):
         db = self.get_db_provider()
         experiment_tuple = get_test_experiment()
@@ -70,7 +65,7 @@ class HTTPProviderTest(unittest.TestCase):
         self.assertEquals(experiment.key, experiment_tuple[0].key)
         self.assertEquals(experiment.filename, experiment_tuple[0].filename)
         self.assertEquals(experiment.args, experiment_tuple[0].args)
-        
+
         db.finish_experiment(experiment_tuple[0])
         db.delete_experiment(experiment_tuple[1])
 

@@ -4,17 +4,18 @@ import calendar
 
 from google.cloud import storage
 from tartifact_store import TartifactStore
-logging.basicConfig()
 
 from auth import FirebaseAuth
 import pyrebase
+
+logging.basicConfig()
 
 
 class GCloudArtifactStore(TartifactStore):
     def __init__(self, config, verbose=10, measure_timestamp_diff=True):
         self.logger = logging.getLogger('GCloudArtifactStore')
         self.logger.setLevel(verbose)
-        
+
         auth_config = config.get('auth')
         if not auth_config:
             self.client = storage.Client()
@@ -26,7 +27,7 @@ class GCloudArtifactStore(TartifactStore):
                                      auth_config.get("email"),
                                      auth_config.get("password"))
 
-            self.client = storage.Client(credentials = self.auth.get_token())
+            self.client = storage.Client(credentials=self.auth.get_token())
 
         try:
             self.bucket = self.client.get_bucket(config['bucket'])
@@ -62,15 +63,14 @@ class GCloudArtifactStore(TartifactStore):
         if not blob:
             blob = self.bucket.blob(key)
             blob.upload_from_string("dummy")
-        
+
         acl = blob.acl
         if user:
             acl.user(user).grant_owner()
         else:
             acl.all().grant_owner()
-            
-        acl.save()
 
+        acl.save()
 
     def get_qualified_location(self, key):
         return 'gs://' + self.bucket.name + '/' + key

@@ -1,4 +1,3 @@
-import copy
 import os
 import sys
 import subprocess
@@ -7,8 +6,6 @@ import yaml
 import logging
 import time
 import json
-import yaml
-import copy
 
 from apscheduler.schedulers.background import BackgroundScheduler
 
@@ -18,6 +15,7 @@ from local_queue import LocalQueue
 from gpu_util import get_available_gpus, get_gpu_mapping
 
 logging.basicConfig()
+
 
 class LocalExecutor(object):
     """Runs job while capturing environment and logging results.
@@ -56,9 +54,9 @@ class LocalExecutor(object):
         """
         env = dict(os.environ)
         if 'env' in self.config.keys():
-            for k,v in self.config['env'].iteritems():
-                    if v is not None:
-                        env[str(k)] = str(v)
+            for k, v in self.config['env'].iteritems():
+                if v is not None:
+                    env[str(k)] = str(v)
 
         fs_tracker.setup_experiment(env, experiment, clean=True)
         log_path = fs_tracker.get_artifact_cache('output', experiment.key)
@@ -184,7 +182,6 @@ def worker_loop(queue, parsed_args,
     logger = logging.getLogger('worker_loop')
 
     hold_period = 4
-    last_config = None
     # job_start_time = time.time()
     while queue.has_next():
         # if not queue.has_next():
@@ -202,7 +199,7 @@ def worker_loop(queue, parsed_args,
         #                key=lambda t: t[1])[0]
 
         experiment_key = json.loads(first_exp)['experiment']['key']
-        last_config = config = json.loads(first_exp)['config']
+        config = json.loads(first_exp)['config']
         parsed_args.config = config
         verbose = model.parse_verbosity(config.get('verbose'))
         logger.setLevel(verbose)

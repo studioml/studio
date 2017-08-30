@@ -155,8 +155,10 @@ def main(args=sys.argv):
     parser.add_argument(
         '--optimizer', '-opt',
         help='Name of optimizer to use, by default is grid search. ' +
-        'The name of the optimizer must either be in studio/optimizer_plugins ' +
-        'directory or the path to the optimizer source file must be supplied. ',
+        'The name of the optimizer must either be in ' +
+        'studio/optimizer_plugins ' +
+        'directory or the path to the optimizer source file ' +
+        'must be supplied. ',
         default='grid')
 
     # detect which argument is the script filename
@@ -208,7 +210,12 @@ def main(args=sys.argv):
                 runner_args,
                 artifacts,
                 resources_needed)
-            submit_experiments(experiments, config, runner_args, logger, resources_needed)
+            submit_experiments(
+                experiments,
+                config,
+                runner_args,
+                logger,
+                resources_needed)
         else:
             opt_modulepath = os.path.join(
                 os.path.dirname(os.path.abspath(__file__)),
@@ -313,7 +320,7 @@ def submit_experiments(
 
             queue_name = 'pubsub_' + str(uuid.uuid4())
 
-            queue = PubsubQueue(queue_name, config['database']['projectId'], verbose=verbose)
+            queue = PubsubQueue(queue_name, verbose=verbose)
             worker_manager = GCloudWorkerManager(
                 auth_cookie=auth_cookie,
                 zone=config['cloud']['zone']
@@ -361,7 +368,10 @@ def submit_experiments(
         elif queue_name.startswith('sqs_'):
             queue = SQSQueue(queue_name, verbose=verbose)
         else:
-            queue = PubsubQueue(queue_name, config['database']['projectId'], verbose=verbose)
+            queue = PubsubQueue(
+                queue_name,
+                config['database']['projectId'],
+                verbose=verbose)
 
     for e in experiments:
         queue.enqueue(json.dumps({

@@ -56,15 +56,21 @@ class Firebase:
             ]
             service_account_type = type(config["serviceAccount"])
             if service_account_type is str:
-                self.credentials = ServiceAccountCredentials.from_json_keyfile_name(
-                    config["serviceAccount"], scopes)
+                self.credentials = ServiceAccountCredentials\
+                    .from_json_keyfile_name(
+                        config["serviceAccount"], scopes)
+
             if service_account_type is dict:
-                self.credentials = ServiceAccountCredentials.from_json_keyfile_dict(
-                    config["serviceAccount"], scopes)
+                self.credentials = ServiceAccountCredentials \
+                    .from_json_keyfile_dict(
+                        config["serviceAccount"], scopes)
+
         if is_appengine_sandbox():
             # Fix error in standard GAE environment
-            # is releated to https://github.com/kennethreitz/requests/issues/3187
-            # ProtocolError('Connection aborted.', error(13, 'Permission denied'))
+            # is releated to
+            # https://github.com/kennethreitz/requests/issues/3187
+            # ProtocolError('Connection aborted.',
+            #               error(13, 'Permission denied'))
             adapter = appengine.AppEngineAdapter(max_retries=3)
         else:
             adapter = requests.adapters.HTTPAdapter(max_retries=3)
@@ -96,7 +102,8 @@ class Auth:
         self.credentials = credentials
 
     def sign_in_with_email_and_password(self, email, password):
-        request_ref = "https://www.googleapis.com/identitytoolkit/v3/relyingparty/verifyPassword?key={0}".format(
+        request_ref = ("https://www.googleapis.com/identitytoolkit" +
+                       "/v3/relyingparty/verifyPassword?key={0}").format(
             self.api_key)
         headers = {"content-type": "application/json; charset=UTF-8"}
         data = json.dumps(
@@ -116,7 +123,8 @@ class Auth:
         payload = {
             "iss": service_account_email,
             "sub": service_account_email,
-            "aud": "https://identitytoolkit.googleapis.com/google.identity.identitytoolkit.v1.IdentityToolkit",
+            "aud": "https://identitytoolkit.googleapis.com/" +
+                   "google.identity.identitytoolkit.v1.IdentityToolkit",
             "uid": uid}
         if additional_claims:
             payload["claims"] = additional_claims
@@ -124,7 +132,8 @@ class Auth:
         return jwt.generate_jwt(payload, private_key, "RS256", exp)
 
     def sign_in_with_custom_token(self, token):
-        request_ref = "https://www.googleapis.com/identitytoolkit/v3/relyingparty/verifyCustomToken?key={0}".format(
+        request_ref = ("https://www.googleapis.com/identitytoolkit" +
+                       "/v3/relyingparty/verifyCustomToken?key={0}").format(
             self.api_key)
         headers = {"content-type": "application/json; charset=UTF-8"}
         data = json.dumps({"returnSecureToken": True, "token": token})
@@ -137,8 +146,8 @@ class Auth:
         return request_object.json()
 
     def refresh(self, refresh_token):
-        request_ref = "https://securetoken.googleapis.com/v1/token?key={0}".format(
-            self.api_key)
+        request_ref = "https://securetoken.googleapis.com/v1/token?key={0}" \
+            .format(self.api_key)
         headers = {"content-type": "application/json; charset=UTF-8"}
         data = json.dumps({"grantType": "refresh_token",
                            "refreshToken": refresh_token})
@@ -158,8 +167,10 @@ class Auth:
         return user
 
     def get_account_info(self, id_token):
-        request_ref = "https://www.googleapis.com/identitytoolkit/v3/relyingparty/getAccountInfo?key={0}".format(
-            self.api_key)
+        request_ref = ("https://www.googleapis.com/identitytoolkit/" +
+                       "v3/relyingparty/getAccountInfo?key={0}") \
+            .format(self.api_key)
+
         headers = {"content-type": "application/json; charset=UTF-8"}
         data = json.dumps({"idToken": id_token})
         request_object = requests.post(
@@ -171,8 +182,10 @@ class Auth:
         return request_object.json()
 
     def send_email_verification(self, id_token):
-        request_ref = "https://www.googleapis.com/identitytoolkit/v3/relyingparty/getOobConfirmationCode?key={0}".format(
-            self.api_key)
+        request_ref = "https://www.googleapis.com/identitytoolkit/" +  \
+                      "v3/relyingparty/getOobConfirmationCode?key={0}" \
+            .format(self.api_key)
+
         headers = {"content-type": "application/json; charset=UTF-8"}
         data = json.dumps({"requestType": "VERIFY_EMAIL", "idToken": id_token})
         request_object = requests.post(
@@ -184,8 +197,10 @@ class Auth:
         return request_object.json()
 
     def send_password_reset_email(self, email):
-        request_ref = "https://www.googleapis.com/identitytoolkit/v3/relyingparty/getOobConfirmationCode?key={0}".format(
-            self.api_key)
+        request_ref = "https://www.googleapis.com/identitytoolkit/" + \
+                      "v3/relyingparty/getOobConfirmationCode?key={0}" \
+                      .format(self.api_key)
+
         headers = {"content-type": "application/json; charset=UTF-8"}
         data = json.dumps({"requestType": "PASSWORD_RESET", "email": email})
         request_object = requests.post(
@@ -197,8 +212,10 @@ class Auth:
         return request_object.json()
 
     def verify_password_reset_code(self, reset_code, new_password):
-        request_ref = "https://www.googleapis.com/identitytoolkit/v3/relyingparty/resetPassword?key={0}".format(
-            self.api_key)
+        request_ref = "https://www.googleapis.com/identitytoolkit" + \
+                      "/v3/relyingparty/resetPassword?key={0}" \
+                      .format(self.api_key)
+
         headers = {"content-type": "application/json; charset=UTF-8"}
         data = json.dumps({"oobCode": reset_code, "newPassword": new_password})
         request_object = requests.post(
@@ -210,8 +227,10 @@ class Auth:
         return request_object.json()
 
     def create_user_with_email_and_password(self, email, password):
-        request_ref = "https://www.googleapis.com/identitytoolkit/v3/relyingparty/signupNewUser?key={0}".format(
-            self.api_key)
+        request_ref = "https://www.googleapis.com/identitytoolkit/" + \
+                      "v3/relyingparty/signupNewUser?key={0}" \
+                      .format(self.api_key)
+
         headers = {"content-type": "application/json; charset=UTF-8"}
         data = json.dumps(
             {"email": email, "password": password, "returnSecureToken": True})
@@ -298,7 +317,8 @@ class Database:
             if isinstance(self.build_query[param], str):
                 parameters[param] = quote('"' + self.build_query[param] + '"')
             elif isinstance(self.build_query[param], bool):
-                parameters[param] = "true" if self.build_query[param] else "false"
+                parameters[param] = "true" if self.build_query[param] \
+                                    else "false"
             else:
                 parameters[param] = self.build_query[param]
         # reset path and build_query for next query
@@ -350,7 +370,8 @@ class Database:
                     request_dict.items(), key=lambda item: item[1])
             else:
                 sorted_response = sorted(
-                    request_dict.items(), key=lambda item: item[1][build_query["orderBy"]])
+                    request_dict.items(),
+                    key=lambda item: item[1][build_query["orderBy"]])
         return PyreResponse(convert_to_pyre(sorted_response), query_key)
 
     def push(self, data, token=None, json_kwargs={}):
@@ -406,7 +427,10 @@ class Database:
             return '{0}{1}.json'.format(database_url, path)
 
     def generate_key(self):
-        push_chars = '-0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz'
+        push_chars = '-0123456789' + \
+                     'ABCDEFGHIJKLMNOPQRSTUVWXYZ_' + \
+                     'abcdefghijklmnopqrstuvwxyz'
+
         now = int(time.time() * 1000)
         duplicate_time = now == self.last_push_time
         self.last_push_time = now
@@ -443,7 +467,9 @@ class Storage:
     """ Storage Service """
 
     def __init__(self, credentials, storage_bucket, requests):
-        self.storage_bucket = "https://firebasestorage.googleapis.com/v0/b/" + storage_bucket
+        self.storage_bucket = \
+            "https://firebasestorage.googleapis.com/v0/b/" + storage_bucket
+
         self.credentials = credentials
         self.requests = requests
         self.path = ""

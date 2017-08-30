@@ -136,23 +136,23 @@ def create_experiment(
 
 
 def experiment_from_dict(data, info={}):
-        return Experiment(
-            key=data['key'],
-            filename=data['filename'],
-            args=data.get('args'),
-            pythonenv=data['pythonenv'],
-            project=data.get('project'),
-            status=data['status'],
-            artifacts=data.get('artifacts'),
-            resources_needed=data.get('resources_needed'),
-            time_added=data['time_added'],
-            time_started=data.get('time_started'),
-            time_last_checkpoint=data.get('time_last_checkpoint'),
-            time_finished=data.get('time_finished'),
-            info=info,
-            git=data.get('git'),
-            metric=data.get('metric')
-        )
+    return Experiment(
+        key=data['key'],
+        filename=data['filename'],
+        args=data.get('args'),
+        pythonenv=data['pythonenv'],
+        project=data.get('project'),
+        status=data['status'],
+        artifacts=data.get('artifacts'),
+        resources_needed=data.get('resources_needed'),
+        time_added=data['time_added'],
+        time_started=data.get('time_started'),
+        time_last_checkpoint=data.get('time_last_checkpoint'),
+        time_finished=data.get('time_finished'),
+        info=info,
+        git=data.get('git'),
+        metric=data.get('metric')
+    )
 
 
 class FirebaseProvider(object):
@@ -172,7 +172,6 @@ class FirebaseProvider(object):
                                      db_config.get("email"),
                                      db_config.get("password"),
                                      blocking_auth)
-
 
         self.store = store if store else FirebaseArtifactStore(
             db_config, verbose=verbose, blocking_auth=blocking_auth)
@@ -376,9 +375,9 @@ class FirebaseProvider(object):
 
         checkpoint_threads = [
             Thread(
-               target=self.store.put_artifact,
-               args=(art,))
-        for _, art in experiment.artifacts.iteritems()
+                target=self.store.put_artifact,
+                args=(art,))
+            for _, art in experiment.artifacts.iteritems()
             if art['mutable'] and art.get('local')]
 
         for t in checkpoint_threads:
@@ -689,7 +688,7 @@ def get_config(config_file=None):
                         replace_with_env(value)
 
             replace_with_env(config)
-            
+
             return config
 
     raise ValueError('None of the config paths {} exits!'
