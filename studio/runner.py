@@ -70,15 +70,13 @@ def main(args=sys.argv):
     parser.add_argument(
         '--ram',
         help='Amount of RAM needed to run the experiment' +
-             ' (used to configure cloud instance)',
-        type=int,
+             ' (used to configure cloud instance), ex: 10G, 10GB',
         default=None)
 
     parser.add_argument(
         '--hdd',
         help='Amount of hard drive space needed to run the experiment' +
-             ' (used to configure cloud instance)',
-        type=int,
+             ' (used to configure cloud instance), ex: 10G, 10GB',
         default=None)
 
     parser.add_argument(
