@@ -39,8 +39,8 @@ def insert_user_startup_script(user_startup_script, startup_script_str,
         ' into the default startup script:')
     logger.info("\n".join(user_startup_script_lines))
 
-    with open("/home/jason/Desktop/script.sh", 'wb') as f:
-        f.write(new_startup_script)
+    # with open("/home/jason/Desktop/script.sh", 'wb') as f:
+    #     f.write(new_startup_script)
     # sys.exit()
 
     return new_startup_script
