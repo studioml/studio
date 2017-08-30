@@ -430,6 +430,7 @@ def get_experiment_fitnesses(experiments, optimizer, config, logger):
     progbar = Progbar(len(experiments), interval=0.0)
     logger.info("Waiting for fitnesses from %s experiments" % len(experiments))
 
+    bad_line_dicts = [{}] * len(experiments)
     has_result = [False] * len(experiments)
     fitnesses = [0.0] * len(experiments)
     term_criterion = config['optimizer']['termination_criterion']
@@ -460,15 +461,32 @@ def get_experiment_fitnesses(experiments, optimizer, config, logger):
             if output is None:
                 continue
 
-            for line in output:
+            for j, line in enumerate(output):
+
+                if line.startswith("Traceback (most recent call last):") and
+                    j not in bad_line_dicts[i]:
+                    logger.warn("Experiment %s: error discovered in output" % \
+                        returned_experiment.key)
+                    logger.warn("".join(output[j:]))
+                    bad_line_dicts[i][j] = True
+
                 if line.startswith("Fitness") or line.startswith("fitness"):
                     try:
                         fitness = float(line.rstrip().split(':')[1])
-                        assert fitness >= 0.0
+                        # assert fitness >= 0.0
                     except BaseException:
-                        logger.warn('Error parsing or invalid fitness (%s)'
-                                    % line)
+                        if j not in bad_line_dicts[i]:
+                            logger.warn('Experiment %s: error parsing or invalid' \
+                                ' fitness' % returned_experiment.key)
+                            logger.warn(line)
+                            bad_line_dicts[i][j] = True
                     else:
+                        if fitness < 0.0:
+                            logger.warn('Experiment %s: returned fitness is' \
+                                ' less than zero, setting it to zero' % \
+                                returned_experiment.key)
+                            fitness = 0.0
+
                         fitnesses[i] = fitness
                         has_result[i] = True
                         progbar.add(1)
