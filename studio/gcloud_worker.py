@@ -137,7 +137,7 @@ class GCloudWorkerManager(object):
 
         with open(self.startup_script_file, 'r') as f:
             startup_script = f.read()
-        startup_script =  insert_user_startup_script(self.user_startup_script,
+        startup_script = insert_user_startup_script(self.user_startup_script,
             startup_script, self.logger)
 
         with open(os.environ['GOOGLE_APPLICATION_CREDENTIALS'], 'r') as f:
