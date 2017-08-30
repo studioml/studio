@@ -156,7 +156,7 @@ def allocate_gpus(gpus_needed, config=None):
 
 def main(args=sys.argv):
     parser = argparse.ArgumentParser(
-        description='TensorFlow Studio worker. \
+        description='Studio worker. \
                      Usage: studio-local-worker \
                      ')
 
