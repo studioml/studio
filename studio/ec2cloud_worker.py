@@ -171,7 +171,7 @@ class EC2WorkerManager(object):
             auth_key = None
             auth_data = None
 
-        credentials = ""
+        credentials = ''
 
         if 'GOOGLE_APPLICATION_CREDENTIALS' in os.environ.keys():
             with open(os.environ['GOOGLE_APPLICATION_CREDENTIALS'], 'r') as f:
