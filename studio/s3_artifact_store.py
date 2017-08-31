@@ -1,5 +1,6 @@
 import logging
 import calendar
+from urlparse import urlparse
 
 try:
     import boto3
@@ -27,7 +28,7 @@ class S3ArtifactStore(TartifactStore):
         super(S3ArtifactStore, self).__init__(measure_timestamp_diff)
 
     def _upload_file(self, key, local_path):
-        self.client.upload_file(local_path, self.bucket, key)
+        self.client.upload_file(Filename=local_path, Bucket=self.bucket, Key=key)
 
     def _download_file(self, key, local_path):
         self.client.download_file(self.bucket, key, local_path)
@@ -50,7 +51,8 @@ class S3ArtifactStore(TartifactStore):
             return None
 
     def get_qualified_location(self, key):
-        return 's3://' + self.endpoint + '/' + self.bucket + '/' + key
+        url = urlparse(self.endpoint)
+        return 's3://' + url.netloc + '/' + self.bucket + '/' + key
 
     def get_bucket(self):
         return self.bucket
