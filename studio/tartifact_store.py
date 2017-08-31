@@ -260,8 +260,8 @@ class TartifactStore(object):
         if url is None:
             return None
 
-        fileobj=urllib.urlopen(url)
-        if fileobj: 
+        fileobj = urllib.urlopen(url)
+        if fileobj:
             try:
                 retval = tarfile.open(fileobj=fileobj, mode='r|gz')
                 return retval

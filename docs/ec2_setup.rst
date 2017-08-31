@@ -2,14 +2,14 @@ Setting up Amazon EC2
 =====================
 
 This page describes the process of configuring Studio to work
-with Amazon EC2. We assume that you have an AWS account already set up
-along with AWS credentials.
+with Amazon EC2. We assume that you already have AWS credentials 
+and an AWS account set up.
 
 Install boto3
 -------------
 
 Studio interacts with AWS via the boto3 API. Thus, in order to use EC2
-cloud, you'll need to install boto3:
+cloud you'll need to install boto3:
 
 ::
 

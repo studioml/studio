@@ -35,7 +35,8 @@ class GCloudWorkerManager(object):
             queue_name,
             resources_needed={},
             blocking=True,
-            ssh_keypair=None):
+            ssh_keypair=None,
+            timeout=300):
 
         if ssh_keypair is not None:
             self.logger.warn('ssh keypairs are not supported ' +
@@ -46,7 +47,9 @@ class GCloudWorkerManager(object):
 
         name = self._generate_instance_name()
 
-        config = self._get_instance_config(resources_needed, queue_name)
+        config = self._get_instance_config(
+            resources_needed, queue_name, timeout=timeout)
+
         config['name'] = name
 
         op = self.compute.instances().insert(
@@ -69,7 +72,8 @@ class GCloudWorkerManager(object):
             ssh_keypair=None,
             queue_upscaling=True,
             start_workers=1,
-            max_workers=100):
+            max_workers=100,
+            timeout=300):
 
         if resources_needed is None:
             resources_needed = {}
@@ -89,7 +93,8 @@ class GCloudWorkerManager(object):
         template_name = self._generate_template_name()
         group_name = self._generate_group_name()
 
-        config = self._get_instance_config(resources_needed, queue_name)
+        config = self._get_instance_config(
+            resources_needed, queue_name, timeout=timeout)
         config['scheduling']['preemptible'] = True
         config['machineType'] = config['machineType'].split('/')[-1]
         config['metadata']['items'].append(
@@ -120,7 +125,7 @@ class GCloudWorkerManager(object):
 
         self.logger.info('Managed groupd {} created'.format(group_name))
 
-    def _get_instance_config(self, resources_needed, queue_name):
+    def _get_instance_config(self, resources_needed, queue_name, timeout=300):
         image_response = self.compute.images().getFromFamily(
             project='debian-cloud', family='debian-9').execute()
         source_disk_image = image_response['selfLink']
@@ -191,6 +196,9 @@ class GCloudWorkerManager(object):
                 }, {
                     'key': 'auth_data',
                     'value': auth_data
+                }, {
+                    'key': 'timeout',
+                    'value': str(timeout)
                 }]
             },
             "scheduling": {

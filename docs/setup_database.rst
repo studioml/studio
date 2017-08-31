@@ -3,12 +3,12 @@ Setting up a database
 
 This page describes the process of setting up your own database /
 storage for the models. This puts you in full control of who has access
-to the experiment data. For the moment, studioml only supports Firebase
+to the experiment data. For the moment, Studio only supports Firebase
 (https://firebase.google.com/) as a database/storage backend. To
-configure studioml to work with Firebase, do the following:
+configure Studio to work with Firebase, do the following:
 
-Creating a Firebase project and configuring StudioML
-----------------------------------------------------
+Creating a Firebase project and configuring Studio
+--------------------------------------------------
 
 1. Create a copy of studio/default\_config.yaml file. Let's call it
    new\_config.yaml
@@ -31,11 +31,13 @@ uncomment the use\_email\_auth tag in your new\_config.yaml. Add
 users. By default, Firebase (both database and storage) grants read and
 write access to all authenticated users. Go to Authentication in the Firebase
 console (on left-hand pane), tab sign-in methods, and enable methods
-that you would like to use. For now, studio supports google account
-authentication, and email/password authentication. If you have choosen
+that you would like to use. 
+
+For now, Studio supports Google account
+authentication and email/password authentication. If you have choosen
 to use the email/password method for authentication, use the Users tab
 of the Authentication panel to manually add yourself with a password.
-This password is not shared by other google services; if this is what
+This password is not shared by other Google services. If this is what
 you want then Google account based authentication is needed, therefore
 you should always use a unique password. Further, you can customize the
 database / storage access rules (good resources are
@@ -44,13 +46,14 @@ https://firebase.google.com/docs/storage/security/start). The default
 rules allow read and write access to all authenticated users, to both
 storage and database. This might not be the behaviour you 
 want because then users can freely delete / modify each other's experiments. 
+
 To make experiments readable by everyone, but writeable only
 by the creator, slightly more sophisticated rules are needed. Examples of such
-rules (that are used at the default studio firebase app) are given in
+rules (that are used at the default Studio Firebase app) are given in
 ``auth/firebase_db.rules`` and ``auth/firebase_storage.rules`` for
 database and storage.
 
-Setting up an authentication app for google account authentication
+Setting up an authentication app for Google account authentication
 ------------------------------------------------------------------
 
 1.  Create a new Firebase project from the [console]
@@ -58,7 +61,7 @@ Setting up an authentication app for google account authentication
 2.  Under the authentication tab in the console, turn on the Google
     authentication provider
 3.  Install the Firebase CLI (https://firebase.google.com/docs/cli/)
-4.  We will be deploying a firebase app, so the following is the summary
+4.  We will be deploying a Firebase app, so the following is the summary
     of (https://firebase.google.com/docs/hosting/deploying). The app
     iteslf is a modified authentication code example from here:
     https://firebase.google.com/docs/samples/
@@ -94,7 +97,7 @@ Go to the studio/helloworld/ folder, and run
 
 where 10 is the number of training epochs. You should be prompted
 for your user email and password (if you have uncommented
-use\_email\_auth in new\_config.yaml), or block to wait for studio to
+use\_email\_auth in new\_config.yaml), or block to wait for Studio to
 authenticate. When entering email/password combinations you may be
 prompted several times to enter your details. Then (or in another
 terminal) run

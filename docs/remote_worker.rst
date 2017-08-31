@@ -13,10 +13,10 @@ Getting credentials
    need application credentials from Google (in the future, it may be
    implemented via Firebase itself, in which case this step should
    become obsolete). If you've made it this far, you are likely to have a
-   Google cloud compute account set up, but even if not, go to
+   Google Cloud Compute account set up, but if not, go to
    http://cloud.google.com and either set up an account or sign in.
 2. Next, create a project if you don't have a project corresponding to
-   studio just yet.
+   Studio just yet.
 3. Then go to API Manager -> Credentials, and click "Create credentials"
    -> "Service account key"
 4. Choose "New service account" from the "Select accout" dropdown, and
@@ -70,12 +70,12 @@ Setting up a remote worker with exising docker image
 ----------------------------------------------------
 
 This section applies when you already have a docker
-image/container and would like the studio remote worker to run inside it.
+image/container and would like the Studio remote worker to run inside it.
 
 1. Make sure that the image has python-dev, python-pip, and git installed,
-   as well as studio. The easiest way is to make your Dockerfile inherit
-   from from the studioml Dockerfile (located in the studio root
-   directory). Otherwise, copy relevant contents of studioml Dockerfile
+   as well as Studio. The easiest way is to make your Dockerfile inherit
+   from from the Studio Dockerfile (located in the Studio root
+   directory). Otherwise, copy relevant contents of Studio Dockerfile
    into yours.
 2. Bake the credentials into your image. Run ::
 
@@ -103,4 +103,5 @@ On a submitting machine (usually local):
     studio run --queue <queue-name> <any_other_args> script.py <script_args>
 
 This script should quit promptly, but you'll be able to see experiment
-progress in studio web ui.
+progress in the Studio WebUI.
+

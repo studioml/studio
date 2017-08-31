@@ -17,8 +17,7 @@ can handle missing data while retaining performance. As a concrete example, let 
 `studio/tests/model\_util\_test.py <../studio/tests/model_util_test.py>`__):
 
 We are training a network to classify mnist digits, and then trying to
-predict images from urls. The simplest way to achieve that would be:
-
+predict images from urls. The simplest way to achieve this would be:
 ::
 
     from PIL import Image
@@ -58,7 +57,7 @@ well with hundreds of processes trying to run different instructions.
 To leverage GPU speedup, we'll need to create batches of data and
 feed them to the GPU (preferrably in parallel with urls being fetched).
 
-Keras offers a built in mechanism to do that:
+Keras offers a built in mechanism to do this:
 ``keras.models.predict_generator``. The relevant part of the code above
 can then become:
 

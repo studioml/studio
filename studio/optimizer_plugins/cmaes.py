@@ -1,4 +1,3 @@
-import copy
 import numpy as np
 import cma
 import math
@@ -13,17 +12,19 @@ OPTIMIZER_CONFIG = {
 
 # Termination criterion for stopping CMAES
 TERM_CRITERION = {
-    'generation': 20, # Number of generation to run to
-    'fitness': 999, # Threshold fitness to reach
-    'skip_gen_thres': 0.5, # Fraction of results to get back before moving on
-    'skip_gen_timeout': 0.0 # Timeout when skip_gen_thres activates
+    'generation': 20,  # Number of generation to run to
+    'fitness': 999,  # Threshold fitness to reach
+    'skip_gen_thres': 0.5,  # Fraction of results to get back before moving on
+    'skip_gen_timeout': 0.0  # Timeout when skip_gen_thres activates
 }
+
 
 class Optimizer(object):
     def __init__(self, hyperparam_dict, log_scale_dict):
         self.hyperparam_dict = hyperparam_dict
         self.log_scale_dict = log_scale_dict
-        self.nametoi = {}; self.itoname = {}
+        self.nametoi = {}
+        self.itoname = {}
         self.init = []
         self.sigma = SIGMA0
         self.bounds = []
@@ -38,19 +39,22 @@ class Optimizer(object):
             else:
                 values = hyperparam_dict[name]
             self.bounds.append((np.min(values), np.max(values)))
-            self.init.append(self.__scale_var(np.median(values), np.min(values),
-                np.max(values)))
+            self.init.append(
+                self.__scale_var(
+                    np.median(values),
+                    np.min(values),
+                    np.max(values)))
 
         self.opts = cma.CMAOptions()
         for param, value in OPTIMIZER_CONFIG.iteritems():
             if param in self.opts and value is not None:
                 self.opts[param] = value
         self.es = cma.CMAEvolutionStrategy(np.array(self.init), self.sigma,
-            self.opts)
+                                           self.opts)
 
     def get_configs(self):
         return {'termination_criterion': TERM_CRITERION,
-        'optimizer_config': OPTIMIZER_CONFIG}
+                'optimizer_config': OPTIMIZER_CONFIG}
 
     def __scale_var(self, var, min_value, max_value):
         return (var - min_value) / max((max_value - min_value), EPSILON)
@@ -64,8 +68,8 @@ class Optimizer(object):
             name = self.itoname[i]
             solution_dict[name] = solution[i]
             solution_dict[name] = min(1.0, max(0.0, solution_dict[name]))
-            solution_dict[name] = self.__unscale_var(solution_dict[name],
-                self.bounds[i][0], self.bounds[i][1])
+            solution_dict[name] = self.__unscale_var(
+                solution_dict[name], self.bounds[i][0], self.bounds[i][1])
             if self.log_scale_dict[name]:
                 solution_dict[name] = math.exp(solution_dict[name])
         return solution_dict
@@ -77,8 +81,8 @@ class Optimizer(object):
             solution[i] = hyperparam_dict[name]
             if self.log_scale_dict[name]:
                 solution[i] = math.log(solution[i] + EPSILON)
-            solution[i] = self.__scale_var(solution[i],
-                self.bounds[i][0], self.bounds[i][1])
+            solution[i] = self.__scale_var(
+                solution[i], self.bounds[i][0], self.bounds[i][1])
 
         return solution
 

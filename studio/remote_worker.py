@@ -1,7 +1,6 @@
-from local_worker import worker_loop
+from local_worker import worker_loop, wait_for_messages
 import sys
 import logging
-import time
 import model
 
 
@@ -15,7 +14,7 @@ logging.basicConfig()
 def main(args=sys.argv):
     logger = logging.getLogger('studio-remote-worker')
     parser = argparse.ArgumentParser(
-        description='TensorFlow Studio remote worker. \
+        description='Studio remote worker. \
                      Usage: studio-remote-worker \
                      ')
     parser.add_argument('--config', help='configuration file', default=None)
@@ -41,7 +40,8 @@ def main(args=sys.argv):
     parser.add_argument(
         '--timeout', '-t',
         help='Timeout after which remote worker stops listening (in seconds)',
-        default=None)
+        type=int,
+        default=-1)
 
     parsed_args, script_args = parser.parse_known_args(args)
     verbose = model.parse_verbosity(parsed_args.verbose)
@@ -53,24 +53,16 @@ def main(args=sys.argv):
         queue = PubsubQueue(parsed_args.queue, verbose=verbose)
     logger.info('Waiting for the work in the queue...')
 
-    wait_time = 0
-    wait_step = 5
-    while not queue.has_next():
-        logger.info(
-            'No messages found, sleeping for {} s (total wait time {} s)'
-            .format(wait_step, wait_time))
-        time.sleep(wait_step)
-        wait_time += wait_step
-        if parsed_args.timeout and int(parsed_args.timeout) < wait_time:
-            logger.info('No jobs found in the queue during {} s'.
-                        format(parsed_args.timeout))
-            return
+    timeout_before = parsed_args.timeout
+    timeout_after = timeout_before if timeout_before > 0 else 0
+    wait_for_messages(queue, timeout_before, logger)
 
     logger.info('Starting working')
     worker_loop(queue, parsed_args,
                 setup_pyenv=True,
                 single_experiment=parsed_args.single_run,
-                fetch_artifacts=True)
+                fetch_artifacts=True,
+                timeout=timeout_after)
 
 
 if __name__ == "__main__":

@@ -47,7 +47,7 @@ def get_gpu_mapping():
 
         pstdout, _ = loadp.communicate()
         if loadp.returncode != 0:
-            return {str(i):i for i in range(0, no_gpus)}
+            return {str(i): i for i in range(0, no_gpus)}
 
         gpu_minor_number = pstdout.split('\n')[-2]
         gpu_mapping[gpu_minor_number] = i
