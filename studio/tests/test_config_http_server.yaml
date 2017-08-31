@@ -13,8 +13,8 @@ log:
     name: output.log
 
 storage:
-    type: gcloud
-    bucket: "studio-ed756.appspot.com"
+    type: s3
+    bucket: "studioml-artifacts"
 
 saveWorkspaceFrequencyMinutes: 1 #how often is workspace being saved (minutes)
 

@@ -4,6 +4,7 @@ import json
 import model
 import pyrebase
 from auth import FirebaseAuth
+from http_artifact_store import HTTPArtifactStore
 
 import logging
 logging.basicConfig()
@@ -12,12 +13,13 @@ logging.basicConfig()
 class HTTPProvider(object):
     """Data provider for Postgres."""
 
-    def __init__(self, config, store, blocking_auth=True):
+    def __init__(self, config, verbose=10, blocking_auth=True):
         # TODO: implement connection
         self.url = config.get('serverUrl')
         self.auth = None
+        self.verbose = verbose
         self.logger = logging.getLogger('HTTPProvider')
-        self.logger.setLevel(10)
+        self.logger.setLevel(self.verbose)
 
         self.auth = None
         self.app = pyrebase.initialize_app(config)
@@ -28,8 +30,6 @@ class HTTPProvider(object):
                                      config.get("email"),
                                      config.get("password"),
                                      blocking_auth)
-
-        self.store = store
 
     def add_experiment(self, experiment):
         headers = self._get_headers()
@@ -46,7 +46,8 @@ class HTTPProvider(object):
             art['qualified'] = artifacts[tag]['qualified']
             art['bucket'] = artifacts[tag]['bucket']
 
-            self.store.put_artifact(art)
+            HTTPArtifactStore(artifacts[tag]['post'], self.verbose) \
+                .put_artifact(art)
 
     def delete_experiment(self, experiment):
         if isinstance(experiment, basestring):

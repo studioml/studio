@@ -717,7 +717,7 @@ def get_db_provider(config=None, blocking_auth=True):
             verbose=verbose,
             store=artifact_store)
     elif db_config['type'].lower() == 'http':
-        return HTTPProvider(db_config, store=artifact_store)
+        return HTTPProvider(db_config)
     else:
         raise ValueError('Unknown type of the database ' + db_config['type'])
 

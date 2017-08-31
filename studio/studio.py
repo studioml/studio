@@ -165,18 +165,20 @@ def get_user_experiments():
                      .format(toc - tic))
     return retval
 
+
 @app.route('/api/get_all_experiments', methods=['POST'])
 def get_all_experiments():
     tic = time.time()
-    myuser_id = get_and_verify_user(request)
+    get_and_verify_user(request)
 
     # TODO check is myuser_id is authorized to do that
 
     getlogger().info('Getting all experiments')
     users = get_db().get_users()
-    
-    experiments = [e for user in users 
-            for e in get_db().get_user_experiments(user, blocking=False)]
+
+    experiments = [e for user in users
+                   for e in get_db().get_user_experiments(
+                       user, blocking=False)]
 
     status = "ok"
     retval = json.dumps({
@@ -185,8 +187,9 @@ def get_all_experiments():
     })
     toc = time.time()
     getlogger().info('Processed get_user_experiments request in {} s'
-                .format(toc - tic))
+                     .format(toc - tic))
     return retval
+
 
 @app.route('/api/get_projects', methods=['POST'])
 def get_projects():
@@ -353,7 +356,7 @@ def finish_experiment():
 @app.route('/api/add_experiment', methods=['POST'])
 def add_experiment():
     tic = time.time()
-    userid = get_and_verify_user(request)
+    get_and_verify_user(request)
 
     # TODO check if user has access
 
@@ -368,7 +371,8 @@ def add_experiment():
 
         for tag, art in added_experiment.artifacts.iteritems():
             if 'key' in art.keys():
-                get_db().store.grant_write(art['key'], userid)
+                post = get_db().store.get_artifact_post(art)
+                art['post'] = post
                 artifacts[tag] = art
         status = 'ok'
 
@@ -403,9 +407,10 @@ def checkpoint_experiment():
 
     toc = time.time()
     getlogger().info('Processed add_experiment request in {} s'
-                    .format(toc - tic))
+                     .format(toc - tic))
 
     return json.dumps({'status': status, 'artifacts': artifacts})
+
 
 def get_and_verify_user(request):
     if not request.headers or 'Authorization' not in request.headers.keys():
