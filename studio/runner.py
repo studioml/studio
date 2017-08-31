@@ -98,7 +98,7 @@ def main(args=sys.argv):
 
     parser.add_argument(
         '--capture', '-c',
-        help='Name of the mutable artifact to be captured continously',
+        help='Name of the mutable artifact to be captured continuously',
         default=[], action='append')
 
     parser.add_argument(
@@ -108,7 +108,7 @@ def main(args=sys.argv):
 
     parser.add_argument(
         '--verbose', '-v',
-        help='Verbosity level. Allowed vaules: ' +
+        help='Verbosity level. Allowed values: ' +
              'debug, info, warn, error, crit ' +
              'or numerical value of logger levels.',
         default=None)
