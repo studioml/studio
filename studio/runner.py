@@ -36,7 +36,7 @@ def main(args=sys.argv):
     parser.add_argument('--project', help='name of the project', default=None)
     parser.add_argument(
         '--experiment', '-e',
-        help='name of the experiment. If none provided, ' +
+        help='Name of the experiment. If none provided, ' +
              'random uuid will be generated',
         default=None)
 
