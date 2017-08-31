@@ -29,7 +29,7 @@ logging.basicConfig()
 def main(args=sys.argv):
     logger = logging.getLogger('studio-runner')
     parser = argparse.ArgumentParser(
-        description='TensorFlow Studio runner. \
+        description='Studio runner. \
                      Usage: studio run <runner_arguments> \
                      script <script_arguments>')
     parser.add_argument('--config', help='configuration file', default=None)
