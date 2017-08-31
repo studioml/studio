@@ -28,7 +28,7 @@ class S3ArtifactStore(TartifactStore):
         super(S3ArtifactStore, self).__init__(measure_timestamp_diff)
 
     def _upload_file(self, key, local_path):
-        self.client.upload_file(local_path, self.bucket, key)
+        self.client.upload_file(Filename=local_path, Bucket=self.bucket, Key=key)
 
     def _download_file(self, key, local_path):
         self.client.download_file(self.bucket, key, local_path)
