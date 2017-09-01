@@ -7,6 +7,8 @@ Utility functions for anything shared in common by ec2cloud_worker and
 gcloud_worker
 """
 
+INDENT = 2
+
 def insert_user_startup_script(user_startup_script, startup_script_str,
     logger):
     try:
@@ -21,6 +23,7 @@ def insert_user_startup_script(user_startup_script, startup_script_str,
 
     startup_script_lines = startup_script_str.splitlines()
     new_startup_script_lines = []
+    whitespace = " " * INDENT
     for line in startup_script_lines:
 
         if line.startswith("studio remote worker") or \
@@ -34,10 +37,13 @@ def insert_user_startup_script(user_startup_script, startup_script_str,
             for user_line in user_startup_script_lines:
                 if user_line.startswith("#!"):
                     continue
-                new_startup_script_lines.append("\t%s\n" % user_line)
+                new_startup_script_lines.append("%s%s\n" % \
+                    (whitespace, user_line))
 
-            new_startup_script_lines.append("\tcd $%s\n" % curr_working_dir)
-            new_startup_script_lines.append("\t%s\n" % line)
+            new_startup_script_lines.append("%scd $%s\n" % \
+                (whitespace, curr_working_dir))
+            new_startup_script_lines.append("%s%s\n" % \
+                (whitespace, line))
             new_startup_script_lines.append(")\n")
             new_startup_script_lines.append("%s\n" % func_name)
         else:
