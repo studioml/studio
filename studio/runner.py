@@ -437,7 +437,7 @@ def get_experiment_fitnesses(experiments, optimizer, config, logger):
     progbar = Progbar(len(experiments), interval=0.0)
     logger.info("Waiting for fitnesses from %s experiments" % len(experiments))
 
-    bad_line_dicts = [{}] * len(experiments)
+    bad_line_dicts = [dict() for x in xrange(len(experiments))]
     has_result = [False] * len(experiments)
     fitnesses = [0.0] * len(experiments)
     term_criterion = config['optimizer']['termination_criterion']
