@@ -141,16 +141,17 @@ class GCloudWorkerManager(object):
         with open(self.startup_script_file, 'r') as f:
             startup_script = f.read()
         if self.runner_args is not None:
-            startup_script = startup_script.format(
-                studioml_branch=self.runner_args.branch,
-                metadata_url="metadata_url")
+            startup_script = startup_script.replace(
+                "{studioml_branch}", self.runner_args.branch)
             startup_script = insert_user_startup_script(
                 self.runner_args.user_startup_script,
                 startup_script, self.logger)
         else:
-            startup_script = startup_script.format(
-                studioml_branch="master",
-                metadata_url="metadata_url")
+            startup_script = startup_script.replace(
+                "{studioml_branch}", "master")
+
+        self.logger.info('Startup script:')
+        self.logger.info(startup_script)
 
         with open(os.environ['GOOGLE_APPLICATION_CREDENTIALS'], 'r') as f:
             credentials = f.read()
