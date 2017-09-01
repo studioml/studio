@@ -311,7 +311,10 @@ def main(args=sys.argv):
             artifacts=artifacts,
             resources_needed=resources_needed,
             metric=runner_args.metric)]
-        submit_experiments(experiments, resources_needed, config, runner_args,
+        submit_experiments(experiments,
+            resources_needed,
+            config,
+            runner_args,
             logger)
 
     db = None
