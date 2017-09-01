@@ -7,7 +7,6 @@ pillow
 
 flask
 jinja2
-nose
 
 pyyaml
 cma
