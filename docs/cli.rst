@@ -7,7 +7,7 @@ a command-line tool to get a quick overview of exising experiments and take acti
 at the moment are:
 
 - ``studio runs list users`` - lists all users 
-- ``studio runs list projects`` - lists al projects
+- ``studio runs list projects`` - lists all projects
 - ``studio runs list [user]`` - lists your (default) or someone else's experiments
 - ``studio runs list project <project>`` - lists all experiments in a project
 - ``studio runs list all`` - lists all experiments
