@@ -113,7 +113,8 @@ class EC2WorkerManager(object):
         startup_script = self._get_startup_script(
             resources_needed, queue_name, timeout=timeout)
         if self.runner_args is not None:
-            startup_script.format(studioml_branch=self.runner_args.branch)
+            startup_script = startup_script.format(
+                studioml_branch=self.runner_args.branch)
             startup_script = insert_user_startup_script(
                 self.runner_args.user_startup_script,
                 startup_script, self.logger)
@@ -265,7 +266,8 @@ class EC2WorkerManager(object):
         startup_script = self._get_startup_script(
             resources_needed, queue_name, asg_name, timeout=timeout)
         if self.runner_args is not None:
-            startup_script.format(studioml_branch=self.runner_args.branch)
+            startup_script = startup_script.format(
+                studioml_branch=self.runner_args.branch)
             startup_script = insert_user_startup_script(
                 self.runner_args.user_startup_script,
                 startup_script, self.logger)
