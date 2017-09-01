@@ -39,7 +39,7 @@ def main(args=sys.argv):
     parser.add_argument('--project', help='name of the project', default=None)
     parser.add_argument(
         '--experiment', '-e',
-        help='name of the experiment. If none provided, ' +
+        help='Name of the experiment. If none provided, ' +
              'random uuid will be generated',
         default=None)
 
@@ -103,7 +103,7 @@ def main(args=sys.argv):
 
     parser.add_argument(
         '--capture', '-c',
-        help='Name of the mutable artifact to be captured continously',
+        help='Name of the mutable artifact to be captured continuously',
         default=[], action='append')
 
     parser.add_argument(
@@ -113,7 +113,7 @@ def main(args=sys.argv):
 
     parser.add_argument(
         '--verbose', '-v',
-        help='Verbosity level. Allowed vaules: ' +
+        help='Verbosity level. Allowed values: ' +
              'debug, info, warn, error, crit ' +
              'or numerical value of logger levels.',
         default=None)
