@@ -146,6 +146,9 @@ class GCloudWorkerManager(object):
             startup_script = insert_user_startup_script(
                 self.runner_args.user_startup_script,
                 startup_script, self.logger)
+        else:
+            startup_script = startup_script.format(
+                studioml_branch="master")
 
         with open(os.environ['GOOGLE_APPLICATION_CREDENTIALS'], 'r') as f:
             credentials = f.read()

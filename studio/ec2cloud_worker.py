@@ -194,6 +194,8 @@ class EC2WorkerManager(object):
 
             startup_script = f.read()
 
+        branch = self.runner_args.branch if self.runner_args is not None \
+            else "master"
         startup_script = startup_script.format(
             auth_key=auth_key if auth_key else "",
             queue_name=queue_name,
@@ -204,12 +206,11 @@ class EC2WorkerManager(object):
             autoscaling_group=autoscaling_group if autoscaling_group else "",
             region=self.region,
             use_gpus=0 if resources_needed['gpus'] == 0 else 1,
-            timeout=timeout
+            timeout=timeout,
+            studioml_branch=branch
         )
 
         if self.runner_args is not None:
-            startup_script = startup_script.format(
-                studioml_branch=self.runner_args.branch)
             startup_script = insert_user_startup_script(
                 self.runner_args.user_startup_script,
                 startup_script, self.logger)
