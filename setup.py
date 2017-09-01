@@ -52,6 +52,9 @@ def read(fname):
 with open('requirements.txt') as f:
     required = f.read().splitlines()
 
+with open('test_requirements.txt') as f:
+    test_required = f.read().splitlines()
+
 # projects using the studioml pthon APIs will need to use this installer
 # to access the google and AWS cloud storage
 
@@ -79,7 +82,7 @@ setup(
             'studio/scripts/gcloud_worker_startup.sh',
             'studio/scripts/ec2_worker_startup.sh'],
     tests_suite='nose.collector',
-    tests_require=['nose'],
+    tests_require=test_required,
     cmdclass={'develop': MyDevelop, 'install': MyInstall},
     classifiers=[
             "Development Status :: 3 - Alpha",
