@@ -112,12 +112,6 @@ class EC2WorkerManager(object):
 
         startup_script = self._get_startup_script(
             resources_needed, queue_name, timeout=timeout)
-        if self.runner_args is not None:
-            startup_script = startup_script.format(
-                studioml_branch=self.runner_args.branch)
-            startup_script = insert_user_startup_script(
-                self.runner_args.user_startup_script,
-                startup_script, self.logger)
 
         if ssh_keypair is not None:
             groupid = self._create_security_group(ssh_keypair)
@@ -213,6 +207,13 @@ class EC2WorkerManager(object):
             timeout=timeout,
         )
 
+        if self.runner_args is not None:
+            startup_script = startup_script.format(
+                studioml_branch=self.runner_args.branch)
+            startup_script = insert_user_startup_script(
+                self.runner_args.user_startup_script,
+                startup_script, self.logger)
+
         self.logger.info('Startup script:')
         self.logger.info(startup_script)
 
@@ -265,12 +266,6 @@ class EC2WorkerManager(object):
 
         startup_script = self._get_startup_script(
             resources_needed, queue_name, asg_name, timeout=timeout)
-        if self.runner_args is not None:
-            startup_script = startup_script.format(
-                studioml_branch=self.runner_args.branch)
-            startup_script = insert_user_startup_script(
-                self.runner_args.user_startup_script,
-                startup_script, self.logger)
 
         if bid_price.endswith('%'):
             bid_price = str(self.prices[instance_type]
