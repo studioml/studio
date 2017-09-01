@@ -182,8 +182,12 @@ class Optimizer(object):
             self.config['optimizer']['checkpoint_interval'] == 0) or \
             self.stop():
 
-            with open(os.path.join(os.path.abspath( \
-                os.path.expanduser(self.config['optimizer']['result_dir'])), \
+            result_dir = os.path.abspath( \
+                os.path.expanduser(self.config['optimizer']['result_dir']))
+            if not os.path.exists(result_dir):
+                os.makedirs(result_dir)
+
+            with open(os.path.join(result_dir, \
                 "G%s_F%s_best_hyperparam.pkl" % (self.gen, self.best_fitness)), \
                 'wb') as f:
                 pickle.dump(self.best_hyperparam, f, protocol=-1)
