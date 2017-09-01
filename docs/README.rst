@@ -48,36 +48,36 @@ pip install ``studioml`` from the master pypi repositry:
 
     pip install studioml
 
-Find more `details <http://studioml.readthedocs.io/en/latest/installation.html>`__ on installation methods and the release process. 
+Find more `details <http://docs.studio.ml/en/latest/installation.html>`__ on installation methods and the release process. 
 
 Authentication
 --------------
 
-Currently Studio supports 2 methods of authentication: `email / password <http://studioml.readthedocs.io/en/latest/authentication.html#email--password-authentication>`__ and using a `Google account. <http://studioml.readthedocs.io/en/latest/authentication.html#google-account-authentication>`__ To use ``studio run`` and ``studio ui`` in guest
+Currently Studio supports 2 methods of authentication: `email / password <http://docs.studio.ml/en/latest/authentication.html#email--password-authentication>`__ and using a `Google account. <http://docs.studio.ml/en/latest/authentication.html#google-account-authentication>`__ To use ``studio run`` and ``studio ui`` in guest
 mode, in studio/default\_config.yaml, uncomment "guest: true" under the
 database section.
 
 Alternatively, you can set up your own database and configure Studio to
-use it. See `setting up database <http://studioml.readthedocs.io/en/latest/setup_database.html>`__. This is the
+use it. See `setting up database <http://docs.studio.ml/en/latest/setup_database.html>`__. This is the
 preferred option if you want to keep your models and artifacts private.
 
 
 Further reading and cool features
 ---------------------------------
 
--  `Running experiments remotely <http://studioml.readthedocs.io/en/latest/remote_worker.html>`__
+-  `Running experiments remotely <http://docs.studio.ml/en/latest/remote_worker.html>`__
    
-   -  `Custom Python environments for remote workers <http://studioml.readthedocs.io/en/latest/customenv.html>`__
+   -  `Custom Python environments for remote workers <http://docs.studio.ml/en/latest/customenv.html>`__
 
--  `Running experiments in the cloud <http://studioml.readthedocs.io/en/latest/cloud.html>`__
+-  `Running experiments in the cloud <http://docs.studio.ml/en/latest/cloud.html>`__
 
-   -  `Google Cloud setup instructions <http://studioml.readthedocs.io/en/latest/gcloud_setup.html>`__
+   -  `Google Cloud setup instructions <http://docs.studio.ml/en/latest/gcloud_setup.html>`__
 
-   -  `Amazon EC2 setup instructions <http://studioml.readthedocs.io/en/latest/ec2_setup.html>`__
+   -  `Amazon EC2 setup instructions <http://docs.studio.ml/en/latest/ec2_setup.html>`__
 
--  `Artifact management <http://studioml.readthedocs.io/en/latest/artifacts.html>`__
--  `Hyperparameter search <http://studioml.readthedocs.io/en/latest/hyperparams.html>`__
--  `Pipeline for trained models <http://studioml.readthedocs.io/en/latest/model_pipelines.html>`__
+-  `Artifact management <http://docs.studio.ml/en/latest/artifacts.html>`__
+-  `Hyperparameter search <http://docs.studio.ml/en/latest/hyperparams.html>`__
+-  `Pipeline for trained models <http://docs.studio.ml/en/latest/model_pipelines.html>`__
 
 .. |Hex.pm| image:: https://img.shields.io/hexpm/l/plug.svg
    :target: https://github.com/studioml/studio/blob/master/LICENSE
