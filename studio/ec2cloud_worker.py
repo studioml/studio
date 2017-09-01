@@ -204,7 +204,7 @@ class EC2WorkerManager(object):
             autoscaling_group=autoscaling_group if autoscaling_group else "",
             region=self.region,
             use_gpus=0 if resources_needed['gpus'] == 0 else 1,
-            timeout=timeout,
+            timeout=timeout
         )
 
         if self.runner_args is not None:
