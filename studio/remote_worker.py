@@ -14,7 +14,7 @@ logging.basicConfig()
 def main(args=sys.argv):
     logger = logging.getLogger('studio-remote-worker')
     parser = argparse.ArgumentParser(
-        description='TensorFlow Studio remote worker. \
+        description='Studio remote worker. \
                      Usage: studio-remote-worker \
                      ')
     parser.add_argument('--config', help='configuration file', default=None)
@@ -50,8 +50,7 @@ def main(args=sys.argv):
        parsed_args.queue.startswith('sqs_'):
         queue = SQSQueue(parsed_args.queue, verbose=verbose)
     else:
-        config = model.get_config(runner_args.config)
-        queue = PubsubQueue(parsed_args.queue, config['database']['projectId'], verbose=verbose)
+        queue = PubsubQueue(parsed_args.queue, verbose=verbose)
     logger.info('Waiting for the work in the queue...')
 
     timeout_before = parsed_args.timeout

@@ -1,7 +1,6 @@
 import logging
 import time
 import calendar
-import requests
 import certifi
 import json
 

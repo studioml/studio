@@ -9,17 +9,21 @@ import math
 import json
 
 from gpu_util import memstr2int
+from cloud_worker_util import insert_user_startup_script
 
 logging.basicConfig()
 
 
 class GCloudWorkerManager(object):
-    def __init__(self, zone='us-central1-f', auth_cookie=None, verbose=10):
+    def __init__(self, runner_args=None, zone='us-central1-f',
+        auth_cookie=None, verbose=10):
         assert 'GOOGLE_APPLICATION_CREDENTIALS' in os.environ.keys()
         with open(os.environ['GOOGLE_APPLICATION_CREDENTIALS'], 'r') as f:
             credentials_dict = json.loads(f.read())
 
         self.compute = googleapiclient.discovery.build('compute', 'v1')
+
+        self.runner_args = runner_args
         self.startup_script_file = os.path.join(
             os.path.dirname(__file__),
             'scripts/gcloud_worker_startup.sh')
@@ -47,7 +51,9 @@ class GCloudWorkerManager(object):
 
         name = self._generate_instance_name()
 
-        config = self._get_instance_config(resources_needed, queue_name)
+        config = self._get_instance_config(
+            resources_needed, queue_name, timeout=timeout)
+
         config['name'] = name
 
         op = self.compute.instances().insert(
@@ -70,7 +76,7 @@ class GCloudWorkerManager(object):
             ssh_keypair=None,
             queue_upscaling=True,
             start_workers=1,
-            max_workers=100, 
+            max_workers=100,
             timeout=300):
 
         if resources_needed is None:
@@ -91,7 +97,8 @@ class GCloudWorkerManager(object):
         template_name = self._generate_template_name()
         group_name = self._generate_group_name()
 
-        config = self._get_instance_config(resources_needed, queue_name)
+        config = self._get_instance_config(
+            resources_needed, queue_name, timeout=timeout)
         config['scheduling']['preemptible'] = True
         config['machineType'] = config['machineType'].split('/')[-1]
         config['metadata']['items'].append(
@@ -122,7 +129,7 @@ class GCloudWorkerManager(object):
 
         self.logger.info('Managed groupd {} created'.format(group_name))
 
-    def _get_instance_config(self, resources_needed, queue_name):
+    def _get_instance_config(self, resources_needed, queue_name, timeout=300):
         image_response = self.compute.images().getFromFamily(
             project='debian-cloud', family='debian-9').execute()
         source_disk_image = image_response['selfLink']
@@ -130,8 +137,14 @@ class GCloudWorkerManager(object):
         # Configure the machine
         machine_type = self._generate_machine_type(resources_needed)
         self.logger.debug('Machine type = {}'.format(machine_type))
+
         with open(self.startup_script_file, 'r') as f:
             startup_script = f.read()
+        if self.runner_args is not None:
+            startup_script.format(studioml_branch=self.runner_args.branch)
+            startup_script = insert_user_startup_script(
+                self.runner_args.user_startup_script,
+                startup_script, self.logger)
 
         with open(os.environ['GOOGLE_APPLICATION_CREDENTIALS'], 'r') as f:
             credentials = f.read()
@@ -193,6 +206,9 @@ class GCloudWorkerManager(object):
                 }, {
                     'key': 'auth_data',
                     'value': auth_data
+                }, {
+                    'key': 'timeout',
+                    'value': str(timeout)
                 }]
             },
             "scheduling": {

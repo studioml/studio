@@ -80,10 +80,10 @@ class HyperparameterParser(object):
             param_name = hyperparam.split('=')[0]
             param_values_str = hyperparam.split('=')[1]
             if self.runner_args.optimizer == "grid":
-                hyperparameters.append(self.__parse_grid(param_name,
+                hyperparameters.append(self._parse_grid(param_name,
                     param_values_str))
             else:
-                hyperparameters.append(self.__parse_opt(param_name,
+                hyperparameters.append(self._parse_opt(param_name,
                     param_values_str))
         if self.runner_args.verbose:
             self.logger.info("Parsed the following hyperparameters:")
@@ -91,7 +91,7 @@ class HyperparameterParser(object):
                 self.logger.info(str(h))
         return hyperparameters
 
-    def __parse_opt(self, param_name, range_str):
+    def _parse_opt(self, param_name, range_str):
         unbounded = is_log = rand_init = False
         min_range = max_range = array_length = None
         raw_fields = range_str.split(":")
@@ -136,13 +136,15 @@ class HyperparameterParser(object):
         else:
             is_log = False
 
+        if not hasattr(self, 'index'):
+            self.index = 0
         h = Hyperparameter(param_name, index=self.index, min_range=min_range,
             max_range=max_range, array_length=array_length, unbounded=unbounded,
             is_log=is_log, rand_init=rand_init)
         self.index += array_length if array_length is not None else 1
         return h
 
-    def __parse_grid(self, param_name, range_str):
+    def _parse_grid(self, param_name, range_str):
         return_val = None
         if ',' in range_str:
             # return numpy array for consistency with other cases
@@ -189,6 +191,9 @@ class HyperparameterParser(object):
             return_val = [float(range_str)]
         if type(return_val) is not list:
             return_val = return_val.tolist()
+
+        if not hasattr(self, 'index'):
+            self.index = 0
         h = Hyperparameter(param_name, index=self.index, values=return_val)
         self.index += 1
         return h

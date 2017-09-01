@@ -14,8 +14,8 @@ VERSION = ""
 class MyDevelop(develop):
     def run(self):
         if "TRAVIS_TAG" in os.environ:
-          global VERSION
-          VERSION = os.environ["TRAVIS_TAG"]
+            global VERSION
+            VERSION = os.environ["TRAVIS_TAG"]
         call(["pip install -r requirements.txt --no-clean"], shell=True)
         copyconfig()
         develop.run(self)
@@ -23,8 +23,9 @@ class MyDevelop(develop):
 
 class MyInstall(install):
     if "TRAVIS_TAG" in os.environ:
-      global VERSION
-      VERSION = os.environ["TRAVIS_TAG"]
+        global VERSION
+        VERSION = os.environ["TRAVIS_TAG"]
+
     def run(self):
         call(["pip install -r requirements.txt --no-clean"], shell=True)
         copyconfig()
@@ -39,11 +40,12 @@ def copyconfig():
 
     if not os.path.exists(config_path):
         if not os.path.exists(os.path.dirname(config_path)):
-                os.makedirs(os.path.dirname(config_path))
+            os.makedirs(os.path.dirname(config_path))
 
         shutil.copyfile(
             default_config_path,
             os.path.expanduser('~/.studioml/config.yaml'))
+
 
 def read(fname):
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
@@ -82,15 +84,15 @@ setup(
     tests_require=['nose'],
     cmdclass={'develop': MyDevelop, 'install': MyInstall},
     classifiers=[
-            "Development Status :: 3 - Alpha",
-            "Environment :: Console",
-            "Intended Audience :: Developers",
-            "Intended Audience :: Science/Research",
-            "Operating System :: POSIX :: Linux",
-            "Programming Language :: Python",
-            "Topic :: Scientific/Engineering :: Artificial Intelligence",
-            "Topic :: Utilities",
-            "License :: OSI Approved :: Apache Software License",
+        "Development Status :: 3 - Alpha",
+        "Environment :: Console",
+        "Intended Audience :: Developers",
+        "Intended Audience :: Science/Research",
+        "Operating System :: POSIX :: Linux",
+        "Programming Language :: Python",
+        "Topic :: Scientific/Engineering :: Artificial Intelligence",
+        "Topic :: Utilities",
+        "License :: OSI Approved :: Apache Software License",
     ],
     install_requires=required,
     zip_safe=False)

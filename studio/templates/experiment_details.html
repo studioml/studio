@@ -17,7 +17,6 @@
 
     <dl>
         <div id="container-artifacts" hidden>
-            <dt>Experiment artifacts:</dt>
         </div>
 
         <div id="info" hidden>
@@ -107,7 +106,7 @@
                 }
                 $('#container-pyenv').show()
 
-                
+                $('#container-artifacts').html('<dt>Experiemnt artifacts</dt>')
                 for (var key in e.artifacts) {
                     art = e.artifacts[key]
                     var artifactHtml = '<dd>';
@@ -181,6 +180,7 @@
 
         function displayExtraInfo(elementId, info) {
             el = $('#' + elementId)
+            el.html('')
             if (info) {
                 for (var key in info) {
                     if (key != 'logtail') {

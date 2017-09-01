@@ -32,7 +32,7 @@ logging.basicConfig()
 def main(args=sys.argv):
     logger = logging.getLogger('studio-runner')
     parser = argparse.ArgumentParser(
-        description='TensorFlow Studio runner. \
+        description='Studio runner. \
                      Usage: studio run <runner_arguments> \
                      script <script_arguments>')
     parser.add_argument('--config', help='configuration file', default=None)
@@ -57,24 +57,26 @@ def main(args=sys.argv):
     parser.add_argument(
         '--gpus',
         help='Number of gpus needed to run the experiment',
+        type=int,
         default=None)
 
     parser.add_argument(
         '--cpus',
         help='Number of cpus needed to run the experiment' +
              ' (used to configure cloud instance)',
+        type=int,
         default=None)
 
     parser.add_argument(
         '--ram',
         help='Amount of RAM needed to run the experiment' +
-             ' (used to configure cloud instance)',
+             ' (used to configure cloud instance), ex: 10G, 10GB',
         default=None)
 
     parser.add_argument(
         '--hdd',
         help='Amount of hard drive space needed to run the experiment' +
-             ' (used to configure cloud instance)',
+             ' (used to configure cloud instance), ex: 10G, 10GB',
         default=None)
 
     parser.add_argument(
@@ -140,6 +142,7 @@ def main(args=sys.argv):
     parser.add_argument(
         '--num-workers',
         help='Number of local or cloud workers to spin up',
+        type=int,
         default=None)
 
     parser.add_argument(
@@ -158,20 +161,34 @@ def main(args=sys.argv):
     parser.add_argument(
         '--optimizer', '-opt',
         help='Name of optimizer to use, by default is grid search. ' +
-        'The name of the optimizer must either be in studio/optimizer_plugins ' +
-        'directory or the path to the optimizer source file must be supplied. ',
+        'The name of the optimizer must either be in ' +
+        'studio/optimizer_plugins ' +
+        'directory or the path to the optimizer source file ' +
+        'must be supplied. ',
         default='grid')
 
     parser.add_argument(
         '--cloud-timeout',
         help="Time (in seconds) that cloud workers wait for messages. " +
              "If negative, " +
-             "wait for the first message in the queue indefinitely and shut down " +
+             "wait for the first message in the queue indefinitely " +
+             "and shut down " +
              "as soon as no new messages are available. " +
              "If zero, don't wait at all." +
              "Default value is %(default)",
         type=int,
         default=300)
+
+    parser.add_argument(
+        '--user-startup-script',
+        help='Path of script to run immediately before running the remote worker',
+        default=None)
+
+    parser.add_argument(
+        '--branch',
+        help='Branch of studioml to use when running remote worker, useful ' +
+             'for debugging pull requests',
+        default='master')
 
     # detect which argument is the script filename
     # and attribute all arguments past that index as related to the script
@@ -223,8 +240,13 @@ def main(args=sys.argv):
                 artifacts,
                 resources_needed,
                 logger)
-            submit_experiments(experiments, resources_needed, config,
-                               runner_args, logger)
+            submit_experiments(
+                experiments,
+                resources_needed,
+                config,
+                runner_args,
+                logger,
+                resources_needed)
         else:
             opt_modulepath = os.path.join(
                 os.path.dirname(os.path.abspath(__file__)),
@@ -289,8 +311,11 @@ def main(args=sys.argv):
             artifacts=artifacts,
             resources_needed=resources_needed,
             metric=runner_args.metric)]
-        submit_experiments(experiments, resources_needed,
-                           config, runner_args, logger)
+        submit_experiments(experiments,
+            resources_needed,
+            config,
+            runner_args,
+            logger)
 
     db = None
     return
@@ -328,16 +353,18 @@ def submit_experiments(experiments, resources_needed, config, runner_args,
             if queue_name is None:
                 queue_name = 'pubsub_' + str(uuid.uuid4())
                 worker_manager = GCloudWorkerManager(
+                    runner_args=runner_args,
                     auth_cookie=auth_cookie,
                     zone=config['cloud']['zone']
                 )
 
-            queue = PubsubQueue(queue_name, config['database']['projectId'], verbose=verbose)
+            queue = PubsubQueue(queue_name, verbose=verbose)
 
         if runner_args.cloud in ['ec2', 'ec2spot']:
             if queue_name is None:
                 queue_name = 'sqs_' + str(uuid.uuid4())
                 worker_manager = EC2WorkerManager(
+                    runner_args=runner_args,
                     auth_cookie=auth_cookie
                 )
 
@@ -352,30 +379,25 @@ def submit_experiments(experiments, resources_needed, config, runner_args,
                 for i in range(num_workers):
                     worker_manager.start_worker(
                         queue_name, resources_needed,
-                        ssh_keypair=runner_args.ssh_keypair)
+                        ssh_keypair=runner_args.ssh_keypair,
+                        timeout=runner_args.cloud_timeout)
             else:
                 assert runner_args.bid is not None
                 if runner_args.num_workers:
                     start_workers = runner_args.num_workers
                     queue_upscaling = False
                 else:
-                    assert runner_args.bid is not None
-                    if runner_args.num_workers:
-                        start_workers = runner_args.num_workers
-                        queue_upscaling = False
-                    else:
-                        start_workers = 1
-                        queue_upscaling = True
+                    start_workers = 1
+                    queue_upscaling = True
 
-                    worker_manager.start_spot_workers(
-                        queue_name,
-                        runner_args.bid,
-                        resources_needed,
-                        start_workers=start_workers,
-                        queue_upscaling=queue_upscaling,
-                        ssh_keypair=runner_args.ssh_keypair,
-                        timeout=runner_args.cloud_timeout)
-
+                worker_manager.start_spot_workers(
+                    queue_name,
+                    runner_args.bid,
+                    resources_needed,
+                    start_workers=start_workers,
+                    queue_upscaling=queue_upscaling,
+                    ssh_keypair=runner_args.ssh_keypair,
+                    timeout=runner_args.cloud_timeout)
     else:
         if queue_name == 'local':
             queue = LocalQueue()
@@ -383,7 +405,10 @@ def submit_experiments(experiments, resources_needed, config, runner_args,
         elif queue_name.startswith('sqs_'):
             queue = SQSQueue(queue_name, verbose=verbose)
         else:
-            queue = PubsubQueue(queue_name, config['database']['projectId'], verbose=verbose)
+            queue = PubsubQueue(
+                queue_name,
+                config['database']['projectId'],
+                verbose=verbose)
 
     for e in experiments:
         queue.enqueue(json.dumps({
@@ -412,6 +437,7 @@ def get_experiment_fitnesses(experiments, optimizer, config, logger):
     progbar = Progbar(len(experiments), interval=0.0)
     logger.info("Waiting for fitnesses from %s experiments" % len(experiments))
 
+    bad_line_dicts = [{}] * len(experiments)
     has_result = [False] * len(experiments)
     fitnesses = [0.0] * len(experiments)
     term_criterion = config['optimizer']['termination_criterion']
@@ -442,15 +468,32 @@ def get_experiment_fitnesses(experiments, optimizer, config, logger):
             if output is None:
                 continue
 
-            for line in output:
+            for j, line in enumerate(output):
+
+                if line.startswith("Traceback (most recent call last):") and \
+                    j not in bad_line_dicts[i]:
+                    logger.warn("Experiment %s: error discovered in output" % \
+                        returned_experiment.key)
+                    logger.warn("".join(output[j:]))
+                    bad_line_dicts[i][j] = True
+
                 if line.startswith("Fitness") or line.startswith("fitness"):
                     try:
                         fitness = float(line.rstrip().split(':')[1])
-                        assert fitness >= 0.0
+                        # assert fitness >= 0.0
                     except BaseException:
-                        logger.warn('Error parsing or invalid fitness (%s)'
-                                    % line)
+                        if j not in bad_line_dicts[i]:
+                            logger.warn('Experiment %s: error parsing or invalid' \
+                                ' fitness' % returned_experiment.key)
+                            logger.warn(line)
+                            bad_line_dicts[i][j] = True
                     else:
+                        if fitness < 0.0:
+                            logger.warn('Experiment %s: returned fitness is' \
+                                ' less than zero, setting it to zero' % \
+                                returned_experiment.key)
+                            fitness = 0.0
+
                         fitnesses[i] = fitness
                         has_result[i] = True
                         progbar.add(1)

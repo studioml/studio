@@ -11,7 +11,7 @@ database:
 
     # serviceAccount: $GOOGLE_APPLICATION_CREDENTIALS
     # guest: true
-    # use_email_auth: true
+    use_email_auth: false
 
 
 
@@ -40,7 +40,7 @@ optimizer:
     result_dir: "~/Desktop/"
     checkpoint_interval: 0
     termination_criterion:
-        generation: 20
+        generation: 5
         fitness: 999
         skip_gen_thres: 1.0
         skip_gen_timeout: 30

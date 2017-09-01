@@ -33,6 +33,7 @@ model.add(Dense(128, activation='relu'))
 model.add(Dense(128, activation='relu'))
 
 model.add(Dense(10, activation='softmax'))
+model.summary()
 
 
 batch_size = 128
@@ -43,7 +44,8 @@ print('learning rate = {}'.format(lr))
 print('batch size = {}'.format(batch_size))
 print('no_epochs = {}'.format(no_epochs))
 
-model.compile(loss='categorical_crossentropy', optimizer=optimizers.SGD(lr=lr))
+model.compile(loss='categorical_crossentropy', optimizer=optimizers.SGD(lr=lr), 
+              metrics=['accuracy'])
 
 
 checkpointer = ModelCheckpoint(

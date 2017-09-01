@@ -1,15 +1,19 @@
 from google.cloud import pubsub
 import logging
 import os
+import json
 
 from model import parse_verbosity
 
 logging.basicConfig()
 
 class PubsubQueue(object):
-    def __init__(self, queue_name, project_name, sub_name=None, verbose=10):
+    def __init__(self, queue_name, sub_name=None, verbose=10):
         assert 'GOOGLE_APPLICATION_CREDENTIALS' in os.environ.keys()
-        assert project_name != ''
+        with open(os.environ['GOOGLE_APPLICATION_CREDENTIALS']) as f:
+            credentials = json.loads(f.read())
+
+        project_name = credentials['project_id']
         self.logger = logging.getLogger(self.__class__.__name__)
         if verbose is not None:
             self.logger.setLevel(parse_verbosity(verbose))
@@ -30,7 +34,8 @@ class PubsubQueue(object):
         self.logger.info("Topic name = {}".format(queue_name))
         self.logger.info("Subscription name = {}".format(sub_name))
 
-        self.sub_name = self.subclient.subscription_path(project_name, sub_name)
+        self.sub_name = self.subclient.subscription_path(
+            project_name, sub_name)
         try:
             self.subclient.get_subscription(self.sub_name)
         except BaseException as e:
@@ -66,8 +71,8 @@ class PubsubQueue(object):
     def dequeue(self, acknowledge=True):
 
         response = self.subclient.api.pull(
-                self.sub_name,
-                return_immediately=True, max_messages=1)
+            self.sub_name,
+            return_immediately=True, max_messages=1)
         msgs = response.received_messages
 
         if not any(msgs):
@@ -82,8 +87,10 @@ class PubsubQueue(object):
 
             return retval.message.data
         else:
-            self.logger.debug("Message {} received, ack_id {}"
-                              .format(retval.message.message_id, retval.ack_id))
+            self.logger.debug(
+                "Message {} received, ack_id {}" .format(
+                    retval.message.message_id,
+                    retval.ack_id))
             return (retval.message.data, retval.ack_id)
 
     def hold(self, ack_key, delay=5):
@@ -92,7 +99,8 @@ class PubsubQueue(object):
              "min for {}").format(
                 delay,
                 ack_key))
-        self.subclient.modify_ack_deadline(self.sub_name, [ack_key], int(delay * 60))
+        self.subclient.modify_ack_deadline(
+            self.sub_name, [ack_key], int(delay * 60))
 
     def acknowledge(self, ack_key):
         self.logger.debug("Message with key {} acknowledged".format(ack_key))

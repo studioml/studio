@@ -28,7 +28,8 @@ class GCloudWorkerTest(unittest.TestCase):
         stubtest_worker(
             self,
             experiment_name=experiment_name,
-            runner_args=['--cloud=gcloud', '--force-git'],
+            runner_args=['--cloud=gcloud', '--force-git',
+                         '--cloud-timeout=-1'],
             config_name='test_config.yaml',
             test_script='tf_hello_world.py',
             script_args=['arg0'],
@@ -40,7 +41,8 @@ class GCloudWorkerTest(unittest.TestCase):
         stubtest_worker(
             self,
             experiment_name=experiment_name,
-            runner_args=['--cloud=gcspot', '--force-git'],
+            runner_args=['--cloud=gcspot', '--force-git',
+                         '--cloud-timeout=-1'],
             config_name='test_config.yaml',
             test_script='tf_hello_world.py',
             script_args=['arg0'],
@@ -77,6 +79,7 @@ class EC2WorkerTest(unittest.TestCase):
             experiment_name=experiment_name,
             runner_args=['--cloud=ec2spot', '--force-git',
                          '--bid=25%', '--cloud-timeout=-1'],
+
             config_name='test_config.yaml',
             test_script='tf_hello_world.py',
             script_args=['arg0'],

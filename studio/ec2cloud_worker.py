@@ -11,7 +11,7 @@ import requests
 import json
 
 from gpu_util import memstr2int
-
+from cloud_worker_util import insert_user_startup_script
 
 logging.basicConfig()
 
@@ -63,7 +63,12 @@ _instance_specs = {
 
 class EC2WorkerManager(object):
 
-    def __init__(self, auth_cookie=None, verbose=10):
+    def __init__(self, runner_args=None, auth_cookie=None, verbose=10):
+        self.runner_args = runner_args
+        self.startup_script_file = os.path.join(
+            os.path.dirname(__file__),
+            'scripts/ec2_worker_startup.sh')
+
         self.region = 'us-east-1'
         self.client = boto3.client('ec2', region_name=self.region)
         self.asclient = boto3.client('autoscaling', region_name=self.region)
@@ -96,7 +101,7 @@ class EC2WorkerManager(object):
             queue_name,
             resources_needed={},
             blocking=True,
-            ssh_keypair=None, 
+            ssh_keypair=None,
             timeout=300):
 
         imageid = self._get_image_id()
@@ -105,8 +110,13 @@ class EC2WorkerManager(object):
 
         instance_type = self._select_instance_type(resources_needed)
 
-        startup_script = self._get_startup_script(resources_needed, queue_name, 
-            timeout=timeout)
+        startup_script = self._get_startup_script(
+            resources_needed, queue_name, timeout=timeout)
+        if self.runner_args is not None:
+            startup_script.format(studioml_branch=self.runner_args.branch)
+            startup_script = insert_user_startup_script(
+                self.runner_args.user_startup_script,
+                startup_script, self.logger)
 
         if ssh_keypair is not None:
             groupid = self._create_security_group(ssh_keypair)
@@ -141,7 +151,7 @@ class EC2WorkerManager(object):
 
         response = self.client.run_instances(**kwargs)
         self.logger.info(
-            'Staring instance {}'.format(
+            'Starting instance {}'.format(
                 response['Instances'][0]['InstanceId']))
 
     def _select_instance_type(self, resources_needed):
@@ -164,7 +174,7 @@ class EC2WorkerManager(object):
             self,
             resources_needed,
             queue_name,
-            autoscaling_group=None, 
+            autoscaling_group=None,
             timeout=300):
         if self.auth_cookie is not None:
             auth_key = os.path.basename(self.auth_cookie)
@@ -182,11 +192,9 @@ class EC2WorkerManager(object):
         else:
             self.logger.info('credentials NOT found')
 
-        startup_script_filename = 'scripts/ec2_worker_startup.sh'
-
         with open(os.path.join(
                 os.path.dirname(__file__),
-                startup_script_filename),
+                self.startup_script_file),
                 'r') as f:
 
             startup_script = f.read()
@@ -201,7 +209,7 @@ class EC2WorkerManager(object):
             autoscaling_group=autoscaling_group if autoscaling_group else "",
             region=self.region,
             use_gpus=0 if resources_needed['gpus'] == 0 else 1,
-            timeout=timeout
+            timeout=timeout,
         )
 
         self.logger.info('Startup script:')
@@ -256,6 +264,11 @@ class EC2WorkerManager(object):
 
         startup_script = self._get_startup_script(
             resources_needed, queue_name, asg_name, timeout=timeout)
+        if self.runner_args is not None:
+            startup_script.format(studioml_branch=self.runner_args.branch)
+            startup_script = insert_user_startup_script(
+                self.runner_args.user_startup_script,
+                startup_script, self.logger)
 
         if bid_price.endswith('%'):
             bid_price = str(self.prices[instance_type]
