@@ -7,7 +7,7 @@ Utility functions for anything shared in common by ec2cloud_worker and
 gcloud_worker
 """
 
-INDENT = 2
+INDENT = 4
 
 def insert_user_startup_script(user_startup_script, startup_script_str,
     logger):
