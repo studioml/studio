@@ -15,7 +15,16 @@ class S3ArtifactStore(TartifactStore):
         self.logger = logging.getLogger('S3ArtifactStore')
         self.logger.setLevel(verbose)
 
-        self.client = boto3.client(service_name='s3')
+        if 'aws_access_key' in config.keys():
+            access_key = config['aws_access_key']
+            secret_key = config['aws_secret_key']
+            self.client = boto3.client(
+                's3',
+                aws_access_key_id=access_key,
+                aws_secret_access_key=secret_key)
+
+        else:
+            self.client = boto3.client(service_name='s3')
         self.endpoint = self.client._endpoint.host
 
         self.bucket = config['bucket']

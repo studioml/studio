@@ -41,6 +41,9 @@ class HTTPProvider(object):
         self._raise_detailed_error(request)
         artifacts = request.json()['artifacts']
 
+        self._update_artifacts(experiment, artifacts)
+
+    def _update_artifacts(experiment, artifacts):
         for tag, art in experiment.artifacts.iteritems():
             art['key'] = artifacts[tag]['key']
             art['qualified'] = artifacts[tag]['qualified']
@@ -146,13 +149,7 @@ class HTTPProvider(object):
         self._raise_detailed_error(request)
         artifacts = request.json()['artifacts']
 
-        for tag, art in experiment.artifacts.iteritems():
-            if 'local' in art.keys():
-                art['key'] = artifacts[tag]['key']
-                art['qualified'] = artifacts[tag]['qualified']
-                art['bucket'] = artifacts[tag]['bucket']
-
-                self.store.put_artifact(art)
+        self._update_artifacts(experiment, artifacts)
 
     def refresh_auth_token(self, email, refresh_token):
         raise NotImplementedError()

@@ -398,7 +398,8 @@ def checkpoint_experiment():
 
         for tag, art in experiment.artifacts.iteritems():
             if 'key' in art.keys():
-                get_db().store.grant_write(art['key'], userid)
+                post = get_db().store.get_artifact_post(art)
+                art['post'] = post
                 artifacts[tag] = art
         status = 'ok'
 
@@ -406,7 +407,7 @@ def checkpoint_experiment():
         status = traceback.format_exc()
 
     toc = time.time()
-    getlogger().info('Processed add_experiment request in {} s'
+    getlogger().info('Processed checkpoint_experiment request in {} s'
                      .format(toc - tic))
 
     return json.dumps({'status': status, 'artifacts': artifacts})
