@@ -15,7 +15,7 @@ logging.basicConfig()
 
 
 class GCloudWorkerManager(object):
-    def __init__(self, runner_args, zone='us-central1-f',
+    def __init__(self, runner_args=None, zone='us-central1-f',
         auth_cookie=None, verbose=10):
         assert 'GOOGLE_APPLICATION_CREDENTIALS' in os.environ.keys()
         with open(os.environ['GOOGLE_APPLICATION_CREDENTIALS'], 'r') as f:
@@ -140,10 +140,11 @@ class GCloudWorkerManager(object):
 
         with open(self.startup_script_file, 'r') as f:
             startup_script = f.read()
-        startup_script.format(studioml_branch=self.runner_args.branch)
-        startup_script = insert_user_startup_script(
-            self.runner_args.user_startup_script,
-            startup_script, self.logger)
+        if self.runner_args is not None:
+            startup_script.format(studioml_branch=self.runner_args.branch)
+            startup_script = insert_user_startup_script(
+                self.runner_args.user_startup_script,
+                startup_script, self.logger)
 
         with open(os.environ['GOOGLE_APPLICATION_CREDENTIALS'], 'r') as f:
             credentials = f.read()
