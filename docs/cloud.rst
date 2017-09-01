@@ -4,8 +4,8 @@ Cloud computing
 Studio can be configured to submit jobs to the cloud. Right
 now, only Google Cloud is supported (CPU only), as well as Amazon EC2
 (CPU and GPU). Specifically, once configured (see
-`here <http://studioml.readthedocs.io/en/latest/gcloud_setup.html>`__ for configuration instructions for Google
-Cloud, and `here <http://studioml.readthedocs.io/en/latest/ec2_setup.html>`__ for EC2) the command
+`here <http://docs.studio.ml/en/latest/gcloud_setup.html>`__ for configuration instructions for Google
+Cloud, and `here <http://docs.studio.ml/en/latest/ec2_setup.html>`__ for EC2) the command
 
 ::
 

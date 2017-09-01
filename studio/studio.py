@@ -135,7 +135,7 @@ def get_experiment():
 
     toc = time.time()
     getlogger().info('Processed get_experiment request in {} s'
-                .format(toc - tic))
+                     .format(toc - tic))
 
     return retval
 
@@ -152,7 +152,7 @@ def get_user_experiments():
     # TODO check is myuser_id is authorized to do that
 
     getlogger().info('Getting experiments of user {}'
-                .format(user))
+                     .format(user))
 
     experiments = get_db().get_user_experiments(user, blocking=True)
     status = "ok"
@@ -162,14 +162,14 @@ def get_user_experiments():
     })
     toc = time.time()
     getlogger().info('Processed get_user_experiments request in {} s'
-                .format(toc - tic))
+                     .format(toc - tic))
     return retval
 
 
 @app.route('/api/get_projects', methods=['POST'])
 def get_projects():
     tic = time.time()
-    myuser_id = get_and_verify_user(request)
+    get_and_verify_user(request)
 
     # TODO check / filter access
 
@@ -183,14 +183,14 @@ def get_projects():
 
     toc = time.time()
     getlogger().info('Processed get_projects request in {} s'
-                .format(toc - tic))
+                     .format(toc - tic))
     return retval
 
 
 @app.route('/api/get_users', methods=['POST'])
 def get_users():
     tic = time.time()
-    myuser_id = get_and_verify_user(request)
+    get_and_verify_user(request)
 
     # TODO check / filter access
 
@@ -203,14 +203,14 @@ def get_users():
     })
     toc = time.time()
     getlogger().info('Processed get_user_experiments request in {} s'
-                .format(toc - tic))
+                     .format(toc - tic))
     return retval
 
 
 @app.route('/api/get_project_experiments', methods=['POST'])
 def get_project_experiments():
     tic = time.time()
-    myuser_id = get_and_verify_user(request)
+    get_and_verify_user(request)
 
     project = request.json.get('project')
     if not project:
@@ -220,7 +220,7 @@ def get_project_experiments():
         # TODO check is myuser_id is authorized to do that
 
         getlogger().info('Getting experiments in project {}'
-                    .format(project))
+                         .format(project))
 
         experiments = get_db().get_project_experiments(project)
 
@@ -231,7 +231,7 @@ def get_project_experiments():
     })
     toc = time.time()
     getlogger().info('Processed get_project_experiments request in {} s'
-                .format(toc - tic))
+                     .format(toc - tic))
     return retval
 
 
@@ -253,7 +253,7 @@ def delete_experiment():
 
     toc = time.time()
     getlogger().info('Processed delete_experiment request in {} s'
-                .format(toc - tic))
+                     .format(toc - tic))
 
     return json.dumps({'status': status})
 
@@ -276,9 +276,10 @@ def stop_experiment():
 
     toc = time.time()
     getlogger().info('Processed stop_experiment request in {} s'
-                .format(toc - tic))
+                     .format(toc - tic))
 
     return json.dumps({'status': status})
+
 
 @app.route('/api/start_experiment', methods=['POST'])
 def start_experiment():
@@ -299,9 +300,10 @@ def start_experiment():
 
     toc = time.time()
     getlogger().info('Processed start_experiment request in {} s'
-                .format(toc - tic))
+                     .format(toc - tic))
 
     return json.dumps({'status': status})
+
 
 @app.route('/api/finish_experiment', methods=['POST'])
 def finish_experiment():
@@ -321,40 +323,40 @@ def finish_experiment():
 
     toc = time.time()
     getlogger().info('Processed start_experiment request in {} s'
-                .format(toc - tic))
+                     .format(toc - tic))
 
     return json.dumps({'status': status})
+
 
 @app.route('/api/add_experiment', methods=['POST'])
 def add_experiment():
     tic = time.time()
     userid = get_and_verify_user(request)
 
-    # TODO check if user has access 
+    # TODO check if user has access
 
     artifacts = {}
     try:
         experiment = model.experiment_from_dict(request.json['experiment'])
-        for tag,art in experiment.artifacts.iteritems():
+        for tag, art in experiment.artifacts.iteritems():
             art.pop('local', None)
-        
+
         get_db().add_experiment(experiment)
         added_experiment = get_db().get_experiment(experiment.key)
-        
+
         for tag, art in added_experiment.artifacts.iteritems():
             if 'key' in art.keys():
                 get_db().store.grant_write(art['key'], userid)
                 artifacts[tag] = art
         status = 'ok'
-       
-    
-    except BaseException as e:
+
+    except BaseException:
         status = traceback.format_exc()
     toc = time.time()
     getlogger().info('Processed add_experiment request in {} s'
-                .format(toc - tic))
+                     .format(toc - tic))
 
-    return json.dumps({'status':status, 'artifacts':artifacts})
+    return json.dumps({'status': status, 'artifacts': artifacts})
 
 
 @app.route('/api/checkpoint_experiment', methods=['POST'])
@@ -374,18 +376,14 @@ def checkpoint_experiment():
                 artifacts[tag] = art
         status = 'ok'
 
-    except BaseException as e:
+    except BaseException:
         status = traceback.format_exc()
 
     toc = time.time()
     getlogger().info('Processed add_experiment request in {} s'
-                .format(toc - tic))
+                     .format(toc - tic))
 
-    return json.dumps({'status':status, 'artifacts':artifacts})
-
- 
-
-
+    return json.dumps({'status': status, 'artifacts': artifacts})
 
 
 def get_and_verify_user(request):

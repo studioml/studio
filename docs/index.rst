@@ -25,7 +25,8 @@ Most of the features are compatible with any Python machine learning framework (
 
    Getting Started  <README>
    installation
-   authentication   
+   authentication
+   cli
 
 .. toctree::
    :hidden:

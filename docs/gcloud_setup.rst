@@ -77,7 +77,7 @@ In the config file (the one that you use with the ``--config`` flag, or, if you
 use the default, in the ``studio/default_config.yaml``), go to the ``cloud``
 section. Change projectId to the project id of the Google project for which
 you enabled cloud computing. You can also modify the default instance
-parameters (see `Cloud computing for studio <http://studioml.readthedocs.io/en/latest/cloud.html>`__ for
+parameters (see `Cloud computing for studio <http://docs.studio.ml/en/latest/cloud.html>`__ for
 limitations though).
 
 Test
@@ -93,5 +93,5 @@ To test if things are set up correctly, go to
 Then run ``studio`` locally, and watch the new experiment. In a little
 while, it should change its status to "finished" and show the system
 information (number of cpus, amount of ram / hdd) of a default instance.
-See `Cloud computing for studio <http://studioml.readthedocs.io/en/latest/cloud.html>`__ for more instructions on
+See `Cloud computing for studio <http://docs.studio.ml/en/latest/cloud.html>`__ for more instructions on
 using an instance with specific hardware parameters.

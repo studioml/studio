@@ -29,14 +29,14 @@ logging.basicConfig()
 def main(args=sys.argv):
     logger = logging.getLogger('studio-runner')
     parser = argparse.ArgumentParser(
-        description='TensorFlow Studio runner. \
+        description='Studio runner. \
                      Usage: studio run <runner_arguments> \
                      script <script_arguments>')
     parser.add_argument('--config', help='configuration file', default=None)
     parser.add_argument('--project', help='name of the project', default=None)
     parser.add_argument(
         '--experiment', '-e',
-        help='name of the experiment. If none provided, ' +
+        help='Name of the experiment. If none provided, ' +
              'random uuid will be generated',
         default=None)
 
@@ -98,7 +98,7 @@ def main(args=sys.argv):
 
     parser.add_argument(
         '--capture', '-c',
-        help='Name of the mutable artifact to be captured continously',
+        help='Name of the mutable artifact to be captured continuously',
         default=[], action='append')
 
     parser.add_argument(
@@ -108,7 +108,7 @@ def main(args=sys.argv):
 
     parser.add_argument(
         '--verbose', '-v',
-        help='Verbosity level. Allowed vaules: ' +
+        help='Verbosity level. Allowed values: ' +
              'debug, info, warn, error, crit ' +
              'or numerical value of logger levels.',
         default=None)
@@ -155,9 +155,23 @@ def main(args=sys.argv):
     parser.add_argument(
         '--optimizer', '-opt',
         help='Name of optimizer to use, by default is grid search. ' +
-        'The name of the optimizer must either be in studio/optimizer_plugins ' +
-        'directory or the path to the optimizer source file must be supplied. ',
+        'The name of the optimizer must either be in ' +
+        'studio/optimizer_plugins ' +
+        'directory or the path to the optimizer source file ' +
+        'must be supplied. ',
         default='grid')
+
+    parser.add_argument(
+        '--cloud-timeout',
+        help="Time (in seconds) that cloud workers wait for messages. " +
+             "If negative, " +
+             "wait for the first message in the queue indefinitely " +
+             "and shut down " +
+             "as soon as no new messages are available. " +
+             "If zero, don't wait at all." +
+             "Default value is %(default)",
+        type=int,
+        default=300)
 
     # detect which argument is the script filename
     # and attribute all arguments past that index as related to the script
@@ -208,7 +222,12 @@ def main(args=sys.argv):
                 runner_args,
                 artifacts,
                 resources_needed)
-            submit_experiments(experiments, config, runner_args, logger, resources_needed)
+            submit_experiments(
+                experiments,
+                config,
+                runner_args,
+                logger,
+                resources_needed)
         else:
             opt_modulepath = os.path.join(
                 os.path.dirname(os.path.abspath(__file__)),
@@ -313,7 +332,7 @@ def submit_experiments(
 
             queue_name = 'pubsub_' + str(uuid.uuid4())
 
-            queue = PubsubQueue(queue_name, config['database']['projectId'], verbose=verbose)
+            queue = PubsubQueue(queue_name, verbose=verbose)
             worker_manager = GCloudWorkerManager(
                 auth_cookie=auth_cookie,
                 zone=config['cloud']['zone']
@@ -336,7 +355,8 @@ def submit_experiments(
             for i in range(num_workers):
                 worker_manager.start_worker(
                     queue_name, resources_needed,
-                    ssh_keypair=runner_args.ssh_keypair)
+                    ssh_keypair=runner_args.ssh_keypair,
+                    timeout=runner_args.cloud_timeout)
         else:
             assert runner_args.bid is not None
             if runner_args.num_workers:
@@ -352,7 +372,8 @@ def submit_experiments(
                 resources_needed,
                 start_workers=start_workers,
                 queue_upscaling=queue_upscaling,
-                ssh_keypair=runner_args.ssh_keypair)
+                ssh_keypair=runner_args.ssh_keypair,
+                timeout=runner_args.cloud_timeout)
 
     else:
         if queue_name == 'local':
@@ -361,7 +382,10 @@ def submit_experiments(
         elif queue_name.startswith('sqs_'):
             queue = SQSQueue(queue_name, verbose=verbose)
         else:
-            queue = PubsubQueue(queue_name, config['database']['projectId'], verbose=verbose)
+            queue = PubsubQueue(
+                queue_name,
+                config['database']['projectId'],
+                verbose=verbose)
 
     for e in experiments:
         queue.enqueue(json.dumps({

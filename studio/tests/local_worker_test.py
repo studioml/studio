@@ -234,7 +234,7 @@ def stubtest_worker(
 
     experiments = [e for e in db.get_user_experiments()
                    if e.key.startswith(experiment_name)]
-    
+
     assert len(experiments) == 1
 
     experiment_name = experiments[0].key
