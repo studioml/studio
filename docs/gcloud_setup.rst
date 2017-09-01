@@ -84,7 +84,7 @@ Test
 ~~~~
 
 To test if things are set up correctly, go to
-``studio/studio/helloworld`` and run
+``studio/examples/general`` and run
 
 ::
 
