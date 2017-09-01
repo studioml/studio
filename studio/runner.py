@@ -86,7 +86,7 @@ def main(args=sys.argv):
 
     parser.add_argument(
         '--cloud',
-        help='Cloud execution mode. Could be gcloud, ec2 or ec2spot',
+        help='Cloud execution mode. Could be gcloud, gcspot, ec2 or ec2spot',
         default=None)
 
     parser.add_argument(

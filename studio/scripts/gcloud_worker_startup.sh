@@ -53,7 +53,7 @@ git checkout $branch
 
 sudo pip install --upgrade pip
 sudo pip install -e . --upgrade
-mkdir ~/workspace && cd ~/workspace 
+mkdir ~/workspace && cd ~/workspace
 studio-remote-worker --queue=$queue_name --verbose=debug --timeout=${timeout}
 
 # shutdown the instance
