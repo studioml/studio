@@ -178,8 +178,9 @@ class Optimizer(object):
         #     self.best_fitness, self.mean_fitness))
 
     def __save_checkpoint(self):
-        if (self.config['optimizer']['checkpoint_interval'] >= 1 and self.gen % \
-            self.config['optimizer']['checkpoint_interval'] == 0) or \
+        if (int(self.config['optimizer']['checkpoint_interval']) >= 1 \
+            and self.gen % \
+            int(self.config['optimizer']['checkpoint_interval']) == 0) or \
             self.stop():
 
             result_dir = os.path.abspath( \
