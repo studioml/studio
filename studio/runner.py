@@ -264,8 +264,8 @@ def main(args=sys.argv):
 
             h = HyperparameterParser(runner_args, logger)
             hyperparams = h.parse()
-            optimizer = getattr(opt_module, "Optimizer")(hyperparams, config,
-                                                         logger)
+            optimizer = getattr(opt_module, "Optimizer")(hyperparams,
+                config['optimizer'], logger)
 
             queue_name = None
             while not optimizer.stop():

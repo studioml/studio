@@ -21,6 +21,10 @@ class Hyperparameter(object):
         self.rand_init = rand_init
         self.array_length = array_length
 
+    def is_compatible(self, h):
+        return self.index == h.index and \
+            self.array_length == h.array_length
+
     def __str__(self):
         my_str = "Hyperparameter: %s \n" % self.name
         if self.index is not None:

@@ -8,33 +8,17 @@ import time
 
 import numpy as np
 
-# Overwrite the parameters of CMAES implementation
-OPT_CONFIG = {
-    'popsize': 100,
-}
-
-# Misc configuration for this wrapper class only
-MISC_CONFIG = {
-    'epsilon': 1e-12,
-    'sigma0': 0.33
-}
-
-# Termination criterion for stopping CMAES
-# TERM_CRITERION = {
-#     'generation': 20, # Number of generation to run to
-#     'fitness': 999, # Threshold fitness to reach
-#     'skip_gen_thres': 1.0, # Fraction of results to get back before moving on
-#     'skip_gen_timeout': 999 # Timeout when skip_gen_thres activates
-# }
+from opt_util import scale_var, unscale_var, EPSILON
 
 class Optimizer(object):
+
     def __init__(self, hyperparameters, config, logger):
         self.hyperparameters = hyperparameters
         self.config = config
         self.logger = logger
 
         self.opts = cma.CMAOptions()
-        for param, value in OPT_CONFIG.iteritems():
+        for param, value in self.config['cmaes_config'].iteritems():
             if param in self.opts and value is not None:
                 self.opts[param] = value
         self.dim = 0
@@ -44,10 +28,10 @@ class Optimizer(object):
 
         self.init = np.empty(self.dim)
         # self.sigma = np.random.random(self.dim) # not allowed
-        self.sigma = MISC_CONFIG['sigma0']
+        self.sigma = self.config['cmaes_config']['sigma0']
         self.opts['CMA_stds'] = np.ones(self.dim)
         self.gen = 0; self.start_time = time.time()
-        self.best_fitness = self.mean_fitness = 0.0
+        self.best_fitnesses = self.mean_fitnesses = None
         self.best_hyperparam = None
 
         for h in self.hyperparameters:
@@ -69,34 +53,35 @@ class Optimizer(object):
                         / 2.0
 
             if h.array_length is None:
-                if h.max_range - h.min_range > MISC_CONFIG['epsilon']:
+                if h.max_range - h.min_range > EPSILON:
                     self.opts['CMA_stds'][h.index] *= h.max_range - h.min_range
             else:
-                if h.max_range - h.min_range > MISC_CONFIG['epsilon']:
+                if h.max_range - h.min_range > EPSILON:
                     self.opts['CMA_stds'][h.index: h.index + h.array_length] *= \
                         h.max_range - h.min_range
 
         # If min range and max range are exactly the same, use a sigma calculated
         # from mean of init
         # if max([h.max_range for h in hyperparameters]) - \
-        #     min([h.min_range for h in hyperparameters]) < MISC_CONFIG['epsilon']:
+        #     min([h.min_range for h in hyperparameters]) < EPSILON:
         #     self.logger.warn("min range == max range, overwriting sigma0")
         #     self.sigma = np.mean(self.init) * MISC_CONFIG['sigma0']
+        self.es = cma.CMAEvolutionStrategy(self.init, self.sigma, self.opts)
+        self.__load_checkpoint()
+
         self.logger.info("Init: %s" % self.init)
         self.logger.info("CMA stds: %s" % self.opts['CMA_stds'])
-        self.es = cma.CMAEvolutionStrategy(self.init, self.sigma, self.opts)
-
         self.logger.info(pprint.pformat(self.get_configs()))
 
-    def get_configs(self):
-        return {'optimizer_config': self.opts, 'misc_config': MISC_CONFIG}
 
-    def __scale_var(self, var, min_range, max_range):
-        return (var - min_range) / max((max_range - min_range),
-            MISC_CONFIG['epsilon'])
+    best_fitness = property(lambda self: self.best_fitnesses[-1] \
+        if len(self.best_fitnesses) > 0 else 0.0)
 
-    def __unscale_var(self, var, min_range, max_range):
-        return (var * (max_range - min_range)) + min_range
+    mean_fitness = property(lambda self: self.mean_fitnesses[-1] \
+        if len(self.mean_fitnesses) > 0 else 0.0)
+
+    def get_config(self):
+        return self.config['cmaes_config']
 
     def __unpack_solution(self, solution):
         # print solution
@@ -109,8 +94,8 @@ class Optimizer(object):
                 h.values = solution[h.index: h.index + h.array_length]
             if not h.unbounded:
                 h.values = np.clip(h.values, h.min_range, h.max_range)
-            # if h.max_range - h.min_range < MISC_CONFIG['epsilon']:
-            #     h.values = self.__unscale_var(h.values, h.min_range, h.max_range)
+            # if h.max_range - h.min_range < EPSILON:
+            #     h.values = unscale_var(h.values, h.min_range, h.max_range)
             if h.is_log:
                 h.values = np.exp(h.values)
             if h.array_length is None:
@@ -124,8 +109,8 @@ class Optimizer(object):
             values = copy.copy(h.values)
             if h.is_log:
                 values = np.log(values)
-            # if h.max_range - h.min_range < MISC_CONFIG['epsilon']:
-            #     values = self.__scale_var(values, h.min_range, h.max_range)
+            # if h.max_range - h.min_range < EPSILON:
+            #     values = scale_var(values, h.min_range, h.max_range)
             if not h.unbounded:
                 values = np.clip(values, h.min_range, h.max_range)
             if h.array_length is None:
@@ -136,7 +121,7 @@ class Optimizer(object):
         return solution
 
     def stop(self):
-        term_criterion = self.config['optimizer']['termination_criterion']
+        term_criterion = self.config['termination_criterion']
 
         if self.gen >= term_criterion['generation']:
             self.logger.info("Reached target generation %s, terminating" % \
@@ -155,15 +140,17 @@ class Optimizer(object):
 
     def tell(self, hyperparameter_pop, fitnesses):
         adjusted_fitnesses = -1 * np.array(fitnesses)
-        self.best_fitness = float(np.max(fitnesses))
-        self.mean_fitness = float(np.mean(fitnesses))
-        self.best_hyperparam = hyperparameter_pop[np.argmax(fitnesses)]
+        self.best_fitnesses.append(float(np.max(fitnesses)))
+        self.mean_fitnesses.append(float(np.mean(fitnesses)))
+        self.best = (hyperparameter_pop[np.argmax(fitnesses)],
+            self.__pack_solution(hyperparameter_pop[np.argmax(fitnesses)]))
 
         solutions = [self.__pack_solution(hyperparameters) for hyperparameters \
             in hyperparameter_pop]
         self.es.tell(solutions, adjusted_fitnesses)
         self.gen += 1
         self.__save_checkpoint()
+        visualize(self.best_fitnesses, self.mean_fitnesses)
 
     def disp(self):
         print "*****************************************************************"
@@ -177,23 +164,46 @@ class Optimizer(object):
         #     "%s mean fitness: %s" % (self.gen, self.es.popsize,
         #     self.best_fitness, self.mean_fitness))
 
+    def __load_checkpoint(self):
+        if os.path.exists(self.config['checkpoint_file']):
+            with open(self.config['checkpoint_file']) as f:
+                try:
+                    old_cmaes_instance = pickle.load(f)
+                except:
+                    return
+
+            for h, h_old in zip(self.hyperparameters,
+                old_cmaes_instance.hyperparameters):
+                assert h.is_compatible(h_old)
+
+            if self.config['cmaes_config']['load_best_only']:
+                self.init = old_cmaes_instance.best[1]
+                self.es = cma.CMAEvolutionStrategy(self.init, self.sigma,
+                    self.opts)
+            else:
+                self.__dict__ = old_cmaes_instance.__dict__
+
     def __save_checkpoint(self):
-        if (int(self.config['optimizer']['checkpoint_interval']) >= 1 \
+        if (int(self.config['checkpoint_interval']) >= 1 \
             and self.gen % \
-            int(self.config['optimizer']['checkpoint_interval']) == 0) or \
+            int(self.config['checkpoint_interval']) == 0) or \
             self.stop():
 
             result_dir = os.path.abspath( \
-                os.path.expanduser(self.config['optimizer']['result_dir']))
+                os.path.expanduser(self.config['result_dir']))
             if not os.path.exists(result_dir):
                 os.makedirs(result_dir)
 
             with open(os.path.join(result_dir, \
-                "G%s_F%s_best_hyperparam.pkl" % (self.gen, self.best_fitness)), \
+                "G%s_F%s_checkpoint.pkl" % (self.gen, self.best_fitness)), \
                 'wb') as f:
-                pickle.dump(self.best_hyperparam, f, protocol=-1)
+                pickle.dump(self, f, protocol=-1)
+
+            with open(os.path.join(result_dir, "fitness.txt"), 'wb') as f:
+                for best, mean in zip(self.best_fitnesses, self.mean_fitnesses):
+                    f.write("%s %s\n" % (best, mean))
 
             # with open(os.path.join(os.path.abspath( \
-            #     os.path.expanduser(self.config['optimizer']['result_dir'])), \
+            #     os.path.expanduser(self.config['result_dir'])), \
             #     "G%s_optimizer_state.pkl" % self.gen), 'wb') as f:
             #     pickle.dump(self.es, f, protocol=-1)
