@@ -26,7 +26,7 @@ class Hyperparameter(object):
             self.array_length == h.array_length
 
     def __str__(self):
-        my_str = "Hyperparameter: %s \n" % self.name
+        my_str = "Hyperparameter: %s " % self.name
         if self.index is not None:
             my_str += "Index: %s " % self.index
         if self.values is not None:

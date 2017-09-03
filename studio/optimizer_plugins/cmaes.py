@@ -1,7 +1,8 @@
 import cma
 import random
 import copy
-import cPickle as pickle
+import pickle
+# import cPickle as pickle
 import os
 import pprint
 import time
@@ -31,7 +32,7 @@ class Optimizer(object):
         self.sigma = self.config['cmaes_config']['sigma0']
         self.opts['CMA_stds'] = np.ones(self.dim)
         self.gen = 0; self.start_time = time.time()
-        self.best_fitnesses = self.mean_fitnesses = None
+        self.best_fitnesses = []; self.mean_fitnesses = []
         self.best_hyperparam = None
 
         for h in self.hyperparameters:
@@ -71,8 +72,7 @@ class Optimizer(object):
 
         self.logger.info("Init: %s" % self.init)
         self.logger.info("CMA stds: %s" % self.opts['CMA_stds'])
-        self.logger.info(pprint.pformat(self.get_configs()))
-
+        self.logger.info(pprint.pformat(self.get_config()))
 
     best_fitness = property(lambda self: self.best_fitnesses[-1] \
         if len(self.best_fitnesses) > 0 else 0.0)
@@ -150,7 +150,6 @@ class Optimizer(object):
         self.es.tell(solutions, adjusted_fitnesses)
         self.gen += 1
         self.__save_checkpoint()
-        visualize(self.best_fitnesses, self.mean_fitnesses)
 
     def disp(self):
         print "*****************************************************************"
@@ -159,29 +158,31 @@ class Optimizer(object):
             self.gen, self.es.popsize, \
             self.best_fitness, self.mean_fitness)
         print "*****************************************************************"
-        # return self.gen, self.best_fitness, self.best_hyperparam
-        # self.logger.info("CMAES gen: %s pop size: %s best fitness: "
-        #     "%s mean fitness: %s" % (self.gen, self.es.popsize,
-        #     self.best_fitness, self.mean_fitness))
 
     def __load_checkpoint(self):
-        if os.path.exists(self.config['checkpoint_file']):
-            with open(self.config['checkpoint_file']) as f:
-                try:
-                    old_cmaes_instance = pickle.load(f)
-                except:
-                    return
+        try:
+            checkpoint_file = os.path.abspath(os.path.expanduser(
+                self.config['load_checkpoint_file']))
+            with open(checkpoint_file) as f:
+                old_cmaes_instance = pickle.load(f)
+        except:
+            return
 
-            for h, h_old in zip(self.hyperparameters,
-                old_cmaes_instance.hyperparameters):
-                assert h.is_compatible(h_old)
+        for h, h_old in zip(self.hyperparameters,
+            old_cmaes_instance.hyperparameters):
+            assert h.is_compatible(h_old)
 
-            if self.config['cmaes_config']['load_best_only']:
-                self.init = old_cmaes_instance.best[1]
-                self.es = cma.CMAEvolutionStrategy(self.init, self.sigma,
-                    self.opts)
-            else:
-                self.__dict__ = old_cmaes_instance.__dict__
+        if self.config['cmaes_config']['load_best_only']:
+            self.init = old_cmaes_instance.best[1]
+            self.es = cma.CMAEvolutionStrategy(self.init, self.sigma,
+                self.opts)
+            self.logger.info("Loaded best solution as init")
+        else:
+            logger = self.logger; config = self.config
+            self.__dict__ = old_cmaes_instance.__dict__
+            self.logger = logger; self.config = config
+
+        self.logger.info("Loaded checkpoint from file: %s" % checkpoint_file)
 
     def __save_checkpoint(self):
         if (int(self.config['checkpoint_interval']) >= 1 \
@@ -194,16 +195,17 @@ class Optimizer(object):
             if not os.path.exists(result_dir):
                 os.makedirs(result_dir)
 
-            with open(os.path.join(result_dir, \
-                "G%s_F%s_checkpoint.pkl" % (self.gen, self.best_fitness)), \
-                'wb') as f:
-                pickle.dump(self, f, protocol=-1)
+            checkpoint_file = os.path.join(result_dir, \
+                "G%s_F%s_checkpoint.pkl" % (self.gen, self.best_fitness))
+            with open(checkpoint_file, 'wb') as f:
+                copy_of_self = copy.copy(self)
+                copy_of_self.logger = None
+                copy_of_self.config = None
+                # copy_of_self.es = None
+                pickle.dump(copy_of_self, f, protocol=-1)
 
             with open(os.path.join(result_dir, "fitness.txt"), 'wb') as f:
                 for best, mean in zip(self.best_fitnesses, self.mean_fitnesses):
                     f.write("%s %s\n" % (best, mean))
 
-            # with open(os.path.join(os.path.abspath( \
-            #     os.path.expanduser(self.config['result_dir'])), \
-            #     "G%s_optimizer_state.pkl" % self.gen), 'wb') as f:
-            #     pickle.dump(self.es, f, protocol=-1)
+            self.logger.info("Saved checkpoint to file: %s" % checkpoint_file)
