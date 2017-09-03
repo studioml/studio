@@ -6,6 +6,7 @@ import pickle
 import os
 import pprint
 import time
+import traceback
 
 import numpy as np
 
@@ -33,7 +34,7 @@ class Optimizer(object):
         self.opts['CMA_stds'] = np.ones(self.dim)
         self.gen = 0; self.start_time = time.time()
         self.best_fitnesses = []; self.mean_fitnesses = []
-        self.best_hyperparam = None
+        self.best = None
 
         for h in self.hyperparameters:
 
@@ -166,8 +167,10 @@ class Optimizer(object):
             with open(checkpoint_file) as f:
                 old_cmaes_instance = pickle.load(f)
         except:
-            return
-
+            self.logger.warn("Checkpoint file cannot be loaded")
+            raise sys.exc_info()[0], sys.exc_info()[1], sys.exc_info()[2]
+            # print traceback.format_exc()
+            # raise
         for h, h_old in zip(self.hyperparameters,
             old_cmaes_instance.hyperparameters):
             assert h.is_compatible(h_old)
