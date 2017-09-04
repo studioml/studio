@@ -297,12 +297,14 @@ def main(args=sys.argv):
     db = None
     return
 
+
 def add_experiment(args):
     config, python_pkg, e = args
     e.pythonenv = add_packages(e.pythonenv, python_pkg)
     db = model.get_db_provider(config)
     db.add_experiment(e)
     return e
+
 
 def submit_experiments(
         experiments,
@@ -321,7 +323,7 @@ def submit_experiments(
         queue_name = runner_args.queue
 
     start_time = time.time()
-    n_workers = multiprocessing.cpu_count() * 4
+    n_workers = min(multiprocessing.cpu_count() * 4, num_experiments)
     p = multiprocessing.Pool(n_workers)
     experiments = p.map(add_experiment,
         zip([config] * num_experiments,
