@@ -9,6 +9,8 @@ try:
 except BaseException:
     BackgroundScheduler = None
 
+from util import rand_string
+
 TOKEN_DIR = os.path.expanduser('~/.studioml/keys')
 HOUR = 3600
 SLEEP_TIME = 0.05
@@ -70,13 +72,16 @@ class FirebaseAuth(object):
             else:
                 self.expired = True
         else:
-            user = None
-            while user is None:
-                try:
-                    with open(api_key, 'rb') as f:
-                        user = json.load(f)
-                except:
-                    time.sleep(SLEEP_TIME)
+            # If json file fails to load, try again
+            # user = None
+            # while user is None:
+            #     try:
+            #         with open(api_key, 'rb') as f:
+            #             user = json.load(f)
+            #     except:
+            #         time.sleep(SLEEP_TIME)
+            with open(api_key, 'rb') as f:
+                user = json.load(f)
 
             self.refresh_token(user['email'], user['refreshToken'])
 
@@ -95,8 +100,18 @@ class FirebaseAuth(object):
         self.user = self.firebase.auth().refresh(refresh_token)
         self.user['email'] = email
         self.expired = False
-        with open(api_key, 'wb') as f:
+
+        # Rename to ensure atomic writes to json file (technically more safe, but
+        # slower)
+        tmp_api_key = '/tmp/api_key_%s' % rand_string(32)
+        with open(tmp_api_key, 'wb') as f:
             json.dump(self.user, f)
+            f.flush()
+            os.fsync(f.fileno())
+            f.close()
+        os.rename(tmp_api_key, api_key)
+        # with open(api_key, 'wb') as f:
+        #     json.dump(self.user, f)
 
     def get_token(self):
         if self.expired:
