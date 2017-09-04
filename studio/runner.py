@@ -8,6 +8,7 @@ import uuid
 import shutil
 import importlib
 import time
+import multiprocessing
 
 import numpy as np
 
@@ -321,8 +322,17 @@ def main(args=sys.argv):
     return
 
 
+def add_experiment(args):
+    config, python_pkg, e = args
+    e.pythonenv = add_packages(e.pythonenv, python_pkg)
+    db = model.get_db_provider(config)
+    db.add_experiment(e)
+    return e
+
 def submit_experiments(experiments, resources_needed, config, runner_args,
                        logger, queue_name=None, launch_workers=True):
+
+    num_experiments = len(experiments)
     db = model.get_db_provider(config)
     verbose = model.parse_verbosity(config['verbose'])
 
@@ -333,9 +343,13 @@ def submit_experiments(experiments, resources_needed, config, runner_args,
         if runner_args.queue:
             queue_name = runner_args.queue
 
+    p = multiprocessing.Pool(multiprocessing.cpu_count() * 2)
+    experiments = p.map(add_experiment,
+        zip([config] * num_experiments,
+        [runner_args.python_pkg] * num_experiments,
+        experiments))
+    p.close(); p.join()
     for e in experiments:
-        e.pythonenv = add_packages(e.pythonenv, runner_args.python_pkg)
-        db.add_experiment(e)
         logger.info("Added experiment " + e.key)
 
     if runner_args.cloud is not None:

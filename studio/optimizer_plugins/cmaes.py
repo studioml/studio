@@ -7,6 +7,7 @@ import os
 import pprint
 import time
 import traceback
+import sys
 
 import numpy as np
 
@@ -161,6 +162,8 @@ class Optimizer(object):
         print "*****************************************************************"
 
     def __load_checkpoint(self):
+        if self.config['load_checkpoint_file'] is None:
+            return
         try:
             checkpoint_file = os.path.abspath(os.path.expanduser(
                 self.config['load_checkpoint_file']))
@@ -168,9 +171,8 @@ class Optimizer(object):
                 old_cmaes_instance = pickle.load(f)
         except:
             self.logger.warn("Checkpoint file cannot be loaded")
-            raise sys.exc_info()[0], sys.exc_info()[1], sys.exc_info()[2]
-            # print traceback.format_exc()
-            # raise
+            raise
+
         for h, h_old in zip(self.hyperparameters,
             old_cmaes_instance.hyperparameters):
             assert h.is_compatible(h_old)
