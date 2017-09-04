@@ -287,6 +287,7 @@ class FirebaseProvider(object):
                              self.auth.get_user_id())
 
         self.checkpoint_experiment(experiment, blocking=True)
+        self.logger.info("Added experiment " + experiment.key)
 
     def start_experiment(self, experiment):
         experiment.time_started = time.time()

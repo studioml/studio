@@ -329,8 +329,8 @@ def submit_experiments(
         experiments),
         chunksize=1)
     p.close(); p.join()
-    for e in experiments:
-        logger.info("Added experiment " + e.key)
+    # for e in experiments:
+    #     logger.info("Added experiment " + e.key)
     logger.info("Added %s experiments in %s seconds" % (num_experiments,
         int(time.time() - start_time)))
 
