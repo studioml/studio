@@ -310,6 +310,7 @@ def submit_experiments(
         runner_args,
         logger,
         resources_needed):
+    num_experiments = len(experiments)
     db = model.get_db_provider(config)
     verbose = model.parse_verbosity(config['verbose'])
 
