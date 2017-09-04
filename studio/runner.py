@@ -320,11 +320,12 @@ def submit_experiments(
     if runner_args.queue:
         queue_name = runner_args.queue
 
-    p = multiprocessing.Pool(multiprocessing.cpu_count() * 2)
+    n_workers = multiprocessing.cpu_count() * 2
+    p = multiprocessing.Pool(n_workers)
     experiments = p.map(add_experiment,
         zip([config] * num_experiments,
         [runner_args.python_pkg] * num_experiments,
-        experiments))
+        experiments), chunksize=min(1, num_experiments/n_workers))
     p.close(); p.join()
     for e in experiments:
         logger.info("Added experiment " + e.key)
