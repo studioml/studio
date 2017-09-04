@@ -70,6 +70,7 @@ class FirebaseAuth(object):
             else:
                 self.expired = True
         else:
+            # If json file fails to load, try again
             user = None
             while user is None:
                 try:
@@ -95,8 +96,15 @@ class FirebaseAuth(object):
         self.user = self.firebase.auth().refresh(refresh_token)
         self.user['email'] = email
         self.expired = False
-        with open(api_key, 'wb') as f:
+
+        # Use rename to ensure atomic writes to json file
+        tmp_api_key = '/tmp/api_key_%s_%s' % (os.getpid(), time.time())
+        with open(tmp_api_key, 'wb') as f:
             json.dump(self.user, f)
+            f.flush()
+            os.fsync(f.fileno())
+            f.close()
+        os.rename(tmp_api_key, api_key)
 
     def get_token(self):
         if self.expired:
