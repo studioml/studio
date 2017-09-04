@@ -320,6 +320,7 @@ def submit_experiments(
     if runner_args.queue:
         queue_name = runner_args.queue
 
+    start_time = time.time()
     n_workers = multiprocessing.cpu_count() * 2
     p = multiprocessing.Pool(n_workers)
     experiments = p.map(add_experiment,
@@ -330,6 +331,8 @@ def submit_experiments(
     p.close(); p.join()
     for e in experiments:
         logger.info("Added experiment " + e.key)
+    logger.info("Added %s experiments in %s seconds" % (num_experiments,
+        int(time.time() - start_time)))
 
     if runner_args.cloud is not None:
         assert runner_args.cloud in ['gcloud', 'gcspot', 'ec2', 'ec2spot']
