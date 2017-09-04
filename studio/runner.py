@@ -351,7 +351,7 @@ def submit_experiments(
     	    queue_name = runner_args.queue
 
     start_time = time.time()
-    n_workers = multiprocessing.cpu_count() * 4
+    n_workers = min(multiprocessing.cpu_count() * 4, num_experiments)
     p = multiprocessing.Pool(n_workers)
     experiments = p.map(add_experiment,
         zip([config] * num_experiments,
