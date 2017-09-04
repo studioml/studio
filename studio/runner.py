@@ -225,7 +225,6 @@ def main(args=sys.argv):
                 resources_needed)
             submit_experiments(
                 experiments,
-                resources_needed,
                 config,
                 runner_args,
                 logger,
@@ -264,7 +263,6 @@ def main(args=sys.argv):
                     hyperparam_tuples=hyperparam_tuples)
                 submit_experiments(
                     experiments,
-                    resources_needed,
                     config,
                     runner_args,
                     logger,
@@ -291,7 +289,6 @@ def main(args=sys.argv):
             metric=runner_args.metric)]
         submit_experiments(
             experiments,
-            resources_needed,
             config,
             runner_args,
             logger,
@@ -309,7 +306,6 @@ def add_experiment(args):
 
 def submit_experiments(
         experiments,
-        resources_needed,
         config,
         runner_args,
         logger,
