@@ -9,6 +9,8 @@ try:
 except BaseException:
     BackgroundScheduler = None
 
+from util import rand_string
+
 TOKEN_DIR = os.path.expanduser('~/.studioml/keys')
 HOUR = 3600
 SLEEP_TIME = 0.05
@@ -98,7 +100,7 @@ class FirebaseAuth(object):
         self.expired = False
 
         # Use rename to ensure atomic writes to json file
-        tmp_api_key = '/tmp/api_key_%s_%s' % (os.getpid(), time.time())
+        tmp_api_key = '/tmp/api_key_%s' % rand_string(32)
         with open(tmp_api_key, 'wb') as f:
             json.dump(self.user, f)
             f.flush()

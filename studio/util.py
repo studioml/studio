@@ -2,6 +2,8 @@ import hashlib
 import StringIO
 import re
 import struct
+import random
+import string
 
 from tensorflow.core.util import event_pb2
 
@@ -25,6 +27,9 @@ def sha256_checksum(filename, block_size=65536):
             sha256.update(block)
     return sha256.hexdigest()
 
+def rand_string(length):
+    return "".join([random.choice(string.ascii_letters + string.digits) \
+        for n in xrange(length)])
 
 def event_reader(fileobj):
 
