@@ -8,6 +8,7 @@ import uuid
 import shutil
 import importlib
 import time
+import multiprocessing
 import numpy as np
 
 from local_queue import LocalQueue
@@ -224,6 +225,7 @@ def main(args=sys.argv):
                 resources_needed)
             submit_experiments(
                 experiments,
+                resources_needed,
                 config,
                 runner_args,
                 logger,
@@ -262,6 +264,7 @@ def main(args=sys.argv):
                     hyperparam_tuples=hyperparam_tuples)
                 submit_experiments(
                     experiments,
+                    resources_needed,
                     config,
                     runner_args,
                     logger,
@@ -288,6 +291,7 @@ def main(args=sys.argv):
             metric=runner_args.metric)]
         submit_experiments(
             experiments,
+            resources_needed,
             config,
             runner_args,
             logger,
@@ -296,9 +300,16 @@ def main(args=sys.argv):
     db = None
     return
 
+def add_experiment(args):
+    config, python_pkg, e = args
+    e.pythonenv = add_packages(e.pythonenv, python_pkg)
+    db = model.get_db_provider(config)
+    db.add_experiment(e)
+    return e
 
 def submit_experiments(
         experiments,
+        resources_needed,
         config,
         runner_args,
         logger,
@@ -312,9 +323,13 @@ def submit_experiments(
     if runner_args.queue:
         queue_name = runner_args.queue
 
+    p = multiprocessing.Pool(multiprocessing.cpu_count() * 2)
+    experiments = p.map(add_experiment,
+        zip([config] * num_experiments,
+        [runner_args.python_pkg] * num_experiments,
+        experiments))
+    p.close(); p.join()
     for e in experiments:
-        e.pythonenv = add_packages(e.pythonenv, runner_args.python_pkg)
-        db.add_experiment(e)
         logger.info("Added experiment " + e.key)
 
     if runner_args.cloud is not None:
