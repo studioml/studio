@@ -325,7 +325,8 @@ def submit_experiments(
     experiments = p.map(add_experiment,
         zip([config] * num_experiments,
         [runner_args.python_pkg] * num_experiments,
-        experiments), chunksize=min(1, num_experiments/n_workers))
+        experiments),
+        chunksize=max(1, num_experiments/n_workers))
     p.close(); p.join()
     for e in experiments:
         logger.info("Added experiment " + e.key)
