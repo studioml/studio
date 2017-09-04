@@ -9,7 +9,7 @@ import shutil
 import importlib
 import time
 import multiprocessing
-(??)
+
 import numpy as np
 
 from local_queue import LocalQueue
@@ -321,12 +321,14 @@ def main(args=sys.argv):
     db = None
     return
 
+
 def add_experiment(args):
     config, python_pkg, e = args
     e.pythonenv = add_packages(e.pythonenv, python_pkg)
     db = model.get_db_provider(config)
     db.add_experiment(e)
     return e
+
 
 def submit_experiments(
     experiments,
@@ -375,53 +377,53 @@ def submit_experiments(
 
         if runner_args.cloud in ['gcloud', 'gcspot']:
             if queue_name is None:
-            queue_name = 'pubsub_' + str(uuid.uuid4())
-            worker_manager = GCloudWorkerManager(
-                    runner_args=runner_args,
-                auth_cookie=auth_cookie,
-                zone=config['cloud']['zone']
-            )
+                queue_name = 'pubsub_' + str(uuid.uuid4())
+                worker_manager = GCloudWorkerManager(
+                        runner_args=runner_args,
+                    auth_cookie=auth_cookie,
+                    zone=config['cloud']['zone']
+                )
 
             queue = PubsubQueue(queue_name, verbose=verbose)
 
         if runner_args.cloud in ['ec2', 'ec2spot']:
             if queue_name is None:
-            queue_name = 'sqs_' + str(uuid.uuid4())
-            worker_manager = EC2WorkerManager(
-                    runner_args=runner_args,
-                auth_cookie=auth_cookie
-            )
+                queue_name = 'sqs_' + str(uuid.uuid4())
+                worker_manager = EC2WorkerManager(
+                        runner_args=runner_args,
+                    auth_cookie=auth_cookie
+                )
 
             queue = SQSQueue(queue_name, verbose=verbose)
 
         if launch_workers:
-        if runner_args.cloud == 'gcloud' or \
-           runner_args.cloud == 'ec2':
+            if runner_args.cloud == 'gcloud' or \
+               runner_args.cloud == 'ec2':
 
-            num_workers = int(
-                runner_args.num_workers) if runner_args.num_workers else 1
-            for i in range(num_workers):
-                worker_manager.start_worker(
-                    queue_name, resources_needed,
+                num_workers = int(
+                    runner_args.num_workers) if runner_args.num_workers else 1
+                for i in range(num_workers):
+                    worker_manager.start_worker(
+                        queue_name, resources_needed,
+                        ssh_keypair=runner_args.ssh_keypair,
+                        timeout=runner_args.cloud_timeout)
+            else:
+                assert runner_args.bid is not None
+                if runner_args.num_workers:
+                    start_workers = runner_args.num_workers
+                    queue_upscaling = False
+                else:
+                    start_workers = 1
+                    queue_upscaling = True
+
+                worker_manager.start_spot_workers(
+                    queue_name,
+                    runner_args.bid,
+                    resources_needed,
+                    start_workers=start_workers,
+                    queue_upscaling=queue_upscaling,
                     ssh_keypair=runner_args.ssh_keypair,
                     timeout=runner_args.cloud_timeout)
-        else:
-            assert runner_args.bid is not None
-            if runner_args.num_workers:
-                start_workers = runner_args.num_workers
-                queue_upscaling = False
-            else:
-                start_workers = 1
-                queue_upscaling = True
-
-            worker_manager.start_spot_workers(
-                queue_name,
-                runner_args.bid,
-                resources_needed,
-                start_workers=start_workers,
-                queue_upscaling=queue_upscaling,
-                ssh_keypair=runner_args.ssh_keypair,
-                timeout=runner_args.cloud_timeout)
     else:
         if queue_name == 'local':
             queue = LocalQueue()
@@ -464,7 +466,7 @@ def get_experiment_fitnesses(experiments, optimizer, config, logger):
     bad_line_dicts = [dict() for x in xrange(len(experiments))]
     has_result = [False] * len(experiments)
     fitnesses = [0.0] * len(experiments)
-        term_criterion = config['optimizer']['termination_criterion']
+    term_criterion = config['optimizer']['termination_criterion']
     skip_gen_thres = term_criterion['skip_gen_thres']
     skip_gen_timeout = term_criterion['skip_gen_timeout']
     result_timestamp = time.time()
