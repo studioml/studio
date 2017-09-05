@@ -43,7 +43,7 @@ class HTTPProvider(object):
 
         self._update_artifacts(experiment, artifacts)
 
-    def _update_artifacts(experiment, artifacts):
+    def _update_artifacts(self, experiment, artifacts):
         for tag, art in experiment.artifacts.iteritems():
             art['key'] = artifacts[tag]['key']
             art['qualified'] = artifacts[tag]['qualified']

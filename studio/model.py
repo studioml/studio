@@ -190,6 +190,8 @@ class FirebaseProvider(object):
             self.__setitem__(self._get_user_keybase() + "email",
                              self.auth.get_user_email())
 
+        self.max_keys = db_config.get('max_keys', 100)
+
     def __getitem__(self, key):
         try:
             splitKey = key.split('/')
@@ -517,6 +519,7 @@ class FirebaseProvider(object):
             self._get_user_keybase(userid) + "/experiments")
         if not experiment_keys:
             experiment_keys = {}
+
         return self._get_valid_experiments(
             experiment_keys.keys(), getinfo=True, blocking=blocking)
 
@@ -541,6 +544,9 @@ class FirebaseProvider(object):
 
     def _get_valid_experiments(self, experiment_keys,
                                getinfo=False, blocking=True):
+
+        if self.max_keys > 0:
+            experiment_keys = experiment_keys[:self.max_keys]
         def cache_valid_experiment(key):
             try:
                 self._experiment_cache[key] = self.get_experiment(
