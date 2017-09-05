@@ -343,7 +343,7 @@ def submit_experiments(
             '--queue argument cannot be provided with --cloud argument'
         auth_cookie = None if config['database'].get('guest') \
             else os.path.join(
-            auth.token_dir,
+            auth.TOKEN_DIR,
             config['database']['apiKey']
         )
 
