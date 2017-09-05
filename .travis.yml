@@ -11,7 +11,7 @@ install:
   - pip install -e .
 
 script:
-  - nosetests --processes=4 --process-timeout=600
+  - nosetests
   - python setup.py sdist
 
 deploy:
