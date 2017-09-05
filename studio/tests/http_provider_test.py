@@ -33,7 +33,6 @@ class HTTPProviderTest(unittest.TestCase):
                 os.path.realpath(__file__)),
             'test_config_http_client.yaml')
 
-
         self.serverp = subprocess.Popen([
             'studio-ui',
             '--port=' + str(self.port),

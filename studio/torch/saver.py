@@ -49,18 +49,17 @@ class Saver(object):
     def restore(self, model_dir):
         """Restores model and optimizer from given directory.
 
-	Returns:
-	   Last training step for the model restored.
+        Returns:
+           Last training step for the model restored.
         """
         last_step = load_checkpoint(self._model, self._optimizer, model_dir)
         return last_step
 
     def save(self, model_dir, step):
         """Saves model and optimizer to given directory.
-        
+
         Args:
            model_dir: Model directory to save.
            step: Current training step.
         """
         save_checkpoint(self._model, self._optimizer, step, model_dir)
-
