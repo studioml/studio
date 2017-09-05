@@ -4,7 +4,7 @@ import os
 import uuid
 try:
     import pip
-except BaseException:
+except ImportError:
     pip = None
 
 import yaml
@@ -15,16 +15,8 @@ import glob
 from threading import Thread
 try:
     from multiprocessing.pool import ThreadPool
-except BaseException:
+except ImportError:
     ThreadPool = None
-try:
-    import tensorflow as tf
-except BaseException:
-    tf = None
-try:
-    import keras
-except BaseException:
-    keras = None
 
 import fs_tracker
 import util
@@ -102,7 +94,7 @@ class Experiment(object):
             glob.glob(modeldir + '/*.h5')]
         if any(hdf5_files):
             # experiment type - keras
-            assert keras is not None
+            import keras
             last_checkpoint = max(hdf5_files, key=lambda t: t[1])[0]
             return keras.models.load_model(last_checkpoint)
 
