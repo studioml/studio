@@ -9,7 +9,7 @@ env:
 
 install:
   - pip install -e .
-  - pip install -r test_requirements.txt
+  - pip install pep8
 
 script:
   - nosetests
