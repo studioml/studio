@@ -1,8 +1,10 @@
 """Tools to save/restore model from checkpoints."""
 
 import os
-
-import torch
+try:
+    import torch
+except ImportError:
+    torch = None
 
 
 def load_checkpoint(model, optimizer, model_dir):
