@@ -84,3 +84,5 @@ Further reading and cool features
 
 .. |Hex.pm| image:: https://img.shields.io/hexpm/l/plug.svg
    :target: https://github.com/studioml/studio/blob/master/LICENSE
+
+.. |Hex.pm| image:: https://travis-ci.org/studioml/studio.svg?branch=master
