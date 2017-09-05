@@ -15,15 +15,15 @@ import glob
 from threading import Thread
 try:
     from multiprocessing.pool import ThreadPool
-except BaseException:
+except ImportError:
     ThreadPool = None
 try:
     import tensorflow as tf
-except BaseException:
+except ImportError:
     tf = None
 try:
     import keras
-except BaseException:
+except ImportError:
     keras = None
 
 import fs_tracker
@@ -274,13 +274,13 @@ class FirebaseProvider(object):
 
         experiment_dict = experiment.__dict__.copy()
         experiment_dict['owner'] = self._get_userid()
-
+        
         self.__setitem__(self._get_experiments_keybase() + experiment.key,
                          experiment_dict)
 
         self.__setitem__(self._get_user_keybase() + "experiments/" +
                          experiment.key,
-                         experiment.key)
+                         experiment.time_added)
 
         if experiment.project and self.auth:
             self.__setitem__(self._get_projects_keybase() +
@@ -519,9 +519,13 @@ class FirebaseProvider(object):
             self._get_user_keybase(userid) + "/experiments")
         if not experiment_keys:
             experiment_keys = {}
+        
+        keys = sorted(experiment_keys.keys(),
+                      key=lambda k: experiment_keys[k],
+                      reverse=True)
 
         return self._get_valid_experiments(
-            experiment_keys.keys(), getinfo=True, blocking=blocking)
+            keys, getinfo=True, blocking=blocking)
 
     def get_project_experiments(self, project):
         experiment_keys = self.__getitem__(self._get_projects_keybase() +
