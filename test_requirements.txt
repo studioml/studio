@@ -1,3 +1,2 @@
 nose
 pep8
-keras
