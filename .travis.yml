@@ -1,7 +1,6 @@
 dist: trusty
 
 language: python
-
 python:
   - "2.7"
 
@@ -12,7 +11,7 @@ install:
   - pip install .
 
 script:
-  - python studio/tests/model_test.py
+  - python studio/tests/http_provider_test.py
   - python setup.py sdist
 
 deploy:
