@@ -136,11 +136,11 @@ class ModelPipeTest(unittest.TestCase):
 
         self.assertEquals(expected_dict, output_dict)
 
-    @timeout(10)
+    @timeout(30)
     def test_model_pipe_long(self):
 
         p = model_util.ModelPipe()
-        p.add(lambda x: x * x, num_workers=32, timeout=1)
+        p.add(lambda x: x * x, num_workers=32, timeout=0.5)
 
         input_dict = {x: x for x in range(10000)}
         output_dict = p(input_dict)

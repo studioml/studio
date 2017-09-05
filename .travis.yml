@@ -1,7 +1,6 @@
 dist: trusty
 
 language: python
-
 python:
   - "2.7"
 
@@ -9,9 +8,12 @@ env:
   fast_finish: true
 
 install:
-  - pip install -r requirements.txt
+  - pip install -e .
+  - pip install pep8
 
 script:
+  - nosetests
+  - pep8 --show-source .
   - python setup.py sdist
 
 deploy:

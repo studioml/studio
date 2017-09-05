@@ -28,7 +28,7 @@ class ReporterTest(unittest.TestCase):
             r.report()
             r.add(2, 'k', 0.3)
             r.report()
-        self.assertEqual(out.getvalue(), "Step 2: k=0.25000\n")
+        self.assertEqual(out.getvalue(), "Step 2: k = 0.25000\n")
 
 
 if __name__ == "__main__":
