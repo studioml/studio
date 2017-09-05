@@ -4,7 +4,7 @@
       <img src="logo.png">
    </p>
 
-|Hex.pm|
+|Hex.pm| |Build.pm|
 
 Studio is a model management framework written in Python to help simplify and expedite your model building experience. It was developed to minimize the overhead involved with scheduling, running, monitoring and managing artifacts of your machine learning experiments. No one wants to spend their time configuring different machines, setting up dependencies, or playing archeologist to track down previous model artifacts.
 
@@ -85,5 +85,5 @@ Further reading and cool features
 .. |Hex.pm| image:: https://img.shields.io/hexpm/l/plug.svg
    :target: https://github.com/studioml/studio/blob/master/LICENSE
 
-.. image:: https://travis-ci.org/studioml/studio.svg?branch=master
+.. |Build.pm| image:: https://travis-ci.org/studioml/studio.svg?branch=master
    :target: https://travis-ci.org/studioml/studio.svg?branch=master
