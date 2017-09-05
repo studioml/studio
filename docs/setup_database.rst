@@ -88,7 +88,7 @@ Setting up an authentication app for Google account authentication
 Test run
 --------
 
-Go to the studio/helloworld/ folder, and run
+Go to the ``studio/examples/keras/`` folder, and run
 
 ::
 
