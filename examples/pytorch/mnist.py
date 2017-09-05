@@ -7,6 +7,9 @@ import torch.optim as optim
 from torchvision import datasets, transforms
 from torch.autograd import Variable
 
+import studio
+
+
 # Training settings
 parser = argparse.ArgumentParser(description='PyTorch MNIST Example')
 parser.add_argument('--batch-size', type=int, default=64, metavar='N',
@@ -73,7 +76,7 @@ if args.cuda:
 
 optimizer = optim.SGD(model.parameters(), lr=args.lr, momentum=args.momentum)
 
-def train(epoch):
+def train(epoch, reporter):
     model.train()
     for batch_idx, (data, target) in enumerate(train_loader):
         if args.cuda:
@@ -84,10 +87,9 @@ def train(epoch):
         loss = F.nll_loss(output, target)
         loss.backward()
         optimizer.step()
-        if batch_idx % args.log_interval == 0:
-            print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
-                epoch, batch_idx * len(data), len(train_loader.dataset),
-                100. * batch_idx / len(train_loader), loss.data[0]))
+        reporter.record(batch_idx, loss=loss.data[0])
+        reporter.report()
+
 
 def test():
     model.eval()
@@ -108,7 +110,15 @@ def test():
         100. * correct / len(test_loader.dataset)))
 
 
-for epoch in range(1, args.epochs + 1):
-    train(model_dir, epoch)
+saver = studio.torch.Saver(model, optimizer)
+model_dir = studio.fs_tracker.get_model_directory()
+last_epoch = saver.restore(model_dir)
+reporter = studio.torch.Reporter(
+    log_interval=args.log_interval,
+    logdir=studio.fs_tracker.get_tensorboard_dir())
+
+for epoch in range(last_epoch, args.epochs + 1):
+    train(epoch, reporter)
+    saver.save(model_dir, epoch)
     test()
 
