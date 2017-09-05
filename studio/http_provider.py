@@ -1,9 +1,9 @@
 import requests
 import json
 
-import model
-import pyrebase
-from auth import FirebaseAuth
+import studio.model
+from . import pyrebase
+from .auth import FirebaseAuth
 
 import logging
 logging.basicConfig()
@@ -74,7 +74,7 @@ class HTTPProvider(object):
                                 )
 
         self._raise_detailed_error(request)
-        return model.experiment_from_dict(request.json()['experiment'])
+        return studio.model.experiment_from_dict(request.json()['experiment'])
 
     def start_experiment(self, experiment):
         self.checkpoint_experiment(experiment)

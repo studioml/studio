@@ -4,8 +4,9 @@ import os
 import uuid
 import pip
 
+from six import iteritems, string_types
 import yaml
-import pyrebase
+from .pyrebase import initialize_app
 import logging
 import time
 import glob
@@ -15,14 +16,14 @@ try:
 except ImportError:
     ThreadPool = None
 
-import fs_tracker
-import util
-import git_util
-from auth import FirebaseAuth
-from artifact_store import get_artifact_store
-from firebase_artifact_store import FirebaseArtifactStore
+from . import fs_tracker
+from . import util
+from . import git_util
+from .auth import FirebaseAuth
+from .artifact_store import get_artifact_store
+from .firebase_artifact_store import FirebaseArtifactStore
 
-from http_provider import HTTPProvider
+from .http_provider import HTTPProvider
 
 logging.basicConfig()
 
@@ -150,7 +151,7 @@ class FirebaseProvider(object):
     def __init__(self, db_config, blocking_auth=True, verbose=10, store=None):
         guest = db_config.get('guest')
 
-        self.app = pyrebase.initialize_app(db_config)
+        self.app = initialize_app(db_config)
         self.logger = logging.getLogger('FirebaseProvider')
         self.logger.setLevel(verbose)
 
@@ -244,7 +245,7 @@ class FirebaseProvider(object):
             experiment.git = git_util.get_git_info(
                 experiment.artifacts['workspace']['local'])
 
-        for tag, art in experiment.artifacts.iteritems():
+        for tag, art in iteritems(experiment.artifacts):
             if art['mutable']:
                 art['key'] = self._get_experiments_keybase() + \
                     experiment.key + '/' + tag + '.tgz'
@@ -301,10 +302,9 @@ class FirebaseProvider(object):
         self.__setitem__(self._get_experiments_keybase() +
                          key + "/status",
                          "stopped")
-
     def finish_experiment(self, experiment):
         time_finished = time.time()
-        if isinstance(experiment, basestring):
+        if isinstance(experiment, string_types):
             key = experiment
         else:
             key = experiment.key
@@ -321,7 +321,7 @@ class FirebaseProvider(object):
                          time_finished)
 
     def delete_experiment(self, experiment):
-        if isinstance(experiment, basestring):
+        if isinstance(experiment, string_types):
             experiment_key = experiment
             try:
                 experiment = self.get_experiment(experiment)
@@ -340,7 +340,7 @@ class FirebaseProvider(object):
             del self._experiment_info_cache[experiment_key]
 
         if experiment is not None:
-            for tag, art in experiment.artifacts.iteritems():
+            for tag, art in iteritems(experiment.artifacts):
                 if art.get('key') is not None:
                     self.logger.debug(
                         ('Deleting artifact {} from the store, ' +
@@ -357,7 +357,7 @@ class FirebaseProvider(object):
         self._delete(self._get_experiments_keybase() + experiment.key)
 
     def checkpoint_experiment(self, experiment, blocking=False):
-        if isinstance(experiment, basestring):
+        if isinstance(experiment, string_types):
             key = experiment
             experiment = self.get_experiment(key, getinfo=False)
         else:
@@ -367,7 +367,7 @@ class FirebaseProvider(object):
             Thread(
                 target=self.store.put_artifact,
                 args=(art,))
-            for _, art in experiment.artifacts.iteritems()
+            for _, art in iteritems(experiment.artifacts)
             if art['mutable'] and art.get('local')]
 
         for t in checkpoint_threads:
@@ -522,7 +522,7 @@ class FirebaseProvider(object):
         experiment = self.get_experiment(key, getinfo=False)
         retval = {}
         if experiment.artifacts is not None:
-            for tag, art in experiment.artifacts.iteritems():
+            for tag, art in iteritems(experiment.artifacts):
                 url = self.store.get_artifact_url(art)
                 if url is not None:
                     retval[tag] = url
@@ -670,8 +670,8 @@ def get_config(config_file=None):
             config = yaml.load(f.read())
 
             def replace_with_env(config):
-                for key, value in config.iteritems():
-                    if isinstance(value, basestring) and value.startswith('$'):
+                for key, value in iteritems(config):
+                    if isinstance(value, string_types) and value.startswith('$'):
                         config[key] = os.environ.get(value[1:])
 
                     elif isinstance(value, dict):
@@ -727,7 +727,7 @@ def parse_verbosity(verbosity=None):
         'crit': 50
     }
 
-    if isinstance(verbosity, basestring):
+    if isinstance(verbosity, string_types):
         return logger_levels[verbosity]
     else:
         return int(verbosity)

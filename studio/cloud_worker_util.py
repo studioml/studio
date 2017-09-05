@@ -1,7 +1,7 @@
 import os
 import sys
 
-from util import rand_string
+from .util import rand_string
 """
 Utility functions for anything shared in common by ec2cloud_worker and
 gcloud_worker

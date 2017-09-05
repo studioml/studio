@@ -4,9 +4,9 @@ import calendar
 import certifi
 import json
 
-import pyrebase
-from auth import FirebaseAuth
-from tartifact_store import TartifactStore
+from . import pyrebase
+from .auth import FirebaseAuth
+from .tartifact_store import TartifactStore
 
 logging.basicConfig()
 
@@ -166,7 +166,7 @@ class FirebaseArtifactStore(TartifactStore):
                                  .format(response.status_code))
                 return (None, None)
 
-            return (json.loads(response.content), url)
+            return (json.loads(response.content.decode()), url)
 
         except Exception as err:
             self.logger.warn(

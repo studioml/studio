@@ -1,7 +1,7 @@
 import time
 import sys
 from flask import Flask, render_template, request, redirect
-import model
+from . import model
 import argparse
 import yaml
 import logging
