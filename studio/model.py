@@ -2,10 +2,7 @@
 
 import os
 import uuid
-try:
-    import pip
-except ImportError:
-    pip = None
+import pip
 
 import yaml
 import pyrebase
