@@ -44,7 +44,7 @@ some intermediate data (e.g. weights of a neural network). The following
 example can be made more concise using the keras or tensorflow built-in
 checkpointers, but we'll leave that as an exercise for the reader.
 Consider the following contents of file ``train_linreg.py`` (also
-located in studio/helloworld/ in repo):
+located in ``studio/examples/general/`` in repo):
 
 ::
 
