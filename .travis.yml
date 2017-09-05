@@ -9,9 +9,11 @@ env:
 
 install:
   - pip install -e .
+  - pip install -r test_requirements.txt
 
 script:
   - nosetests
+  - pep8 --show-source .
   - python setup.py sdist
 
 deploy:
