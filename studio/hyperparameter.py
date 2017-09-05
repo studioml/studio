@@ -42,7 +42,7 @@ class Hyperparameter(object):
         if self.is_log is not None:
             my_str += "Log scale: %s " % self.is_log
         if self.rand_init is not None:
-            my_str += "Rand init %s " % self.rand_init
+            my_str += "Rand init: %s " % self.rand_init
         return my_str
 
 class HyperparameterParser(object):
