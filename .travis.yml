@@ -8,10 +8,10 @@ env:
   fast_finish: true
 
 install:
-  - pip install .
+  - pip install -e .
 
 script:
-  - python studio/tests/http_provider_test.py
+  - nosetests
   - python setup.py sdist
 
 deploy:
