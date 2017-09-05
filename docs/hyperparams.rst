@@ -13,7 +13,7 @@ launched in a separate project, and can be compared in tensorboard or by
 the value of some scalar metrics reported in tensorboard logs.
 
 Consider the following code snippet (code in
-`here <../studio/helloworld/train_mnist_keras.py>`__):
+`here <../studio/examples/keras/train_mnist_keras.py>`__):
 
 ::
 
@@ -124,7 +124,7 @@ Cloud workers
 
 Waiting till your local machine runs all experiments one after another
 can be time consuming. Fortunately, we can outsource the compute to Google
-Cloud or Amazon EC2. Please refer to `this page <http://studioml.readthedocs.io/en/latest/cloud.html>`__ for setup
+Cloud or Amazon EC2. Please refer to `this page <http://docs.studio.ml/en/latest/cloud.html>`__ for setup
 instructions; all the custom hardware configuration options can be
 applied to the hyperparameter search as well.
 

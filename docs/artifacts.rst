@@ -44,7 +44,7 @@ some intermediate data (e.g. weights of a neural network). The following
 example can be made more concise using the keras or tensorflow built-in
 checkpointers, but we'll leave that as an exercise for the reader.
 Consider the following contents of file ``train_linreg.py`` (also
-located in studio/helloworld/ in repo):
+located in ``studio/examples/general/`` in repo):
 
 ::
 
@@ -222,7 +222,7 @@ For now, the downside of using Google Cloud storage is that Google service accou
 are used, which means that all users in possession of the credential's
 file have read/write access to the objects in the storage, so in
 principle one user can delete the experiments of another. See
-`here <http://studioml.readthedocs.io/en/latest/gcloud_setup.html>`__ for instructions on how to generate service
+`here <http://docs.studio.ml/en/latest/gcloud_setup.html>`__ for instructions on how to generate service
 account credentials. Once you have generated a credentials file, uncomment the 
 "storage" section in your config.yaml file, set the type of storage to
 ``gcloud``, and specify a storage bucket. Note that the bucket name needs to
