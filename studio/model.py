@@ -549,7 +549,7 @@ class FirebaseProvider(object):
         return retval
 
     def get_artifact(self, artifact, only_newer=True):
-        return self.store.get_artifact(artifact, only_newer)
+        return self.store.get_artifact(artifact, only_newer=only_newer)
 
     def _get_valid_experiments(self, experiment_keys,
                                getinfo=False, blocking=True):
