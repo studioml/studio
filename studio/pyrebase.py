@@ -27,8 +27,9 @@ except BaseException:
     RSA = None
 import datetime
 
-NUM_RETRIES=3
-POOL_SIZE=100
+NUM_RETRIES = 3
+POOL_SIZE = 100
+
 
 def initialize_app(config):
     if 'projectId' in config.keys():
