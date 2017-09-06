@@ -13,7 +13,9 @@ class TensorBoardWriter(object):
 
     def __init__(self, logdir):
         if tb_summary is None:
-            raise ValueError("You must install TensorFlow to use Tensorboard summary writer.")
+            raise ValueError(
+                "You must install TensorFlow " +
+                "to use Tensorboard summary writer.")
         self._writer = tb_summary.FileWriter(logdir)
 
     def add(self, step, key, value):
@@ -56,8 +58,9 @@ class Reporter(object):
                 self._writer.add(step, key, value)
 
     def report(self):
-        if self._last_step % self._log_interval == 0:            
+        if self._last_step % self._log_interval == 0:
             def smooth(values):
                 return (sum(values) / len(values)) if values else 0.0
-            metrics = ','.join(["%s = %.5f" % (k, smooth(v)) for k, v in self._metrics.iteritems()])
+            metrics = ','.join(["%s = %.5f" % (k, smooth(v))
+                                for k, v in self._metrics.iteritems()])
             print("Step %d: %s" % (self._last_step, metrics))

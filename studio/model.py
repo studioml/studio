@@ -511,8 +511,8 @@ class FirebaseProvider(object):
             experiment_keys.keys(), getinfo=True, blocking=blocking)
 
     def get_project_experiments(self, project):
-        experiment_keys = self.__getitem__(self._get_projects_keybase()
-                                           + project)
+        experiment_keys = self.__getitem__(self._get_projects_keybase() +
+                                           project)
         if not experiment_keys:
             experiment_keys = {}
         return self._get_valid_experiments(
