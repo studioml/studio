@@ -157,7 +157,7 @@ contain a line with the fitness printed to stdout as shown below. For
 hyperparameters whose contents are numpy arrays, they must be loaded using
 the ``fs_tracker.get_artifact`` function call as shown below:
 
-```python
+::
 
     from studio import fs_tracker
 
@@ -165,7 +165,7 @@ the ``fs_tracker.get_artifact`` function call as shown below:
 
     print "fitness: %s" % np.sum(lr)
 
-```
+
 
 Cloud workers
 -------------
