@@ -84,7 +84,6 @@ class FirebaseAuth(object):
                 except:
                     time.sleep(SLEEP_TIME)
                     counter += 1
-
             if user is not None:
                 self.refresh_token(user['email'], user['refreshToken'])
 
