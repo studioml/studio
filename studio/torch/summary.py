@@ -1,6 +1,7 @@
 """Tools to simplify PyTorch reporting and integrate with TensorBoard."""
 
 import collections
+import six
 
 try:
     from tensorflow import summary as tb_summary
@@ -45,7 +46,7 @@ class Reporter(object):
         self._metrics = collections.defaultdict(collections.deque)
 
     def record(self, step, **kwargs):
-        for key, value in kwargs.iteritems():
+        for key, value in kwargs.six.iteritems():
             self.add(step, key, value)
 
     def add(self, step, key, value):
@@ -62,5 +63,5 @@ class Reporter(object):
             def smooth(values):
                 return (sum(values) / len(values)) if values else 0.0
             metrics = ','.join(["%s = %.5f" % (k, smooth(v))
-                                for k, v in self._metrics.iteritems()])
+                                for k, v in self._metrics.six.iteritems()])
             print("Step %d: %s" % (self._last_step, metrics))

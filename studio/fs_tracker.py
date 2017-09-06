@@ -5,7 +5,7 @@ import uuid
 import shutil
 import json
 import re
-
+import six
 
 STUDIOML_EXPERIMENT = 'STUDIOML_EXPERIMENT'
 STUDIOML_HOME = 'STUDIOML_HOME'
@@ -38,7 +38,7 @@ def setup_experiment(env, experiment, clean=True):
     _setup_model_directory(key, clean)
 
     amapping = {}
-    for tag, art in artifacts.items():
+    for tag, art in artifacts.six.iteritems():
         if art.get('local') is not None:
             amapping[tag] = art['local']
 

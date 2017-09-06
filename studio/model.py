@@ -14,6 +14,7 @@ try:
     from multiprocessing.pool import ThreadPool
 except ImportError:
     ThreadPool = None
+import six
 
 import fs_tracker
 import util
@@ -244,7 +245,7 @@ class FirebaseProvider(object):
             experiment.git = git_util.get_git_info(
                 experiment.artifacts['workspace']['local'])
 
-        for tag, art in experiment.artifacts.items():
+        for tag, art in experiment.artifacts.six.iteritems():
             if art['mutable']:
                 art['key'] = self._get_experiments_keybase() + \
                     experiment.key + '/' + tag + '.tgz'
@@ -340,7 +341,7 @@ class FirebaseProvider(object):
             del self._experiment_info_cache[experiment_key]
 
         if experiment is not None:
-            for tag, art in experiment.artifacts.items():
+            for tag, art in experiment.artifacts.six.iteritems():
                 if art.get('key') is not None:
                     self.logger.debug(
                         ('Deleting artifact {} from the store, ' +
@@ -367,7 +368,7 @@ class FirebaseProvider(object):
             Thread(
                 target=self.store.put_artifact,
                 args=(art,))
-            for _, art in experiment.artifacts.items()
+            for _, art in experiment.artifacts.six.iteritems()
             if art['mutable'] and art.get('local')]
 
         for t in checkpoint_threads:
@@ -522,7 +523,7 @@ class FirebaseProvider(object):
         experiment = self.get_experiment(key, getinfo=False)
         retval = {}
         if experiment.artifacts is not None:
-            for tag, art in experiment.artifacts.items():
+            for tag, art in experiment.artifacts.six.iteritems():
                 url = self.store.get_artifact_url(art)
                 if url is not None:
                     retval[tag] = url
@@ -670,7 +671,7 @@ def get_config(config_file=None):
             config = yaml.load(f.read())
 
             def replace_with_env(config):
-                for key, value in config.items():
+                for key, value in config.six.iteritems():
                     if isinstance(value, str) and value.startswith('$'):
                         config[key] = os.environ.get(value[1:])
 

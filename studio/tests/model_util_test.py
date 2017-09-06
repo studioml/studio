@@ -1,6 +1,7 @@
 import unittest
 import numpy as np
 import urllib
+import six
 
 from PIL import Image
 from io import BytesIO
@@ -132,7 +133,7 @@ class ModelPipeTest(unittest.TestCase):
         input_dict = {x: x for x in range(10)}
         output_dict = p(input_dict)
 
-        expected_dict = {k: v * v for k, v in input_dict.iteritems()}
+        expected_dict = {k: v * v for k, v in input_dict.six.iteritems()}
 
         self.assertEquals(expected_dict, output_dict)
 
@@ -145,7 +146,7 @@ class ModelPipeTest(unittest.TestCase):
         input_dict = {x: x for x in range(10000)}
         output_dict = p(input_dict)
 
-        expected_dict = {k: v * v for k, v in input_dict.iteritems()}
+        expected_dict = {k: v * v for k, v in input_dict.six.iteritems()}
 
         self.assertEquals(expected_dict, output_dict)
 
@@ -262,7 +263,7 @@ class ModelPipeTest(unittest.TestCase):
 
         expected_output = {url5: 5, url2: 2}
         output = pipe({url5: url5, url2: url2, urlb: urlb})
-        output = {k: v for k, v in output.iteritems() if v}
+        output = {k: v for k, v in output.six.iteritems() if v}
 
         self.assertEquals(output, expected_output)
 

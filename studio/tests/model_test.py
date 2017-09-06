@@ -6,6 +6,7 @@ import os
 import time
 import pip
 import shutil
+import six
 
 from studio import model
 from studio.auth import remove_all_keys
@@ -111,7 +112,7 @@ class FirebaseProviderTest(unittest.TestCase):
         self.assertTrue(experiment.time_added <= time.time())
         actual_experiment_dict = fb.__getitem__(
             fb._get_experiments_keybase() + '/' + experiment_name)
-        for key, value in experiment.__dict__.iteritems():
+        for key, value in experiment.__dict__.six.iteritems():
             if value:
                 self.assertTrue(actual_experiment_dict[key] == value)
 
@@ -132,7 +133,7 @@ class FirebaseProviderTest(unittest.TestCase):
 
         actual_experiment_dict = fb.__getitem__(
             fb._get_experiments_keybase() + '/' + experiment_name)
-        for key, value in experiment.__dict__.iteritems():
+        for key, value in experiment.__dict__.six.iteritems():
             if value:
                 self.assertTrue(actual_experiment_dict[key] == value)
 
@@ -155,7 +156,7 @@ class FirebaseProviderTest(unittest.TestCase):
 
         actual_experiment_dict = fb.__getitem__(
             fb._get_experiments_keybase() + '/' + experiment_name)
-        for key, value in experiment.__dict__.iteritems():
+        for key, value in experiment.__dict__.six.iteritems():
             if value:
                 self.assertTrue(actual_experiment_dict[key] == value)
 

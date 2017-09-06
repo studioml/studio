@@ -9,6 +9,7 @@ import shutil
 import importlib
 import time
 import multiprocessing
+import six 
 
 import numpy as np
 
@@ -616,7 +617,7 @@ def add_hyperparam_experiments(
             with open(os.path.join(workspace_new, exec_filename), 'r') as f:
                 script_text = f.read()
 
-            for param_name, param_value in hyperparam_tuple.iteritems():
+            for param_name, param_value in hyperparam_tuple.six.iteritems():
                 if isinstance(param_value, np.ndarray):
                     array_filepath = '/tmp/%s.npy' % rand_string(32)
                     np.save(array_filepath, param_value)
@@ -656,7 +657,7 @@ def add_hyperparam_experiments(
 
 def add_packages(list1, list2):
     pkg_dict = {re.sub('==.+', '', pkg): pkg for pkg in list1 + list2}
-    return [pkg for _, pkg in pkg_dict.items()]
+    return [pkg for _, pkg in pkg_dict.six.iteritems()]
 
 
 if __name__ == "__main__":

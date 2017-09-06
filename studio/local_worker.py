@@ -6,6 +6,7 @@ import yaml
 import logging
 import time
 import json
+import six 
 
 from apscheduler.schedulers.background import BackgroundScheduler
 
@@ -54,7 +55,7 @@ class LocalExecutor(object):
         """
         env = dict(os.environ)
         if 'env' in self.config.keys():
-            for k, v in self.config['env'].items():
+            for k, v in self.config['env'].six.iteritems():
                 if v is not None:
                     env[str(k)] = str(v)
 
@@ -221,7 +222,7 @@ def worker_loop(queue, parsed_args,
 
                     # pip.main(['install'] + experiment.pythonenv)
 
-                for tag, art in experiment.artifacts.items():
+                for tag, art in experiment.artifacts.six.iteritems():
                     if fetch_artifacts or 'local' not in art.keys():
                         logger.info('Fetching artifact ' + tag)
                         if tag == 'workspace':

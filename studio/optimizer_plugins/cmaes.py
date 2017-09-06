@@ -8,6 +8,7 @@ import pprint
 import time
 import traceback
 import sys
+import six
 
 import numpy as np
 
@@ -21,7 +22,7 @@ class Optimizer(object):
         self.logger = logger
 
         self.opts = cma.CMAOptions()
-        for param, value in self.config['cmaes_config'].iteritems():
+        for param, value in self.config['cmaes_config'].six.iteritems():
             if param in self.opts and value is not None:
                 self.opts[param] = value
         self.dim = 0

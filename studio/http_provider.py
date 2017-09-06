@@ -1,5 +1,6 @@
 import requests
 import json
+import six
 
 import model
 import pyrebase
@@ -41,7 +42,7 @@ class HTTPProvider(object):
         self._raise_detailed_error(request)
         artifacts = request.json()['artifacts']
 
-        for tag, art in experiment.artifacts.iteritems():
+        for tag, art in experiment.artifacts.six.iteritems():
             art['key'] = artifacts[tag]['key']
             art['qualified'] = artifacts[tag]['qualified']
             art['bucket'] = artifacts[tag]['bucket']
@@ -145,7 +146,7 @@ class HTTPProvider(object):
         self._raise_detailed_error(request)
         artifacts = request.json()['artifacts']
 
-        for tag, art in experiment.artifacts.iteritems():
+        for tag, art in experiment.artifacts.six.iteritems():
             if 'local' in art.keys():
                 art['key'] = artifacts[tag]['key']
                 art['qualified'] = artifacts[tag]['qualified']

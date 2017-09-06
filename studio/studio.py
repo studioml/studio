@@ -9,7 +9,7 @@ import json
 import socket
 import subprocess
 import traceback
-from urllib.parse import urlparse
+import six 
 
 import google.oauth2.id_token
 import google.auth.transport.requests
@@ -108,7 +108,7 @@ def tensorboard(logdir):
         _tensorboard_dirs[logdir] = port
 
     redirect_url = 'http://{}:{}'.format(
-        urlparse(request.url).hostname,
+        six.moves.urllib.parse(request.url).hostname,
         port)
 
     logger.debug('Redirecting to ' + redirect_url)
@@ -123,7 +123,7 @@ def get_experiment():
     try:
         experiment = get_db().get_experiment(key).__dict__
         artifacts = get_db().get_artifacts(key)
-        for art, url in artifacts.iteritems():
+        for art, url in artifacts.six.iteritems():
             experiment['artifacts'][art]['url'] = url
 
         status = 'ok'
@@ -338,13 +338,13 @@ def add_experiment():
     artifacts = {}
     try:
         experiment = model.experiment_from_dict(request.json['experiment'])
-        for tag, art in experiment.artifacts.iteritems():
+        for tag, art in experiment.artifacts.six.iteritems():
             art.pop('local', None)
 
         get_db().add_experiment(experiment)
         added_experiment = get_db().get_experiment(experiment.key)
 
-        for tag, art in added_experiment.artifacts.iteritems():
+        for tag, art in added_experiment.artifacts.six.iteritems():
             if 'key' in art.keys():
                 get_db().store.grant_write(art['key'], userid)
                 artifacts[tag] = art
@@ -370,7 +370,7 @@ def checkpoint_experiment():
         experiment = get_db().get_experiment(key)
         get_db().checkpoint_experiment(experiment)
 
-        for tag, art in experiment.artifacts.iteritems():
+        for tag, art in experiment.artifacts.six.iteritems():
             if 'key' in art.keys():
                 get_db().store.grant_write(art['key'], userid)
                 artifacts[tag] = art
