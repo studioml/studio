@@ -9,6 +9,7 @@ database:
     messagingSenderId: 81790704397
 
     guest: true
+    max_keys: -1
                                                                     
 log:
     name: output.log
