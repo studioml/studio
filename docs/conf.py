@@ -183,7 +183,7 @@ texinfo_documents = [
      u'studioml Documentation',
      author,
      'studioml',
-     'Python model management tool to simplify ' + 
+     'Python model management tool to simplify ' +
      'and expedite your model building process.',
      'Miscellaneous'),
 ]

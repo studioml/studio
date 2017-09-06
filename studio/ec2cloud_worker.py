@@ -269,8 +269,8 @@ class EC2WorkerManager(object):
             resources_needed, queue_name, asg_name, timeout=timeout)
 
         if bid_price.endswith('%'):
-            bid_price = str(self.prices[instance_type]
-                            * float(bid_price.replace('%', '')) / 100)
+            bid_price = str(self.prices[instance_type] *
+                            float(bid_price.replace('%', '')) / 100)
 
         self.logger.info('Price bid for instance type {} : {}'
                          .format(instance_type, bid_price))
