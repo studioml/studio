@@ -24,7 +24,7 @@ class LocalExecutor(object):
     def __init__(self, args):
         self.config = model.get_config()
         if args.config:
-            if isinstance(args.config, basestring):
+            if isinstance(args.config, str):
                 with open(args.config) as f:
                     self.config.update(yaml.load(f))
             else:
@@ -40,7 +40,7 @@ class LocalExecutor(object):
         self.logger.debug(self.config)
 
     def run(self, experiment):
-        if isinstance(experiment, basestring):
+        if isinstance(experiment, str):
             experiment = self.db.get_experiment(experiment)
         elif not isinstance(experiment, model.Experiment):
             raise ValueError("Unknown type of experiment: " +
@@ -54,7 +54,7 @@ class LocalExecutor(object):
         """
         env = dict(os.environ)
         if 'env' in self.config.keys():
-            for k, v in self.config['env'].iteritems():
+            for k, v in self.config['env'].items():
                 if v is not None:
                     env[str(k)] = str(v)
 
@@ -221,7 +221,7 @@ def worker_loop(queue, parsed_args,
 
                     # pip.main(['install'] + experiment.pythonenv)
 
-                for tag, art in experiment.artifacts.iteritems():
+                for tag, art in experiment.artifacts.items():
                     if fetch_artifacts or 'local' not in art.keys():
                         logger.info('Fetching artifact ' + tag)
                         if tag == 'workspace':
