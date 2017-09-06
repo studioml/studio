@@ -216,6 +216,12 @@ class Optimizer(object):
                 # copy_of_self.es = None
                 pickle.dump(copy_of_self, f, protocol=-1)
 
+            best_file = os.path.join(
+                result_dir, "G%s_F%s_best.pkl" %
+                (self.gen, self.best_fitness))
+            with open(best_file, 'wb') as f:
+                pickle.dump(self.best, f, protocol=-1)
+
             with open(os.path.join(result_dir, "fitness.txt"), 'wb') as f:
                 for best, mean in zip(
                         self.best_fitnesses, self.mean_fitnesses):
