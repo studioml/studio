@@ -11,7 +11,7 @@ import requests
 import json
 
 from gpu_util import memstr2int
-
+from cloud_worker_util import insert_user_startup_script
 
 logging.basicConfig()
 
@@ -63,14 +63,19 @@ _instance_specs = {
 
 class EC2WorkerManager(object):
 
-    def __init__(self, auth_cookie=None):
+    def __init__(self, runner_args=None, auth_cookie=None, verbose=10):
+        self.runner_args = runner_args
+        self.startup_script_file = os.path.join(
+            os.path.dirname(__file__),
+            'scripts/ec2_worker_startup.sh')
+
         self.region = 'us-east-1'
         self.client = boto3.client('ec2', region_name=self.region)
         self.asclient = boto3.client('autoscaling', region_name=self.region)
         self.cwclient = boto3.client('cloudwatch', region_name=self.region)
 
         self.logger = logging.getLogger('EC2WorkerManager')
-        self.logger.setLevel(10)
+        self.logger.setLevel(verbose)
         self.auth_cookie = auth_cookie
 
         self.prices = self._get_ondemand_prices(_instance_specs.keys())
@@ -141,7 +146,7 @@ class EC2WorkerManager(object):
 
         response = self.client.run_instances(**kwargs)
         self.logger.info(
-            'Staring instance {}'.format(
+            'Starting instance {}'.format(
                 response['Instances'][0]['InstanceId']))
 
     def _select_instance_type(self, resources_needed):
@@ -182,15 +187,15 @@ class EC2WorkerManager(object):
         else:
             self.logger.info('credentials NOT found')
 
-        startup_script_filename = 'scripts/ec2_worker_startup.sh'
-
         with open(os.path.join(
                 os.path.dirname(__file__),
-                startup_script_filename),
+                self.startup_script_file),
                 'r') as f:
 
             startup_script = f.read()
 
+        branch = self.runner_args.branch if self.runner_args is not None \
+            else "master"
         startup_script = startup_script.format(
             auth_key=auth_key if auth_key else "",
             queue_name=queue_name,
@@ -201,8 +206,14 @@ class EC2WorkerManager(object):
             autoscaling_group=autoscaling_group if autoscaling_group else "",
             region=self.region,
             use_gpus=0 if resources_needed['gpus'] == 0 else 1,
-            timeout=timeout
+            timeout=timeout,
+            studioml_branch=branch
         )
+
+        if self.runner_args is not None:
+            startup_script = insert_user_startup_script(
+                self.runner_args.user_startup_script,
+                startup_script, self.logger)
 
         self.logger.info('Startup script:')
         self.logger.info(startup_script)
