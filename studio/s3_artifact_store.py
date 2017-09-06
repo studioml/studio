@@ -53,7 +53,6 @@ class S3ArtifactStore(TartifactStore):
                 'put_object', Params={'Bucket': self.bucket, 'Key': key})
         else:
             raise ValueError('Unknown method ' + method)
-        
 
     def _get_file_post(self, key):
         return self.client.generate_presigned_post(

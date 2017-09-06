@@ -48,7 +48,9 @@ class HTTPProvider(object):
             art['qualified'] = artifacts[tag]['qualified']
             art['bucket'] = artifacts[tag]['bucket']
 
-            HTTPArtifactStore(artifacts[tag]['url'], self.verbose) \
+            HTTPArtifactStore(artifacts[tag]['url'],
+                              artifacts[tag]['timestamp'],
+                              self.verbose) \
                 .put_artifact(art)
 
     def delete_experiment(self, experiment):
@@ -132,7 +134,6 @@ class HTTPProvider(object):
     def get_artifact(self, artifact, only_newer='True'):
         return HTTPArtifactStore(artifact['url'], self.verbose) \
             .get_artifact(artifact)
-               
 
     def get_users(self):
         raise NotImplementedError()
@@ -162,10 +163,10 @@ class HTTPProvider(object):
         raise NotImplementedError()
 
     def _get_headers(self):
-        return {
-            "content-type": "application/json",
-            "Authorization": "Firebase " + self.auth.get_token()
-        }
+        headers = {"content-type": "application/json"}
+        if self.auth:
+            headers["Authorization"] = "Firebase " + self.auth.get_token()
+        return headers
 
     def _raise_detailed_error(self, request):
         if request.status_code != 200:

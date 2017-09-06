@@ -276,7 +276,7 @@ class FirebaseProvider(object):
 
         experiment_dict = experiment.__dict__.copy()
         experiment_dict['owner'] = userid
-        
+
         self.__setitem__(self._get_experiments_keybase() + experiment.key,
                          experiment_dict)
 
@@ -521,7 +521,7 @@ class FirebaseProvider(object):
             self._get_user_keybase(userid) + "/experiments")
         if not experiment_keys:
             experiment_keys = {}
-        
+
         keys = sorted(experiment_keys.keys(),
                       key=lambda k: experiment_keys[k],
                       reverse=True)
@@ -556,6 +556,7 @@ class FirebaseProvider(object):
 
         if self.max_keys > 0:
             experiment_keys = experiment_keys[:self.max_keys]
+
         def cache_valid_experiment(key):
             try:
                 self._experiment_cache[key] = self.get_experiment(
@@ -654,6 +655,9 @@ class PostgresProvider(object):
         raise NotImplementedError()
 
     def get_artifacts(self):
+        raise NotImplementedError()
+
+    def get_artifact(self):
         raise NotImplementedError()
 
     def get_users(self):

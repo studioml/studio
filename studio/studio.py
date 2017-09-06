@@ -357,26 +357,21 @@ def finish_experiment():
 def add_experiment():
     tic = time.time()
     userid = get_and_verify_user(request)
-    
-    # TODO check if user has access
 
-    artifacts = {}
     try:
         experiment = model.experiment_from_dict(request.json['experiment'])
-        for tag, art in experiment.artifacts.iteritems():
-            art.pop('local', None)
+        if get_db().can_write_experiment(experiment.key, userid):
+            for tag, art in experiment.artifacts.iteritems():
+                art.pop('local', None)
 
-        import pdb
-        pdb.set_trace()
-        get_db().add_experiment(experiment, userid)
-        added_experiment = get_db().get_experiment(experiment.key)
+            get_db().add_experiment(experiment, userid)
+            added_experiment = get_db().get_experiment(experiment.key)
 
-        for tag, art in added_experiment.artifacts.iteritems():
-            if 'key' in art.keys():
-                put_url = get_db().store.get_artifact_url(art, method='PUT')
-                art['url'] = put_url
-                artifacts[tag] = art
-        status = 'ok'
+            artifacts = _process_artifacts(added_experiment)
+            status = 'ok'
+        else:
+            artifacts = {}
+            raise ValueError('Unauthorized')
 
     except BaseException:
         status = traceback.format_exc()
@@ -392,20 +387,16 @@ def checkpoint_experiment():
     tic = time.time()
     userid = get_and_verify_user(request)
 
-    artifacts = {}
     try:
         key = request.json['key']
         experiment = get_db().get_experiment(key)
         get_db().checkpoint_experiment(experiment)
 
-        for tag, art in experiment.artifacts.iteritems():
-            if 'key' in art.keys():
-                put_url = get_db().store.get_artifact_url(art, method='PUT')
-                art['url'] = put_url
-                artifacts[tag] = art
+        artifacts = _process_artifacts(experiment)
         status = 'ok'
 
     except BaseException:
+        artifacts = {}
         status = traceback.format_exc()
 
     toc = time.time()
@@ -413,6 +404,20 @@ def checkpoint_experiment():
                      .format(toc - tic))
 
     return json.dumps({'status': status, 'artifacts': artifacts})
+
+
+def _process_artifacts(experiment):
+    artifacts = {}
+    for tag, art in experiment.artifacts.iteritems():
+        if 'key' in art.keys():
+            put_url, timestamp = get_db().store.get_artifact_url(
+                art, method='PUT', get_timestamp=True)
+
+            art['url'] = put_url
+            art['timestamp'] = timestamp
+            artifacts[tag] = art
+
+    return artifacts
 
 
 def get_and_verify_user(request):

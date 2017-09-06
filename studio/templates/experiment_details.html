@@ -53,6 +53,9 @@
             if (expA == null || expB == null) {
                 return false;
             }
+            expA = JSON.parse(expA)
+            expB = JSON.parse(expB)
+
             if (JSON.stringify(expA.experiment.info) == JSON.stringify(expB.experiment.info)) {
                 return true;
             }

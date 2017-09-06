@@ -6,11 +6,12 @@ logging.basicConfig()
 
 
 class HTTPArtifactStore(TartifactStore):
-    def __init__(self, url, verbose=10):
+    def __init__(self, url, timestamp=None, verbose=10):
         self.logger = logging.getLogger(self.__class__.__name__)
         self.logger.setLevel(verbose)
 
         self.url = url
+        self.timestamp = None
 
         super(HTTPArtifactStore, self).__init__(False)
     '''
@@ -32,7 +33,7 @@ class HTTPArtifactStore(TartifactStore):
     def _upload_file(self, key, local_path):
         with open(local_path, 'rb') as f:
             resp = requests.put(
-                self.url, 
+                self.url,
                 data=f.read())
 
         if resp.status_code != 200:
@@ -49,9 +50,8 @@ class HTTPArtifactStore(TartifactStore):
                 for chunk in response:
                     f.write(chunk)
         else:
-           self.logger.info("Response error with code {}"
-                            .format(response.status_code))
-
+            self.logger.info("Response error with code {}"
+                             .format(response.status_code))
 
     def _delete_file(self, key):
         raise NotImplementedError
@@ -65,7 +65,7 @@ class HTTPArtifactStore(TartifactStore):
             Key=key)
 
     def _get_file_timestamp(self, key):
-        raise NotImplementedError
+        return self.timestamp
 
     def get_qualified_location(self, key):
         return self.endpoint + '/' + key
