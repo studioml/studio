@@ -14,6 +14,7 @@ from util import rand_string
 TOKEN_DIR = os.path.expanduser('~/.studioml/keys')
 HOUR = 3600
 SLEEP_TIME = 0.05
+MAX_NUM_RETRIES = 100
 
 class FirebaseAuth(object):
     def __init__(
@@ -57,7 +58,7 @@ class FirebaseAuth(object):
 
         self.sched = BackgroundScheduler()
         self.sched.start()
-        self.sched.add_job(self._update_user, 'interval', minutes=15)
+        self.sched.add_job(self._update_user, 'interval', minutes=59)
         atexit.register(self.sched.shutdown)
 
     def _update_user(self):
@@ -71,19 +72,21 @@ class FirebaseAuth(object):
                 self.expired = False
             else:
                 self.expired = True
-        else:
+        elif time.time() - os.path.getmtime(api_key) > HOUR:
             # If json file fails to load, try again
-            # user = None
-            # while user is None:
-            #     try:
-            #         with open(api_key, 'rb') as f:
-            #             user = json.load(f)
-            #     except:
-            #         time.sleep(SLEEP_TIME)
-            with open(api_key, 'rb') as f:
-                user = json.load(f)
+            counter = 0; user = None
+            while True:
+                if user is not None or counter >= MAX_NUM_RETRIES:
+                    break
+                try:
+                    with open(api_key, 'rb') as f:
+                        user = json.load(f)
+                except:
+                    time.sleep(SLEEP_TIME)
+                    counter += 1
 
-            self.refresh_token(user['email'], user['refreshToken'])
+            if user is not None:
+                self.refresh_token(user['email'], user['refreshToken'])
 
     def sign_in_with_email(self):
         self.user = \
@@ -110,8 +113,6 @@ class FirebaseAuth(object):
             os.fsync(f.fileno())
             f.close()
         os.rename(tmp_api_key, api_key)
-        # with open(api_key, 'wb') as f:
-        #     json.dump(self.user, f)
 
     def get_token(self):
         if self.expired:
