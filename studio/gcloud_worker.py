@@ -16,7 +16,7 @@ logging.basicConfig()
 
 class GCloudWorkerManager(object):
     def __init__(self, runner_args=None, zone='us-central1-f',
-        auth_cookie=None, verbose=10):
+                 auth_cookie=None, verbose=10):
         assert 'GOOGLE_APPLICATION_CREDENTIALS' in os.environ.keys()
         with open(os.environ['GOOGLE_APPLICATION_CREDENTIALS'], 'r') as f:
             credentials_dict = json.loads(f.read())

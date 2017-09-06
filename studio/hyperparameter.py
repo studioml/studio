@@ -6,10 +6,19 @@ import math
 
 import numpy as np
 
+
 class Hyperparameter(object):
-    def __init__(self, name, index=None, values=None, min_range=None,
-        max_range=None, array_length=None, unbounded=None, is_log=None,
-        rand_init=None):
+    def __init__(
+            self,
+            name,
+            index=None,
+            values=None,
+            min_range=None,
+            max_range=None,
+            array_length=None,
+            unbounded=None,
+            is_log=None,
+            rand_init=None):
 
         self.name = name
         self.index = index
@@ -44,6 +53,7 @@ class Hyperparameter(object):
         if self.rand_init is not None:
             my_str += "Rand init: %s " % self.rand_init
         return my_str
+
 
 class HyperparameterParser(object):
     '''Class for parsing hyperparameters'''
@@ -85,10 +95,10 @@ class HyperparameterParser(object):
             param_values_str = hyperparam.split('=')[1]
             if self.runner_args.optimizer == "grid":
                 hyperparameters.append(self._parse_grid(param_name,
-                    param_values_str))
+                                                        param_values_str))
             else:
                 hyperparameters.append(self._parse_opt(param_name,
-                    param_values_str))
+                                                       param_values_str))
         if self.runner_args.verbose:
             self.logger.info("Parsed the following hyperparameters:")
             for h in hyperparameters:
@@ -100,7 +110,8 @@ class HyperparameterParser(object):
         min_range = max_range = array_length = None
         raw_fields = range_str.split(":")
 
-        correct_format = True; flags = ""
+        correct_format = True
+        flags = ""
         if len(raw_fields) > 2:
             flags = raw_fields[-1]
             allowed_flags = 'ualr'
@@ -115,7 +126,7 @@ class HyperparameterParser(object):
 
         if not correct_format:
             raise ValueError("Hyperparameter flags (%s) are incorrect for %s" %
-                (range_str, self.runner_args.optimizer))
+                             (range_str, self.runner_args.optimizer))
 
         try:
             min_range = float(raw_fields[0])
@@ -124,12 +135,13 @@ class HyperparameterParser(object):
             if array_length is not None and array_length <= 0:
                 raise ValueError
         except ValueError:
-            raise ValueError("Hyperparameter values (%s) are incorrect for %s" %
+            raise ValueError(
+                "Hyperparameter values (%s) are incorrect for %s" %
                 (range_str, self.runner_args.optimizer))
 
         if min_range > max_range:
             raise ValueError("Min range (%s) is larger than max range (%s) " %
-                (min_range, max_range))
+                             (min_range, max_range))
 
         unbounded = True if "u" in flags else False
         rand_init = True if "r" in flags else False
@@ -142,9 +154,15 @@ class HyperparameterParser(object):
 
         if not hasattr(self, 'index'):
             self.index = 0
-        h = Hyperparameter(param_name, index=self.index, min_range=min_range,
-            max_range=max_range, array_length=array_length, unbounded=unbounded,
-            is_log=is_log, rand_init=rand_init)
+        h = Hyperparameter(
+            param_name,
+            index=self.index,
+            min_range=min_range,
+            max_range=max_range,
+            array_length=array_length,
+            unbounded=unbounded,
+            is_log=is_log,
+            rand_init=rand_init)
         self.index += array_length if array_length is not None else 1
         return h
 
@@ -176,7 +194,8 @@ class HyperparameterParser(object):
                     if int(limit2) == limit2 and limit2 > abs(limit3 - limit1):
                         return_val = np.linspace(limit1, limit3, int(limit2))
                     else:
-                        return_val = np.arange(limit1, limit3 + 0.5 * limit2, limit2)
+                        return_val = np.arange(
+                            limit1, limit3 + 0.5 * limit2, limit2)
 
                 except ValueError:
                     if 'l' in range_limits[1]:
@@ -193,7 +212,7 @@ class HyperparameterParser(object):
 
         else:
             return_val = [float(range_str)]
-        if type(return_val) is not list:
+        if not isinstance(return_val, list):
             return_val = return_val.tolist()
 
         if not hasattr(self, 'index'):

@@ -29,8 +29,9 @@ class GitUtilTest(unittest.TestCase):
             'git@github\.com:studioml/studio(\.git){0,1}')
         actual = git_util.get_repo_url(remove_user=True)
         self.assertTrue(
-            (expected.match(actual) is not None) or \
+            (expected.match(actual) is not None) or
             (expected2.match(actual) is not None))
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -16,6 +16,7 @@ HOUR = 3600
 SLEEP_TIME = 0.05
 MAX_NUM_RETRIES = 100
 
+
 class FirebaseAuth(object):
     def __init__(
             self,
@@ -74,14 +75,15 @@ class FirebaseAuth(object):
                 self.expired = True
         else:
             # If json file fails to load, try again
-            counter = 0; user = None
+            counter = 0
+            user = None
             while True:
                 if user is not None or counter >= MAX_NUM_RETRIES:
                     break
                 try:
                     with open(api_key, 'rb') as f:
                         user = json.load(f)
-                except:
+                except BaseException:
                     time.sleep(SLEEP_TIME)
                     counter += 1
             if user is not None:
