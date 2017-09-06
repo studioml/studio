@@ -13,7 +13,7 @@ launched in a separate project, and can be compared in tensorboard or by
 the value of some scalar metrics reported in tensorboard logs.
 
 Consider the following code snippet (code in
-`here <../studio/examples/keras/train_mnist_keras.py>`__):
+`here <https://github.com/studioml/studio/blob/master/examples/keras/train_mnist_keras.py>`__):
 
 ::
 
