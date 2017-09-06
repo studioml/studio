@@ -9,7 +9,7 @@ import json
 import socket
 import subprocess
 import traceback
-from urlparse import urlparse
+from urllib.parse import urlparse
 
 import google.oauth2.id_token
 import google.auth.transport.requests

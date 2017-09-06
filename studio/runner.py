@@ -527,7 +527,7 @@ def add_hyperparam_experiments(
         experiment_names = {}
         for hyperparam_tuple in hyperparam_tuples:
             experiment_name = experiment_name_base
-            for param_name, param_value in hyperparam_tuple.iteritems():
+            for param_name, param_value in hyperparam_tuple.items():
                 experiment_name = experiment_name + '__' + \
                     param_name + '__' + str(param_value)
             experiment_name = experiment_name.replace('.', '_')
@@ -560,7 +560,7 @@ def add_hyperparam_experiments(
             with open(os.path.join(workspace_new, exec_filename), 'r') as f:
                 script_text = f.read()
 
-            for param_name, param_value in hyperparam_tuple.iteritems():
+            for param_name, param_value in hyperparam_tuple.items():
                 script_text = re.sub('\\b' + param_name + '\\b(?=[^=]*\\n)',
                                      str(param_value), script_text)
 
@@ -653,7 +653,7 @@ def parse_range(range_str):
 
 def unfold_tuples(hyperparam_values):
     hyperparam_tuples = []
-    for param_name, param_values in hyperparam_values.iteritems():
+    for param_name, param_values in hyperparam_values.items():
         hyperparam_tuples_new = []
         for value in param_values:
             if any(hyperparam_tuples):
@@ -670,7 +670,7 @@ def unfold_tuples(hyperparam_values):
 
 def add_packages(list1, list2):
     pkg_dict = {re.sub('==.+', '', pkg): pkg for pkg in list1 + list2}
-    return [pkg for _, pkg in pkg_dict.iteritems()]
+    return [pkg for _, pkg in pkg_dict.items()]
 
 
 if __name__ == "__main__":

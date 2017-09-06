@@ -255,7 +255,7 @@ class FirebaseProvider(object):
             experiment.git = git_util.get_git_info(
                 experiment.artifacts['workspace']['local'])
 
-        for tag, art in experiment.artifacts.iteritems():
+        for tag, art in experiment.artifacts.items():
             if art['mutable']:
                 art['key'] = self._get_experiments_keybase() + \
                     experiment.key + '/' + tag + '.tgz'
@@ -314,7 +314,7 @@ class FirebaseProvider(object):
 
     def finish_experiment(self, experiment):
         time_finished = time.time()
-        if isinstance(experiment, basestring):
+        if isinstance(experiment, str):
             key = experiment
         else:
             key = experiment.key
@@ -331,7 +331,7 @@ class FirebaseProvider(object):
                          time_finished)
 
     def delete_experiment(self, experiment):
-        if isinstance(experiment, basestring):
+        if isinstance(experiment, str):
             experiment_key = experiment
             try:
                 experiment = self.get_experiment(experiment)
@@ -350,7 +350,7 @@ class FirebaseProvider(object):
             del self._experiment_info_cache[experiment_key]
 
         if experiment is not None:
-            for tag, art in experiment.artifacts.iteritems():
+            for tag, art in experiment.artifacts.items():
                 if art.get('key') is not None:
                     self.logger.debug(
                         ('Deleting artifact {} from the store, ' +
@@ -367,7 +367,7 @@ class FirebaseProvider(object):
         self._delete(self._get_experiments_keybase() + experiment.key)
 
     def checkpoint_experiment(self, experiment, blocking=False):
-        if isinstance(experiment, basestring):
+        if isinstance(experiment, str):
             key = experiment
             experiment = self.get_experiment(key, getinfo=False)
         else:
@@ -377,7 +377,7 @@ class FirebaseProvider(object):
             Thread(
                 target=self.store.put_artifact,
                 args=(art,))
-            for _, art in experiment.artifacts.iteritems()
+            for _, art in experiment.artifacts.items()
             if art['mutable'] and art.get('local')]
 
         for t in checkpoint_threads:
@@ -532,7 +532,7 @@ class FirebaseProvider(object):
         experiment = self.get_experiment(key, getinfo=False)
         retval = {}
         if experiment.artifacts is not None:
-            for tag, art in experiment.artifacts.iteritems():
+            for tag, art in experiment.artifacts.items():
                 url = self.store.get_artifact_url(art)
                 if url is not None:
                     retval[tag] = url
@@ -680,8 +680,8 @@ def get_config(config_file=None):
             config = yaml.load(f.read())
 
             def replace_with_env(config):
-                for key, value in config.iteritems():
-                    if isinstance(value, basestring) and value.startswith('$'):
+                for key, value in config.items():
+                    if isinstance(value, str) and value.startswith('$'):
                         config[key] = os.environ.get(value[1:])
 
                     elif isinstance(value, dict):
@@ -737,7 +737,7 @@ def parse_verbosity(verbosity=None):
         'crit': 50
     }
 
-    if isinstance(verbosity, basestring):
+    if isinstance(verbosity, str):
         return logger_levels[verbosity]
     else:
         return int(verbosity)

@@ -1,6 +1,10 @@
-runtime: python27
+runtime: python
 # api_verison: 1
+env: flex
 threadsafe: false
+
+runtime_config:
+    python_version: 3
 
 handlers:
     - url: /.*

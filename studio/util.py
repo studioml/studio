@@ -1,5 +1,5 @@
 import hashlib
-import StringIO
+from io import StringIO
 import re
 import struct
 
@@ -8,7 +8,7 @@ from tensorflow.core.util import event_pb2
 
 def remove_backspaces(line):
     splitline = re.split('(\x08+)', line)
-    buf = StringIO.StringIO()
+    buf = StringIO()
     for i in range(0, len(splitline) - 1, 2):
         buf.write(splitline[i][:-len(splitline[i + 1])])
 
