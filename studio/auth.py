@@ -72,7 +72,7 @@ class FirebaseAuth(object):
                 self.expired = False
             else:
                 self.expired = True
-        elif time.time() - os.path.getmtime(api_key) > HOUR:
+        else:
             # If json file fails to load, try again
             counter = 0; user = None
             while True:
@@ -104,15 +104,16 @@ class FirebaseAuth(object):
         self.user['email'] = email
         self.expired = False
 
-        # Rename to ensure atomic writes to json file (technically more safe, but
-        # slower)
-        tmp_api_key = '/tmp/api_key_%s' % rand_string(32)
-        with open(tmp_api_key, 'wb') as f:
-            json.dump(self.user, f)
-            f.flush()
-            os.fsync(f.fileno())
-            f.close()
-        os.rename(tmp_api_key, api_key)
+        if time.time() - os.path.getmtime(api_key) > HOUR:
+            # Rename to ensure atomic writes to json file
+            # (technically more safe, but slower)
+            tmp_api_key = '/tmp/api_key_%s' % rand_string(32)
+            with open(tmp_api_key, 'wb') as f:
+                json.dump(self.user, f)
+                f.flush()
+                os.fsync(f.fileno())
+                f.close()
+            os.rename(tmp_api_key, api_key)
 
     def get_token(self):
         if self.expired:
