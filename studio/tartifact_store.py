@@ -240,9 +240,9 @@ class TartifactStore(object):
             t.join()
             return local_path
 
-    def get_artifact_url(self, artifact):
+    def get_artifact_url(self, artifact, method='GET'):
         if 'key' in artifact.keys():
-            return self._get_file_url(artifact['key'])
+            return self._get_file_url(artifact['key'], method=method)
         return None
 
     def get_artifact_post(self, artifact):

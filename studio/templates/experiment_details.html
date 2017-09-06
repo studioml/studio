@@ -45,8 +45,19 @@
 
     <script>
         $(authWidget(function() {
-            reload(() => data_ajax('get_experiment', data={"key": "{{ experiment }}"}), updateExperimentPage)
+            reload(() => data_ajax('get_experiment', data={"key": "{{ experiment }}"}), updateExperimentPage, 1, 120,
+                                   compareExperimentData)
         }));
+
+        function compareExperimentData(expA, expB) {
+            if (expA == null || expB == null) {
+                return false;
+            }
+            if (JSON.stringify(expA.experiment.info) == JSON.stringify(expB.experiment.info)) {
+                return true;
+            }
+            return false;
+        }
 
         function deleteExperiment(key) {
             if (confirm("The experiment and its artfacts will be lost. Proceed?")) {

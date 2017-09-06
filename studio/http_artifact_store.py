@@ -6,14 +6,14 @@ logging.basicConfig()
 
 
 class HTTPArtifactStore(TartifactStore):
-    def __init__(self, post, verbose=10):
+    def __init__(self, url, verbose=10):
         self.logger = logging.getLogger(self.__class__.__name__)
         self.logger.setLevel(verbose)
 
-        self.post = post
+        self.url = url
 
         super(HTTPArtifactStore, self).__init__(False)
-
+    '''
     def _upload_file(self, key, local_path):
         with open(local_path, 'rb') as f:
             resp = requests.post(
@@ -27,9 +27,31 @@ class HTTPArtifactStore(TartifactStore):
             # but for some reason S3 runs the operation
             # correctly, and yet returns 204
             self.logger.error(str(resp))
+    '''
+
+    def _upload_file(self, key, local_path):
+        with open(local_path, 'rb') as f:
+            resp = requests.put(
+                self.url, 
+                data=f.read())
+
+        if resp.status_code != 200:
+            self.logger.error(str(resp.reason))
 
     def _download_file(self, key, local_path):
-        raise NotImplementedError
+
+        response = requests.get(
+            self.url,
+            stream=True)
+
+        if response.status_code == 200:
+            with open(local_path, 'wb') as f:
+                for chunk in response:
+                    f.write(chunk)
+        else:
+           self.logger.info("Response error with code {}"
+                            .format(response.status_code))
+
 
     def _delete_file(self, key):
         raise NotImplementedError

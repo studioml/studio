@@ -11,12 +11,11 @@ logging.basicConfig()
 
 
 class HTTPProvider(object):
-    """Data provider for Postgres."""
+    """Data provider communicating with API server."""
 
     def __init__(self, config, verbose=10, blocking_auth=True):
         # TODO: implement connection
         self.url = config.get('serverUrl')
-        self.auth = None
         self.verbose = verbose
         self.logger = logging.getLogger('HTTPProvider')
         self.logger.setLevel(self.verbose)
@@ -49,7 +48,7 @@ class HTTPProvider(object):
             art['qualified'] = artifacts[tag]['qualified']
             art['bucket'] = artifacts[tag]['bucket']
 
-            HTTPArtifactStore(artifacts[tag]['post'], self.verbose) \
+            HTTPArtifactStore(artifacts[tag]['url'], self.verbose) \
                 .put_artifact(art)
 
     def delete_experiment(self, experiment):
@@ -65,7 +64,7 @@ class HTTPProvider(object):
                                 )
         self._raise_detailed_error(request)
 
-    def get_experiment(self, experiment):
+    def get_experiment(self, experiment, getinfo='True'):
         if isinstance(experiment, basestring):
             key = experiment
         else:
@@ -130,6 +129,11 @@ class HTTPProvider(object):
     def get_artifacts(self):
         raise NotImplementedError()
 
+    def get_artifact(self, artifact, only_newer='True'):
+        return HTTPArtifactStore(artifact['url'], self.verbose) \
+            .get_artifact(artifact)
+               
+
     def get_users(self):
         raise NotImplementedError()
 
@@ -158,7 +162,10 @@ class HTTPProvider(object):
         raise NotImplementedError()
 
     def _get_headers(self):
-        return {"content-type": "application/json"}
+        return {
+            "content-type": "application/json",
+            "Authorization": "Firebase " + self.auth.get_token()
+        }
 
     def _raise_detailed_error(self, request):
         if request.status_code != 200:

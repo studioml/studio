@@ -115,7 +115,8 @@ class FirebaseArtifactStore(TartifactStore):
                 ("Deleting file {} from storage " +
                  "raised an exception: {}") .format(key, err))
 
-    def _get_file_url(self, key):
+    def _get_file_url(self, key, method='GET'):
+        assert method == 'GET'
         self.logger.debug("Getting a download url for a file at key {}"
                           .format(key))
 

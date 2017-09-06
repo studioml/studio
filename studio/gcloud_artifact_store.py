@@ -46,9 +46,12 @@ class GCloudArtifactStore(TartifactStore):
     def _delete_file(self, key):
         self.bucket.get_blob(key).delete()
 
-    def _get_file_url(self, key):
+    def _get_file_url(self, key, method='GET'):
+        
         expiration = long(time.time() + 100000)
-        return self.bucket.blob(key).generate_signed_url(expiration)
+        return self.bucket.blob(key).generate_signed_url(
+                expiration,
+                method=method)
 
     def _get_file_timestamp(self, key):
         time_updated = self.bucket.get_blob(key).updated

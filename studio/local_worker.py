@@ -227,10 +227,10 @@ def worker_loop(queue, parsed_args,
                         if tag == 'workspace':
                             # art['local'] = executor.db.store.get_artifact(
                             #    art, '.', only_newer=False)
-                            art['local'] = executor.db.store.get_artifact(
+                            art['local'] = executor.db.get_artifact(
                                 art, only_newer=False)
                         else:
-                            art['local'] = executor.db.store.get_artifact(art)
+                            art['local'] = executor.db.get_artifact(art)
                 executor.run(experiment)
             finally:
                 sched.shutdown()

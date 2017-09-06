@@ -1,0 +1,13 @@
+database: 
+    type: http
+    serverUrl: "http://localhost:5000"
+    apiKey: AIzaSyCLQbp5X2B4SWzBw-sz9rUnGHNSdMl0Yx8
+    authDomain: "studio-ed756.firebaseapp.com"
+
+saveWorkspaceFrequencyMinutes: 1 #how often is workspace being saved (minutes)
+
+cloud:
+    cpus: 1
+    gpus: 0
+    ram: 4g
+    hdd: 10g

@@ -44,9 +44,16 @@ class S3ArtifactStore(TartifactStore):
     def _delete_file(self, key):
         self.client.delete_object(Bucket=self.bucket, Key=key)
 
-    def _get_file_url(self, key):
-        return self.client.generate_presigned_url(
-            'get_object', Params={'Bucket': self.bucket, 'Key': key})
+    def _get_file_url(self, key, method='GET'):
+        if method == 'GET':
+            return self.client.generate_presigned_url(
+                'get_object', Params={'Bucket': self.bucket, 'Key': key})
+        elif method == 'PUT':
+            return self.client.generate_presigned_url(
+                'put_object', Params={'Bucket': self.bucket, 'Key': key})
+        else:
+            raise ValueError('Unknown method ' + method)
+        
 
     def _get_file_post(self, key):
         return self.client.generate_presigned_post(

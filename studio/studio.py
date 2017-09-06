@@ -356,8 +356,8 @@ def finish_experiment():
 @app.route('/api/add_experiment', methods=['POST'])
 def add_experiment():
     tic = time.time()
-    get_and_verify_user(request)
-
+    userid = get_and_verify_user(request)
+    
     # TODO check if user has access
 
     artifacts = {}
@@ -366,13 +366,15 @@ def add_experiment():
         for tag, art in experiment.artifacts.iteritems():
             art.pop('local', None)
 
-        get_db().add_experiment(experiment)
+        import pdb
+        pdb.set_trace()
+        get_db().add_experiment(experiment, userid)
         added_experiment = get_db().get_experiment(experiment.key)
 
         for tag, art in added_experiment.artifacts.iteritems():
             if 'key' in art.keys():
-                post = get_db().store.get_artifact_post(art)
-                art['post'] = post
+                put_url = get_db().store.get_artifact_url(art, method='PUT')
+                art['url'] = put_url
                 artifacts[tag] = art
         status = 'ok'
 
@@ -398,8 +400,8 @@ def checkpoint_experiment():
 
         for tag, art in experiment.artifacts.iteritems():
             if 'key' in art.keys():
-                post = get_db().store.get_artifact_post(art)
-                art['post'] = post
+                put_url = get_db().store.get_artifact_url(art, method='PUT')
+                art['url'] = put_url
                 artifacts[tag] = art
         status = 'ok'
 

@@ -247,7 +247,7 @@ class FirebaseProvider(object):
     def _get_projects_keybase(self):
         return "projects/"
 
-    def add_experiment(self, experiment):
+    def add_experiment(self, experiment, userid=None):
         self._delete(self._get_experiments_keybase() + experiment.key)
         experiment.time_added = time.time()
         experiment.status = 'waiting'
@@ -272,13 +272,15 @@ class FirebaseProvider(object):
 
             art['bucket'] = self.store.get_bucket()
 
+        userid = userid if userid else self._get_userid()
+
         experiment_dict = experiment.__dict__.copy()
-        experiment_dict['owner'] = self._get_userid()
+        experiment_dict['owner'] = userid
         
         self.__setitem__(self._get_experiments_keybase() + experiment.key,
                          experiment_dict)
 
-        self.__setitem__(self._get_user_keybase() + "experiments/" +
+        self.__setitem__(self._get_user_keybase(userid) + "experiments/" +
                          experiment.key,
                          experiment.time_added)
 
@@ -286,7 +288,7 @@ class FirebaseProvider(object):
             self.__setitem__(self._get_projects_keybase() +
                              experiment.project + "/" +
                              experiment.key + "/owner",
-                             self.auth.get_user_id())
+                             userid)
 
         self.checkpoint_experiment(experiment, blocking=True)
 
@@ -545,6 +547,9 @@ class FirebaseProvider(object):
                     retval[tag] = url
 
         return retval
+
+    def get_artifact(self, artifact, only_newer=True):
+        return self.store.get_artifact(artifact, only_newer)
 
     def _get_valid_experiments(self, experiment_keys,
                                getinfo=False, blocking=True):

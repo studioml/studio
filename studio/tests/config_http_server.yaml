@@ -1,0 +1,18 @@
+database: 
+    type: FireBase
+
+    apiKey: AIzaSyCLQbp5X2B4SWzBw-sz9rUnGHNSdMl0Yx8
+    authDomain: "{}.firebaseapp.com"
+    databaseURL: "https://{}.firebaseio.com"
+    projectId: studio-ed756
+    storageBucket: "{}.appspot.com"
+    messagingSenderId: 81790704397
+    serviceAccount: /Users/peter.zhokhov/gkeys/studio-ed756-firebase-adminsdk-4ug1o-7202e6402d.json
+
+storage:
+    type: gcloud
+    bucket: "studio-ed756.appspot.com"
+
+saveWorkspaceFrequencyMinutes: 1 #how often is workspace being saved (minutes)
+
+
