@@ -7,6 +7,7 @@ from model import parse_verbosity
 
 logging.basicConfig()
 
+
 class PubsubQueue(object):
     def __init__(self, queue_name, sub_name=None, verbose=10):
         assert 'GOOGLE_APPLICATION_CREDENTIALS' in os.environ.keys()
