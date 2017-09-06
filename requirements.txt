@@ -4,7 +4,6 @@ numpy
 tensorflow
 h5py
 pillow
-keras
 
 flask
 jinja2
