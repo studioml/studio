@@ -88,8 +88,8 @@ previously seen values of metric. Other allowed values for the
 ``--metric`` parameter suffix are ":max" for maximum value seen
 throughout experiment, or empty for the last value.
 
-Specifying hyperparameter ranges
---------------------------------
+Specifying hyperparameter ranges for grid search
+------------------------------------------------
 
 Scanning learning rate in constant steps is not always the best idea,
 especially if we want to cover several orders of magnitude. We can
@@ -115,9 +115,57 @@ Other options are:
 
 4. ``no_layers=2,5,6`` will generate three values - 2,5 and 6
 
-Note that option ``--hyperparam`` can be used several times for
+Note that option ``--hyperparam/-hp`` can be used several times for
 different hyperparameters; however, keep in mind that grid size grows
 exponentially with number of hyperparameters to try.
+
+Specifying hyperparameter ranges for plugin optimizers
+------------------------------------------------------
+Plugin optimizers are also supported. They can be enabled with the
+``-opt/--optimizer`` flag. Either the name of the optimizer (or its file path)
+can be specified as argument. The format is slightly different for plugin
+optimizers. Below are some examples:
+
+::
+
+    --hyperparam=lr=0:1:10:urla
+::
+
+    --hyperparam=lr=0:5:l
+::
+
+    --hp=lr=5:5:10:alu
+
+The general format is [min range]:[max range]:{array length}:{flags},
+where {array length} and {flags} are optional arguments. The following
+flags are supported:
+
+1. {u}: whether or not to constrain hyperparameters to [min range]:[max range]
+   (default is constrained).
+
+2. {r}: whether to initialize hyperparameters with random value between
+   [min range]:[max range] or right in the middle (default is nonrandom).
+
+3. {l}: whether to use log scaling for the hyperparameter (default is nonlog).
+
+4. {a}: whether the hyperparameter is a numpy array or a scalar. If the
+   hyperparameter is a numpy array, then the {array length} field must be
+   present as well (default is scalar).
+
+In addition, the python script whose hyperparameters are being optimized must
+contain a line with the fitness printed to stdout as shown below. For
+hyperparameters whose contents are numpy arrays, they must be loaded using
+the ``fs_tracker.get_artifact`` function call as shown below:
+
+```python
+
+    from studio import fs_tracker
+
+    lr = np.load(fs_tracker.get_artifact('lr'))
+
+    print "fitness: %s" % np.sum(lr)
+
+```
 
 Cloud workers
 -------------

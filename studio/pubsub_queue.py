@@ -2,8 +2,10 @@ from google.cloud import pubsub
 import logging
 import os
 import json
-logging.basicConfig()
 
+from model import parse_verbosity
+
+logging.basicConfig()
 
 class PubsubQueue(object):
     def __init__(self, queue_name, sub_name=None, verbose=10):
@@ -13,7 +15,8 @@ class PubsubQueue(object):
 
         project_name = credentials['project_id']
         self.logger = logging.getLogger(self.__class__.__name__)
-        self.logger.setLevel(verbose)
+        if verbose is not None:
+            self.logger.setLevel(parse_verbosity(verbose))
 
         self.pubclient = pubsub.PublisherClient()
         self.subclient = pubsub.SubscriberClient()

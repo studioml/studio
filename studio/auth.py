@@ -9,9 +9,11 @@ try:
 except BaseException:
     BackgroundScheduler = None
 
-token_dir = os.path.expanduser('~/.studioml/keys')
-hour = 3600
+from util import rand_string
 
+TOKEN_DIR = os.path.expanduser('~/.studioml/keys')
+HOUR = 3600
+SLEEP_TIME = 0.05
 
 class FirebaseAuth(object):
     def __init__(
@@ -21,8 +23,8 @@ class FirebaseAuth(object):
             email=None,
             password=None,
             blocking=True):
-        if not os.path.exists(token_dir):
-            os.makedirs(token_dir)
+        if not os.path.exists(TOKEN_DIR):
+            os.makedirs(TOKEN_DIR)
 
         self.firebase = firebase
         self.user = {}
@@ -59,18 +61,26 @@ class FirebaseAuth(object):
         atexit.register(self.sched.shutdown)
 
     def _update_user(self):
-        api_key = os.path.join(token_dir, self.firebase.api_key)
+        api_key = os.path.join(TOKEN_DIR, self.firebase.api_key)
         if not os.path.exists(api_key):
                 # refresh tokens don't expire, hence we can
                 # use them forever once obtained
-                # or (time.time() - os.path.getmtime(api_key)) > hour:
+                # or (time.time() - os.path.getmtime(api_key)) > HOUR:
             if self.use_email_auth:
                 self.sign_in_with_email()
                 self.expired = False
             else:
                 self.expired = True
         else:
-            with open(api_key, 'r') as f:
+            # If json file fails to load, try again
+            # user = None
+            # while user is None:
+            #     try:
+            #         with open(api_key, 'rb') as f:
+            #             user = json.load(f)
+            #     except:
+            #         time.sleep(SLEEP_TIME)
+            with open(api_key, 'rb') as f:
                 user = json.load(f)
 
             self.refresh_token(user['email'], user['refreshToken'])
@@ -86,12 +96,22 @@ class FirebaseAuth(object):
         self.user['email'] = self.email
 
     def refresh_token(self, email, refresh_token):
-        api_key = os.path.join(token_dir, self.firebase.api_key)
+        api_key = os.path.join(TOKEN_DIR, self.firebase.api_key)
         self.user = self.firebase.auth().refresh(refresh_token)
         self.user['email'] = email
         self.expired = False
-        with open(api_key, 'w') as f:
+
+        # Rename to ensure atomic writes to json file (technically more safe, but
+        # slower)
+        tmp_api_key = '/tmp/api_key_%s' % rand_string(32)
+        with open(tmp_api_key, 'wb') as f:
             json.dump(self.user, f)
+            f.flush()
+            os.fsync(f.fileno())
+            f.close()
+        os.rename(tmp_api_key, api_key)
+        # with open(api_key, 'wb') as f:
+        #     json.dump(self.user, f)
 
     def get_token(self):
         if self.expired:

@@ -9,17 +9,21 @@ import math
 import json
 
 from gpu_util import memstr2int
+from cloud_worker_util import insert_user_startup_script
 
 logging.basicConfig()
 
 
 class GCloudWorkerManager(object):
-    def __init__(self, zone='us-central1-f', auth_cookie=None):
+    def __init__(self, runner_args=None, zone='us-central1-f',
+        auth_cookie=None, verbose=10):
         assert 'GOOGLE_APPLICATION_CREDENTIALS' in os.environ.keys()
         with open(os.environ['GOOGLE_APPLICATION_CREDENTIALS'], 'r') as f:
             credentials_dict = json.loads(f.read())
 
         self.compute = googleapiclient.discovery.build('compute', 'v1')
+
+        self.runner_args = runner_args
         self.startup_script_file = os.path.join(
             os.path.dirname(__file__),
             'scripts/gcloud_worker_startup.sh')
@@ -27,7 +31,7 @@ class GCloudWorkerManager(object):
         self.zone = zone
         self.projectid = credentials_dict['project_id']
         self.logger = logging.getLogger("GCloudWorkerManager")
-        self.logger.setLevel(10)
+        self.logger.setLevel(verbose)
         self.auth_cookie = auth_cookie
 
     def start_worker(
@@ -133,8 +137,21 @@ class GCloudWorkerManager(object):
         # Configure the machine
         machine_type = self._generate_machine_type(resources_needed)
         self.logger.debug('Machine type = {}'.format(machine_type))
+
         with open(self.startup_script_file, 'r') as f:
             startup_script = f.read()
+        if self.runner_args is not None:
+            startup_script = startup_script.replace(
+                "{studioml_branch}", self.runner_args.branch)
+            startup_script = insert_user_startup_script(
+                self.runner_args.user_startup_script,
+                startup_script, self.logger)
+        else:
+            startup_script = startup_script.replace(
+                "{studioml_branch}", "master")
+
+        self.logger.info('Startup script:')
+        self.logger.info(startup_script)
 
         with open(os.environ['GOOGLE_APPLICATION_CREDENTIALS'], 'r') as f:
             credentials = f.read()

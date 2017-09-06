@@ -1,4 +1,4 @@
-database: 
+database:
     type: FireBase
 
     apiKey: AIzaSyCLQbp5X2B4SWzBw-sz9rUnGHNSdMl0Yx8
@@ -9,11 +9,12 @@ database:
     messagingSenderId: 81790704397
 
     guest: true
-                                                                    
+
 log:
     name: output.log
 
 saveWorkspaceFrequencyMinutes: 1 #how often is workspace being saved (minutes)
+verbose: error
 
 cloud:
     type: google

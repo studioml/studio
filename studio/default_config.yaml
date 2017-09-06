@@ -9,9 +9,9 @@ database:
     databaseURL: "https://{}.firebaseio.com"
     storageBucket: "{}.appspot.com"
 
-    serviceAccount: $GOOGLE_APPLICATION_CREDENTIALS
+    # serviceAccount: $GOOGLE_APPLICATION_CREDENTIALS
     # guest: true
-    # use_email_auth: true
+    use_email_auth: false
 
 
 
@@ -35,3 +35,18 @@ cloud:
 
 sleep_time: 1
 worker_timeout: 30
+
+optimizer:
+    cmaes_config:
+        popsize: 100
+        sigma0: 0.25
+        load_best_only: false
+    load_checkpoint_file:
+    visualization: true
+    result_dir: "~/Desktop/"
+    checkpoint_interval: 0
+    termination_criterion:
+        generation: 5
+        fitness: 999
+        skip_gen_thres: 1.0
+        skip_gen_timeout: 30

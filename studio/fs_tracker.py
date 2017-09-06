@@ -47,10 +47,12 @@ def setup_experiment(env, experiment, clean=True):
 
 
 def get_artifact(tag):
-    with open(_get_artifact_mapping_path(), 'r') as f:
-        a_mapping = json.load(f)
-
-    return a_mapping[tag]
+    try:
+        with open(_get_artifact_mapping_path(), 'r') as f:
+            a_mapping = json.load(f)
+        return a_mapping[tag]
+    except:
+        return None
 
 
 def get_model_directory(experiment_name=None):

@@ -42,7 +42,7 @@ class FirebaseArtifactStore(TartifactStore):
             else:
                 storageobj.put(local_file_path)
         except Exception as err:
-            self.logger.warn(("Uploading file {} with key {} into storage " +
+            self.logger.debug(("Uploading file {} with key {} into storage " +
                               "raised an exception: {}")
                              .format(local_file_path, key, err))
 
