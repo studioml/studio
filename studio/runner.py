@@ -527,6 +527,7 @@ def get_experiment_fitnesses(experiments, optimizer, config, logger):
                         break
 
         time.sleep(config['sleep_time'])
+    print
     return fitnesses
 
 
