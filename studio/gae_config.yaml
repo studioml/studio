@@ -15,11 +15,11 @@ database:
 
 
 
-#storage:
+storage:
     #type: s3
     #bucket: "studioml-artifacts"
-    #type: gcloud
-    #bucket: studio-ed756.appspot.com
+    type: gcloud
+    bucket: studio-ed756.appspot.com
 
    
 
