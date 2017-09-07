@@ -91,7 +91,7 @@ class FirebaseAuth(object):
 
             self.user = user
             self.expired = False
-            if time.time() - os.path.getmtime(api_key) > HOUR
+            if time.time() - os.path.getmtime(api_key) > HOUR:
                 self.refresh_token(user['email'], user['refreshToken'])
 
     def sign_in_with_email(self):
