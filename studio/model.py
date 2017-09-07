@@ -2,10 +2,7 @@
 
 import os
 import uuid
-try:
-    import pip
-except BaseException:
-    pip = None
+import pip
 
 import yaml
 import pyrebase
@@ -17,14 +14,7 @@ try:
     from multiprocessing.pool import ThreadPool
 except ImportError:
     ThreadPool = None
-try:
-    import tensorflow as tf
-except ImportError:
-    tf = None
-try:
-    import keras
-except ImportError:
-    keras = None
+
 
 import fs_tracker
 import util
@@ -102,7 +92,7 @@ class Experiment(object):
             glob.glob(modeldir + '/*.h5')]
         if any(hdf5_files):
             # experiment type - keras
-            assert keras is not None
+            import keras
             last_checkpoint = max(hdf5_files, key=lambda t: t[1])[0]
             return keras.models.load_model(last_checkpoint)
 
@@ -291,6 +281,7 @@ class FirebaseProvider(object):
                              userid)
 
         self.checkpoint_experiment(experiment, blocking=True)
+        self.logger.info("Added experiment " + experiment.key)
 
     def start_experiment(self, experiment):
         experiment.time_started = time.time()

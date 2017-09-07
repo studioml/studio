@@ -8,6 +8,8 @@ import uuid
 import shutil
 import importlib
 import time
+import multiprocessing
+
 import numpy as np
 
 from local_queue import LocalQueue
@@ -15,6 +17,8 @@ from pubsub_queue import PubsubQueue
 from sqs_queue import SQSQueue
 from gcloud_worker import GCloudWorkerManager
 from ec2cloud_worker import EC2WorkerManager
+from hyperparameter import HyperparameterParser
+from util import rand_string, Progbar
 
 import model
 import auth
@@ -54,24 +58,26 @@ def main(args=sys.argv):
     parser.add_argument(
         '--gpus',
         help='Number of gpus needed to run the experiment',
+        type=int,
         default=None)
 
     parser.add_argument(
         '--cpus',
         help='Number of cpus needed to run the experiment' +
              ' (used to configure cloud instance)',
+        type=int,
         default=None)
 
     parser.add_argument(
         '--ram',
         help='Amount of RAM needed to run the experiment' +
-             ' (used to configure cloud instance)',
+             ' (used to configure cloud instance), ex: 10G, 10GB',
         default=None)
 
     parser.add_argument(
         '--hdd',
         help='Amount of hard drive space needed to run the experiment' +
-             ' (used to configure cloud instance)',
+             ' (used to configure cloud instance), ex: 10G, 10GB',
         default=None)
 
     parser.add_argument(
@@ -81,7 +87,7 @@ def main(args=sys.argv):
 
     parser.add_argument(
         '--cloud',
-        help='Cloud execution mode. Could be gcloud, ec2 or ec2spot',
+        help='Cloud execution mode. Could be gcloud, gcspot, ec2 or ec2spot',
         default=None)
 
     parser.add_argument(
@@ -137,6 +143,7 @@ def main(args=sys.argv):
     parser.add_argument(
         '--num-workers',
         help='Number of local or cloud workers to spin up',
+        type=int,
         default=None)
 
     parser.add_argument(
@@ -172,6 +179,17 @@ def main(args=sys.argv):
              "Default value is %(default)",
         type=int,
         default=300)
+
+    parser.add_argument(
+        '--user-startup-script',
+        help='Path of script to run before running the remote worker',
+        default=None)
+
+    parser.add_argument(
+        '--branch',
+        help='Branch of studioml to use when running remote worker, useful ' +
+             'for debugging pull requests',
+        default='master')
 
     # detect which argument is the script filename
     # and attribute all arguments past that index as related to the script
@@ -224,9 +242,11 @@ def main(args=sys.argv):
                 other_args,
                 runner_args,
                 artifacts,
-                resources_needed)
+                resources_needed,
+                logger)
             submit_experiments(
                 experiments,
+                resources_needed,
                 config,
                 runner_args,
                 logger,
@@ -236,24 +256,29 @@ def main(args=sys.argv):
                 os.path.dirname(os.path.abspath(__file__)),
                 "optimizer_plugins",
                 runner_args.optimizer + ".py")
-            # logger.info('optimizer path: %s' % opt_modulepath)
             if not os.path.exists(opt_modulepath):
                 opt_modulepath = os.path.abspath(
                     os.path.expanduser(runner_args.optimizer))
             logger.info('optimizer path: %s' % opt_modulepath)
+
             assert os.path.exists(opt_modulepath)
             sys.path.append(os.path.dirname(opt_modulepath))
             opt_module = importlib.import_module(
                 os.path.basename(opt_modulepath.replace(".py", '')))
 
-            hyperparam_values, log_scale_dict = get_hyperparam_values(
-                runner_args)
+            h = HyperparameterParser(runner_args, logger)
+            hyperparams = h.parse()
+            optimizer = getattr(
+                opt_module,
+                "Optimizer")(
+                hyperparams,
+                config['optimizer'],
+                logger)
 
-            optimizer = getattr(opt_module, "Optimizer")(hyperparam_values,
-                                                         log_scale_dict)
-
+            queue_name = None
             while not optimizer.stop():
-                hyperparam_tuples = optimizer.ask()
+                hyperparam_pop = optimizer.ask()
+                hyperparam_tuples = h.convert_to_tuples(hyperparam_pop)
 
                 experiments = add_hyperparam_experiments(
                     exec_filename,
@@ -261,21 +286,26 @@ def main(args=sys.argv):
                     runner_args,
                     artifacts,
                     resources_needed,
+                    logger,
                     optimizer=optimizer,
                     hyperparam_tuples=hyperparam_tuples)
-                submit_experiments(
+                queue_name = submit_experiments(
                     experiments,
+                    resources_needed,
                     config,
                     runner_args,
                     logger,
-                    resources_needed)
+                    queue_name,
+                    queue_name is None)
 
                 fitnesses = get_experiment_fitnesses(experiments,
                                                      optimizer, config, logger)
 
-                optimizer.tell(hyperparam_tuples, fitnesses)
-                # if config['verbose'] == "info" or config['verbose'] ==
-                # "debug":
+                # for i, hh in enumerate(hyperparam_pop):
+                #     print fitnesses[i]
+                #     for hhh in hh:
+                #         print hhh
+                optimizer.tell(hyperparam_pop, fitnesses)
                 try:
                     optimizer.disp()
                 except BaseException:
@@ -289,36 +319,58 @@ def main(args=sys.argv):
             artifacts=artifacts,
             resources_needed=resources_needed,
             metric=runner_args.metric)]
-        submit_experiments(
-            experiments,
-            config,
-            runner_args,
-            logger,
-            resources_needed)
+        submit_experiments(experiments,
+                           resources_needed,
+                           config,
+                           runner_args,
+                           logger)
 
     db = None
     return
 
 
+def add_experiment(args):
+    config, python_pkg, e = args
+    e.pythonenv = add_packages(e.pythonenv, python_pkg)
+    db = model.get_db_provider(config)
+    db.add_experiment(e)
+    return e
+
+
 def submit_experiments(
         experiments,
+        resources_needed,
         config,
         runner_args,
         logger,
-        resources_needed):
+        queue_name=None,
+        launch_workers=True):
+
+    num_experiments = len(experiments)
     db = model.get_db_provider(config)
     verbose = model.parse_verbosity(config['verbose'])
 
-    queue_name = 'local'
-    if 'queue' in config.keys():
-        queue_name = config['queue']
-    if runner_args.queue:
-        queue_name = runner_args.queue
+    if runner_args.cloud is None:
+        queue_name = 'local'
+        if 'queue' in config.keys():
+            queue_name = config['queue']
+        if runner_args.queue:
+            queue_name = runner_args.queue
 
-    for e in experiments:
-        e.pythonenv = add_packages(e.pythonenv, runner_args.python_pkg)
-        db.add_experiment(e)
-        logger.info("Added experiment " + e.key)
+    start_time = time.time()
+    n_workers = min(multiprocessing.cpu_count() * 2, num_experiments)
+    p = multiprocessing.Pool(n_workers)
+    experiments = p.map(add_experiment,
+                        zip([config] * num_experiments,
+                            [runner_args.python_pkg] * num_experiments,
+                            experiments),
+                        chunksize=1)
+    p.close()
+    p.join()
+    # for e in experiments:
+    #     logger.info("Added experiment " + e.key)
+    logger.info("Added %s experiments in %s seconds" %
+                (num_experiments, int(time.time() - start_time)))
 
     if runner_args.cloud is not None:
         assert runner_args.cloud in ['gcloud', 'gcspot', 'ec2', 'ec2spot']
@@ -327,57 +379,59 @@ def submit_experiments(
             '--queue argument cannot be provided with --cloud argument'
         auth_cookie = None if config['database'].get('guest') \
             else os.path.join(
-            auth.token_dir,
+            auth.TOKEN_DIR,
             config['database']['apiKey']
         )
 
         if runner_args.cloud in ['gcloud', 'gcspot']:
-
-            queue_name = 'pubsub_' + str(uuid.uuid4())
+            if queue_name is None:
+                queue_name = 'pubsub_' + str(uuid.uuid4())
+                worker_manager = GCloudWorkerManager(
+                    runner_args=runner_args,
+                    auth_cookie=auth_cookie,
+                    zone=config['cloud']['zone']
+                )
 
             queue = PubsubQueue(queue_name, verbose=verbose)
-            worker_manager = GCloudWorkerManager(
-                auth_cookie=auth_cookie,
-                zone=config['cloud']['zone']
-            )
 
         if runner_args.cloud in ['ec2', 'ec2spot']:
-
-            queue_name = 'sqs_' + str(uuid.uuid4())
+            if queue_name is None:
+                queue_name = 'sqs_' + str(uuid.uuid4())
+                worker_manager = EC2WorkerManager(
+                    runner_args=runner_args,
+                    auth_cookie=auth_cookie
+                )
 
             queue = SQSQueue(queue_name, verbose=verbose)
-            worker_manager = EC2WorkerManager(
-                auth_cookie=auth_cookie
-            )
 
-        if runner_args.cloud == 'gcloud' or \
-           runner_args.cloud == 'ec2':
+        if launch_workers:
+            if runner_args.cloud == 'gcloud' or \
+               runner_args.cloud == 'ec2':
 
-            num_workers = int(
-                runner_args.num_workers) if runner_args.num_workers else 1
-            for i in range(num_workers):
-                worker_manager.start_worker(
-                    queue_name, resources_needed,
+                num_workers = int(
+                    runner_args.num_workers) if runner_args.num_workers else 1
+                for i in range(num_workers):
+                    worker_manager.start_worker(
+                        queue_name, resources_needed,
+                        ssh_keypair=runner_args.ssh_keypair,
+                        timeout=runner_args.cloud_timeout)
+            else:
+                assert runner_args.bid is not None
+                if runner_args.num_workers:
+                    start_workers = runner_args.num_workers
+                    queue_upscaling = False
+                else:
+                    start_workers = 1
+                    queue_upscaling = True
+
+                worker_manager.start_spot_workers(
+                    queue_name,
+                    runner_args.bid,
+                    resources_needed,
+                    start_workers=start_workers,
+                    queue_upscaling=queue_upscaling,
                     ssh_keypair=runner_args.ssh_keypair,
                     timeout=runner_args.cloud_timeout)
-        else:
-            assert runner_args.bid is not None
-            if runner_args.num_workers:
-                start_workers = runner_args.num_workers
-                queue_upscaling = False
-            else:
-                start_workers = 1
-                queue_upscaling = True
-
-            worker_manager.start_spot_workers(
-                queue_name,
-                runner_args.bid,
-                resources_needed,
-                start_workers=start_workers,
-                queue_upscaling=queue_upscaling,
-                ssh_keypair=runner_args.ssh_keypair,
-                timeout=runner_args.cloud_timeout)
-
     else:
         if queue_name == 'local':
             queue = LocalQueue()
@@ -409,27 +463,25 @@ def submit_experiments(
         else:
             raise NotImplementedError("Multiple local workers are not " +
                                       "implemented yet")
-    return
+    return queue_name
 
 
 def get_experiment_fitnesses(experiments, optimizer, config, logger):
     db_provider = model.get_db_provider()
+    progbar = Progbar(len(experiments), interval=0.0)
+    logger.info("Waiting for fitnesses from %s experiments" % len(experiments))
+
+    bad_line_dicts = [dict() for x in xrange(len(experiments))]
     has_result = [False] * len(experiments)
     fitnesses = [0.0] * len(experiments)
-    try:
-        term_criterion = config['optimizer']['termination_criterion']
-    except BaseException:
-        logger.warn("Cannot find termination criterion in config.yaml, looking"
-                    "in optimizer source code instead")
-        term_criterion = optimizer.get_configs()['termination_criterion']
-
+    term_criterion = config['optimizer']['termination_criterion']
     skip_gen_thres = term_criterion['skip_gen_thres']
     skip_gen_timeout = term_criterion['skip_gen_timeout']
-
     result_timestamp = time.time()
+
     while sum(has_result) < len(experiments):
         for i, experiment in enumerate(experiments):
-            if float(sum(has_result)) / len(experiments) > skip_gen_thres \
+            if float(sum(has_result)) / len(experiments) >= skip_gen_thres \
                     and time.time() - result_timestamp > skip_gen_timeout:
                 logger.warn(
                     "Skipping to next gen with %s of solutions evaled" %
@@ -445,21 +497,42 @@ def get_experiment_fitnesses(experiments, optimizer, config, logger):
             # try:
             #     experiment_output = returned_experiment.info['logtail']
             # except:
-            #     logger.warn('Cannot access "logtail" ' +
-            #                 'field in experiment.info')
+            #     logger.warn('Cannot access "logtail" in experiment.info')
             output = db_provider._get_experiment_logtail(returned_experiment)
+            if output is None:
+                continue
 
-            for line in output:
+            for j, line in enumerate(output):
+
+                if line.startswith("Traceback (most recent call last):") and \
+                        j not in bad_line_dicts[i]:
+                    logger.warn("Experiment %s: error discovered in output" %
+                                returned_experiment.key)
+                    logger.warn("".join(output[j:]))
+                    bad_line_dicts[i][j] = True
+
                 if line.startswith("Fitness") or line.startswith("fitness"):
                     try:
                         fitness = float(line.rstrip().split(':')[1])
-                        assert fitness >= 0.0
+                        # assert fitness >= 0.0
                     except BaseException:
-                        logger.warn('Error parsing or invalid fitness (%s)'
-                                    % line)
+                        if j not in bad_line_dicts[i]:
+                            logger.warn(
+                                'Experiment %s: error parsing or invalid'
+                                ' fitness' %
+                                returned_experiment.key)
+                            logger.warn(line)
+                            bad_line_dicts[i][j] = True
                     else:
+                        if fitness < 0.0:
+                            logger.warn('Experiment %s: returned fitness is'
+                                        ' less than zero, setting it to zero' %
+                                        returned_experiment.key)
+                            fitness = 0.0
+
                         fitnesses[i] = fitness
                         has_result[i] = True
+                        progbar.add(1)
                         result_timestamp = time.time()
                         break
 
@@ -516,6 +589,7 @@ def add_hyperparam_experiments(
         runner_args,
         artifacts,
         resources_needed,
+        logger,
         optimizer=None,
         hyperparam_tuples=None):
 
@@ -527,23 +601,12 @@ def add_hyperparam_experiments(
 
     def create_experiments(hyperparam_tuples):
         experiments = []
-        experiment_names = {}
+        # experiment_names = {}
         for hyperparam_tuple in hyperparam_tuples:
             experiment_name = experiment_name_base
-            for param_name, param_value in hyperparam_tuple.iteritems():
-                experiment_name = experiment_name + '__' + \
-                    param_name + '__' + str(param_value)
+            experiment_name += "__opt__%s__%s" % (rand_string(32),
+                                                  int(time.time()))
             experiment_name = experiment_name.replace('.', '_')
-
-            # if experiments uses a previously used name, change it
-            if experiment_name in experiment_names:
-                new_experiment_name = experiment_name
-                counter = 1
-                while new_experiment_name in experiment_names:
-                    counter += 1
-                    new_experiment_name = "%s_v%s" % (experiment_name, counter)
-                experiment_name = new_experiment_name
-            experiment_names[experiment_name] = True
 
             workspace_orig = artifacts['workspace']['local'] \
                 if 'workspace' in artifacts.keys() else '.'
@@ -564,8 +627,19 @@ def add_hyperparam_experiments(
                 script_text = f.read()
 
             for param_name, param_value in hyperparam_tuple.iteritems():
-                script_text = re.sub('\\b' + param_name + '\\b(?=[^=]*\\n)',
-                                     str(param_value), script_text)
+                if isinstance(param_value, np.ndarray):
+                    array_filepath = '/tmp/%s.npy' % rand_string(32)
+                    np.save(array_filepath, param_value)
+                    assert param_name not in current_artifacts
+                    current_artifacts[param_name] = {'local': array_filepath,
+                                                     'mutable': False}
+                else:
+                    script_text = re.sub(
+                        '\\b' +
+                        param_name +
+                        '\\b(?=[^=]*\\n)',
+                        str(param_value),
+                        script_text)
 
             with open(os.path.join(workspace_new, exec_filename), 'w') as f:
                 f.write(script_text)
@@ -583,92 +657,11 @@ def add_hyperparam_experiments(
     if optimizer is not None:
         experiments = create_experiments(hyperparam_tuples)
     else:
-        hyperparam_values, log_scale_dict = get_hyperparam_values(runner_args)
-        hyperparam_tuples = unfold_tuples(hyperparam_values)
+        h = HyperparameterParser(runner_args, logger)
+        hyperparam_tuples = h.convert_to_tuples(h.parse())
         experiments = create_experiments(hyperparam_tuples)
 
     return experiments
-
-
-def get_hyperparam_values(runner_args):
-    hyperparam_values = {}
-    log_scale_dict = {}
-    for hyperparam in runner_args.hyperparam:
-        param_name = hyperparam.split('=')[0]
-        param_values_str = hyperparam.split('=')[1]
-
-        param_values, is_log = parse_range(param_values_str)
-        hyperparam_values[param_name] = param_values
-        log_scale_dict[param_name] = is_log
-    return hyperparam_values, log_scale_dict
-
-
-def parse_range(range_str):
-    is_log = False
-    return_val = None
-    if ',' in range_str:
-        # return numpy array for consistency with other cases
-        return_val = np.array([float(s) for s in range_str.split(',')])
-    elif ':' in range_str:
-        range_limits = range_str.split(':')
-        assert len(range_limits) > 1
-        if len(range_limits) == 2:
-            try:
-                limit1 = float(range_limits[0])
-            except ValueError:
-                limit1 = 0.0
-            limit2 = float(range_limits[1])
-            return_val = np.arange(limit1, limit2 + 1)
-        else:
-            try:
-                limit1 = float(range_limits[0])
-            except ValueError:
-                limit1 = 0.0
-
-            limit3 = float(range_limits[2])
-
-            try:
-                limit2 = float(range_limits[1])
-                if int(limit2) == limit2 and limit2 > abs(limit3 - limit1):
-                    return_val = np.linspace(limit1, limit3, int(limit2))
-                else:
-                    return_val = np.arange(
-                        limit1, limit3 + 0.5 * limit2, limit2)
-
-            except ValueError:
-                if 'l' in range_limits[1]:
-                    is_log = True
-                    limit2 = int(range_limits[1].replace('l', ''))
-                    return_val = np.exp(
-                        np.linspace(
-                            np.log(limit1),
-                            np.log(limit3),
-                            limit2))
-                else:
-                    raise ValueError(
-                        'unknown limit specification ' +
-                        range_limits[1])
-
-    else:
-        return_val = [float(range_str)]
-    return return_val, is_log
-
-
-def unfold_tuples(hyperparam_values):
-    hyperparam_tuples = []
-    for param_name, param_values in hyperparam_values.iteritems():
-        hyperparam_tuples_new = []
-        for value in param_values:
-            if any(hyperparam_tuples):
-                for hyperparam_tuple in hyperparam_tuples:
-                    hyperparam_tuple_new = hyperparam_tuple.copy()
-                    hyperparam_tuple_new[param_name] = value
-                    hyperparam_tuples_new.append(hyperparam_tuple_new)
-            else:
-                hyperparam_tuples_new.append({param_name: value})
-
-        hyperparam_tuples = hyperparam_tuples_new
-    return hyperparam_tuples
 
 
 def add_packages(list1, list2):

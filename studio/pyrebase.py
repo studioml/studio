@@ -27,6 +27,9 @@ except BaseException:
     RSA = None
 import datetime
 
+NUM_RETRIES = 3
+POOL_SIZE = 100
+
 
 def initialize_app(config):
     if 'projectId' in config.keys():
@@ -71,9 +74,15 @@ class Firebase:
             # https://github.com/kennethreitz/requests/issues/3187
             # ProtocolError('Connection aborted.',
             #               error(13, 'Permission denied'))
-            adapter = appengine.AppEngineAdapter(max_retries=3)
+            adapter = appengine.AppEngineAdapter(
+                pool_connections=POOL_SIZE,
+                pool_maxsize=POOL_SIZE,
+                max_retries=NUM_RETRIES)
         else:
-            adapter = requests.adapters.HTTPAdapter(max_retries=3)
+            adapter = requests.adapters.HTTPAdapter(
+                pool_connections=POOL_SIZE,
+                pool_maxsize=POOL_SIZE,
+                max_retries=NUM_RETRIES)
 
         for scheme in ('http://', 'https://'):
             self.requests.mount(scheme, adapter)
