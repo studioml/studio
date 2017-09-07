@@ -12,9 +12,10 @@ try:
 except ImportError:
     boto3 = None
 
+
 @unittest.skipIf(boto3 is None,
-    "boto3 module is missing, needed for " +
-    "server to communicate with storage")
+                 "boto3 module is missing, needed for " +
+                 "server to communicate with storage")
 class HTTPProviderTest(unittest.TestCase):
 
     @classmethod

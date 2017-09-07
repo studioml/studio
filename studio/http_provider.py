@@ -178,8 +178,6 @@ class HTTPProvider(object):
 
         raise ValueError(data['status'])
 
-
-
     def __enter__(self):
         return self
 
