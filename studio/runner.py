@@ -9,6 +9,7 @@ import shutil
 import importlib
 import time
 import multiprocessing
+from contextlib import closing
 
 import numpy as np
 
@@ -214,8 +215,6 @@ def main(args=sys.argv):
     verbose = model.parse_verbosity(config['verbose'])
     logger.setLevel(verbose)
 
-    db = model.get_db_provider(config)
-
     if git_util.is_git() and not git_util.is_clean():
         logger.warn('Running from dirty git repo')
         if not runner_args.force_git:
@@ -230,7 +229,8 @@ def main(args=sys.argv):
     artifacts = {}
     artifacts.update(parse_artifacts(runner_args.capture, mutable=True))
     artifacts.update(parse_artifacts(runner_args.capture_once, mutable=False))
-    artifacts.update(parse_external_artifacts(runner_args.reuse, db))
+    with model.get_db_provider(config) as db:
+        artifacts.update(parse_external_artifacts(runner_args.reuse, db))
 
     if any(runner_args.hyperparam):
         if runner_args.optimizer is "grid":
@@ -322,7 +322,6 @@ def main(args=sys.argv):
                            runner_args,
                            logger)
 
-    db = None
     return
 
 
@@ -344,7 +343,6 @@ def submit_experiments(
         launch_workers=True):
 
     num_experiments = len(experiments)
-    db = model.get_db_provider(config)
     verbose = model.parse_verbosity(config['verbose'])
 
     if runner_args.cloud is None:
@@ -356,13 +354,15 @@ def submit_experiments(
 
     start_time = time.time()
     n_workers = min(multiprocessing.cpu_count() * 2, num_experiments)
-    p = multiprocessing.Pool(n_workers)
-    experiments = p.map(add_experiment,
-                        zip([config] * num_experiments,
-                            [runner_args.python_pkg] * num_experiments,
-                            experiments),
-                        chunksize=1)
-    p.close(); p.terminate(); p.join(); del p
+    with closing(multiprocessing.Pool(n_workers)) as p:
+        experiments = p.map(add_experiment,
+                            zip([config] * num_experiments,
+                                [runner_args.python_pkg] * num_experiments,
+                                experiments),
+                            chunksize=1)
+        p.close()
+        p.terminate()
+        p.join()
     # for e in experiments:
     #     logger.info("Added experiment " + e.key)
     logger.info("Added %s experiments in %s seconds" %
@@ -464,79 +464,84 @@ def submit_experiments(
 
 
 def get_experiment_fitnesses(experiments, optimizer, config, logger):
-    db_provider = model.get_db_provider()
-    progbar = Progbar(len(experiments), interval=0.0)
-    logger.info("Waiting for fitnesses from %s experiments" % len(experiments))
+    with model.get_db_provider() as db:
+        progbar = Progbar(len(experiments), interval=0.0)
+        logger.info("Waiting for fitnesses from %s experiments" %
+                    len(experiments))
 
-    bad_line_dicts = [dict() for x in xrange(len(experiments))]
-    has_result = [False] * len(experiments)
-    fitnesses = [0.0] * len(experiments)
-    term_criterion = config['optimizer']['termination_criterion']
-    skip_gen_thres = term_criterion['skip_gen_thres']
-    skip_gen_timeout = term_criterion['skip_gen_timeout']
-    result_timestamp = time.time()
-    return fitnesses
+        bad_line_dicts = [dict() for x in xrange(len(experiments))]
+        has_result = [False] * len(experiments)
+        fitnesses = [0.0] * len(experiments)
+        term_criterion = config['optimizer']['termination_criterion']
+        skip_gen_thres = term_criterion['skip_gen_thres']
+        skip_gen_timeout = term_criterion['skip_gen_timeout']
+        result_timestamp = time.time()
 
-    while sum(has_result) < len(experiments):
-        for i, experiment in enumerate(experiments):
-            if float(sum(has_result)) / len(experiments) >= skip_gen_thres \
-                    and time.time() - result_timestamp > skip_gen_timeout:
-                logger.warn(
-                    "Skipping to next gen with %s of solutions evaled" %
-                    (float(
-                        sum(has_result)) /
-                        len(experiments)))
-                has_result = [True] * len(experiments)
-                break
-            if has_result[i]:
-                continue
-            returned_experiment = db_provider.get_experiment(experiment.key,
-                                                             getinfo=True)
-            # try:
-            #     experiment_output = returned_experiment.info['logtail']
-            # except:
-            #     logger.warn('Cannot access "logtail" in experiment.info')
-            output = db_provider._get_experiment_logtail(returned_experiment)
-            if output is None:
-                continue
+        while sum(has_result) < len(experiments):
+            for i, experiment in enumerate(experiments):
+                if float(sum(has_result))/len(experiments) >= skip_gen_thres \
+                        and time.time() - result_timestamp > skip_gen_timeout:
+                    logger.warn(
+                        "Skipping to next gen with %s of solutions evaled" %
+                        (float(
+                            sum(has_result)) /
+                            len(experiments)))
+                    has_result = [True] * len(experiments)
+                    break
+                if has_result[i]:
+                    continue
+                returned_experiment = db.get_experiment(experiment.key,
+                                                        getinfo=True)
+                # try:
+                #     experiment_output = returned_experiment.info['logtail']
+                # except:
+                #     logger.warn('Cannot access "logtail" in experiment.info')
+                output = db_provider._get_experiment_logtail(
+                    returned_experiment)
+                if output is None:
+                    continue
 
-            for j, line in enumerate(output):
+                for j, line in enumerate(output):
 
-                if line.startswith("Traceback (most recent call last):") and \
-                        j not in bad_line_dicts[i]:
-                    logger.warn("Experiment %s: error discovered in output" %
-                                returned_experiment.key)
-                    logger.warn("".join(output[j:]))
-                    bad_line_dicts[i][j] = True
+                    if line.startswith(
+                            "Traceback (most recent call last):") and \
+                            j not in bad_line_dicts[i]:
+                        logger.warn("Experiment %s: error"
+                                    " discovered in output" %
+                                    returned_experiment.key)
+                        logger.warn("".join(output[j:]))
+                        bad_line_dicts[i][j] = True
 
-                if line.startswith("Fitness") or line.startswith("fitness"):
-                    try:
-                        fitness = float(line.rstrip().split(':')[1])
-                        # assert fitness >= 0.0
-                    except BaseException:
-                        if j not in bad_line_dicts[i]:
-                            logger.warn(
-                                'Experiment %s: error parsing or invalid'
-                                ' fitness' %
-                                returned_experiment.key)
-                            logger.warn(line)
-                            bad_line_dicts[i][j] = True
-                    else:
-                        if fitness < 0.0:
-                            logger.warn('Experiment %s: returned fitness is'
-                                        ' less than zero, setting it to zero' %
-                                        returned_experiment.key)
-                            fitness = 0.0
+                    if line.startswith("Fitness") or \
+                            line.startswith("fitness"):
+                        try:
+                            fitness = float(line.rstrip().split(':')[1])
+                            # assert fitness >= 0.0
+                        except BaseException:
+                            if j not in bad_line_dicts[i]:
+                                logger.warn(
+                                    'Experiment %s: error parsing or invalid'
+                                    ' fitness' %
+                                    returned_experiment.key)
+                                logger.warn(line)
+                                bad_line_dicts[i][j] = True
+                        else:
+                            if fitness < 0.0:
+                                logger.warn('Experiment %s: returned'
+                                            ' fitness is less than zero,'
+                                            ' setting it to zero' %
+                                            returned_experiment.key)
+                                fitness = 0.0
 
-                        fitnesses[i] = fitness
-                        has_result[i] = True
-                        progbar.add(1)
-                        result_timestamp = time.time()
-                        break
+                            fitnesses[i] = fitness
+                            has_result[i] = True
+                            progbar.add(1)
+                            result_timestamp = time.time()
+                            break
 
-        time.sleep(config['sleep_time'])
-    print
-    return fitnesses
+            time.sleep(config['sleep_time'])
+        print
+        return fitnesses
 
 
 def parse_artifacts(art_list, mutable):

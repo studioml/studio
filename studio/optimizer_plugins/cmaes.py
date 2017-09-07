@@ -208,7 +208,7 @@ class Optimizer(object):
                     os.makedirs(result_dir)
             except:
                 self.looger.warn("Cannot retrieve checkpoint directory,"
-                    " not saving checkpoint")
+                                 " not saving checkpoint")
                 return
 
             checkpoint_file = os.path.join(
