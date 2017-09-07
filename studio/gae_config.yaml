@@ -1,0 +1,56 @@
+database:
+    type: FireBase
+
+    apiKey: AIzaSyCLQbp5X2B4SWzBw-sz9rUnGHNSdMl0Yx8
+    projectId: studio-ed756
+    messagingSenderId: 81790704397
+
+    authDomain: "{}.firebaseapp.com"
+    databaseURL: "https://{}.firebaseio.com"
+    storageBucket: "{}.appspot.com"
+
+    serviceAccount: ./firebase_admin_creds.json
+    # guest: true
+    use_email_auth: false
+
+
+
+#storage:
+    #type: s3
+    #bucket: "studioml-artifacts"
+    #type: gcloud
+    #bucket: studio-ed756.appspot.com
+
+   
+
+queue: local
+
+saveWorkspaceFrequencyMinutes: 1
+verbose: error
+
+cloud:
+    type: google
+    zone: us-central1-f
+
+    cpus: 2
+    ram:  3g
+    hdd:  10g
+    gpus: 0
+
+sleep_time: 1
+worker_timeout: 30
+
+optimizer:
+    cmaes_config:
+        popsize: 100
+        sigma0: 0.25
+        load_best_only: false
+    load_checkpoint_file:
+    visualization: true
+    result_dir: "~/Desktop/"
+    checkpoint_interval: 0
+    termination_criterion:
+        generation: 5
+        fitness: 999
+        skip_gen_thres: 1.0
+        skip_gen_timeout: 30
