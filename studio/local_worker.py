@@ -23,7 +23,7 @@ class LocalExecutor(object):
 
     def __init__(self, args):
         self.config = args.config
-        
+
         if args.guest:
             self.config['database']['guest'] = True
 
