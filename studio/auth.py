@@ -86,7 +86,12 @@ class FirebaseAuth(object):
                 except BaseException:
                     time.sleep(SLEEP_TIME)
                     counter += 1
-            if user is not None:
+            if user is None:
+                return
+
+            self.user = user
+            self.expired = False
+            if time.time() - os.path.getmtime(api_key) > HOUR
                 self.refresh_token(user['email'], user['refreshToken'])
 
     def sign_in_with_email(self):
@@ -105,16 +110,15 @@ class FirebaseAuth(object):
         self.user['email'] = email
         self.expired = False
 
-        if time.time() - os.path.getmtime(api_key) > HOUR:
-            # Rename to ensure atomic writes to json file
-            # (technically more safe, but slower)
-            tmp_api_key = '/tmp/api_key_%s' % rand_string(32)
-            with open(tmp_api_key, 'wb') as f:
-                json.dump(self.user, f)
-                f.flush()
-                os.fsync(f.fileno())
-                f.close()
-            os.rename(tmp_api_key, api_key)
+        # Rename to ensure atomic writes to json file
+        # (technically more safe, but slower)
+        tmp_api_key = '/tmp/api_key_%s' % rand_string(32)
+        with open(tmp_api_key, 'wb') as f:
+            json.dump(self.user, f)
+            f.flush()
+            os.fsync(f.fileno())
+            f.close()
+        os.rename(tmp_api_key, api_key)
 
     def get_token(self):
         if self.expired:
