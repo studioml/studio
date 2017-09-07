@@ -329,8 +329,8 @@ def main(args=sys.argv):
 def add_experiment(args):
     config, python_pkg, e = args
     e.pythonenv = add_packages(e.pythonenv, python_pkg)
-    db = model.get_db_provider(config)
-    db.add_experiment(e)
+    with model.get_db_provider(config) as db:
+        db.add_experiment(e)
     return e
 
 
