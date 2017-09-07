@@ -22,14 +22,8 @@ class LocalExecutor(object):
     """
 
     def __init__(self, args):
-        self.config = model.get_config()
-        if args.config:
-            if isinstance(args.config, basestring):
-                with open(args.config) as f:
-                    self.config.update(yaml.load(f))
-            else:
-                self.config.update(args.config)
-
+        self.config = args.config
+        
         if args.guest:
             self.config['database']['guest'] = True
 
