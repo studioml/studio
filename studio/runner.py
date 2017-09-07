@@ -354,18 +354,15 @@ def submit_experiments(
         if runner_args.queue:
             queue_name = runner_args.queue
 
-    for i in xrange(100):
-        start_time = time.time()
-        n_workers = min(multiprocessing.cpu_count() * 2, num_experiments)
-        p = multiprocessing.Pool(n_workers)
-        experiments = p.map(add_experiment,
-                            zip([config] * num_experiments,
-                                [runner_args.python_pkg] * num_experiments,
-                                experiments),
-                            chunksize=1)
-        p.close(); p.terminate(); p.join()
-        del p
-
+    start_time = time.time()
+    n_workers = min(multiprocessing.cpu_count() * 2, num_experiments)
+    p = multiprocessing.Pool(n_workers)
+    experiments = p.map(add_experiment,
+                        zip([config] * num_experiments,
+                            [runner_args.python_pkg] * num_experiments,
+                            experiments),
+                        chunksize=1)
+    p.close(); p.terminate(); p.join(); del p
     # for e in experiments:
     #     logger.info("Added experiment " + e.key)
     logger.info("Added %s experiments in %s seconds" %
@@ -477,6 +474,7 @@ def get_experiment_fitnesses(experiments, optimizer, config, logger):
     skip_gen_thres = term_criterion['skip_gen_thres']
     skip_gen_timeout = term_criterion['skip_gen_timeout']
     result_timestamp = time.time()
+    return fitnesses
 
     while sum(has_result) < len(experiments):
         for i, experiment in enumerate(experiments):
