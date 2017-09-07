@@ -86,7 +86,7 @@ class TartifactStore(object):
                         .format(local_path, cache_dir))
 
                     if os.path.exists(cache_dir) and os.path.isdir(cache_dir):
-                        shutil.rmtree(cache_dir)
+                        shutil.rmtree(cache_dir, ignore_errors=True)
 
                     pcp = subprocess.Popen(
                         ['cp', '-pR', local_path, cache_dir],
