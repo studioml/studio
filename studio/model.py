@@ -712,6 +712,9 @@ def get_db_provider(config=None, blocking_auth=True):
         config = get_config()
     verbose = parse_verbosity(config.get('verbose'))
 
+    self.logger.debug('Choosing db provider with config:')
+    self.logger.debug(config)
+
     if 'storage' in config.keys():
         artifact_store = get_artifact_store(
             config['storage'],
