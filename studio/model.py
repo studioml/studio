@@ -2,7 +2,13 @@
 
 import os
 import uuid
-import pip
+
+try:
+    # try-except statement needed because
+    # pip module is not available in google app engine
+    import pip
+except ImportError:
+	pip = None
 
 import yaml
 import pyrebase

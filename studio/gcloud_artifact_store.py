@@ -44,7 +44,9 @@ class GCloudArtifactStore(TartifactStore):
         self.bucket.get_blob(key).download_to_filename(local_path)
 
     def _delete_file(self, key):
-        self.bucket.get_blob(key).delete()
+        blob = self.bucket.get_blob(key)
+        if blob:
+            blob.delete()
 
     def _get_file_url(self, key, method='GET'):
 
@@ -54,7 +56,10 @@ class GCloudArtifactStore(TartifactStore):
             method=method)
 
     def _get_file_timestamp(self, key):
-        time_updated = self.bucket.get_blob(key).updated
+        blob = self.bucket.get_blob(key)
+        if blob is None:
+            return None
+        time_updated = blob.updated
         if time_updated:
             timestamp = calendar.timegm(time_updated.timetuple())
             return timestamp
