@@ -9,6 +9,7 @@ import shutil
 import importlib
 import time
 import multiprocessing
+import traceback
 from contextlib import closing
 
 import numpy as np
@@ -326,10 +327,14 @@ def main(args=sys.argv):
 
 
 def add_experiment(args):
-    config, python_pkg, e = args
-    e.pythonenv = add_packages(e.pythonenv, python_pkg)
-    with model.get_db_provider(config) as db:
-        db.add_experiment(e)
+    try:
+        config, python_pkg, e = args
+        e.pythonenv = add_packages(e.pythonenv, python_pkg)
+        with model.get_db_provider(config) as db:
+            db.add_experiment(e)
+    except:
+        traceback.print_exc()
+        raise
     return e
 
 
