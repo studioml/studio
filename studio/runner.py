@@ -455,7 +455,8 @@ def submit_experiments(
 
         logger.info('worker args: {}'.format(worker_args))
         if not runner_args.num_workers or int(runner_args.num_workers) == 1:
-            local_worker.main(worker_args)
+            pass
+            # local_worker.main(worker_args)
         else:
             raise NotImplementedError("Multiple local workers are not " +
                                       "implemented yet")
