@@ -10,16 +10,16 @@ from model_test import get_test_experiment
 
 class HTTPProviderHostedTest(unittest.TestCase):
 
-    def get_http_provider(self):
-        return model.get_db_provider(model.get_config(
-            'test_config_http_client.yaml'))
-
-    def get_firebase_provider(self):
-        return model.get_db_provider(model.get_config('test_config.yaml'))
+    def get_db_provider(self, config_name):
+        config_file = os.path.join(
+            os.path.dirname(
+                os.path.realpath(__file__)),
+            config_name)
+        return model.get_db_provider(model.get_config(config_file))
 
     def test_add_get_delete_experiment(self):
-        with self.get_firebase_provider() as fp, \
-                self.get_http_provider() as hp:
+        with self.get_db_provider('test_config.yaml') as fp, \
+             self.get_db_provider('test_config_http_client.yaml') as hp:
 
             experiment_tuple = get_test_experiment()
             hp.add_experiment(experiment_tuple[0])
@@ -58,7 +58,7 @@ class HTTPProviderHostedTest(unittest.TestCase):
             self.assertTrue(thrown)
 
     def test_start_experiment(self):
-        with self.get_http_provider() as hp:
+        with self.get_db_provider('test_config_http_client.yaml') as hp:
             experiment_tuple = get_test_experiment()
 
             hp.add_experiment(experiment_tuple[0])
