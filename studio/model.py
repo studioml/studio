@@ -618,6 +618,8 @@ class FirebaseProvider(object):
     def __exit__(self, *args):
         if self.pool:
             self.pool.close()
+        if self.app:
+            self.app.requests.close()
 
 
 class PostgresProvider(object):

@@ -77,9 +77,10 @@ class LocalExecutor(object):
                                  stderr=subprocess.STDOUT,
                                  env=env,
                                  cwd=experiment
-                                 .artifacts['workspace']['local'])
+                                 .artifacts['workspace']['local'],
+                                 close_fds=True)
             # simple hack to show what's in the log file
-            ptail = subprocess.Popen(["tail", "-f", log_path])
+            ptail = subprocess.Popen(["tail", "-f", log_path], close_fds=True)
 
             sched.add_job(
                 lambda: self.db.checkpoint_experiment(experiment),
