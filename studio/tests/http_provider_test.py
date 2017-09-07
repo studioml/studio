@@ -7,18 +7,21 @@ import os
 from studio import model
 from model_test import get_test_experiment
 
+try:
+    import boto3
+except ImportError:
+    boto3 = None
 
-@unittest.skipIf(
-    'GOOGLE_APPLICATION_CREDENTIALS' not in os.environ.keys(),
-    'GOOGLE_APPLICATION_CREDENTIALS environment ' +
-    'variable not set, won'' be able to use google cloud')
+@unittest.skipIf(boto3 is None,
+    "boto3 module is missing, needed for " +
+    "server to communicate with storage")
 class HTTPProviderTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(self):
-        if 'GOOGLE_APPLICATION_CREDENTIALS' not in os.environ.keys():
+        if boto3 is None:
             return
-        print "Setting up"
+        print "Starting up the API server"
         self.port = randint(5000, 9000)
 
         # self.app.run(port=self.port, debug=True)
@@ -40,14 +43,14 @@ class HTTPProviderTest(unittest.TestCase):
             '--config=' + self.server_config_file,
             '--host=localhost'])
 
-        time.sleep(10)
+        time.sleep(25)
 
     @classmethod
     def tearDownClass(self):
-        if 'GOOGLE_APPLICATION_CREDENTIALS' not in os.environ.keys():
+        if boto3 is None:
             return
-        print "Tearing down"
 
+        print "Shutting down the API server"
         self.serverp.kill()
 
     def get_db_provider(self):

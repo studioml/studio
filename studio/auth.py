@@ -105,7 +105,8 @@ class FirebaseAuth(object):
         self.user['email'] = email
         self.expired = False
 
-        if time.time() - os.path.getmtime(api_key) > HOUR:
+        if not os.path.exists(api_key) or \
+           time.time() - os.path.getmtime(api_key) > HOUR:
             # Rename to ensure atomic writes to json file
             # (technically more safe, but slower)
             tmp_api_key = '/tmp/api_key_%s' % rand_string(32)

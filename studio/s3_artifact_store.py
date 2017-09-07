@@ -61,8 +61,12 @@ class S3ArtifactStore(TartifactStore):
 
     def _get_file_timestamp(self, key):
         obj = boto3.resource('s3').Object(self.bucket, key)
-
-        time_updated = obj.last_modified
+        
+        try:
+            time_updated = obj.last_modified
+        except BaseException as e:
+            return None
+       
         if time_updated:
             timestamp = calendar.timegm(time_updated.timetuple())
             return timestamp

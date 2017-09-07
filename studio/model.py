@@ -21,7 +21,6 @@ try:
 except ImportError:
     ThreadPool = None
 
-
 import fs_tracker
 import util
 import git_util

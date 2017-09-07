@@ -7,6 +7,7 @@ from tartifact_store import TartifactStore
 
 from auth import FirebaseAuth
 import pyrebase
+import json
 
 logging.basicConfig()
 
@@ -16,6 +17,13 @@ class GCloudArtifactStore(TartifactStore):
         self.logger = logging.getLogger('GCloudArtifactStore')
         self.logger.setLevel(verbose)
 
+        if 'credentials' in config.keys():
+            self.client = storage.Client.from_service_account_json(
+                config['serviceAccount'])
+        else:
+            self.client = storage.Client()
+
+        '''
         auth_config = config.get('auth')
         if not auth_config:
             self.client = storage.Client()
@@ -28,6 +36,7 @@ class GCloudArtifactStore(TartifactStore):
                                      auth_config.get("password"))
 
             self.client = storage.Client(credentials=self.auth.get_token())
+        '''
 
         try:
             self.bucket = self.client.get_bucket(config['bucket'])

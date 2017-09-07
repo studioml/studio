@@ -177,3 +177,11 @@ class HTTPProvider(object):
             return
 
         raise ValueError(data['status'])
+
+
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args):
+        pass
