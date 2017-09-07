@@ -12,7 +12,8 @@ install:
   - pip install pep8
 
 script:
-  - nosetests -v
+  # - nosetests -v
+  - cd studio/tests && python local_worker_test.py
   - pep8 --show-source .
   - python setup.py sdist
 
