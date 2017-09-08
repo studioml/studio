@@ -46,7 +46,7 @@ class Reporter(object):
         self._metrics = collections.defaultdict(collections.deque)
 
     def record(self, step, **kwargs):
-        for key, value in kwargs.six.iteritems():
+        for key, value in six.iteritems(kwargs):
             self.add(step, key, value)
 
     def add(self, step, key, value):
@@ -63,5 +63,5 @@ class Reporter(object):
             def smooth(values):
                 return (sum(values) / len(values)) if values else 0.0
             metrics = ','.join(["%s = %.5f" % (k, smooth(v))
-                                for k, v in self._metrics.six.iteritems()])
+                                for k, v in six.iteritems(self._metrics)])
             print("Step %d: %s" % (self._last_step, metrics))

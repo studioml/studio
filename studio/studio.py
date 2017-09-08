@@ -123,7 +123,7 @@ def get_experiment():
     try:
         experiment = get_db().get_experiment(key).__dict__
         artifacts = get_db().get_artifacts(key)
-        for art, url in artifacts.six.iteritems():
+        for art, url in six.iteritems(artifacts):
             experiment['artifacts'][art]['url'] = url
 
         status = 'ok'
@@ -338,13 +338,13 @@ def add_experiment():
     artifacts = {}
     try:
         experiment = model.experiment_from_dict(request.json['experiment'])
-        for tag, art in experiment.artifacts.six.iteritems():
+        for tag, art in six.iteritems(experiment.artifacts):
             art.pop('local', None)
 
         get_db().add_experiment(experiment)
         added_experiment = get_db().get_experiment(experiment.key)
 
-        for tag, art in added_experiment.artifacts.six.iteritems():
+        for tag, art in six.iteritems(added_experiment.artifacts):
             if 'key' in art.keys():
                 get_db().store.grant_write(art['key'], userid)
                 artifacts[tag] = art
@@ -370,7 +370,7 @@ def checkpoint_experiment():
         experiment = get_db().get_experiment(key)
         get_db().checkpoint_experiment(experiment)
 
-        for tag, art in experiment.artifacts.six.iteritems():
+        for tag, art in six.iteritems(experiment.artifacts):
             if 'key' in art.keys():
                 get_db().store.grant_write(art['key'], userid)
                 artifacts[tag] = art

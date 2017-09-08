@@ -372,7 +372,7 @@ class EC2WorkerManager(object):
 
         for instance_type in instances:
             product_sku = [
-                k for k, v in offer_dict['products'].six.iteritems()
+                k for k, v in six.iteritems(offer_dict['products'])
                 if v['attributes'].get('instanceType') == instance_type and
                 v['attributes']['tenancy'] == 'Shared' and
                 v['attributes']['operatingSystem'] == 'Linux' and
@@ -384,8 +384,10 @@ class EC2WorkerManager(object):
                 .format(instance_type)
 
             prices[instance_type] = float(
-                offer_dict['terms']['OnDemand'][product_sku[0]]
-                .six.iteritems().next()[1]['priceDimensions']
-                .six.iteritems().next()[1]['pricePerUnit']['USD'])
+                six.iteritems(
+                    six.iteritems(
+                        offer_dict['terms']['OnDemand'][product_sku[0]]
+                    ).next()[1]['priceDimensions']
+                ).next()[1]['pricePerUnit']['USD'])
 
         return prices

@@ -38,7 +38,7 @@ def setup_experiment(env, experiment, clean=True):
     _setup_model_directory(key, clean)
 
     amapping = {}
-    for tag, art in artifacts.six.iteritems():
+    for tag, art in six.iteritems(artifacts):
         if art.get('local') is not None:
             amapping[tag] = art['local']
 

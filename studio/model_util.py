@@ -204,7 +204,7 @@ class ModelPipe:
             count_gen = itertools.count(start=0, step=1)
             indexed_gen = itertools.izip(count_gen, (x for x in data))
         else:
-            indexed_gen = ((k, v) for k, v in data.six.iteritems())
+            indexed_gen = ((k, v) for k, v in six.iteritems(data))
 
         output_gen = self._pipe(indexed_gen)
 

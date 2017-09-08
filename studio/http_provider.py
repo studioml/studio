@@ -42,7 +42,7 @@ class HTTPProvider(object):
         self._raise_detailed_error(request)
         artifacts = request.json()['artifacts']
 
-        for tag, art in experiment.artifacts.six.iteritems():
+        for tag, art in six.iteritems(experiment.artifacts):
             art['key'] = artifacts[tag]['key']
             art['qualified'] = artifacts[tag]['qualified']
             art['bucket'] = artifacts[tag]['bucket']
@@ -146,7 +146,7 @@ class HTTPProvider(object):
         self._raise_detailed_error(request)
         artifacts = request.json()['artifacts']
 
-        for tag, art in experiment.artifacts.six.iteritems():
+        for tag, art in six.iteritems(experiment.artifacts):
             if 'local' in art.keys():
                 art['key'] = artifacts[tag]['key']
                 art['qualified'] = artifacts[tag]['qualified']

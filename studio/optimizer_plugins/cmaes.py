@@ -22,7 +22,7 @@ class Optimizer(object):
         self.logger = logger
 
         self.opts = cma.CMAOptions()
-        for param, value in self.config['cmaes_config'].six.iteritems():
+        for param, value in six.iteritems(self.config['cmaes_config']):
             if param in self.opts and value is not None:
                 self.opts[param] = value
         self.dim = 0
