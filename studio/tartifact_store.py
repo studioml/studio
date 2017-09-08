@@ -71,9 +71,16 @@ class TartifactStore(object):
             tar_filename = os.path.join(tempfile.gettempdir(),
                                         str(uuid.uuid4()))
 
+            ignore_arg = ''
             if os.path.isdir(local_path):
                 local_basepath = local_path
                 local_nameonly = '.'
+
+                ignore_filepath = os.path.join(local_basepath,
+                    ".studioml_ignore")
+                if os.path.exists(ignore_filepath) and \
+                    not os.path.isdir(ignore_filepath):
+                    ignore_arg = '--exclude-from=%s' % ignore_filepath
             else:
                 local_nameonly = os.path.basename(local_path)
                 local_basepath = os.path.dirname(local_path)
@@ -107,7 +114,8 @@ class TartifactStore(object):
                     local_path,
                     key))
 
-            tarcmd = 'tar -czf {} -C {} {}'.format(
+            tarcmd = 'tar {} -czf {} -C {} {}'.format(
+                ignore_arg,
                 tar_filename,
                 local_basepath,
                 local_nameonly)
