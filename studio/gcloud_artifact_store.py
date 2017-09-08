@@ -7,6 +7,7 @@ from tartifact_store import TartifactStore
 
 from auth import FirebaseAuth
 import pyrebase
+import json
 
 logging.basicConfig()
 
@@ -16,26 +17,22 @@ class GCloudArtifactStore(TartifactStore):
         self.logger = logging.getLogger('GCloudArtifactStore')
         self.logger.setLevel(verbose)
 
-        auth_config = config.get('auth')
-        if not auth_config:
-            self.client = storage.Client()
-        else:
-            assert auth_config['type'].lower() == 'firebase'
-            app = pyrebase.initialize_app(auth_config)
-            self.auth = FirebaseAuth(app,
-                                     auth_config.get("use_email_auth"),
-                                     auth_config.get("email"),
-                                     auth_config.get("password"))
-
-            self.client = storage.Client(credentials=self.auth.get_token())
+        self.config = config
 
         try:
-            self.bucket = self.client.get_bucket(config['bucket'])
+            self.bucket = self.getclient().get_bucket(config['bucket'])
         except BaseException as e:
             self.logger.exception(e)
-            self.bucket = self.client.create_bucket(config['bucket'])
+            self.bucket = self.getclient().create_bucket(config['bucket'])
 
         super(GCloudArtifactStore, self).__init__(measure_timestamp_diff)
+
+    def getclient(self):
+        if 'credentials' in self.config.keys():
+            return storage.Client \
+                .from_service_account_json(config['serviceAccount'])
+        else:
+            return storage.Client()
 
     def _upload_file(self, key, local_path):
         self.bucket.blob(key).upload_from_filename(local_path)
@@ -44,14 +41,22 @@ class GCloudArtifactStore(TartifactStore):
         self.bucket.get_blob(key).download_to_filename(local_path)
 
     def _delete_file(self, key):
-        self.bucket.get_blob(key).delete()
+        blob = self.bucket.get_blob(key)
+        if blob:
+            blob.delete()
 
-    def _get_file_url(self, key):
+    def _get_file_url(self, key, method='GET'):
+
         expiration = long(time.time() + 100000)
-        return self.bucket.blob(key).generate_signed_url(expiration)
+        return self.bucket.blob(key).generate_signed_url(
+            expiration,
+            method=method)
 
     def _get_file_timestamp(self, key):
-        time_updated = self.bucket.get_blob(key).updated
+        blob = self.bucket.get_blob(key)
+        if blob is None:
+            return None
+        time_updated = blob.updated
         if time_updated:
             timestamp = calendar.timegm(time_updated.timetuple())
             return timestamp

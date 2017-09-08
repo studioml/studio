@@ -2,7 +2,13 @@
 
 import os
 import uuid
-import pip
+
+try:
+    # try-except statement needed because
+    # pip module is not available in google app engine
+    import pip
+except ImportError:
+    pip = None
 
 import yaml
 import pyrebase
@@ -179,6 +185,8 @@ class FirebaseProvider(object):
             self.__setitem__(self._get_user_keybase() + "email",
                              self.auth.get_user_email())
 
+        self.max_keys = db_config.get('max_keys', 100)
+
     def __getitem__(self, key):
         try:
             splitKey = key.split('/')
@@ -207,7 +215,7 @@ class FirebaseProvider(object):
                               "raised an exception: {}")
                              .format(key, value, err))
 
-    def _delete(self, key):
+    def _delete(self, key, token=None):
         dbobj = self.app.database().child(key)
 
         if self.auth:
@@ -234,7 +242,7 @@ class FirebaseProvider(object):
     def _get_projects_keybase(self):
         return "projects/"
 
-    def add_experiment(self, experiment):
+    def add_experiment(self, experiment, userid=None):
         self._delete(self._get_experiments_keybase() + experiment.key)
         experiment.time_added = time.time()
         experiment.status = 'waiting'
@@ -259,21 +267,23 @@ class FirebaseProvider(object):
 
             art['bucket'] = self.store.get_bucket()
 
+        userid = userid if userid else self._get_userid()
+
         experiment_dict = experiment.__dict__.copy()
-        experiment_dict['owner'] = self._get_userid()
+        experiment_dict['owner'] = userid
 
         self.__setitem__(self._get_experiments_keybase() + experiment.key,
                          experiment_dict)
 
-        self.__setitem__(self._get_user_keybase() + "experiments/" +
+        self.__setitem__(self._get_user_keybase(userid) + "experiments/" +
                          experiment.key,
-                         experiment.key)
+                         experiment.time_added)
 
         if experiment.project and self.auth:
             self.__setitem__(self._get_projects_keybase() +
                              experiment.project + "/" +
                              experiment.key + "/owner",
-                             self.auth.get_user_id())
+                             userid)
 
         self.checkpoint_experiment(experiment, blocking=True)
         self.logger.info("Added experiment " + experiment.key)
@@ -507,8 +517,13 @@ class FirebaseProvider(object):
             self._get_user_keybase(userid) + "/experiments")
         if not experiment_keys:
             experiment_keys = {}
+
+        keys = sorted(experiment_keys.keys(),
+                      key=lambda k: experiment_keys[k],
+                      reverse=True)
+
         return self._get_valid_experiments(
-            experiment_keys.keys(), getinfo=True, blocking=blocking)
+            keys, getinfo=True, blocking=blocking)
 
     def get_project_experiments(self, project):
         experiment_keys = self.__getitem__(self._get_projects_keybase() +
@@ -529,8 +544,15 @@ class FirebaseProvider(object):
 
         return retval
 
+    def get_artifact(self, artifact, only_newer=True):
+        return self.store.get_artifact(artifact, only_newer=only_newer)
+
     def _get_valid_experiments(self, experiment_keys,
                                getinfo=False, blocking=True):
+
+        if self.max_keys > 0:
+            experiment_keys = experiment_keys[:self.max_keys]
+
         def cache_valid_experiment(key):
             try:
                 self._experiment_cache[key] = self.get_experiment(
@@ -592,6 +614,8 @@ class FirebaseProvider(object):
     def __exit__(self, *args):
         if self.pool:
             self.pool.close()
+        if self.app:
+            self.app.requests.close()
 
 
 class PostgresProvider(object):
@@ -629,6 +653,9 @@ class PostgresProvider(object):
         raise NotImplementedError()
 
     def get_artifacts(self):
+        raise NotImplementedError()
+
+    def get_artifact(self):
         raise NotImplementedError()
 
     def get_users(self):
@@ -690,6 +717,11 @@ def get_db_provider(config=None, blocking_auth=True):
         config = get_config()
     verbose = parse_verbosity(config.get('verbose'))
 
+    logger = logging.getLogger("get_db_provider")
+    logger.setLevel(verbose)
+    logger.debug('Choosing db provider with config:')
+    logger.debug(config)
+
     if 'storage' in config.keys():
         artifact_store = get_artifact_store(
             config['storage'],
@@ -707,7 +739,7 @@ def get_db_provider(config=None, blocking_auth=True):
             verbose=verbose,
             store=artifact_store)
     elif db_config['type'].lower() == 'http':
-        return HTTPProvider(db_config, store=artifact_store)
+        return HTTPProvider(db_config)
     else:
         raise ValueError('Unknown type of the database ' + db_config['type'])
 

@@ -211,6 +211,9 @@ def main(args=sys.argv):
     if runner_args.verbose:
         config['verbose'] = runner_args.verbose
 
+    if runner_args.guest:
+        config['database']['guest'] = True
+
     verbose = model.parse_verbosity(config['verbose'])
     logger.setLevel(verbose)
 

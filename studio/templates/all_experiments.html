@@ -7,8 +7,10 @@
         {{ experimenttable() }}
         
         <script>
-            $(authWidget(() => reload(getAllExperiments, addExperimentsToTable)))
-
+            $(authWidget(() => reload( () => data_ajax('get_all_experiments'), 
+                                       fillExperimentTable )))
+            /*$(authWidget(() => reload(getAllExperiments, addExperimentsToTable)))
+            
             function getAllExperiments() {
                 var allExperiments = {}
                 return data_ajax('get_users').then( (response) => {
@@ -46,7 +48,7 @@
                 
                 return allExperiments
                 
-            }
+            }*/
         </script>
 
 

@@ -503,9 +503,12 @@ class Storage:
         path = self.path
         self.path = None
         if isinstance(file, str):
-            file_object = open(file, 'rb')
+            with open(file, 'rb') as file_object:
+                return self._put_file(path, file_object, token, userid)
         else:
-            file_object = file
+            return self._put_file(path, file, path, token, userid)
+
+    def _put_file(self, path, file_object, token, userid):
         request_ref = self.storage_bucket + "/o?name={0}".format(path)
         if token:
             headers = {"Authorization": "Firebase " + token}

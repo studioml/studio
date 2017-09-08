@@ -22,13 +22,7 @@ class LocalExecutor(object):
     """
 
     def __init__(self, args):
-        self.config = model.get_config()
-        if args.config:
-            if isinstance(args.config, basestring):
-                with open(args.config) as f:
-                    self.config.update(yaml.load(f))
-            else:
-                self.config.update(args.config)
+        self.config = args.config
 
         if args.guest:
             self.config['database']['guest'] = True
@@ -227,10 +221,10 @@ def worker_loop(queue, parsed_args,
                         if tag == 'workspace':
                             # art['local'] = executor.db.store.get_artifact(
                             #    art, '.', only_newer=False)
-                            art['local'] = executor.db.store.get_artifact(
+                            art['local'] = executor.db.get_artifact(
                                 art, only_newer=False)
                         else:
-                            art['local'] = executor.db.store.get_artifact(art)
+                            art['local'] = executor.db.get_artifact(art)
                 executor.run(experiment)
             finally:
                 sched.shutdown()

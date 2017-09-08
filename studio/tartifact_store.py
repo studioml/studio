@@ -86,12 +86,13 @@ class TartifactStore(object):
                         .format(local_path, cache_dir))
 
                     if os.path.exists(cache_dir) and os.path.isdir(cache_dir):
-                        shutil.rmtree(cache_dir)
+                        shutil.rmtree(cache_dir, ignore_errors=True)
 
                     pcp = subprocess.Popen(
                         ['cp', '-pR', local_path, cache_dir],
                         stdout=subprocess.PIPE,
-                        stderr=subprocess.STDOUT)
+                        stderr=subprocess.STDOUT,
+                        close_fds=True)
                     cpout, _ = pcp.communicate()
                     if pcp.returncode != 0:
                         self.logger.info(
@@ -197,8 +198,8 @@ class TartifactStore(object):
                 self.logger.info("Untarring {}".format(tar_filename))
                 listtar, _ = subprocess.Popen(['tar', '-tzf', tar_filename],
                                               stdout=subprocess.PIPE,
-                                              stderr=subprocess.PIPE
-                                              ).communicate()
+                                              stderr=subprocess.PIPE,
+                                              close_fds=True).communicate()
                 listtar = listtar.strip().split('\n')
                 self.logger.info('List of files in the tar: ' + str(listtar))
                 if listtar[0].startswith('./'):
@@ -214,7 +215,8 @@ class TartifactStore(object):
                 tarp = subprocess.Popen(
                     ['/bin/bash', '-c', tarcmd],
                     stdout=subprocess.PIPE,
-                    stderr=subprocess.STDOUT)
+                    stderr=subprocess.STDOUT,
+                    close_fds=True)
 
                 tarout, tarerr = tarp.communicate()
                 if tarp.returncode != 0:
@@ -241,9 +243,20 @@ class TartifactStore(object):
             t.join()
             return local_path
 
-    def get_artifact_url(self, artifact):
+    def get_artifact_url(self, artifact, method='GET', get_timestamp=False):
         if 'key' in artifact.keys():
-            return self._get_file_url(artifact['key'])
+            url = self._get_file_url(artifact['key'], method=method)
+        if get_timestamp:
+            timestamp = self._get_file_timestamp(artifact['key'])
+            return (url, timestamp)
+        else:
+            return url
+
+        return None
+
+    def get_artifact_post(self, artifact):
+        if 'key' in artifact.keys():
+            return self._get_file_post(artifact['key'])
         return None
 
     def delete_artifact(self, artifact):
