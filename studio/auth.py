@@ -14,9 +14,8 @@ from util import rand_string
 TOKEN_DIR = os.path.expanduser('~/.studioml/keys')
 HOUR = 3600
 API_KEY_COOLDOWN = 900
-SLEEP_TIME = 0.05
+SLEEP_TIME = 0.5
 MAX_NUM_RETRIES = 100
-
 
 class FirebaseAuth(object):
     def __init__(
