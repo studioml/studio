@@ -305,7 +305,7 @@ class FirebaseProvider(object):
 
     def finish_experiment(self, experiment):
         time_finished = time.time()
-        if isinstance(experiment, str):
+        if isinstance(experiment, six.string_types):
             key = experiment
         else:
             key = experiment.key
@@ -322,7 +322,7 @@ class FirebaseProvider(object):
                          time_finished)
 
     def delete_experiment(self, experiment):
-        if isinstance(experiment, str):
+        if isinstance(experiment, six.string_types):
             experiment_key = experiment
             try:
                 experiment = self.get_experiment(experiment)
@@ -358,7 +358,7 @@ class FirebaseProvider(object):
         self._delete(self._get_experiments_keybase() + experiment.key)
 
     def checkpoint_experiment(self, experiment, blocking=False):
-        if isinstance(experiment, str):
+        if isinstance(experiment, six.string_types):
             key = experiment
             experiment = self.get_experiment(key, getinfo=False)
         else:
@@ -672,7 +672,7 @@ def get_config(config_file=None):
 
             def replace_with_env(config):
                 for key, value in six.iteritems(config):
-                    if isinstance(value, str) and value.startswith('$'):
+                    if isinstance(value, six.string_types) and value.startswith('$'):
                         config[key] = os.environ.get(value[1:])
 
                     elif isinstance(value, dict):

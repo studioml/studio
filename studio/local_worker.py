@@ -25,7 +25,7 @@ class LocalExecutor(object):
     def __init__(self, args):
         self.config = model.get_config()
         if args.config:
-            if isinstance(args.config, str):
+            if isinstance(args.config, six.string_types):
                 with open(args.config) as f:
                     self.config.update(yaml.load(f))
             else:
@@ -41,7 +41,7 @@ class LocalExecutor(object):
         self.logger.debug(self.config)
 
     def run(self, experiment):
-        if isinstance(experiment, str):
+        if isinstance(experiment, six.string_types):
             experiment = self.db.get_experiment(experiment)
         elif not isinstance(experiment, model.Experiment):
             raise ValueError("Unknown type of experiment: " +
