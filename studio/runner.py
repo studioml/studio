@@ -359,15 +359,14 @@ def submit_experiments(
 
     start_time = time.time()
     n_workers = min(multiprocessing.cpu_count() * 2, num_experiments)
-    with closing(multiprocessing.Pool(n_workers)) as p:
+    with closing(multiprocessing.Pool(n_workers, maxtasksperchild=20)) as p:
         experiments = p.map(add_experiment,
                             zip([config] * num_experiments,
                                 [runner_args.python_pkg] * num_experiments,
                                 experiments),
                             chunksize=1)
         p.close()
-        p.terminate()
-        p.join()
+        p.join(1)
     # for e in experiments:
     #     logger.info("Added experiment " + e.key)
     logger.info("Added %s experiments in %s seconds" %
