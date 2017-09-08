@@ -1,6 +1,9 @@
 import os
 import subprocess
 import uuid
+import logging
+
+logging.basicConfig()
 
 from studio import runner
 
@@ -10,6 +13,8 @@ class CompletionService:
         self.config = config    
         self.resources_needed = resources_needed
         self.wm = runner.get_worker_manager(config, cloud)
+        self.logger = logging.getLogger(self.__class__.__name__)
+        self.logger.setLevel(10)
 
     def submitTask(experimentId, clientCodeFile, args):
         project_name = "completion_service_" + experimentId
@@ -38,11 +43,19 @@ class CompletionService:
 
         with model.get_db_provider(self.config) as db:
             db.add_experiment(experiment)
-            runner.submit_experiment()
+        
+        runner.submit_experiments(
+            [experiment],
+            resources_needed=self.resources_needed,
+            config=self.config,
+            logger=self.logger,
+            cloud=self.cloud=None,
+            queue_name=queue_name,
+            False)
 
         return experiment_name              
               
-            
+           
     def submitTaskWithFiles():
         raise NotImplementedError
 

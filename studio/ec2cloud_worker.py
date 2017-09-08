@@ -63,9 +63,8 @@ _instance_specs = {
 
 class EC2WorkerManager(object):
 
-    def __init__(self, auth_cookie=None, verbose=10, branch=None, 
-                user_startup_script=None):
-        self.runner_args = runner_args
+    def __init__(self, auth_cookie=None, verbose=10, branch=None,
+                 user_startup_script=None):
         self.startup_script_file = os.path.join(
             os.path.dirname(__file__),
             'scripts/ec2_worker_startup.sh')

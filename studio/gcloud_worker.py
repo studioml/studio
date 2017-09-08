@@ -24,7 +24,6 @@ class GCloudWorkerManager(object):
 
         self.compute = googleapiclient.discovery.build('compute', 'v1')
 
-        self.runner_args = runner_args
         self.startup_script_file = os.path.join(
             os.path.dirname(__file__),
             'scripts/gcloud_worker_startup.sh')
@@ -143,15 +142,12 @@ class GCloudWorkerManager(object):
 
         with open(self.startup_script_file, 'r') as f:
             startup_script = f.read()
-        if self.runner_args is not None:
-            startup_script = startup_script.replace(
-                "{studioml_branch}", self.branch)
-            startup_script = insert_user_startup_script(
-                self.user_startup_script,
-                startup_script, self.logger)
-        else:
-            startup_script = startup_script.replace(
-                "{studioml_branch}", "master")
+
+        startup_script = startup_script.replace(
+            "{studioml_branch}", self.branch)
+        startup_script = insert_user_startup_script(
+            self.user_startup_script,
+            startup_script, self.logger)
 
         self.logger.info('Startup script:')
         self.logger.info(startup_script)

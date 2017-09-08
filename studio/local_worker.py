@@ -33,7 +33,6 @@ class LocalExecutor(object):
         if args.guest:
             self.config['database']['guest'] = True
 
-        self.db = model.get_db_provider(self.config)
         self.logger = logging.getLogger('LocalExecutor')
         self.logger.setLevel(model.parse_verbosity(self.config.get('verbose')))
         self.logger.debug("Config: ")
@@ -47,59 +46,60 @@ class LocalExecutor(object):
                              str(type(experiment)))
 
         self.logger.info("Experiment key: " + experiment.key)
+        
+        with model.get_db_provider(self.config) as db:
+            db.start_experiment(experiment)
 
-        self.db.start_experiment(experiment)
+            """ Override env variables with those inside the queued message
+            """
+            env = dict(os.environ)
+            if 'env' in self.config.keys():
+                for k, v in self.config['env'].iteritems():
+                    if v is not None:
+                        env[str(k)] = str(v)
 
-        """ Override env variables with those inside the queued message
-        """
-        env = dict(os.environ)
-        if 'env' in self.config.keys():
-            for k, v in self.config['env'].iteritems():
-                if v is not None:
-                    env[str(k)] = str(v)
+            fs_tracker.setup_experiment(env, experiment, clean=True)
+            log_path = fs_tracker.get_artifact_cache('output', experiment.key)
 
-        fs_tracker.setup_experiment(env, experiment, clean=True)
-        log_path = fs_tracker.get_artifact_cache('output', experiment.key)
+            # log_path = os.path.join(model_dir, self.config['log']['name'])
 
-        # log_path = os.path.join(model_dir, self.config['log']['name'])
+            self.logger.debug('Child process environment:')
+            self.logger.debug(str(env))
 
-        self.logger.debug('Child process environment:')
-        self.logger.debug(str(env))
+            sched = BackgroundScheduler()
+            sched.start()
 
-        sched = BackgroundScheduler()
-        sched.start()
+            with open(log_path, 'w') as output_file:
+                p = subprocess.Popen(["python",
+                                      experiment.filename] +
+                                     experiment.args,
+                                     stdout=output_file,
+                                     stderr=subprocess.STDOUT,
+                                     env=env,
+                                     cwd=experiment
+                                     .artifacts['workspace']['local'])
+                # simple hack to show what's in the log file
+                ptail = subprocess.Popen(["tail", "-f", log_path])
 
-        with open(log_path, 'w') as output_file:
-            p = subprocess.Popen(["python",
-                                  experiment.filename] +
-                                 experiment.args,
-                                 stdout=output_file,
-                                 stderr=subprocess.STDOUT,
-                                 env=env,
-                                 cwd=experiment
-                                 .artifacts['workspace']['local'])
-            # simple hack to show what's in the log file
-            ptail = subprocess.Popen(["tail", "-f", log_path])
+                sched.add_job(
+                    lambda: self.db.checkpoint_experiment(experiment),
+                    'interval',
+                    minutes=self.config['saveWorkspaceFrequencyMinutes'])
 
-            sched.add_job(
-                lambda: self.db.checkpoint_experiment(experiment),
-                'interval',
-                minutes=self.config['saveWorkspaceFrequencyMinutes'])
+                def kill_if_stopped():
+                    if self.db.get_experiment(
+                            experiment.key,
+                            getinfo=False).status == 'stopped':
+                        p.kill()
 
-            def kill_if_stopped():
-                if self.db.get_experiment(
-                        experiment.key,
-                        getinfo=False).status == 'stopped':
-                    p.kill()
+                sched.add_job(kill_if_stopped, 'interval', seconds=10)
 
-            sched.add_job(kill_if_stopped, 'interval', seconds=10)
-
-            try:
-                p.wait()
-            finally:
-                ptail.kill()
-                self.db.finish_experiment(experiment)
-                sched.shutdown()
+                try:
+                    p.wait()
+                finally:
+                    ptail.kill()
+                    db.finish_experiment(experiment)
+                    sched.shutdown()
 
 
 def allocate_resources(experiment, config=None, verbose=10):

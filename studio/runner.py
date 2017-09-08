@@ -223,7 +223,7 @@ def main(args=sys.argv):
                 'Specify --force-git to run experiment from dirty git repo')
             sys.exit(1)
 
-    resources_needed = parse_hardware(runner_args, config['cloud'])
+    resources_needed = parse_hardware(runner_args, config['resources_needed'])
     logger.debug('resources requested: ')
     logger.debug(str(resources_needed))
 
@@ -235,8 +235,9 @@ def main(args=sys.argv):
     if runner_args.branch:
         config['cloud']['branch'] = runner_args.branch
 
-    if runner_args.startup_script:
-        config['cloud']['user_startup_script'] = runner_args.user_startup_script
+    if runner_args.user_startup_script:
+        config['cloud']['user_startup_script'] = \
+            runner_args.user_startup_script
 
     if any(runner_args.hyperparam):
         if runner_args.optimizer is "grid":
@@ -247,13 +248,19 @@ def main(args=sys.argv):
                 artifacts,
                 resources_needed,
                 logger)
-            submit_experiments(
+
+            queue_name = submit_experiments(
                 experiments,
-                resources_needed,
-                config,
+                config=config,
+                logger=logger,
+                cloud=runner_args.cloud)
+
+            spin_up_workers(
                 runner_args,
-                logger,
-                resources_needed)
+                config,
+                resources_needed,
+                queue_name=queue_name,
+                verbose=verbose)
         else:
             opt_modulepath = os.path.join(
                 os.path.dirname(os.path.abspath(__file__)),
@@ -278,6 +285,7 @@ def main(args=sys.argv):
                 config['optimizer'],
                 logger)
 
+            workers_started = False
             queue_name = None
             while not optimizer.stop():
                 hyperparam_pop = optimizer.ask()
@@ -292,13 +300,21 @@ def main(args=sys.argv):
                     logger,
                     optimizer=optimizer,
                     hyperparam_tuples=hyperparam_tuples)
+
                 queue_name = submit_experiments(
                     experiments,
-                    resources_needed,
-                    config,
-                    logger,
-                    queue_name,
-                    queue_name is None)
+                    config=config,
+                    logger=logger,
+                    queue_name=queue_name)
+
+                if not workers_started:
+                    spin_up_workers(
+                        runner_args,
+                        config,
+                        resources_needed,
+                        queue_name=queue_name,
+                        verbose=verbose)
+                    workers_started = True
 
                 fitnesses = get_experiment_fitnesses(experiments,
                                                      optimizer, config, logger)
@@ -322,10 +338,8 @@ def main(args=sys.argv):
             resources_needed=resources_needed,
             metric=runner_args.metric)]
         submit_experiments(experiments,
-                           resources_needed,
-                           config,
-                           runner_args,
-                           logger)
+                           config=config,
+                           logger=logger)
 
     db = None
     return
@@ -334,13 +348,13 @@ def main(args=sys.argv):
 def add_experiment(args):
     config, python_pkg, e = args
     e.pythonenv = add_packages(e.pythonenv, python_pkg)
-    db = model.get_db_provider(config)
-    db.add_experiment(e)
+        
+    with model.get_db_provider(config) as db:
+        db.add_experiment(e)
     return e
 
 
-
-def get_worker_manager(config, cloud=None, verbose=10)
+def get_worker_manager(config, cloud=None, verbose=10):
     if cloud is None:
         return None
 
@@ -353,43 +367,33 @@ def get_worker_manager(config, cloud=None, verbose=10)
     )
 
     if cloud in ['gcloud', 'gcspot']:
-        if queue_name is None:
-            cloudconfig = config['cloud']['gcloud']
-            queue_name = 'pubsub_' + str(uuid.uuid4())
-            worker_manager = GCloudWorkerManager(
-                runner_args=runner_args,
-                auth_cookie=auth_cookie,
-                zone=cloudconfig['zone'],
-                branch=config['cloud'].get('branch'),
-                user_startup_script=config['cloud'].get('user_startup_script')
-            )
+        cloudconfig = config['cloud']['gcloud']
+        worker_manager = GCloudWorkerManager(
+            auth_cookie=auth_cookie,
+            zone=cloudconfig['zone'],
+            branch=config['cloud'].get('branch'),
+            user_startup_script=config['cloud'].get('user_startup_script')
+        )
 
-        queue = PubsubQueue(queue_name, verbose=verbose)
-
-    if runner_args.cloud in ['ec2', 'ec2spot']:
-        if queue_name is None:
-            cloudconfig = config['cloud']['aws']
-            queue_name = 'sqs_' + str(uuid.uuid4())
-            worker_manager = EC2WorkerManager(
-                runner_args=runner_args,
-                auth_cookie=auth_cookie
-                branch=config['cloud'].get('branch'),
-                user_startup_script=config['cloud'].get('user_startup_script')
-            )
-
-        queue = SQSQueue(queue_name, verbose=verbose)
+    if cloud in ['ec2', 'ec2spot']:
+        worker_manager = EC2WorkerManager(
+            auth_cookie=auth_cookie,
+            branch=config['cloud'].get('branch'),
+            user_startup_script=config['cloud'].get('user_startup_script')
+        )
+    return worker_manager
 
 
-def get_queue(queue_name=None, cloud=None, verbose=10)
+def get_queue(queue_name=None, cloud=None, verbose=10):
     if cloud in ['gcloud', 'gcspot']:
         if queue_name is None:
             queue_name = 'pubsub_' + str(uuid.uuid4())
         return PubsubQueue(queue_name, verbose=verbose)
 
-    elif runner_args.cloud in ['ec2', 'ec2spot']:
+    elif cloud in ['ec2', 'ec2spot']:
         if queue_name is None:
             queue_name = 'sqs_' + str(uuid.uuid4())
-         return SQSQueue(queue_name, verbose=verbose)
+        return SQSQueue(queue_name, verbose=verbose)
     else:
         if queue_name is None:
             queue = LocalQueue()
@@ -399,53 +403,26 @@ def get_queue(queue_name=None, cloud=None, verbose=10)
             return PubsubQueue(queue_name, verbose=verbose)
 
 
-def submit_experiments(
-        experiments,
-        resources_needed,
+def spin_up_workers(
+        runner_args,
         config,
-        logger,
-        cloud=None,
-        queue_name=None,
-        launch_workers=True):
+        resources_needed,
+        queue_name,
+        verbose=10):
+    cloud = runner_args.cloud
+    if cloud:
 
-    num_experiments = len(experiments)
-    verbose = model.parse_verbosity(config['verbose'])
-    
-
-    start_time = time.time()
-    n_workers = min(multiprocessing.cpu_count() * 2, num_experiments)
-    p = multiprocessing.Pool(n_workers)
-    experiments = p.map(add_experiment,
-                        zip([config] * num_experiments,
-                            [runner_args.python_pkg] * num_experiments,
-                            experiments),
-                        chunksize=1)
-    p.close()
-    p.join()
-    # for e in experiments:
-    #     logger.info("Added experiment " + e.key)
-    logger.info("Added %s experiments in %s seconds" %
-                (num_experiments, int(time.time() - start_time)))
-
-    worker_manager = get_worker_manager(config, cloud, verbose=verbose)
-    '''
-    if cloud is None:
-        if queue_name:
-            pass
-        elif 'queue' in config.keys():
-            queue_name = config['queue']
-    '''
-
-    queue = get_queue(queue_name, cloud, verbose)
-    
-    if cloud and launch_workers:
+        assert cloud in ['gcloud', 'gcspot', 'ec2', 'ec2spot']
         worker_manager = get_worker_manager(config, cloud, verbose=verbose)
 
         if cloud == 'gcloud' or \
            cloud == 'ec2':
 
-            num_workers = int(
-                runner_args.num_workers) if runner_args.num_workers else 1
+            if runner_args.num_workers:
+                num_workers = int(runner_args.num_workers)
+            else:
+                num_workers = 1
+
             for i in range(num_workers):
                 worker_manager.start_worker(
                     queue_name, resources_needed,
@@ -468,27 +445,56 @@ def submit_experiments(
                 queue_upscaling=queue_upscaling,
                 ssh_keypair=runner_args.ssh_keypair,
                 timeout=runner_args.cloud_timeout)
-    
 
+    elif queue_name() == 'local':
+        worker_args = ['studio-local-worker']
+
+        if config:
+            worker_args += ['--config=' + runner_args.config]
+
+        if runner_args.guest:
+            worker_args += ['--guest']
+
+        # logger.info('worker args: {}'.format(worker_args))
+        if not num_workers or int(runner_args.num_workers) == 1:
+            local_worker.main(worker_args)
+        else:
+            raise NotImplementedError("Multiple local workers are not " +
+                                      "implemented yet")
+
+
+def submit_experiments(
+        experiments,
+        config,
+        logger,
+        cloud=None,
+        queue_name=None,
+        python_pkg=[]):
+
+    num_experiments = len(experiments)
+    verbose = model.parse_verbosity(config['verbose'])
+
+    start_time = time.time()
+    n_workers = min(multiprocessing.cpu_count() * 2, num_experiments)
+    p = multiprocessing.Pool(n_workers)
+    experiments = p.map(add_experiment,
+                        zip([config] * num_experiments,
+                            [python_pkg] * num_experiments,
+                            experiments),
+                        chunksize=1)
+    p.close()
+    p.join()
+    # for e in experiments:
+    #     logger.info("Added experiment " + e.key)
+    logger.info("Added %s experiments in %s seconds" %
+                (num_experiments, int(time.time() - start_time)))
+
+    queue = get_queue(queue_name, cloud, verbose)
     for e in experiments:
         queue.enqueue(json.dumps({
             'experiment': e.__dict__,
             'config': config}))
 
-    if queue.get_name() == 'local':
-        worker_args = ['studio-local-worker']
-
-        if runner_args.config:
-            worker_args += ['--config=' + runner_args.config]
-        if runner_args.guest:
-            worker_args += ['--guest']
-
-        logger.info('worker args: {}'.format(worker_args))
-        if not runner_args.num_workers or int(runner_args.num_workers) == 1:
-            local_worker.main(worker_args)
-        else:
-            raise NotImplementedError("Multiple local workers are not " +
-                                      "implemented yet")
     return queue.get_name()
 
 
