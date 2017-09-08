@@ -77,12 +77,13 @@ class TartifactStore(object):
                 local_nameonly = '.'
 
                 ignore_filepath = os.path.join(local_basepath,
-                    ".studioml_ignore")
+                                               ".studioml_ignore")
                 if os.path.exists(ignore_filepath) and \
-                    not os.path.isdir(ignore_filepath):
+                        not os.path.isdir(ignore_filepath):
                     ignore_arg = '--exclude-from=%s' % ignore_filepath
                     self.logger.debug('.studioml_ignore found,'
-                        ' files listed inside will not be tarred or uploaded')
+                                      ' files listed inside will'
+                                      ' not be tarred or uploaded')
             else:
                 local_nameonly = os.path.basename(local_path)
                 local_basepath = os.path.dirname(local_path)

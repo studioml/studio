@@ -484,7 +484,7 @@ def get_experiment_fitnesses(experiments, optimizer, config, logger):
 
         while sum(has_result) < len(experiments):
             for i, experiment in enumerate(experiments):
-                if float(sum(has_result)) / len(experiments) >= skip_gen_thres \
+                if float(sum(has_result)) / len(experiments) >= skip_gen_thres\
                         and time.time() - result_timestamp > skip_gen_timeout:
                     logger.warn(
                         "Skipping to next gen with %s of solutions evaled" %
