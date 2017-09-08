@@ -6,6 +6,9 @@ import string
 import struct
 import time
 import sys
+import shutil
+import subprocess
+import os
 import numpy as np
 
 from tensorflow.core.util import event_pb2
@@ -62,6 +65,23 @@ def event_reader(fileobj):
             break
 
     fileobj.close()
+
+
+def rsync_cp(source, dest, ignore_arg='', logger=None):
+    if os.path.exists(dest):
+        shutil.rmtree(dest) if os.path.isdir(dest) else os.remove(dest)
+    os.makedirs(dest)
+
+    pcp = subprocess.Popen(
+        ['rsync', ignore_arg, '-aHAXE',
+         source + '/', dest],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT)
+    cpout, _ = pcp.communicate()
+    if pcp.returncode != 0 and logger is not None:
+        logger.info(
+            'rsync returned non-zero exit code. Output:')
+        logger.info(cpout)
 
 
 class Progbar(object):

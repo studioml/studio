@@ -20,7 +20,7 @@ from sqs_queue import SQSQueue
 from gcloud_worker import GCloudWorkerManager
 from ec2cloud_worker import EC2WorkerManager
 from hyperparameter import HyperparameterParser
-from util import rand_string, Progbar
+from util import rand_string, Progbar, rsync_cp
 
 import model
 import auth
@@ -629,7 +629,15 @@ def add_hyperparam_experiments(
                 }
             })
 
-            shutil.copytree(workspace_orig, workspace_new)
+            ignore_arg = ''
+            ignore_filepath = os.path.join(workspace_orig,
+                                           ".studioml_ignore")
+            if os.path.exists(ignore_filepath) and \
+                    not os.path.isdir(ignore_filepath):
+                ignore_arg = "--exclude-from=%s" % ignore_filepath
+            rsync_cp(workspace_orig, workspace_new, ignore_arg, logger)
+
+            # shutil.copytree(workspace_orig, workspace_new)
 
             with open(os.path.join(workspace_new, exec_filename), 'r') as f:
                 script_text = f.read()
