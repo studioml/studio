@@ -50,4 +50,4 @@ class LocalQueue:
         self.acknowledge(key)
 
     def get_name(self):
-        return self.path
+        return 'local'

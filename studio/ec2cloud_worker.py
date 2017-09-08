@@ -63,7 +63,7 @@ _instance_specs = {
 
 class EC2WorkerManager(object):
 
-    def __init__(self, auth_cookie=None, verbose=10, branch='master', 
+    def __init__(self, auth_cookie=None, verbose=10, branch=None, 
                 user_startup_script=None):
         self.runner_args = runner_args
         self.startup_script_file = os.path.join(
@@ -81,7 +81,7 @@ class EC2WorkerManager(object):
 
         self.prices = self._get_ondemand_prices(_instance_specs.keys())
 
-        self.branch = branch
+        self.branch = branch if branch else 'master'
         self.user_startup_script = user_startup_script
 
     def _get_image_id(self):

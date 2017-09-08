@@ -35,7 +35,7 @@ class GCloudWorkerManager(object):
         self.logger.setLevel(verbose)
         self.auth_cookie = auth_cookie
         self.user_startup_script = user_startup_script
-        self.branch = branch
+        self.branch = branch if branch else 'master'
 
     def start_worker(
             self,

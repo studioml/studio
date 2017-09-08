@@ -6,9 +6,10 @@ from studio import runner
 
 class CompletionService:
 
-    def __init__(self, config=None, resources_needed=None):
+    def __init__(self, config=None, resources_needed=None, cloud=None):
         self.config = config    
-        self.resources_needed
+        self.resources_needed = resources_needed
+        self.wm = runner.get_worker_manager(config, cloud)
 
     def submitTask(experimentId, clientCodeFile, args):
         project_name = "completion_service_" + experimentId

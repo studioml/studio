@@ -232,6 +232,12 @@ def main(args=sys.argv):
     artifacts.update(parse_artifacts(runner_args.capture_once, mutable=False))
     artifacts.update(parse_external_artifacts(runner_args.reuse, db))
 
+    if runner_args.branch:
+        config['cloud']['branch'] = runner_args.branch
+
+    if runner_args.startup_script:
+        config['cloud']['user_startup_script'] = runner_args.user_startup_script
+
     if any(runner_args.hyperparam):
         if runner_args.optimizer is "grid":
             experiments = add_hyperparam_experiments(
@@ -290,7 +296,6 @@ def main(args=sys.argv):
                     experiments,
                     resources_needed,
                     config,
-                    runner_args,
                     logger,
                     queue_name,
                     queue_name is None)
@@ -349,21 +354,27 @@ def get_worker_manager(config, cloud=None, verbose=10)
 
     if cloud in ['gcloud', 'gcspot']:
         if queue_name is None:
+            cloudconfig = config['cloud']['gcloud']
             queue_name = 'pubsub_' + str(uuid.uuid4())
             worker_manager = GCloudWorkerManager(
                 runner_args=runner_args,
                 auth_cookie=auth_cookie,
-                zone=config['cloud']['zone']
+                zone=cloudconfig['zone'],
+                branch=config['cloud'].get('branch'),
+                user_startup_script=config['cloud'].get('user_startup_script')
             )
 
         queue = PubsubQueue(queue_name, verbose=verbose)
 
     if runner_args.cloud in ['ec2', 'ec2spot']:
         if queue_name is None:
+            cloudconfig = config['cloud']['aws']
             queue_name = 'sqs_' + str(uuid.uuid4())
             worker_manager = EC2WorkerManager(
                 runner_args=runner_args,
                 auth_cookie=auth_cookie
+                branch=config['cloud'].get('branch'),
+                user_startup_script=config['cloud'].get('user_startup_script')
             )
 
         queue = SQSQueue(queue_name, verbose=verbose)
@@ -400,22 +411,6 @@ def submit_experiments(
     num_experiments = len(experiments)
     verbose = model.parse_verbosity(config['verbose'])
     
-    '''
-    if runner_args.cloud is None:
-        queue_name = 'local'
-        if 'queue' in config.keys():
-            queue_name = config['queue']
-        if runner_args.queue:
-            queue_name = runner_args.queue
-    '''
-
-    if cloud is None:
-        if queue_name:
-            pass
-        elif 'queue' in config.keys():
-            queue_name = config['queue']
-        else:
-            queue_name = 'local'
 
     start_time = time.time()
     n_workers = min(multiprocessing.cpu_count() * 2, num_experiments)
@@ -433,6 +428,14 @@ def submit_experiments(
                 (num_experiments, int(time.time() - start_time)))
 
     worker_manager = get_worker_manager(config, cloud, verbose=verbose)
+    '''
+    if cloud is None:
+        if queue_name:
+            pass
+        elif 'queue' in config.keys():
+            queue_name = config['queue']
+    '''
+
     queue = get_queue(queue_name, cloud, verbose)
     
     if cloud and launch_workers:
@@ -472,7 +475,7 @@ def submit_experiments(
             'experiment': e.__dict__,
             'config': config}))
 
-    if queue_name == 'local':
+    if queue.get_name() == 'local':
         worker_args = ['studio-local-worker']
 
         if runner_args.config:
@@ -486,7 +489,7 @@ def submit_experiments(
         else:
             raise NotImplementedError("Multiple local workers are not " +
                                       "implemented yet")
-    return queue_name
+    return queue.get_name()
 
 
 def get_experiment_fitnesses(experiments, optimizer, config, logger):
