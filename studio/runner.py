@@ -361,10 +361,11 @@ def submit_experiments(
     n_workers = min(multiprocessing.cpu_count() * 2, num_experiments)
     with closing(multiprocessing.Pool(n_workers, maxtasksperchild=20)) as p:
         experiments = p.imap_unordered(add_experiment,
-                            zip([config] * num_experiments,
-                                [runner_args.python_pkg] * num_experiments,
-                                experiments),
-                            chunksize=1)
+                                       zip([config] * num_experiments,
+                                           [runner_args.python_pkg] *
+                                           num_experiments,
+                                           experiments),
+                                       chunksize=1)
         p.close()
         p.join()
     # for e in experiments:
@@ -483,7 +484,7 @@ def get_experiment_fitnesses(experiments, optimizer, config, logger):
 
         while sum(has_result) < len(experiments):
             for i, experiment in enumerate(experiments):
-                if float(sum(has_result))/len(experiments) >= skip_gen_thres \
+                if float(sum(has_result)) / len(experiments) >= skip_gen_thres \
                         and time.time() - result_timestamp > skip_gen_timeout:
                     logger.warn(
                         "Skipping to next gen with %s of solutions evaled" %

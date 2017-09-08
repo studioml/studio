@@ -17,6 +17,7 @@ API_KEY_COOLDOWN = 900
 SLEEP_TIME = 0.5
 MAX_NUM_RETRIES = 100
 
+
 class FirebaseAuth(object):
     def __init__(
             self,
@@ -101,7 +102,6 @@ class FirebaseAuth(object):
                         counter += 1
                     else:
                         return
-
 
     def sign_in_with_email(self):
         self.user = \
