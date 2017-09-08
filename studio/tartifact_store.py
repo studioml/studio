@@ -81,6 +81,8 @@ class TartifactStore(object):
                 if os.path.exists(ignore_filepath) and \
                     not os.path.isdir(ignore_filepath):
                     ignore_arg = '--exclude-from=%s' % ignore_filepath
+                    self.logger.debug('.studioml_ignore found,'
+                        ' files listed inside will not be tarred or uploaded')
             else:
                 local_nameonly = os.path.basename(local_path)
                 local_basepath = os.path.dirname(local_path)
@@ -138,7 +140,6 @@ class TartifactStore(object):
 
             def finish_upload():
                 self._upload_file(key, tar_filename)
-
                 os.remove(tar_filename)
 
             t = Thread(target=finish_upload)
