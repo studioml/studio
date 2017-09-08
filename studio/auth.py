@@ -13,6 +13,7 @@ from util import rand_string
 
 TOKEN_DIR = os.path.expanduser('~/.studioml/keys')
 HOUR = 3600
+API_KEY_COOLDOWN = 900
 SLEEP_TIME = 0.05
 MAX_NUM_RETRIES = 100
 
@@ -91,7 +92,7 @@ class FirebaseAuth(object):
 
             self.user = user
             self.expired = False
-            if time.time() - os.path.getmtime(api_key) > HOUR:
+            if time.time() - os.path.getmtime(api_key) > API_KEY_COOLDOWN:
                 counter = 0
                 while counter < MAX_NUM_RETRIES:
                     try:
