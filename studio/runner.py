@@ -334,25 +334,88 @@ def add_experiment(args):
     return e
 
 
+
+def get_worker_manager(config, cloud=None, verbose=10)
+    if cloud is None:
+        return None
+
+    assert cloud in ['gcloud', 'gcspot', 'ec2', 'ec2spot']
+
+    auth_cookie = None if config['database'].get('guest') \
+        else os.path.join(
+        auth.TOKEN_DIR,
+        config['database']['apiKey']
+    )
+
+    if cloud in ['gcloud', 'gcspot']:
+        if queue_name is None:
+            queue_name = 'pubsub_' + str(uuid.uuid4())
+            worker_manager = GCloudWorkerManager(
+                runner_args=runner_args,
+                auth_cookie=auth_cookie,
+                zone=config['cloud']['zone']
+            )
+
+        queue = PubsubQueue(queue_name, verbose=verbose)
+
+    if runner_args.cloud in ['ec2', 'ec2spot']:
+        if queue_name is None:
+            queue_name = 'sqs_' + str(uuid.uuid4())
+            worker_manager = EC2WorkerManager(
+                runner_args=runner_args,
+                auth_cookie=auth_cookie
+            )
+
+        queue = SQSQueue(queue_name, verbose=verbose)
+
+
+def get_queue(queue_name=None, cloud=None, verbose=10)
+    if cloud in ['gcloud', 'gcspot']:
+        if queue_name is None:
+            queue_name = 'pubsub_' + str(uuid.uuid4())
+        return PubsubQueue(queue_name, verbose=verbose)
+
+    elif runner_args.cloud in ['ec2', 'ec2spot']:
+        if queue_name is None:
+            queue_name = 'sqs_' + str(uuid.uuid4())
+         return SQSQueue(queue_name, verbose=verbose)
+    else:
+        if queue_name is None:
+            queue = LocalQueue()
+            queue.clean()
+            return queue
+        else:
+            return PubsubQueue(queue_name, verbose=verbose)
+
+
 def submit_experiments(
         experiments,
         resources_needed,
         config,
-        runner_args,
         logger,
+        cloud=None,
         queue_name=None,
         launch_workers=True):
 
     num_experiments = len(experiments)
-    db = model.get_db_provider(config)
     verbose = model.parse_verbosity(config['verbose'])
-
+    
+    '''
     if runner_args.cloud is None:
         queue_name = 'local'
         if 'queue' in config.keys():
             queue_name = config['queue']
         if runner_args.queue:
             queue_name = runner_args.queue
+    '''
+
+    if cloud is None:
+        if queue_name:
+            pass
+        elif 'queue' in config.keys():
+            queue_name = config['queue']
+        else:
+            queue_name = 'local'
 
     start_time = time.time()
     n_workers = min(multiprocessing.cpu_count() * 2, num_experiments)
@@ -369,77 +432,40 @@ def submit_experiments(
     logger.info("Added %s experiments in %s seconds" %
                 (num_experiments, int(time.time() - start_time)))
 
-    if runner_args.cloud is not None:
-        assert runner_args.cloud in ['gcloud', 'gcspot', 'ec2', 'ec2spot']
+    worker_manager = get_worker_manager(config, cloud, verbose=verbose)
+    queue = get_queue(queue_name, cloud, verbose)
+    
+    if cloud and launch_workers:
+        worker_manager = get_worker_manager(config, cloud, verbose=verbose)
 
-        assert runner_args.queue is None, \
-            '--queue argument cannot be provided with --cloud argument'
-        auth_cookie = None if config['database'].get('guest') \
-            else os.path.join(
-            auth.TOKEN_DIR,
-            config['database']['apiKey']
-        )
+        if cloud == 'gcloud' or \
+           cloud == 'ec2':
 
-        if runner_args.cloud in ['gcloud', 'gcspot']:
-            if queue_name is None:
-                queue_name = 'pubsub_' + str(uuid.uuid4())
-                worker_manager = GCloudWorkerManager(
-                    runner_args=runner_args,
-                    auth_cookie=auth_cookie,
-                    zone=config['cloud']['zone']
-                )
-
-            queue = PubsubQueue(queue_name, verbose=verbose)
-
-        if runner_args.cloud in ['ec2', 'ec2spot']:
-            if queue_name is None:
-                queue_name = 'sqs_' + str(uuid.uuid4())
-                worker_manager = EC2WorkerManager(
-                    runner_args=runner_args,
-                    auth_cookie=auth_cookie
-                )
-
-            queue = SQSQueue(queue_name, verbose=verbose)
-
-        if launch_workers:
-            if runner_args.cloud == 'gcloud' or \
-               runner_args.cloud == 'ec2':
-
-                num_workers = int(
-                    runner_args.num_workers) if runner_args.num_workers else 1
-                for i in range(num_workers):
-                    worker_manager.start_worker(
-                        queue_name, resources_needed,
-                        ssh_keypair=runner_args.ssh_keypair,
-                        timeout=runner_args.cloud_timeout)
-            else:
-                assert runner_args.bid is not None
-                if runner_args.num_workers:
-                    start_workers = runner_args.num_workers
-                    queue_upscaling = False
-                else:
-                    start_workers = 1
-                    queue_upscaling = True
-
-                worker_manager.start_spot_workers(
-                    queue_name,
-                    runner_args.bid,
-                    resources_needed,
-                    start_workers=start_workers,
-                    queue_upscaling=queue_upscaling,
+            num_workers = int(
+                runner_args.num_workers) if runner_args.num_workers else 1
+            for i in range(num_workers):
+                worker_manager.start_worker(
+                    queue_name, resources_needed,
                     ssh_keypair=runner_args.ssh_keypair,
                     timeout=runner_args.cloud_timeout)
-    else:
-        if queue_name == 'local':
-            queue = LocalQueue()
-            queue.clean()
-        elif queue_name.startswith('sqs_'):
-            queue = SQSQueue(queue_name, verbose=verbose)
         else:
-            queue = PubsubQueue(
+            assert runner_args.bid is not None
+            if runner_args.num_workers:
+                start_workers = runner_args.num_workers
+                queue_upscaling = False
+            else:
+                start_workers = 1
+                queue_upscaling = True
+
+            worker_manager.start_spot_workers(
                 queue_name,
-                config['database']['projectId'],
-                verbose=verbose)
+                runner_args.bid,
+                resources_needed,
+                start_workers=start_workers,
+                queue_upscaling=queue_upscaling,
+                ssh_keypair=runner_args.ssh_keypair,
+                timeout=runner_args.cloud_timeout)
+    
 
     for e in experiments:
         queue.enqueue(json.dumps({
