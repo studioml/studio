@@ -609,7 +609,7 @@ def add_hyperparam_experiments(
         ('hyperparam_' + experiment_name_base)
 
     workspace_orig = artifacts['workspace']['local'] \
-                if 'workspace' in artifacts.keys() else '.'
+        if 'workspace' in artifacts.keys() else '.'
 
     ignore_arg = ''
     ignore_filepath = os.path.join(workspace_orig, ".studioml_ignore")
@@ -625,7 +625,6 @@ def add_hyperparam_experiments(
             experiment_name += "__opt__%s__%s" % (rand_string(32),
                                                   int(time.time()))
             experiment_name = experiment_name.replace('.', '_')
-
 
             workspace_new = fs_tracker.get_artifact_cache(
                 'workspace', experiment_name)
@@ -650,7 +649,7 @@ def add_hyperparam_experiments(
                                                      'mutable': False}
                 else:
                     with open(os.path.join(workspace_new, exec_filename),
-                        'rb') as f:
+                              'rb') as f:
                         script_text = f.read()
 
                     script_text = re.sub(
@@ -661,7 +660,7 @@ def add_hyperparam_experiments(
                         script_text)
 
                     with open(os.path.join(workspace_new, exec_filename),
-                        'wb') as f:
+                              'wb') as f:
                         f.write(script_text)
 
             experiments.append(model.create_experiment(
