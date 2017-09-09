@@ -78,8 +78,7 @@ class TartifactStore(object):
                 local_basepath = os.path.dirname(local_path)
 
             ignore_arg = ''
-            ignore_filepath = os.path.join(local_basepath,
-                                           ".studioml_ignore")
+            ignore_filepath = os.path.join(local_basepath, ".studioml_ignore")
             if os.path.exists(ignore_filepath) and \
                     not os.path.isdir(ignore_filepath):
                 ignore_arg = "--exclude-from=%s" % ignore_filepath

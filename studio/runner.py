@@ -608,6 +608,15 @@ def add_hyperparam_experiments(
     project = runner_args.project if runner_args.project else \
         ('hyperparam_' + experiment_name_base)
 
+    workspace_orig = artifacts['workspace']['local'] \
+                if 'workspace' in artifacts.keys() else '.'
+
+    ignore_arg = ''
+    ignore_filepath = os.path.join(workspace_orig, ".studioml_ignore")
+    if os.path.exists(ignore_filepath) and \
+            not os.path.isdir(ignore_filepath):
+        ignore_arg = "--exclude-from=%s" % ignore_filepath
+
     def create_experiments(hyperparam_tuples):
         experiments = []
         # experiment_names = {}
@@ -617,8 +626,7 @@ def add_hyperparam_experiments(
                                                   int(time.time()))
             experiment_name = experiment_name.replace('.', '_')
 
-            workspace_orig = artifacts['workspace']['local'] \
-                if 'workspace' in artifacts.keys() else '.'
+
             workspace_new = fs_tracker.get_artifact_cache(
                 'workspace', experiment_name)
 
@@ -630,18 +638,8 @@ def add_hyperparam_experiments(
                 }
             })
 
-            ignore_arg = ''
-            ignore_filepath = os.path.join(workspace_orig,
-                                           ".studioml_ignore")
-            if os.path.exists(ignore_filepath) and \
-                    not os.path.isdir(ignore_filepath):
-                ignore_arg = "--exclude-from=%s" % ignore_filepath
             rsync_cp(workspace_orig, workspace_new, ignore_arg, logger)
-
             # shutil.copytree(workspace_orig, workspace_new)
-
-            with open(os.path.join(workspace_new, exec_filename), 'r') as f:
-                script_text = f.read()
 
             for param_name, param_value in hyperparam_tuple.iteritems():
                 if isinstance(param_value, np.ndarray):
@@ -651,6 +649,10 @@ def add_hyperparam_experiments(
                     current_artifacts[param_name] = {'local': array_filepath,
                                                      'mutable': False}
                 else:
+                    with open(os.path.join(workspace_new, exec_filename),
+                        'rb') as f:
+                        script_text = f.read()
+
                     script_text = re.sub(
                         '\\b' +
                         param_name +
@@ -658,8 +660,9 @@ def add_hyperparam_experiments(
                         str(param_value),
                         script_text)
 
-            with open(os.path.join(workspace_new, exec_filename), 'w') as f:
-                f.write(script_text)
+                    with open(os.path.join(workspace_new, exec_filename),
+                        'wb') as f:
+                        f.write(script_text)
 
             experiments.append(model.create_experiment(
                 filename=exec_filename,
