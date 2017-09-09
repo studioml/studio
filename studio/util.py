@@ -67,14 +67,13 @@ def event_reader(fileobj):
     fileobj.close()
 
 
-def rsync_cp(source, dest, ignore_arg='', add_slash=False, logger=None):
+def rsync_cp(source, dest, ignore_arg='', logger=None):
     if os.path.exists(dest):
         shutil.rmtree(dest) if os.path.isdir(dest) else os.remove(dest)
-    os.makedirs(dest)
 
-    if add_slash:
-        source += "/"
     if ignore_arg != '':
+        os.makedirs(dest)
+        source += "/"
         tool = 'rsync'
         args = [tool, ignore_arg, '-aHAXE', source, dest]
     else:
