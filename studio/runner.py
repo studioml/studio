@@ -340,11 +340,19 @@ def main(args=sys.argv):
             artifacts=artifacts,
             resources_needed=resources_needed,
             metric=runner_args.metric)]
-        submit_experiments(experiments,
+    
+        queue_name = submit_experiments(
+                           experiments,
                            config=config,
                            logger=logger)
 
-    db = None
+        spin_up_workers(
+            runner_args,
+            config,
+            resources_needed,
+            queue_name=queue_name,
+            verbose=verbose)
+
     return
 
 
@@ -398,9 +406,11 @@ def get_queue(queue_name=None, cloud=None, verbose=10):
             queue_name = 'sqs_' + str(uuid.uuid4())
         return SQSQueue(queue_name, verbose=verbose)
     else:
-        if queue_name is None:
+        if queue_name is None or queue_name == 'local':
             queue = LocalQueue()
-            queue.clean()
+            # not cleaning is important to be able to re-use
+            # the queue from several processes
+            # queue.clean()
             return queue
         else:
             return PubsubQueue(queue_name, verbose=verbose)
@@ -449,17 +459,17 @@ def spin_up_workers(
                 ssh_keypair=runner_args.ssh_keypair,
                 timeout=runner_args.cloud_timeout)
 
-    elif queue_name() == 'local':
+    elif queue_name == 'local':
         worker_args = ['studio-local-worker']
 
-        if config:
+        if runner_args.config:
             worker_args += ['--config=' + runner_args.config]
 
         if runner_args.guest:
             worker_args += ['--guest']
 
         # logger.info('worker args: {}'.format(worker_args))
-        if not num_workers or int(runner_args.num_workers) == 1:
+        if not runner_args.num_workers or int(runner_args.num_workers) == 1:
             local_worker.main(worker_args)
         else:
             raise NotImplementedError("Multiple local workers are not " +

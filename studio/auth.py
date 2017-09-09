@@ -4,6 +4,7 @@ import time
 import json
 import shutil
 import atexit
+import tempfile
 try:
     from apscheduler.schedulers.background import BackgroundScheduler
 except BaseException:
@@ -109,7 +110,11 @@ class FirebaseAuth(object):
            time.time() - os.path.getmtime(api_key) > HOUR:
             # Rename to ensure atomic writes to json file
             # (technically more safe, but slower)
-            tmp_api_key = '/tmp/api_key_%s' % rand_string(32)
+            
+            tmp_api_key = os.path.join(
+                tempfile.gettempdir(), 
+                'api_key_%s' % rand_string(32))
+
             with open(tmp_api_key, 'wb') as f:
                 json.dump(self.user, f)
                 f.flush()

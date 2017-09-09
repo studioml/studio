@@ -216,11 +216,11 @@ def stubtest_worker(
 
     queue.clean()
 
-    db = model.get_db_provider(model.get_config(config_name))
-    try:
-        db.delete_experiment(experiment_name)
-    except Exception:
-        pass
+    with model.get_db_provider(model.get_config(config_name)) as db:
+        try:
+            db.delete_experiment(experiment_name)
+        except Exception:
+            pass
 
     p = subprocess.Popen(['studio', 'run'] + runner_args +
                          ['--config=' + config_name,
@@ -238,6 +238,7 @@ def stubtest_worker(
     if pout:
         logger.debug("studio run output: \n" + pout)
 
+    db = model.get_db_provider(model.get_config(config_name))
     experiments = [e for e in db.get_user_experiments()
                    if e.key.startswith(experiment_name)]
 

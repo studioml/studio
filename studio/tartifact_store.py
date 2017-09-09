@@ -20,7 +20,7 @@ logging.basicConfig()
 
 class TartifactStore(object):
 
-    def __init__(self, measure_timestamp_diff=True):
+    def __init__(self, measure_timestamp_diff=False):
 
         if measure_timestamp_diff:
             try:
