@@ -635,7 +635,7 @@ def add_hyperparam_experiments(
             if os.path.exists(ignore_filepath) and \
                     not os.path.isdir(ignore_filepath):
                 ignore_arg = "--exclude-from=%s" % ignore_filepath
-            rsync_cp(workspace_orig, workspace_new, ignore_arg, logger)
+            rsync_cp(workspace_orig, workspace_new, ignore_arg, True, logger)
 
             # shutil.copytree(workspace_orig, workspace_new)
 

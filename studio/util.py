@@ -67,20 +67,27 @@ def event_reader(fileobj):
     fileobj.close()
 
 
-def rsync_cp(source, dest, ignore_arg='', logger=None):
+def rsync_cp(source, dest, ignore_arg='', add_slash=False, logger=None):
     if os.path.exists(dest):
         shutil.rmtree(dest) if os.path.isdir(dest) else os.remove(dest)
     os.makedirs(dest)
 
-    pcp = subprocess.Popen(
-        ['rsync', ignore_arg, '-aHAXE',
-         source + '/', dest],
+    if add_slash:
+        source += "/"
+    if ignore_arg != '':
+        tool = 'rsync'
+        args = [tool, ignore_arg, '-aHAXE', source, dest]
+    else:
+        tool = 'cp'
+        args = [tool, '-pR', source, dest]
+
+    pcp = subprocess.Popen(args,
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT)
     cpout, _ = pcp.communicate()
     if pcp.returncode != 0 and logger is not None:
         logger.info(
-            'rsync returned non-zero exit code. Output:')
+            '%s returned non-zero exit code. Output:' % tool)
         logger.info(cpout)
 
 

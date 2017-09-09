@@ -98,7 +98,7 @@ class TartifactStore(object):
                             .format(ignore_filepath)
                     self.logger.debug(debug_str)
 
-                    util.rsync_cp(local_path, cache_dir, ignore_arg,
+                    util.rsync_cp(local_path, cache_dir, ignore_arg, False,
                                   self.logger)
 
             debug_str = ("Tarring and uploading directrory. " +
