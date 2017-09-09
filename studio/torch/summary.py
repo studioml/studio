@@ -64,7 +64,7 @@ class Reporter(object):
         if self._last_step % self._log_interval == 0:
             def smooth(values):
                 return (sum(values) / len(values)) if values else 0.0
-            metrics = ','.join(["%s = %.5f" % (k, smooth(v)) 
+            metrics = ','.join(["%s = %.5f" % (k, smooth(v))
                                 for k, v in self._metrics.iteritems()])
             if self._last_reported_time:
                 elapsed_secs = time.time() - self._last_reported_time
@@ -73,7 +73,7 @@ class Reporter(object):
                     elapsed_steps = float(
                         self._last_step - self._last_reported_step)
                     self._writer.add(
-                        self._last_step, 'step/sec', 
+                        self._last_step, 'step/sec',
                         elapsed_steps / elapsed_secs)
             print("Step %d: %s" % (self._last_step, metrics))
             self._last_reported_time = time.time()
