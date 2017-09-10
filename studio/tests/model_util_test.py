@@ -189,10 +189,10 @@ class ModelPipeTest(unittest.TestCase):
                      "should have keras for this test")
     def test_model_pipe_keras(self):
 
-        model = keras.models.Sequential()
-        model.add(keras.layers.Flatten(input_shape=(1, 28, 28)))
-        model.add(keras.layers.Dense(128, activation='relu'))
-        model.add(keras.layers.Dense(10, activation='softmax'))
+        model = Sequential()
+        model.add(Flatten(input_shape=(1, 28, 28)))
+        model.add(Dense(128, activation='relu'))
+        model.add(Dense(10, activation='softmax'))
 
         p = model_util.ModelPipe()
         input_data = [np.random.random((1, 1, 28, 28)) for _ in range(2)]
