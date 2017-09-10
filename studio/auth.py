@@ -110,9 +110,9 @@ class FirebaseAuth(object):
            time.time() - os.path.getmtime(api_key) > HOUR:
             # Rename to ensure atomic writes to json file
             # (technically more safe, but slower)
-            
+
             tmp_api_key = os.path.join(
-                tempfile.gettempdir(), 
+                tempfile.gettempdir(),
                 'api_key_%s' % rand_string(32))
 
             with open(tmp_api_key, 'wb') as f:

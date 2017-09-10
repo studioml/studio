@@ -2,8 +2,9 @@ import uuid
 import unittest
 from completion_service import CompletionService
 
+
 class CompletionServiceTest(unittest.TestCase):
-   
+
     def test_two_experiments(self):
         experimentId = str(uuid.uuid4())
         with CompletionService(experimentId) as cs:

@@ -15,8 +15,3 @@ retval = client_module.clientFunction(args)
 
 with open(fs_tracker.get_artifact('retval'), 'w') as f:
     f.write(pickle.dumps(retval))
-
-
-
-
-

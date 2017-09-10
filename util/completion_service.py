@@ -7,13 +7,18 @@ import time
 import pickle
 import tempfile
 
-logging.basicConfig()
-
 from studio import runner, model
+
+logging.basicConfig()
 
 
 class CompletionServiceManager:
-    def __init__(self, config=None, resources_needed=None, cloud=None, verbose=10):
+    def __init__(
+            self,
+            config=None,
+            resources_needed=None,
+            cloud=None,
+            verbose=10):
         self.config = config
         self.experimentId = experimentId
         self.project_name = "completion_service_" + experimentId
@@ -31,15 +36,15 @@ class CompletionServiceManager:
         if experimentId not in self.completion_services.keys():
             self.completion_services[experimentId] = \
                 CompletionService(
-                    experimentId, 
-                    self.config, 
+                    experimentId,
+                    self.config,
                     self.resources_needed,
                     self.cloud,
                     self.verbose).__enter__()
 
-        return self.completion_services[experimentId].submitTask(clientCodeFile, args)
+        return self.completion_services[experimentId].submitTask(
+            clientCodeFile, args)
 
-    
     def __enter__(self):
         return self
 
@@ -50,8 +55,14 @@ class CompletionServiceManager:
 
 class CompletionService:
 
-    def __init__(self, experimentId, config=None, resources_needed=None, cloud=None, verbose=10):
-        self.config = model.get_config(config)    
+    def __init__(
+            self,
+            experimentId,
+            config=None,
+            resources_needed=None,
+            cloud=None,
+            verbose=10):
+        self.config = model.get_config(config)
         self.cloud = None
         self.experimentId = experimentId
         self.project_name = "completion_service_" + experimentId
@@ -66,24 +77,23 @@ class CompletionService:
         self.bid = '100%'
         self.cloud_timeout = 100
 
-
     def __enter__(self):
         if self.wm:
             self.wm.start_spot_workers(
-                    self.queue_name,
-                    self.bid,
-                    self.resources_needed,
-                    start_workers=1,
-                    queue_upscaling=True,
-                    ssh_keypair='peterz-k1',
-                    timeout=self.cloud_timeout)
+                self.queue_name,
+                self.bid,
+                self.resources_needed,
+                start_workers=1,
+                queue_upscaling=True,
+                ssh_keypair='peterz-k1',
+                timeout=self.cloud_timeout)
         else:
             self.p = subprocess.Popen([
-                  'studio-local-worker',
-                  '--verbose=error',
-                  '--timeout=' + str(self.cloud_timeout)],
-                  close_fds=True)
- 
+                'studio-local-worker',
+                '--verbose=error',
+                '--timeout=' + str(self.cloud_timeout)],
+                close_fds=True)
+
         return self
 
     def __exit__(self, *args):
@@ -95,11 +105,11 @@ class CompletionService:
 
     def submitTask(self, clientCodeFile, args):
         cwd = os.path.dirname(os.path.realpath(__file__)),
-        experiment_name = self.project_name + "_" + str(uuid.uuid4())   
-         
+        experiment_name = self.project_name + "_" + str(uuid.uuid4())
+
         tmpdir = tempfile.gettempdir()
         args_file = os.path.join(tmpdir, experiment_name + "_args.pkl")
-        
+
         artifacts = {
             'retval': {
                 'mutable': True
@@ -107,7 +117,7 @@ class CompletionService:
             'clientscript': {
                 'mutable': False,
                 'local': clientCodeFile
-            }, 
+            },
             'args': {
                 'mutable': False,
                 'local': args_file
@@ -132,16 +142,15 @@ class CompletionService:
             cloud=self.cloud,
             queue_name=self.queue_name)
 
-        return experiment_name              
-              
-           
+        return experiment_name
+
     def submitTaskWithFiles(self):
         raise NotImplementedError
 
-    def getResults(self, blocking=False):           
+    def getResults(self, blocking=False):
         retval = {}
         sleep_time = 1
-        
+
         while True:
             with model.get_db_provider(self.config) as db:
                 experiments = db.get_project_experiments(self.project_name)
@@ -150,15 +159,14 @@ class CompletionService:
                 if e.status == 'finished':
                     with open(db.get_artifact(e.artifacts['retval'])) as f:
                         data = pickle.load(f)
-            
+
                     retval[e.key] = data
-            if not blocking or all([e.status == 'finished' for e in experiments]):
+            if not blocking or all(
+                    [e.status == 'finished' for e in experiments]):
                 break
             time.sleep(sleep_time)
-                
-           
+
         return retval
 
     def getResultsWithTimeout(self):
         raise NotImplementedError
-

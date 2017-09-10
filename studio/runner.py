@@ -340,11 +340,11 @@ def main(args=sys.argv):
             artifacts=artifacts,
             resources_needed=resources_needed,
             metric=runner_args.metric)]
-    
+
         queue_name = submit_experiments(
-                           experiments,
-                           config=config,
-                           logger=logger)
+            experiments,
+            config=config,
+            logger=logger)
 
         spin_up_workers(
             runner_args,
@@ -359,7 +359,7 @@ def main(args=sys.argv):
 def add_experiment(args):
     config, python_pkg, e = args
     e.pythonenv = add_packages(e.pythonenv, python_pkg)
-        
+
     with model.get_db_provider(config) as db:
         db.add_experiment(e)
     return e

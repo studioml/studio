@@ -107,7 +107,6 @@ class PubsubQueue(object):
         self.logger.debug("Message with key {} acknowledged".format(ack_key))
         self.subclient.acknowledge(self.sub_name, [ack_key])
 
-
     def delete(self):
         self.logger.debug("Deleting pubsub queue with topic" + self.topic_name)
         self.pubclient.delete_topic(self.topic_name)

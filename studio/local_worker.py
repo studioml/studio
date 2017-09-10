@@ -40,7 +40,7 @@ class LocalExecutor(object):
                              str(type(experiment)))
 
         self.logger.info("Experiment key: " + experiment.key)
-        
+
         with model.get_db_provider(self.config) as db:
             db.start_experiment(experiment)
 
@@ -165,7 +165,6 @@ def main(args=sys.argv):
 
     parsed_args, script_args = parser.parse_known_args(args)
 
-    
     queue = LocalQueue()
     # queue = glob.glob(fs_tracker.get_queue_directory() + "/*")
     wait_for_messages(queue, parsed_args.timeout)
@@ -209,7 +208,8 @@ def worker_loop(queue, parsed_args,
 
                 try:
                     if setup_pyenv:
-                        logger.info('Setting up python packages for experiment')
+                        logger.info(
+                            'Setting up python packages for experiment')
                         pipp = subprocess.Popen(
                             ['pip', 'install'] + experiment.pythonenv,
                             stdout=subprocess.PIPE,
@@ -218,14 +218,10 @@ def worker_loop(queue, parsed_args,
                         pipout, _ = pipp.communicate()
                         logger.info("pip output: \n" + pipout)
 
-                        # pip.main(['install'] + experiment.pythonenv)
-
                     for tag, art in experiment.artifacts.iteritems():
                         if fetch_artifacts or 'local' not in art.keys():
                             logger.info('Fetching artifact ' + tag)
                             if tag == 'workspace':
-                                # art['local'] = executor.db.store.get_artifact(
-                                #    art, '.', only_newer=False)
                                 art['local'] = db.get_artifact(
                                     art, only_newer=False)
                             else:
