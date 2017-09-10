@@ -3,6 +3,9 @@ import subprocess
 import uuid
 import logging
 import subprocess
+import time
+import pickle
+import tempfile
 
 logging.basicConfig()
 
@@ -77,7 +80,7 @@ class CompletionService:
         else:
             self.p = subprocess.Popen([
                   'studio-local-worker',
-                  '--verbose=debug',
+                  '--verbose=error',
                   '--timeout=' + str(self.cloud_timeout)],
                   close_fds=True)
  
@@ -92,32 +95,36 @@ class CompletionService:
 
     def submitTask(self, clientCodeFile, args):
         cwd = os.path.dirname(os.path.realpath(__file__)),
-          
+        experiment_name = self.project_name + "_" + str(uuid.uuid4())   
+         
+        tmpdir = tempfile.gettempdir()
+        args_file = os.path.join(tmpdir, experiment_name + "_args.pkl")
+        
         artifacts = {
             'retval': {
-                'mutable':True,
-                'local':'./retval.pkl'
+                'mutable': True
             },
             'clientscript': {
                 'mutable': False,
                 'local': clientCodeFile
+            }, 
+            'args': {
+                'mutable': False,
+                'local': args_file
             }
         }
 
-        experiment_name = self.project_name + "_" + str(uuid.uuid4())   
+        with open(args_file, 'w') as f:
+            f.write(pickle.dumps(args))
+
         experiment = model.create_experiment(
             'completion_service_client.py',
-            args,
+            [],
             experiment_name=experiment_name,
             project=self.project_name,
             artifacts=artifacts,
             resources_needed=self.resources_needed)
 
-        with model.get_db_provider(self.config) as db:
-            db.add_experiment(experiment)
-        
-        import pdb
-        pdb.set_trace()
         runner.submit_experiments(
             [experiment],
             config=self.config,
@@ -128,23 +135,30 @@ class CompletionService:
         return experiment_name              
               
            
-    def submitTaskWithFiles():
+    def submitTaskWithFiles(self):
         raise NotImplementedError
 
-    def getResults():
-        with model.get_db_provider(self.config) as db:
-            experiments = db.get_project_experiments(self.project_name)
-            
+    def getResults(self, blocking=False):           
         retval = {}
+        sleep_time = 1
         
-        for e in experiments:
-            artifact_fileobj = db.stream_artifact(e.artifacts['retval'])
-            data = pickle.loads(artifact_fileobj.read())
-        
-            retval[e.key] = data
+        while True:
+            with model.get_db_provider(self.config) as db:
+                experiments = db.get_project_experiments(self.project_name)
+
+            for e in experiments:
+                if e.status == 'finished':
+                    with open(db.get_artifact(e.artifacts['retval'])) as f:
+                        data = pickle.load(f)
+            
+                    retval[e.key] = data
+            if not blocking or all([e.status == 'finished' for e in experiments]):
+                break
+            time.sleep(sleep_time)
+                
            
         return retval
 
-    def getResultsWithTimeout():
+    def getResultsWithTimeout(self):
         raise NotImplementedError
 
