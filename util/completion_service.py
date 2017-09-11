@@ -103,7 +103,7 @@ class CompletionService:
         if self.p:
             self.p.wait()
 
-    def submitTask(self, clientCodeFile, args):
+    def submitTaskWithFiles(self, clientCodeFile, args, files={}):
         cwd = os.path.dirname(os.path.realpath(__file__)),
         experiment_name = self.project_name + "_" + str(uuid.uuid4())
 
@@ -123,6 +123,12 @@ class CompletionService:
                 'local': args_file
             }
         }
+
+        for tag, name in files.iteritems():
+            artifacts[tag] = {
+                'mutable': False,
+                'local': name
+            }
 
         with open(args_file, 'w') as f:
             f.write(pickle.dumps(args))
@@ -144,8 +150,8 @@ class CompletionService:
 
         return experiment_name
 
-    def submitTaskWithFiles(self):
-        raise NotImplementedError
+    def submitTask(self, clientCodeFile, args):
+        return self.submitTaskWithFiles(clientCodeFile, args, {})
 
     def getResults(self, blocking=False):
         retval = {}

@@ -11,7 +11,9 @@ os.remove('_clientfile.py')
 with open(fs_tracker.get_artifact('args')) as f:
     args = pickle.loads(f.read())
 
-retval = client_module.clientFunction(args)
+artifacts = fs_tracker.get_artifacts()
+
+retval = client_module.clientFunction(args, artifacts)
 
 with open(fs_tracker.get_artifact('retval'), 'w') as f:
     f.write(pickle.dumps(retval))

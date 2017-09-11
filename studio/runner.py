@@ -308,6 +308,7 @@ def main(args=sys.argv):
                     experiments,
                     config=config,
                     logger=logger,
+                    cloud=runner_args.cloud,
                     queue_name=queue_name)
 
                 if not workers_started:
@@ -344,7 +345,8 @@ def main(args=sys.argv):
         queue_name = submit_experiments(
             experiments,
             config=config,
-            logger=logger)
+            logger=logger,
+            cloud=runner_args.cloud)
 
         spin_up_workers(
             runner_args,
