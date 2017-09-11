@@ -153,8 +153,10 @@ class CompletionService:
     def submitTask(self, clientCodeFile, args):
         return self.submitTaskWithFiles(clientCodeFile, args, {})
 
-    def getResults(self, blocking=False):
+    def getResultsWithTimeout(self, timeout=0):
         retval = {}
+
+        total_sleep_time = 0
         sleep_time = 1
 
         while True:
@@ -167,12 +169,15 @@ class CompletionService:
                         data = pickle.load(f)
 
                     retval[e.key] = data
-            if not blocking or all(
-                    [e.status == 'finished' for e in experiments]):
-                break
-            time.sleep(sleep_time)
+            if all([e.status == 'finished' for e in experiments]) or \
+               timeout == 0 or \
+               (timeout > 0 and total_sleep_time > timeout):
+                    break
 
+            time.sleep(sleep_time)
+            total_sleep_time += sleep_time
+    
         return retval
 
-    def getResultsWithTimeout(self):
-        raise NotImplementedError
+    def getResults(self, blocking=False):
+        return self.getResultsWithTimeout(-1 if blocking else 0)
