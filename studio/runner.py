@@ -525,8 +525,14 @@ def get_experiment_fitnesses(experiments, optimizer, config, logger):
                     if line.startswith("Behavior") or \
                             line.startswith("behavior"):
                         try:
-                            behavior = np.array(
-                                eval(line.rstrip().split(':')[1]))
+                            behavior = eval(line.rstrip().split(':')[1])
+                            if isinstance(behavior, np.ndarray):
+                                pass
+                            elif isinstance(behavior, list):
+                                behavior = np.array(behavior)
+                            else:
+                                raise
+
                         except BaseException:
                             if j not in bad_line_dicts[i]:
                                 logger.warn(
