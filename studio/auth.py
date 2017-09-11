@@ -14,7 +14,8 @@ from util import rand_string
 
 TOKEN_DIR = os.path.expanduser('~/.studioml/keys')
 HOUR = 3600
-SLEEP_TIME = 0.05
+API_KEY_COOLDOWN = 900
+SLEEP_TIME = 0.5
 MAX_NUM_RETRIES = 100
 
 
@@ -87,8 +88,21 @@ class FirebaseAuth(object):
                 except BaseException:
                     time.sleep(SLEEP_TIME)
                     counter += 1
-            if user is not None:
-                self.refresh_token(user['email'], user['refreshToken'])
+            if user is None:
+                return
+
+            self.user = user
+            self.expired = False
+            if time.time() - os.path.getmtime(api_key) > API_KEY_COOLDOWN:
+                counter = 0
+                while counter < MAX_NUM_RETRIES:
+                    try:
+                        self.refresh_token(user['email'], user['refreshToken'])
+                    except BaseException:
+                        time.sleep(SLEEP_TIME)
+                        counter += 1
+                    else:
+                        return
 
     def sign_in_with_email(self):
         self.user = \

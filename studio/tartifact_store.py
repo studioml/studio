@@ -7,8 +7,6 @@ import tempfile
 import re
 from threading import Thread
 import subprocess
-import shutil
-
 
 import fs_tracker
 import util
@@ -74,45 +72,50 @@ class TartifactStore(object):
             if os.path.isdir(local_path):
                 local_basepath = local_path
                 local_nameonly = '.'
+
             else:
                 local_nameonly = os.path.basename(local_path)
                 local_basepath = os.path.dirname(local_path)
 
+            ignore_arg = ''
+            ignore_filepath = os.path.join(local_basepath, ".studioml_ignore")
+            if os.path.exists(ignore_filepath) and \
+                    not os.path.isdir(ignore_filepath):
+                ignore_arg = "--exclude-from=%s" % ignore_filepath
+                # self.logger.debug('.studioml_ignore found: %s,'
+                #                   ' files listed inside will'
+                #                   ' not be tarred or uploaded'
+                #                   % ignore_filepath)
+
             if cache and key:
                 cache_dir = fs_tracker.get_artifact_cache(key)
                 if cache_dir != local_path:
-                    self.logger.debug(
-                        "Copying local path {} to cache {}"
-                        .format(local_path, cache_dir))
+                    debug_str = "Copying local path {} to cache {}" \
+                        .format(local_path, cache_dir)
+                    if ignore_arg != '':
+                        debug_str += ", excluding files in {}" \
+                            .format(ignore_filepath)
+                    self.logger.debug(debug_str)
 
-                    if os.path.exists(cache_dir) and os.path.isdir(cache_dir):
-                        shutil.rmtree(cache_dir, ignore_errors=True)
+                    util.rsync_cp(local_path, cache_dir, ignore_arg,
+                                  self.logger)
 
-                    pcp = subprocess.Popen(
-                        ['cp', '-pR', local_path, cache_dir],
-                        stdout=subprocess.PIPE,
-                        stderr=subprocess.STDOUT,
-                        close_fds=True)
-                    cpout, _ = pcp.communicate()
-                    if pcp.returncode != 0:
-                        self.logger.info(
-                            'cp returned non-zero exit code. Output:')
-                        self.logger.info(cpout)
+            debug_str = ("Tarring and uploading directrory. " +
+                         "tar_filename = {}, " +
+                         "local_path = {}, " +
+                         "key = {}").format(
+                tar_filename,
+                local_path,
+                key)
+            if ignore_arg != '':
+                debug_str += ", exclude = {}".format(ignore_filepath)
+            self.logger.debug(debug_str)
 
-            self.logger.debug(
-                ("Tarring and uploading directrory. " +
-                 "tar_filename = {}, " +
-                 "local_path = {}, " +
-                 "key = {}").format(
-                    tar_filename,
-                    local_path,
-                    key))
-
-            tarcmd = 'tar -czf {} -C {} {}'.format(
+            tarcmd = 'tar {} -czf {} -C {} {}'.format(
+                ignore_arg,
                 tar_filename,
                 local_basepath,
                 local_nameonly)
-
             self.logger.debug("Tar cmd = {}".format(tarcmd))
 
             tarp = subprocess.Popen(['/bin/bash', '-c', tarcmd],
@@ -131,7 +134,6 @@ class TartifactStore(object):
 
             def finish_upload():
                 self._upload_file(key, tar_filename)
-
                 os.remove(tar_filename)
 
             t = Thread(target=finish_upload)
