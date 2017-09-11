@@ -4,6 +4,7 @@ import time
 import json
 import shutil
 import atexit
+import tempfile
 try:
     from apscheduler.schedulers.background import BackgroundScheduler
 except BaseException:
@@ -13,7 +14,8 @@ from util import rand_string
 
 TOKEN_DIR = os.path.expanduser('~/.studioml/keys')
 HOUR = 3600
-SLEEP_TIME = 0.05
+API_KEY_COOLDOWN = 900
+SLEEP_TIME = 0.5
 MAX_NUM_RETRIES = 100
 
 
@@ -86,8 +88,21 @@ class FirebaseAuth(object):
                 except BaseException:
                     time.sleep(SLEEP_TIME)
                     counter += 1
-            if user is not None:
-                self.refresh_token(user['email'], user['refreshToken'])
+            if user is None:
+                return
+
+            self.user = user
+            self.expired = False
+            if time.time() - os.path.getmtime(api_key) > API_KEY_COOLDOWN:
+                counter = 0
+                while counter < MAX_NUM_RETRIES:
+                    try:
+                        self.refresh_token(user['email'], user['refreshToken'])
+                    except BaseException:
+                        time.sleep(SLEEP_TIME)
+                        counter += 1
+                    else:
+                        return
 
     def sign_in_with_email(self):
         self.user = \
@@ -105,16 +120,16 @@ class FirebaseAuth(object):
         self.user['email'] = email
         self.expired = False
 
-        if time.time() - os.path.getmtime(api_key) > HOUR:
-            # Rename to ensure atomic writes to json file
-            # (technically more safe, but slower)
-            tmp_api_key = '/tmp/api_key_%s' % rand_string(32)
-            with open(tmp_api_key, 'wb') as f:
-                json.dump(self.user, f)
-                f.flush()
-                os.fsync(f.fileno())
-                f.close()
-            os.rename(tmp_api_key, api_key)
+        # Rename to ensure atomic writes to json file
+        # (technically more safe, but slower)
+        tmp_api_key = os.path.join(tempfile.gettempdir(),
+            "api_key_%s" % rand_string(32))
+        with open(tmp_api_key, 'wb') as f:
+            json.dump(self.user, f)
+            f.flush()
+            os.fsync(f.fileno())
+            f.close()
+        os.rename(tmp_api_key, api_key)
 
     def get_token(self):
         if self.expired:
