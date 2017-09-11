@@ -17,8 +17,7 @@ class CompletionServiceManager:
             self,
             config=None,
             resources_needed=None,
-            cloud=None,
-            verbose=10):
+            cloud=None):
         self.config = config
         self.experimentId = experimentId
         self.project_name = "completion_service_" + experimentId
@@ -26,6 +25,7 @@ class CompletionServiceManager:
         self.resources_needed = resources_needed
         self.wm = runner.get_worker_manager(config, cloud)
         self.logger = logging.getLogger(self.__class__.__name__)
+        verbose = model.parse_verbosity(self.config['verbose'])
         self.logger.setLevel(verbose)
 
         self.queue = runner.get_queue(queue_name, self.cloud, verbose)
@@ -39,8 +39,7 @@ class CompletionServiceManager:
                     experimentId,
                     self.config,
                     self.resources_needed,
-                    self.cloud,
-                    self.verbose).__enter__()
+                    self.cloud).__enter__()
 
         return self.completion_services[experimentId].submitTask(
             clientCodeFile, args)
@@ -60,8 +59,7 @@ class CompletionService:
             experimentId,
             config=None,
             resources_needed=None,
-            cloud=None,
-            verbose=10):
+            cloud=None):
         self.config = model.get_config(config)
         self.cloud = None
         self.experimentId = experimentId
@@ -70,15 +68,18 @@ class CompletionService:
         self.resources_needed = resources_needed
         self.wm = runner.get_worker_manager(config, cloud)
         self.logger = logging.getLogger(self.__class__.__name__)
+        verbose = model.parse_verbosity(self.config['verbose'])
         self.logger.setLevel(verbose)
 
         self.queue = runner.get_queue(self.queue_name, self.cloud, verbose)
 
         self.bid = '100%'
         self.cloud_timeout = 100
+        self.submitted = set([])
 
     def __enter__(self):
         if self.wm:
+            self.logger.debug('Spinning up cloud workers')
             self.wm.start_spot_workers(
                 self.queue_name,
                 self.bid,
@@ -88,6 +89,7 @@ class CompletionService:
                 ssh_keypair='peterz-k1',
                 timeout=self.cloud_timeout)
         else:
+            self.logger.debug('Starting local worker')
             self.p = subprocess.Popen([
                 'studio-local-worker',
                 '--verbose=error',
@@ -148,6 +150,8 @@ class CompletionService:
             cloud=self.cloud,
             queue_name=self.queue_name)
 
+        self.submitted.add(experiment.key)
+
         return experiment_name
 
     def submitTask(self, clientCodeFile, args):
@@ -161,8 +165,8 @@ class CompletionService:
 
         while True:
             with model.get_db_provider(self.config) as db:
-                experiments = db.get_project_experiments(self.project_name)
-
+                experiments = [db.get_experiment(key)
+                               for key in self.submitted]
             for e in experiments:
                 if e.status == 'finished':
                     with open(db.get_artifact(e.artifacts['retval'])) as f:
@@ -172,12 +176,12 @@ class CompletionService:
             if all([e.status == 'finished' for e in experiments]) or \
                timeout == 0 or \
                (timeout > 0 and total_sleep_time > timeout):
-                    break
+                break
 
             time.sleep(sleep_time)
             total_sleep_time += sleep_time
-    
+
         return retval
 
-    def getResults(self, blocking=False):
+    def getResults(self, blocking=True):
         return self.getResultsWithTimeout(-1 if blocking else 0)
