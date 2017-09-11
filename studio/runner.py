@@ -365,7 +365,7 @@ def add_experiment(args):
         e.pythonenv = add_packages(e.pythonenv, python_pkg)
         with model.get_db_provider(config) as db:
             db.add_experiment(e)
-    except:
+    except BaseException:
         traceback.print_exc()
         raise
     return e
