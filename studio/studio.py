@@ -454,9 +454,9 @@ def get_db():
 
     if not _db_provider or \
        not _db_provider_timestamp or \
-        time.time() - _db_provider_timestamp > DB_PROVIDER_EXPIRATION:
-            _db_provider = model.get_db_provider(blocking_auth=False)
-            _db_provider_timestamp = time.time()
+            time.time() - _db_provider_timestamp > DB_PROVIDER_EXPIRATION:
+        _db_provider = model.get_db_provider(blocking_auth=False)
+        _db_provider_timestamp = time.time()
 
     return _db_provider
 
