@@ -11,20 +11,21 @@ import time
 import multiprocessing
 
 import numpy as np
+from six import iteritems
 
-from local_queue import LocalQueue
-from pubsub_queue import PubsubQueue
-from sqs_queue import SQSQueue
-from gcloud_worker import GCloudWorkerManager
-from ec2cloud_worker import EC2WorkerManager
-from hyperparameter import HyperparameterParser
-from util import rand_string, Progbar
+from .local_queue import LocalQueue
+from .pubsub_queue import PubsubQueue
+from .sqs_queue import SQSQueue
+from .gcloud_worker import GCloudWorkerManager
+from .ec2cloud_worker import EC2WorkerManager
+from .hyperparameter import HyperparameterParser
+from .util import rand_string, Progbar
 
-import model
-import auth
-import git_util
-import local_worker
-import fs_tracker
+from . import model
+from . import auth
+from . import git_util
+from . import local_worker
+from .fs_tracker import get_artifact_cache
 
 
 logging.basicConfig()
@@ -37,10 +38,10 @@ def main(args=sys.argv):
                      Usage: studio run <runner_arguments> \
                      script <script_arguments>')
     parser.add_argument('--config', help='configuration file', default=None)
-    parser.add_argument('--project', help='name of the project', default=None)
+    parser.add_argument('--project', help='Name of the project', default=None)
     parser.add_argument(
         '--experiment', '-e',
-        help='Name of the experiment. If none provided, ' +
+        help='name of the experiment. If none provided, ' +
              'random uuid will be generated',
         default=None)
 
@@ -396,7 +397,8 @@ def submit_experiments(
                 queue_name = 'sqs_' + str(uuid.uuid4())
                 worker_manager = EC2WorkerManager(
                     runner_args=runner_args,
-                    auth_cookie=auth_cookie
+                    auth_cookie=auth_cookie,
+		    verbose=verbose
                 )
 
             queue = SQSQueue(queue_name, verbose=verbose)
@@ -607,7 +609,7 @@ def add_hyperparam_experiments(
 
             workspace_orig = artifacts['workspace']['local'] \
                 if 'workspace' in artifacts.keys() else '.'
-            workspace_new = fs_tracker.get_artifact_cache(
+            workspace_new = get_artifact_cache(
                 'workspace', experiment_name)
 
             current_artifacts = artifacts.copy()
@@ -623,7 +625,7 @@ def add_hyperparam_experiments(
             with open(os.path.join(workspace_new, exec_filename), 'r') as f:
                 script_text = f.read()
 
-            for param_name, param_value in hyperparam_tuple.iteritems():
+            for param_name, param_value in iteritems(hyperparam_tuple):
                 if isinstance(param_value, np.ndarray):
                     array_filepath = '/tmp/%s.npy' % rand_string(32)
                     np.save(array_filepath, param_value)
@@ -663,7 +665,7 @@ def add_hyperparam_experiments(
 
 def add_packages(list1, list2):
     pkg_dict = {re.sub('==.+', '', pkg): pkg for pkg in list1 + list2}
-    return [pkg for _, pkg in pkg_dict.iteritems()]
+    return [pkg for _, pkg in iteritems(pkg_dict)]
 
 
 if __name__ == "__main__":

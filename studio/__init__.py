@@ -1,3 +1,3 @@
 
-import fs_tracker
+from . import fs_tracker
 import torch

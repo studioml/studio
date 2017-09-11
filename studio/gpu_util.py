@@ -1,3 +1,4 @@
+import sys
 import os
 import subprocess
 import tensorflow as tf
@@ -35,7 +36,7 @@ def get_gpu_mapping():
     for i in range(0, no_gpus):
 
         loadp = subprocess.Popen([
-            'python', '-c',
+            sys.executable, '-c',
             ("from studio import gpu_util as gu \n" +
              "import os\n" +
              "os.environ['CUDA_VISIBLE_DEVICES']='{}'\n" +

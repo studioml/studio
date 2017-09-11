@@ -1,5 +1,5 @@
 import os
-import fs_tracker
+from .fs_tracker import get_queue_directory
 import uuid
 import glob
 
@@ -7,7 +7,7 @@ import glob
 class LocalQueue:
     def __init__(self, path=None):
         if path is None:
-            self.path = fs_tracker.get_queue_directory()
+            self.path = get_queue_directory()
         else:
             self.path = path
 

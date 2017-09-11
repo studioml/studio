@@ -9,6 +9,7 @@ from keras.utils import to_categorical
 from keras.callbacks import ModelCheckpoint, TensorBoard
 from keras import optimizers
 
+print("python version", sys.version)
 from studio import fs_tracker
 
 

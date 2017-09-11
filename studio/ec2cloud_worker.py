@@ -1,3 +1,4 @@
+from  __future__ import print_function, division, absolute_import
 try:
     import boto3
 except BaseException:
@@ -9,9 +10,10 @@ import os
 import base64
 import requests
 import json
+from six import iteritems as items
 
-from gpu_util import memstr2int
-from cloud_worker_util import insert_user_startup_script
+from .gpu_util import memstr2int
+from .cloud_worker_util import insert_user_startup_script
 
 logging.basicConfig()
 
@@ -90,7 +92,7 @@ class EC2WorkerManager(object):
             'DeviceName': '/dev/sda1',
             'Ebs': {
                 'DeleteOnTermination': True,
-                'VolumeSize': memstr2int(resources_needed['hdd']) /
+                'VolumeSize': memstr2int(resources_needed['hdd']) //
                 memstr2int('1g'),
                 'VolumeType': 'standard'
             }
@@ -143,7 +145,8 @@ class EC2WorkerManager(object):
         if ssh_keypair:
             kwargs['KeyName'] = ssh_keypair
             kwargs['SecurityGroupIds'] = [groupid]
-
+        self.logger.info("RUNNING INSTANCE with following specifications:\n" +
+              "\n".join(["%s\t%s" %(str(kk),str(vv)) for kk, vv in items(kwargs)]))
         response = self.client.run_instances(**kwargs)
         self.logger.info(
             'Starting instance {}'.format(
@@ -179,10 +182,10 @@ class EC2WorkerManager(object):
             auth_key = None
             auth_data = None
 
-        credentials = ""
+        credentials = b""
 
         if 'GOOGLE_APPLICATION_CREDENTIALS' in os.environ.keys():
-            with open(os.environ['GOOGLE_APPLICATION_CREDENTIALS'], 'r') as f:
+            with open(os.environ['GOOGLE_APPLICATION_CREDENTIALS'], 'br') as f:
                 credentials = f.read()
         else:
             self.logger.info('credentials NOT found')
@@ -371,7 +374,7 @@ class EC2WorkerManager(object):
 
         for instance_type in instances:
             product_sku = [
-                k for k, v in offer_dict['products'].iteritems()
+                k for k, v in items(offer_dict['products'])
                 if v['attributes'].get('instanceType') == instance_type and
                 v['attributes']['tenancy'] == 'Shared' and
                 v['attributes']['operatingSystem'] == 'Linux' and
@@ -383,8 +386,9 @@ class EC2WorkerManager(object):
                 .format(instance_type)
 
             prices[instance_type] = float(
-                offer_dict['terms']['OnDemand'][product_sku[0]]
-                .iteritems().next()[1]['priceDimensions']
-                .iteritems().next()[1]['pricePerUnit']['USD'])
+                next(items(
+                    next(items(offer_dict['terms']['OnDemand'][product_sku[0]]
+                     ))[1]['priceDimensions']
+                ))[1]['pricePerUnit']['USD'])
 
         return prices

@@ -10,8 +10,8 @@ import subprocess
 import shutil
 
 
-import fs_tracker
-import util
+from . import fs_tracker
+from . import util
 import tarfile
 import urllib
 

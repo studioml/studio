@@ -10,7 +10,7 @@ database:
     storageBucket: "{}.appspot.com"
 
     # serviceAccount: $GOOGLE_APPLICATION_CREDENTIALS
-    # guest: true
+    guest: true
     use_email_auth: false
 
 
