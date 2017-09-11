@@ -261,7 +261,7 @@ class FirebaseProvider(object):
                     # upload immutable artifacts
                     art['key'] = self.store.put_artifact(art)
 
-            if 'key' in art.keys():
+            if  art.get('key') is not None:
                 art['qualified'] = self.store.get_qualified_location(
                     art['key'])
 
