@@ -305,7 +305,7 @@ def main(args=sys.argv):
                 #         print hhh
                 try:
                     optimizer.tell(hyperparam_pop, fitnesses, behaviors)
-                except:
+                except BaseException:
                     optimizer.tell(hyperparam_pop, fitnesses)
 
                 try:
@@ -336,7 +336,7 @@ def add_experiment(args):
         e.pythonenv = add_packages(e.pythonenv, python_pkg)
         with model.get_db_provider(config) as db:
             db.add_experiment(e)
-    except:
+    except BaseException:
         traceback.print_exc()
         raise
     return e
@@ -504,7 +504,7 @@ def get_experiment_fitnesses(experiments, optimizer, config, logger):
                                                         getinfo=True)
                 # try:
                 #     experiment_output = returned_experiment.info['logtail']
-                # except:
+                # except BaseException:
                 #     logger.warn('Cannot access "logtail" in experiment.info')
                 output = db._get_experiment_logtail(
                     returned_experiment)
