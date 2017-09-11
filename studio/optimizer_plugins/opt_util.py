@@ -9,7 +9,7 @@ try:
     import matplotlib
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
-except:
+except BaseException:
     pass
 
 EPSILON = 1e-12

@@ -19,7 +19,7 @@ class HTTPProviderHostedTest(unittest.TestCase):
 
     def test_add_get_delete_experiment(self):
         with self.get_db_provider('test_config.yaml') as fp, \
-             self.get_db_provider('test_config_http_client.yaml') as hp:
+                self.get_db_provider('test_config_http_client.yaml') as hp:
 
             experiment_tuple = get_test_experiment()
             hp.add_experiment(experiment_tuple[0])
