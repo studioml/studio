@@ -19,6 +19,9 @@ logging.basicConfig()
 app = Flask(__name__)
 
 
+DB_PROVIDER_EXPIRATION = 1800
+
+_db_provider_timestamp = None
 _db_provider = None
 _tensorboard_dirs = {}
 _grequest = google.auth.transport.requests.Request()
@@ -447,8 +450,13 @@ def get_and_verify_user(request):
 
 def get_db():
     global _db_provider
-    if not _db_provider:
-        _db_provider = model.get_db_provider(blocking_auth=False)
+    global _db_provider_timestamp
+
+    if not _db_provider or \
+       not _db_provider_timestamp or \
+        time.time() - _db_provider_timestamp > DB_PROVIDER_EXPIRATION:
+            _db_provider = model.get_db_provider(blocking_auth=False)
+            _db_provider_timestamp = time.time()
 
     return _db_provider
 
