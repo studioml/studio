@@ -363,6 +363,8 @@ class FirebaseProvider(object):
         else:
             key = experiment.key
 
+        self.logger.info("%s, %s: checkpointing experiment" % \
+                         (os.getpid(), key))
         checkpoint_threads = [
             Thread(
                 target=self.store.put_artifact,
@@ -376,9 +378,11 @@ class FirebaseProvider(object):
         self.__setitem__(self._get_experiments_keybase() +
                          key + "/time_last_checkpoint",
                          time.time())
-        if blocking:
+        if True:
             for t in checkpoint_threads:
                 t.join()
+            self.logger.info("%s, %s: finish checkpointing experiment" % \
+                             (os.getpid(), key))
         else:
             return checkpoint_threads
 
