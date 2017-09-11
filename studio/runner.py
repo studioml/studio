@@ -9,6 +9,8 @@ import shutil
 import importlib
 import time
 import multiprocessing
+import traceback
+from contextlib import closing
 
 import numpy as np
 
@@ -18,7 +20,7 @@ from sqs_queue import SQSQueue
 from gcloud_worker import GCloudWorkerManager
 from ec2cloud_worker import EC2WorkerManager
 from hyperparameter import HyperparameterParser
-from util import rand_string, Progbar
+from util import rand_string, Progbar, rsync_cp
 
 import model
 import auth
@@ -217,8 +219,6 @@ def main(args=sys.argv):
     verbose = model.parse_verbosity(config['verbose'])
     logger.setLevel(verbose)
 
-    db = model.get_db_provider(config)
-
     if git_util.is_git() and not git_util.is_clean():
         logger.warn('Running from dirty git repo')
         if not runner_args.force_git:
@@ -233,7 +233,8 @@ def main(args=sys.argv):
     artifacts = {}
     artifacts.update(parse_artifacts(runner_args.capture, mutable=True))
     artifacts.update(parse_artifacts(runner_args.capture_once, mutable=False))
-    artifacts.update(parse_external_artifacts(runner_args.reuse, db))
+    with model.get_db_provider(config) as db:
+        artifacts.update(parse_external_artifacts(runner_args.reuse, db))
 
     if any(runner_args.hyperparam):
         if runner_args.optimizer is "grid":
@@ -325,15 +326,18 @@ def main(args=sys.argv):
                            runner_args,
                            logger)
 
-    db = None
     return
 
 
 def add_experiment(args):
-    config, python_pkg, e = args
-    e.pythonenv = add_packages(e.pythonenv, python_pkg)
-    db = model.get_db_provider(config)
-    db.add_experiment(e)
+    try:
+        config, python_pkg, e = args
+        e.pythonenv = add_packages(e.pythonenv, python_pkg)
+        with model.get_db_provider(config) as db:
+            db.add_experiment(e)
+    except:
+        traceback.print_exc()
+        raise
     return e
 
 
@@ -347,7 +351,6 @@ def submit_experiments(
         launch_workers=True):
 
     num_experiments = len(experiments)
-    db = model.get_db_provider(config)
     verbose = model.parse_verbosity(config['verbose'])
 
     if runner_args.cloud is None:
@@ -359,14 +362,15 @@ def submit_experiments(
 
     start_time = time.time()
     n_workers = min(multiprocessing.cpu_count() * 2, num_experiments)
-    p = multiprocessing.Pool(n_workers)
-    experiments = p.map(add_experiment,
-                        zip([config] * num_experiments,
-                            [runner_args.python_pkg] * num_experiments,
-                            experiments),
-                        chunksize=1)
-    p.close()
-    p.join()
+    with closing(multiprocessing.Pool(n_workers, maxtasksperchild=20)) as p:
+        experiments = p.imap_unordered(add_experiment,
+                                       zip([config] * num_experiments,
+                                           [runner_args.python_pkg] *
+                                           num_experiments,
+                                           experiments),
+                                       chunksize=1)
+        p.close()
+        p.join()
     # for e in experiments:
     #     logger.info("Added experiment " + e.key)
     logger.info("Added %s experiments in %s seconds" %
@@ -459,7 +463,8 @@ def submit_experiments(
 
         logger.info('worker args: {}'.format(worker_args))
         if not runner_args.num_workers or int(runner_args.num_workers) == 1:
-            local_worker.main(worker_args)
+            if 'STUDIOML_DUMMY_MODE' not in os.environ:
+                local_worker.main(worker_args)
         else:
             raise NotImplementedError("Multiple local workers are not " +
                                       "implemented yet")
@@ -467,77 +472,84 @@ def submit_experiments(
 
 
 def get_experiment_fitnesses(experiments, optimizer, config, logger):
-    db_provider = model.get_db_provider()
-    progbar = Progbar(len(experiments), interval=0.0)
-    logger.info("Waiting for fitnesses from %s experiments" % len(experiments))
+    with model.get_db_provider() as db:
+        progbar = Progbar(len(experiments), interval=0.0)
+        logger.info("Waiting for fitnesses from %s experiments" %
+                    len(experiments))
 
-    bad_line_dicts = [dict() for x in xrange(len(experiments))]
-    has_result = [False] * len(experiments)
-    fitnesses = [0.0] * len(experiments)
-    term_criterion = config['optimizer']['termination_criterion']
-    skip_gen_thres = term_criterion['skip_gen_thres']
-    skip_gen_timeout = term_criterion['skip_gen_timeout']
-    result_timestamp = time.time()
+        bad_line_dicts = [dict() for x in xrange(len(experiments))]
+        has_result = [False] * len(experiments)
+        fitnesses = [0.0] * len(experiments)
+        term_criterion = config['optimizer']['termination_criterion']
+        skip_gen_thres = term_criterion['skip_gen_thres']
+        skip_gen_timeout = term_criterion['skip_gen_timeout']
+        result_timestamp = time.time()
 
-    while sum(has_result) < len(experiments):
-        for i, experiment in enumerate(experiments):
-            if float(sum(has_result)) / len(experiments) >= skip_gen_thres \
-                    and time.time() - result_timestamp > skip_gen_timeout:
-                logger.warn(
-                    "Skipping to next gen with %s of solutions evaled" %
-                    (float(
-                        sum(has_result)) /
-                        len(experiments)))
-                has_result = [True] * len(experiments)
-                break
-            if has_result[i]:
-                continue
-            returned_experiment = db_provider.get_experiment(experiment.key,
-                                                             getinfo=True)
-            # try:
-            #     experiment_output = returned_experiment.info['logtail']
-            # except:
-            #     logger.warn('Cannot access "logtail" in experiment.info')
-            output = db_provider._get_experiment_logtail(returned_experiment)
-            if output is None:
-                continue
+        while sum(has_result) < len(experiments):
+            for i, experiment in enumerate(experiments):
+                if float(sum(has_result)) / len(experiments) >= skip_gen_thres\
+                        and time.time() - result_timestamp > skip_gen_timeout:
+                    logger.warn(
+                        "Skipping to next gen with %s of solutions evaled" %
+                        (float(
+                            sum(has_result)) /
+                            len(experiments)))
+                    has_result = [True] * len(experiments)
+                    break
+                if has_result[i]:
+                    continue
+                returned_experiment = db.get_experiment(experiment.key,
+                                                        getinfo=True)
+                # try:
+                #     experiment_output = returned_experiment.info['logtail']
+                # except:
+                #     logger.warn('Cannot access "logtail" in experiment.info')
+                output = db._get_experiment_logtail(
+                    returned_experiment)
+                if output is None:
+                    continue
 
-            for j, line in enumerate(output):
+                for j, line in enumerate(output):
 
-                if line.startswith("Traceback (most recent call last):") and \
-                        j not in bad_line_dicts[i]:
-                    logger.warn("Experiment %s: error discovered in output" %
-                                returned_experiment.key)
-                    logger.warn("".join(output[j:]))
-                    bad_line_dicts[i][j] = True
+                    if line.startswith(
+                            "Traceback (most recent call last):") and \
+                            j not in bad_line_dicts[i]:
+                        logger.warn("Experiment %s: error"
+                                    " discovered in output" %
+                                    returned_experiment.key)
+                        logger.warn("".join(output[j:]))
+                        bad_line_dicts[i][j] = True
 
-                if line.startswith("Fitness") or line.startswith("fitness"):
-                    try:
-                        fitness = float(line.rstrip().split(':')[1])
-                        # assert fitness >= 0.0
-                    except BaseException:
-                        if j not in bad_line_dicts[i]:
-                            logger.warn(
-                                'Experiment %s: error parsing or invalid'
-                                ' fitness' %
-                                returned_experiment.key)
-                            logger.warn(line)
-                            bad_line_dicts[i][j] = True
-                    else:
-                        if fitness < 0.0:
-                            logger.warn('Experiment %s: returned fitness is'
-                                        ' less than zero, setting it to zero' %
-                                        returned_experiment.key)
-                            fitness = 0.0
+                    if line.startswith("Fitness") or \
+                            line.startswith("fitness"):
+                        try:
+                            fitness = float(line.rstrip().split(':')[1])
+                            # assert fitness >= 0.0
+                        except BaseException:
+                            if j not in bad_line_dicts[i]:
+                                logger.warn(
+                                    'Experiment %s: error parsing or invalid'
+                                    ' fitness' %
+                                    returned_experiment.key)
+                                logger.warn(line)
+                                bad_line_dicts[i][j] = True
+                        else:
+                            if fitness < 0.0:
+                                logger.warn('Experiment %s: returned'
+                                            ' fitness is less than zero,'
+                                            ' setting it to zero' %
+                                            returned_experiment.key)
+                                fitness = 0.0
 
-                        fitnesses[i] = fitness
-                        has_result[i] = True
-                        progbar.add(1)
-                        result_timestamp = time.time()
-                        break
+                            fitnesses[i] = fitness
+                            has_result[i] = True
+                            progbar.add(1)
+                            result_timestamp = time.time()
+                            break
 
-        time.sleep(config['sleep_time'])
-    return fitnesses
+            time.sleep(config['sleep_time'])
+        print
+        return fitnesses
 
 
 def parse_artifacts(art_list, mutable):
@@ -599,6 +611,15 @@ def add_hyperparam_experiments(
     project = runner_args.project if runner_args.project else \
         ('hyperparam_' + experiment_name_base)
 
+    workspace_orig = artifacts['workspace']['local'] \
+        if 'workspace' in artifacts.keys() else '.'
+
+    ignore_arg = ''
+    ignore_filepath = os.path.join(workspace_orig, ".studioml_ignore")
+    if os.path.exists(ignore_filepath) and \
+            not os.path.isdir(ignore_filepath):
+        ignore_arg = "--exclude-from=%s" % ignore_filepath
+
     def create_experiments(hyperparam_tuples):
         experiments = []
         # experiment_names = {}
@@ -608,8 +629,6 @@ def add_hyperparam_experiments(
                                                   int(time.time()))
             experiment_name = experiment_name.replace('.', '_')
 
-            workspace_orig = artifacts['workspace']['local'] \
-                if 'workspace' in artifacts.keys() else '.'
             workspace_new = fs_tracker.get_artifact_cache(
                 'workspace', experiment_name)
 
@@ -621,10 +640,8 @@ def add_hyperparam_experiments(
                 }
             })
 
-            shutil.copytree(workspace_orig, workspace_new)
-
-            with open(os.path.join(workspace_new, exec_filename), 'r') as f:
-                script_text = f.read()
+            rsync_cp(workspace_orig, workspace_new, ignore_arg, logger)
+            # shutil.copytree(workspace_orig, workspace_new)
 
             for param_name, param_value in hyperparam_tuple.iteritems():
                 if isinstance(param_value, np.ndarray):
@@ -634,6 +651,10 @@ def add_hyperparam_experiments(
                     current_artifacts[param_name] = {'local': array_filepath,
                                                      'mutable': False}
                 else:
+                    with open(os.path.join(workspace_new, exec_filename),
+                              'rb') as f:
+                        script_text = f.read()
+
                     script_text = re.sub(
                         '\\b' +
                         param_name +
@@ -641,8 +662,9 @@ def add_hyperparam_experiments(
                         str(param_value),
                         script_text)
 
-            with open(os.path.join(workspace_new, exec_filename), 'w') as f:
-                f.write(script_text)
+                    with open(os.path.join(workspace_new, exec_filename),
+                              'wb') as f:
+                        f.write(script_text)
 
             experiments.append(model.create_experiment(
                 filename=exec_filename,

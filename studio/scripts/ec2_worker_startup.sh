@@ -32,7 +32,7 @@ env
 
 sudo apt -y update
 sudo apt install -y wget python-pip git python-dev jq
-sudo pip install --upgrade pip 
+sudo pip install --upgrade pip
 sudo pip install --upgrade awscli boto3
 
 #wget $code_url_base/$code_ver

@@ -201,10 +201,15 @@ class Optimizer(object):
             self.gen % int(self.config['checkpoint_interval']) == 0) or \
                 self.stop():
 
-            result_dir = os.path.abspath(
-                os.path.expanduser(self.config['result_dir']))
-            if not os.path.exists(result_dir):
-                os.makedirs(result_dir)
+            try:
+                result_dir = os.path.abspath(
+                    os.path.expanduser(self.config['result_dir']))
+                if not os.path.exists(result_dir):
+                    os.makedirs(result_dir)
+            except:
+                self.looger.warn("Cannot retrieve checkpoint directory,"
+                                 " not saving checkpoint")
+                return
 
             checkpoint_file = os.path.join(
                 result_dir, "G%s_F%s_checkpoint.pkl" %
@@ -215,6 +220,12 @@ class Optimizer(object):
                 copy_of_self.config = None
                 # copy_of_self.es = None
                 pickle.dump(copy_of_self, f, protocol=-1)
+
+            best_file = os.path.join(
+                result_dir, "G%s_F%s_best.pkl" %
+                (self.gen, self.best_fitness))
+            with open(best_file, 'wb') as f:
+                pickle.dump(self.best, f, protocol=-1)
 
             with open(os.path.join(result_dir, "fitness.txt"), 'wb') as f:
                 for best, mean in zip(
