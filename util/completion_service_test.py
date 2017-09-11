@@ -8,13 +8,21 @@ class CompletionServiceTest(unittest.TestCase):
 
     def test_two_experiments(self):
         experimentId = str(uuid.uuid4())
-        config_path = os.path.join(
-            os.path.dirname(os.path.realpath(__file__)),
-            '..', 'studio', 'tests', 'test_config.yaml')
+        mypath = os.path.dirname(os.path.realpath(__file__))
+        config_path = os.path.join(mypath,
+                                   '..', 'studio', 'tests', 'test_config.yaml')
 
         with CompletionService(experimentId, config=config_path) as cs:
-            e1 = cs.submitTask('./completion_service_func.py', [1])
-            e2 = cs.submitTask('./completion_service_func.py', [2])
+            e1 = cs.submitTask(
+                os.path.join(
+                    mypath,
+                    'completion_service_func.py'),
+                [1])
+            e2 = cs.submitTask(
+                os.path.join(
+                    mypath,
+                    'completion_service_func.py'),
+                [2])
 
             results = cs.getResults(blocking=True)
 

@@ -170,7 +170,7 @@ class CompletionService:
             for e in experiments:
                 if e.status == 'finished':
                     self.logger.debug('Experiment {} finished, getting results'
-                        .format(e.key))
+                                      .format(e.key))
                     with open(db.get_artifact(e.artifacts['retval'])) as f:
                         data = pickle.load(f)
 
