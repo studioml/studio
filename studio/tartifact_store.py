@@ -90,7 +90,7 @@ class TartifactStore(object):
             if cache and key:
                 cache_dir = fs_tracker.get_artifact_cache(key)
                 if cache_dir != local_path:
-                   debug_str = "Copying local path {} to cache {}" \
+                    debug_str = "Copying local path {} to cache {}" \
                         .format(local_path, cache_dir)
                     if ignore_arg != '':
                         debug_str += ", excluding files in {}" \
