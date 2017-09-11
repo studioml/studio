@@ -12,7 +12,7 @@ install:
   - pip install pep8
 
 script:
-  - python util/popen_test.py
+  - nosetests -v
   - pep8 --show-source .
   - python setup.py sdist
 
