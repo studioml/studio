@@ -11,7 +11,10 @@ logger = logging.getLogger('completion_service_client')
 logger.setLevel(10)
 
 logger.debug('copying and importing client module')
-shutil.copy(fs_tracker.get_artifact('clientscript'), './_clientfile.py')
+
+mypath = os.path.dirname(os.path.realpath(__file__))
+shutil.copy(fs_tracker.get_artifact('clientscript'),
+            os.path.join(mypath, '_clientfile.py'))
 client_module = importlib.import_module('_clientfile')
 os.remove('_clientfile.py')
 

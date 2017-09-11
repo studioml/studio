@@ -106,7 +106,10 @@ class CompletionService:
             self.p.wait()
 
     def submitTaskWithFiles(self, clientCodeFile, args, files={}):
-        cwd = os.path.dirname(os.path.realpath(__file__)),
+        old_cwd = os.getcwd()
+        cwd = os.path.dirname(os.path.realpath(__file__))
+        os.chdir(cwd)
+
         experiment_name = self.project_name + "_" + str(uuid.uuid4())
 
         tmpdir = tempfile.gettempdir()
@@ -151,6 +154,7 @@ class CompletionService:
             queue_name=self.queue_name)
 
         self.submitted.add(experiment.key)
+        os.chdir(old_cwd)
 
         return experiment_name
 
