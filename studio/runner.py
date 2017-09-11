@@ -296,14 +296,18 @@ def main(args=sys.argv):
                     queue_name,
                     queue_name is None)
 
-                fitnesses = get_experiment_fitnesses(experiments,
-                                                     optimizer, config, logger)
+                fitnesses, behaviors = get_experiment_fitnesses(
+                    experiments, optimizer, config, logger)
 
                 # for i, hh in enumerate(hyperparam_pop):
                 #     print fitnesses[i]
                 #     for hhh in hh:
                 #         print hhh
-                optimizer.tell(hyperparam_pop, fitnesses)
+                try:
+                    optimizer.tell(hyperparam_pop, fitnesses, behaviors)
+                except:
+                    optimizer.tell(hyperparam_pop, fitnesses)
+
                 try:
                     optimizer.disp()
                 except BaseException:
@@ -475,8 +479,9 @@ def get_experiment_fitnesses(experiments, optimizer, config, logger):
                     len(experiments))
 
         bad_line_dicts = [dict() for x in xrange(len(experiments))]
-        has_result = [False] * len(experiments)
-        fitnesses = [0.0] * len(experiments)
+        has_result = [False for i in xrange(len(experiments))]
+        fitnesses = [0.0 for i in xrange(len(experiments))]
+        behaviors = [[] for i in xrange(len(experiments))]
         term_criterion = config['optimizer']['termination_criterion']
         skip_gen_thres = term_criterion['skip_gen_thres']
         skip_gen_timeout = term_criterion['skip_gen_timeout']
@@ -517,6 +522,21 @@ def get_experiment_fitnesses(experiments, optimizer, config, logger):
                         logger.warn("".join(output[j:]))
                         bad_line_dicts[i][j] = True
 
+                    if line.startswith("Behavior") or \
+                        line.startswith("behavior"):
+                        try:
+                            behavior = np.array((line.rstrip().split(':')[1]))
+                        except BaseException:
+                            if j not in bad_line_dicts[i]:
+                                logger.warn(
+                                    'Experiment %s: error parsing or invalid'
+                                    ' behavior' %
+                                    returned_experiment.key)
+                                logger.warn(line)
+                                bad_line_dicts[i][j] = True
+                        else:
+                            behaviors[i] = behavior
+
                     if line.startswith("Fitness") or \
                             line.startswith("fitness"):
                         try:
@@ -546,7 +566,7 @@ def get_experiment_fitnesses(experiments, optimizer, config, logger):
 
             time.sleep(config['sleep_time'])
         print
-        return fitnesses
+        return fitnesses, behaviors
 
 
 def parse_artifacts(art_list, mutable):
