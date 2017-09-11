@@ -481,7 +481,7 @@ def get_experiment_fitnesses(experiments, optimizer, config, logger):
         bad_line_dicts = [dict() for x in xrange(len(experiments))]
         has_result = [False for i in xrange(len(experiments))]
         fitnesses = [0.0 for i in xrange(len(experiments))]
-        behaviors = [[] for i in xrange(len(experiments))]
+        behaviors = [None for i in xrange(len(experiments))]
         term_criterion = config['optimizer']['termination_criterion']
         skip_gen_thres = term_criterion['skip_gen_thres']
         skip_gen_timeout = term_criterion['skip_gen_timeout']
@@ -523,9 +523,10 @@ def get_experiment_fitnesses(experiments, optimizer, config, logger):
                         bad_line_dicts[i][j] = True
 
                     if line.startswith("Behavior") or \
-                        line.startswith("behavior"):
+                            line.startswith("behavior"):
                         try:
-                            behavior = np.array((line.rstrip().split(':')[1]))
+                            behavior = np.array(
+                                eval(line.rstrip().split(':')[1]))
                         except BaseException:
                             if j not in bad_line_dicts[i]:
                                 logger.warn(
