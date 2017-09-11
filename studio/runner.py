@@ -5,7 +5,6 @@ import json
 import re
 import os
 import uuid
-import shutil
 import importlib
 import time
 import multiprocessing
@@ -499,7 +498,7 @@ def submit_experiments(
     with closing(multiprocessing.Pool(n_workers, maxtasksperchild=20)) as p:
         experiments = p.imap_unordered(add_experiment,
                                        zip([config] * num_experiments,
-                                           [runner_args.python_pkg] *
+                                           [python_pkg] *
                                            num_experiments,
                                            experiments),
                                        chunksize=1)
