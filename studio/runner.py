@@ -386,10 +386,11 @@ def get_worker_manager(config, cloud=None, verbose=10):
         config['database']['apiKey']
     )
 
+    branch = config['cloud'].get('branch')
+    if branch is None:
+        branch = git_util.get_branch(os.path.dirname(os.path.realpath(__file__)))
+
     if cloud in ['gcloud', 'gcspot']:
-        branch = config['cloud'].get('branch')
-        if branch is None:
-            branch = git_util.get_branch(os.path.dirname(os.path.realpath(__file__)))
 
         cloudconfig = config['cloud']['google']
         worker_manager = GCloudWorkerManager(
