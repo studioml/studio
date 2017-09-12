@@ -1,5 +1,6 @@
 import logging
 import calendar
+from urlparse import urlparse
 
 try:
     import boto3
@@ -50,7 +51,8 @@ class S3ArtifactStore(TartifactStore):
             return None
 
     def get_qualified_location(self, key):
-        return 's3://' + self.endpoint + '/' + self.bucket + '/' + key
+        url = urlparse(self.endpoint)
+        return 's3://' + url.netloc + '/' + self.bucket + '/' + key
 
     def get_bucket(self):
         return self.bucket
