@@ -17,7 +17,13 @@ logging.basicConfig()
 class GCloudWorkerManager(object):
     def __init__(self, runner_args=None, zone='us-central1-f',
                  auth_cookie=None, verbose=10):
-        assert 'GOOGLE_APPLICATION_CREDENTIALS' in os.environ.keys()
+        if 'GOOGLE_APPLICATION_CREDENTIALS' not in os.environ.keys():
+            raise ValueError(
+                "Missing Google Cloud credentials in "
+                "'GOOGLE_APPLICATION_CREDENTIALS' environment variable.\n"
+                "Please follow "
+                "http://docs.studio.ml/en/latest/gcloud_setup.html to "
+                "set it up.")
         with open(os.environ['GOOGLE_APPLICATION_CREDENTIALS'], 'r') as f:
             credentials_dict = json.loads(f.read())
 

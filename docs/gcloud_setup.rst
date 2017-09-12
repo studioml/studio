@@ -35,21 +35,31 @@ Generate service credentials
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The machines that submit cloud jobs will need to be authorized with
-service credentials. Go to the left-hand pane in the Google Cloud console and
-select API Manager -> Credentials. Then click the "Create credentials"
-button, choose service account key, leave key type as JSON, and in the
-"Service account" drop-down select "New service account". Enter a
-service account name (the name can be virtually anything and won't
-matter for the rest of the instructions). The important part is selecting a
-role. Click the "Select a role" dropdown menu, in "Project" select "Service
-Account Actor", and then scroll down to "Compute Engine" and select "Compute
-Engine Admin (v1)". Then scroll down to "Pub/Sub", and add a role
-"Pub/Sub editor" (this is required to create queues, publish and read
-messages from them). If you are planning to use Google Cloud storage
+service credentials. 
+
+First, make sure you have activated:
+  * Compute Engine - visit Compute Engine tab and allow it to initialize.
+  * Pub/Sub - visit Pub/Sub tab and click "Enable API".
+
+To create credentials:
+  * Go to the left-hand pane in the Google Cloud console and
+select API Manager -> Credentials. 
+  * Then click the "Create credentials" button, choose service account key, 
+ leave key type as JSON, and in the
+"Service account" drop-down select "New service account". 
+  * Enter a service account name (the name can be virtually anything and won't
+matter for the rest of the instructions). 
+  * The important part is selecting a role. Click the "Select a role" dropdown menu:
+  ** in "Project" select "Service Account Actor", 
+  ** in "Compute Engine" and select "Compute Instance Admin (v1)".
+  ** In "Pub/Sub", add a role "Pub/Sub editor" (this is required to create queues, publish and read
+messages from them). 
+  ** If you are planning to use Google Cloud storage
 (directly, without the Firebase layer) for artifact storage, select the Storage
-Admin role as well. You can also add other roles if you are planning to use
-these credentials in other applications. When done, click "Create".
-Google Cloud console should generate a json credentials file and save it
+Admin role as well. 
+  ** You can also add other roles if you are planning to use
+these credentials in other applications. 
+  * When done, click "Create". Google Cloud console should generate a json credentials file and save it
 to your computer.
 
 Configuring Studio
