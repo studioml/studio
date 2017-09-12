@@ -36,6 +36,9 @@ class GCloudWorkerManager(object):
         self.user_startup_script = user_startup_script
         self.branch = branch if branch else 'master'
 
+        if user_startup_script:
+            self.logger.warn('User startup script argument is deprecated')
+
     def start_worker(
             self,
             queue_name,

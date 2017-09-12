@@ -83,6 +83,9 @@ class EC2WorkerManager(object):
         self.branch = branch if branch else 'master'
         self.user_startup_script = user_startup_script
 
+        if user_startup_script:
+            self.logger.warn('User startup script argument is deprecated')
+
     def _get_image_id(self):
         # vanilla ubuntu 16.04 image
         # return 'ami-d15a75c7'

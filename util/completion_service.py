@@ -2,7 +2,6 @@ import os
 import subprocess
 import uuid
 import logging
-import subprocess
 import time
 import pickle
 import tempfile
@@ -12,6 +11,7 @@ from studio import runner, model
 logging.basicConfig()
 
 
+'''
 class CompletionServiceManager:
     def __init__(
             self,
@@ -19,16 +19,13 @@ class CompletionServiceManager:
             resources_needed=None,
             cloud=None):
         self.config = config
-        self.experimentId = experimentId
-        self.project_name = "completion_service_" + experimentId
-        self.queue_name = project_name
         self.resources_needed = resources_needed
         self.wm = runner.get_worker_manager(config, cloud)
         self.logger = logging.getLogger(self.__class__.__name__)
         verbose = model.parse_verbosity(self.config['verbose'])
         self.logger.setLevel(verbose)
 
-        self.queue = runner.get_queue(queue_name, self.cloud, verbose)
+        self.queue = runner.get_queue(self.cloud, verbose)
 
         self.completion_services = {}
 
@@ -50,6 +47,7 @@ class CompletionServiceManager:
     def __exit__(self, *args):
         for _, cs in self.completion_services.iter_items():
             cs.__exit__()
+'''
 
 
 class CompletionService:
@@ -59,14 +57,22 @@ class CompletionService:
             experimentId,
             config=None,
             resources_needed=None,
-            cloud=None):
+            cloud=None,
+            resumable=False):
+
         self.config = model.get_config(config)
         self.cloud = None
         self.experimentId = experimentId
         self.project_name = "completion_service_" + experimentId
         self.queue_name = 'local'
+
+        if cloud in ['gcloud', 'gcspot']:
+            self.queue_name = 'pubsub_' + experimentId
+        elif cloud in ['ec2', 'ec2spot']:
+            self.queue_name = 'sqs_' + experimentId
+
         self.resources_needed = resources_needed
-        self.wm = runner.get_worker_manager(config, cloud)
+        self.wm = runner.get_worker_manager(self.config, cloud)
         self.logger = logging.getLogger(self.__class__.__name__)
         verbose = model.parse_verbosity(self.config['verbose'])
         self.logger.setLevel(verbose)
@@ -76,6 +82,7 @@ class CompletionService:
         self.bid = '100%'
         self.cloud_timeout = 100
         self.submitted = set([])
+        self.resumable = resumable
 
     def __enter__(self):
         if self.wm:
@@ -88,6 +95,7 @@ class CompletionService:
                 queue_upscaling=True,
                 ssh_keypair='peterz-k1',
                 timeout=self.cloud_timeout)
+            self.p = None
         else:
             self.logger.debug('Starting local worker')
             self.p = subprocess.Popen([
@@ -132,7 +140,7 @@ class CompletionService:
         for tag, name in files.iteritems():
             artifacts[tag] = {
                 'mutable': False,
-                'local': name
+                'local': os.path.abspath(os.path.expanduser(name))
             }
 
         with open(args_file, 'w') as f:
@@ -162,15 +170,18 @@ class CompletionService:
         return self.submitTaskWithFiles(clientCodeFile, args, {})
 
     def getResultsWithTimeout(self, timeout=0):
-        retval = {}
 
         total_sleep_time = 0
         sleep_time = 1
 
         while True:
             with model.get_db_provider(self.config) as db:
-                experiments = [db.get_experiment(key)
-                               for key in self.submitted]
+                if self.resumable:
+                    experiments = db.get_project_experiments(self.project_name)
+                else:
+                    experiments = [db.get_experiment(key)
+                                   for key in self.submitted]
+
             for e in experiments:
                 if e.status == 'finished':
                     self.logger.debug('Experiment {} finished, getting results'
@@ -178,16 +189,20 @@ class CompletionService:
                     with open(db.get_artifact(e.artifacts['retval'])) as f:
                         data = pickle.load(f)
 
-                    retval[e.key] = data
-            if all([e.status == 'finished' for e in experiments]) or \
-               timeout == 0 or \
+                    if not self.resumable:
+                        self.submitted.remove(e.key)
+                    else:
+                        with model.get_db_provider(self.config) as db:
+                            db.delete_experiment(e.key)
+
+                    return (e.key, data)
+
+            if timeout == 0 or \
                (timeout > 0 and total_sleep_time > timeout):
-                break
+                return None
 
             time.sleep(sleep_time)
             total_sleep_time += sleep_time
-
-        return retval
 
     def getResults(self, blocking=True):
         return self.getResultsWithTimeout(-1 if blocking else 0)

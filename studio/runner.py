@@ -387,6 +387,10 @@ def get_worker_manager(config, cloud=None, verbose=10):
     )
 
     if cloud in ['gcloud', 'gcspot']:
+        branch = config['cloud'].get('branch')
+        if branch is None:
+            branch = git_util.get_branch(os.path.dirname(os.path.realpath(__file__)))
+
         cloudconfig = config['cloud']['gcloud']
         worker_manager = GCloudWorkerManager(
             auth_cookie=auth_cookie,
