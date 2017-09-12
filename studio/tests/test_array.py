@@ -6,4 +6,4 @@ if fs_tracker.get_artifact('lr') is not None:
 else:
   lr = np.random.random(10)
 
-print "fitness: %s" % np.abs(np.sum(lr))
+print("fitness: %s" % np.abs(np.sum(lr)))

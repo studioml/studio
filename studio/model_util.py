@@ -9,7 +9,11 @@ import logging
 
 from PIL import Image
 
-from Queue import Full, Empty, Queue
+try:
+    from Queue import Full, Empty, Queue
+except ImportError:
+    from queue import Full, Empty, Queue
+
 from threading import Thread
 import numpy as np
 import itertools
@@ -134,7 +138,7 @@ class BufferedPipe:
                 return (x[0], self.func(x[1]))
             except BaseException as e:
                 self.logger.warn('Applying function to {} raised exception {}'
-                                 .format(x[1], e.message))
+                                 .format(x[1], str(e))
                 self.logger.exception(e)
                 return (x[0], None)
 
@@ -145,7 +149,7 @@ class BufferedPipe:
                 batch_output = self.func(batch_input)
             except BaseException as e:
                 self.logger.warn('Applying function to {} raised exception {}'
-                                 .format(batch_input, e.message))
+                                 .format(batch_input, str(e))
                 self.logger.exception(e)
                 batch_output = [None] * len(batch_index)
 
@@ -153,7 +157,7 @@ class BufferedPipe:
                 return zip(batch_index, batch_output)
             except BaseException as e:
                 self.logger.warn('Applying function to {} raised exception {}'
-                                 .format(x, e.message))
+                                 .format(x, str(e))
                 self.logger.exception(e)
                 return None
 
@@ -162,7 +166,7 @@ class BufferedPipe:
                 return self.func(x)
             except BaseException as e:
                 self.logger.warn('Applying function to {} raised exception {}'
-                                 .format(x, e.message))
+                                 .format(x, str(e))
                 self.logger.exception(e)
                 return None
 
@@ -202,7 +206,7 @@ class ModelPipe:
 
         if not isinstance(data, dict):
             count_gen = itertools.count(start=0, step=1)
-            indexed_gen = itertools.izip(count_gen, (x for x in data))
+            indexed_gen = six.moves.zip(count_gen, (x for x in data))
         else:
             indexed_gen = ((k, v) for k, v in six.iteritems(data))
 
@@ -326,7 +330,7 @@ def _q2q_single(func, queue_in, queue_out, filterf=lambda x: True, timeout=1):
 def _gen2q(data, queue):
     while True:
         try:
-            next_el = data.next()
+            next_el = next(data)
         except StopIteration:
             return
 

@@ -18,7 +18,7 @@ class HTTPProviderTest(unittest.TestCase):
     def setUpClass(self):
         if 'GOOGLE_APPLICATION_CREDENTIALS' not in os.environ.keys():
             return
-        print "Setting up"
+        print("Setting up")
         self.port = randint(5000, 9000)
 
         # self.app.run(port=self.port, debug=True)
@@ -46,7 +46,7 @@ class HTTPProviderTest(unittest.TestCase):
     def tearDownClass(self):
         if 'GOOGLE_APPLICATION_CREDENTIALS' not in os.environ.keys():
             return
-        print "Tearing down"
+        print("Tearing down")
 
         self.serverp.kill()
 
