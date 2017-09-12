@@ -70,7 +70,7 @@ def get_commit(path='.'):
 
 def get_branch(path='.'):
     p = subprocess.Popen(
-            ['git', 'rev-parse', '--abbrev-ref', 'HEAD']
+            ['git', 'rev-parse', '--abbrev-ref', 'HEAD'],
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             cwd=path)
