@@ -27,6 +27,7 @@ import auth
 import git_util
 import local_worker
 import fs_tracker
+import resources
 
 
 logging.basicConfig()
@@ -143,10 +144,24 @@ def main(args=sys.argv):
              default=[], action='append')
 
     parser.add_argument(
+        '--num-experiments',
+        help='Number of local or cloud hyperparameter experiments to spin up',
+        type=int, default=None)
+
+    parser.add_argument(
+        '--distributed', '-dist',
+        help='Runs the current job with given distributed strategy.',
+        type=str, default=None)
+
+    parser.add_argument(
         '--num-workers',
-        help='Number of local or cloud workers to spin up',
+        help='Number of workers for distributed mode.',
         type=int,
         default=None)
+
+    parser.add_argument(
+        '--num-ps', help='Number of parameter servers for distributed mode.',
+        type=int, default=None)
 
     parser.add_argument(
         '--python-pkg',
@@ -205,6 +220,15 @@ def main(args=sys.argv):
     script_index = py_suffix_args[0]
     runner_args = parser.parse_args(args[1:script_index])
 
+    # TODO: Remove this after 09/31/2017.
+    if any(runner_args.hyperparam) and not runner_args.distributed:
+        if runner_args.num_workers is not None and runner_args.num_experiments is None:
+            logging.warn(
+                "Please switch to use --num-expeirments for hyperparameter optimization. "
+                "Now, --num-workers configures distributed runs. "
+                "This backward compatibility will stop after 09/31/2017.")
+            runner_args.num_experiments = runner_args.num_workers
+
     exec_filename, other_args = args[script_index], args[script_index + 1:]
     # TODO: Queue the job based on arguments and only then execute.
 
@@ -223,7 +247,7 @@ def main(args=sys.argv):
                 'Specify --force-git to run experiment from dirty git repo')
             sys.exit(1)
 
-    resources_needed = parse_hardware(runner_args, config['cloud'])
+    resources_needed = resources.parse_hardware(runner_args, config['cloud'])
     logger.debug('resources requested: ')
     logger.debug(str(resources_needed))
 
@@ -234,80 +258,8 @@ def main(args=sys.argv):
         artifacts.update(parse_external_artifacts(runner_args.reuse, db))
 
     if any(runner_args.hyperparam):
-        if runner_args.optimizer is "grid":
-            experiments = add_hyperparam_experiments(
-                exec_filename,
-                other_args,
-                runner_args,
-                artifacts,
-                resources_needed,
-                logger)
-            submit_experiments(
-                experiments,
-                resources_needed,
-                config,
-                runner_args,
-                logger,
-                resources_needed)
-        else:
-            opt_modulepath = os.path.join(
-                os.path.dirname(os.path.abspath(__file__)),
-                "optimizer_plugins",
-                runner_args.optimizer + ".py")
-            if not os.path.exists(opt_modulepath):
-                opt_modulepath = os.path.abspath(
-                    os.path.expanduser(runner_args.optimizer))
-            logger.info('optimizer path: %s' % opt_modulepath)
-
-            assert os.path.exists(opt_modulepath)
-            sys.path.append(os.path.dirname(opt_modulepath))
-            opt_module = importlib.import_module(
-                os.path.basename(opt_modulepath.replace(".py", '')))
-
-            h = HyperparameterParser(runner_args, logger)
-            hyperparams = h.parse()
-            optimizer = getattr(
-                opt_module,
-                "Optimizer")(
-                hyperparams,
-                config['optimizer'],
-                logger)
-
-            queue_name = None
-            while not optimizer.stop():
-                hyperparam_pop = optimizer.ask()
-                hyperparam_tuples = h.convert_to_tuples(hyperparam_pop)
-
-                experiments = add_hyperparam_experiments(
-                    exec_filename,
-                    other_args,
-                    runner_args,
-                    artifacts,
-                    resources_needed,
-                    logger,
-                    optimizer=optimizer,
-                    hyperparam_tuples=hyperparam_tuples)
-                queue_name = submit_experiments(
-                    experiments,
-                    resources_needed,
-                    config,
-                    runner_args,
-                    logger,
-                    queue_name,
-                    queue_name is None)
-
-                fitnesses = get_experiment_fitnesses(experiments,
-                                                     optimizer, config, logger)
-
-                # for i, hh in enumerate(hyperparam_pop):
-                #     print fitnesses[i]
-                #     for hhh in hh:
-                #         print hhh
-                optimizer.tell(hyperparam_pop, fitnesses)
-                try:
-                    optimizer.disp()
-                except BaseException:
-                    logger.warn('Optimizer has no disp() method')
+        start_hyperparam_search(
+            exec_filename, other_args, runner_args, artifacts, resources_needed, logger)
     else:
         experiments = [model.create_experiment(
             filename=exec_filename,
@@ -323,8 +275,81 @@ def main(args=sys.argv):
                            runner_args,
                            logger)
 
-    return
 
+def start_hyperparam_search(
+        exec_filename, other_args, runner_args, artifacts, 
+        resources_needed, logger):
+    if runner_args.optimizer is "grid":
+        experiments = add_hyperparam_experiments(
+            exec_filename,
+            other_args,
+            runner_args,
+            artifacts,
+            resources_needed,
+            logger)
+        submit_experiments(
+            experiments,
+            resources_needed,
+            config,
+            runner_args,
+            logger,
+            resources_needed)
+    else:
+        opt_modulepath = os.path.join(
+            os.path.dirname(os.path.abspath(__file__)),
+            "optimizer_plugins",
+            runner_args.optimizer + ".py")
+        if not os.path.exists(opt_modulepath):
+            opt_modulepath = os.path.abspath(
+                os.path.expanduser(runner_args.optimizer))
+        logger.info('optimizer path: %s' % opt_modulepath)
+
+        assert os.path.exists(opt_modulepath)
+        sys.path.append(os.path.dirname(opt_modulepath))
+        opt_module = importlib.import_module(
+            os.path.basename(opt_modulepath.replace(".py", '')))
+
+        h = HyperparameterParser(runner_args, logger)
+        hyperparams = h.parse()
+        optimizer = getattr(
+            opt_module,
+            "Optimizer")(
+            hyperparams,
+            config['optimizer'],
+            logger)
+
+        queue_name = None
+        while not optimizer.stop():
+            hyperparam_pop = optimizer.ask()
+            hyperparam_tuples = h.convert_to_tuples(hyperparam_pop)
+
+            experiments = add_hyperparam_experiments(
+                exec_filename,
+                other_args,
+                runner_args,
+                artifacts,
+                resources_needed,
+                logger,
+                optimizer=optimizer,
+                hyperparam_tuples=hyperparam_tuples)
+            queue_name = submit_experiments(
+                experiments,
+                resources_needed,
+                config,
+                runner_args,
+                logger,
+                queue_name,
+                queue_name is None)
+
+            fitnesses = get_experiment_fitnesses(experiments,
+                                                    optimizer, config, logger)
+
+            optimizer.tell(hyperparam_pop, fitnesses)
+            try:
+                optimizer.disp()
+            except BaseException:
+                logger.warn('Optimizer has no disp() method')
+    
 
 def add_experiment(args):
     try:
@@ -406,12 +431,12 @@ def submit_experiments(
             queue = SQSQueue(queue_name, verbose=verbose)
 
         if launch_workers:
+            num_machines = get_num_machines(resources_needed, runner_args.num_experiments)
+
             if runner_args.cloud == 'gcloud' or \
                runner_args.cloud == 'ec2':
 
-                num_workers = int(
-                    runner_args.num_workers) if runner_args.num_workers else 1
-                for i in range(num_workers):
+                for i in range(num_machines):
                     worker_manager.start_worker(
                         queue_name, resources_needed,
                         ssh_keypair=runner_args.ssh_keypair,
@@ -419,17 +444,15 @@ def submit_experiments(
             else:
                 assert runner_args.bid is not None
                 if runner_args.num_workers:
-                    start_workers = runner_args.num_workers
                     queue_upscaling = False
                 else:
-                    start_workers = 1
                     queue_upscaling = True
 
                 worker_manager.start_spot_workers(
                     queue_name,
                     runner_args.bid,
                     resources_needed,
-                    start_workers=start_workers,
+                    start_workers=num_machines,
                     queue_upscaling=queue_upscaling,
                     ssh_keypair=runner_args.ssh_keypair,
                     timeout=runner_args.cloud_timeout)
@@ -459,7 +482,7 @@ def submit_experiments(
             worker_args += ['--guest']
 
         logger.info('worker args: {}'.format(worker_args))
-        if not runner_args.num_workers or int(runner_args.num_workers) == 1:
+        if not runner_args.num_experiments or int(runner_args.num_experiments) == 1:
             if 'STUDIOML_DUMMY_MODE' not in os.environ:
                 local_worker.main(worker_args)
         else:
@@ -576,20 +599,6 @@ def parse_external_artifacts(art_list, db):
             'mutable': False
         }
     return retval
-
-
-def parse_hardware(runner_args, config={}):
-    resources_needed = {}
-    parse_list = ['gpus', 'cpus', 'ram', 'hdd']
-    for key in parse_list:
-        from_args = runner_args.__dict__.get(key)
-        from_config = config.get(key)
-        if from_args is not None:
-            resources_needed[key] = from_args
-        elif from_config is not None:
-            resources_needed[key] = from_config
-
-    return resources_needed
 
 
 def add_hyperparam_experiments(

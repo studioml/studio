@@ -123,7 +123,7 @@ class GCloudWorkerManager(object):
 
         self.logger.info('instance template {} added'.format(template_name))
 
-        self.compute.instanceGroupManagers() .insert(
+        self.compute.instanceGroupManagers().insert(
             project=self.projectid,
             zone=self.zone,
             body={

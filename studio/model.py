@@ -35,6 +35,7 @@ class Experiment(object):
                  artifacts=None,
                  status='waiting',
                  resources_needed=None,
+                 distributed=None,
                  time_added=None,
                  time_started=None,
                  time_last_checkpoint=None,
@@ -73,6 +74,7 @@ class Experiment(object):
             self.artifacts.update(artifacts)
 
         self.resources_needed = resources_needed
+        self.distributed = distributed
         self.status = status
         self.time_added = time_added
         self.time_started = time_started
