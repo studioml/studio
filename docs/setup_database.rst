@@ -43,26 +43,59 @@ Prerequisites
 ------------
 If deploying onto google app engine, you'll need to have gcloud cli installed
 (link)
-In what follows, deployment machine means either the local machine (when deploying
-on GAE) or the instance on which you are 
+In what follows, deployment machine means either the local machine 
+(when deploying on GAE) or the instance on which you are 
 planning to run the API server
 
-Creating a Firebase project and API server config file
---------------------------------------------------
+Creating a Firebase project and deploying the API server 
+--------------------------------------------------------
 
 1. Create a new Firebase project: go to https://firebase.google.com,
    sign in, click add project, specify project name
 2. Go to project settings (little cogwheel next to "Overview" on the
    left-hand pane), tab "General"
 3. Copy the Web API key and paste it in apiKey of the database section of
-   studio/gae\_config.yaml (on the machine from which you are deploying 
-   the API server - 
+   studio/apiserver\_config.yaml 
 4. Copy the project ID and paste it in projectId of the database section of
-   new\_config.yaml
+   config yaml file. 
 5. Go to Service Accounts tab and generate new key for firebase
    service account. This key is json file that will give API server admin 
-   access to the database
-6. On the machine from which you are deployb
+   access to the database. Save it to the deployment machine. 
+6. On the deployment machine, set the environment variable 
+   ``FIREBASE_ADMIN_CREENTIALS`` to the path to the key json file
+   generated in previous step
+7. Modify other entries of the apiserver_config.yaml file to your specs 
+   (e.g. storage type and bucket)
+8. On the deployment machine in the folder studio/studio, run
+      
+      ::
+      
+      ./deploy_apiserver.sh gae
+      
+   for GAE and 
+   
+      ::
+       
+      ./deploy_apiserver.sh local 
+      
+    when running on a dedicated instance
+    
+Configuring studio to work with API server
+------------------------------------------
+
+For clients to work with the API server, you'll
+need to modify their config.yaml files as follows:
+
+1. remove storage section
+2. in the database section, set type: http, 
+   serverUrl: <url of your deployed server>. 
+   When deploying to GAE, the url will have format
+   https://<project_name>.appspot.com
+ 
+3. the the database section, set apiKey: <firebase api key>
+   (from step 3 in previous section), and 
+   authDomain: <project_name>.firebaseapp.com
+       
 
 Creating a Firebase Project
 ---------------------------
@@ -76,7 +109,7 @@ Creating a Firebase Project
 To configure Studio to work with Firebase, do the following:
 
 Creating a Firebase project and configuring Studio
---------------------------------------------------
+-----------------------------------------------------
 
 1. Create a copy of studio/default\_config.yaml file. Let's call it
    new\_config.yaml
