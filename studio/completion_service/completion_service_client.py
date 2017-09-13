@@ -18,7 +18,7 @@ def main():
   logger.debug('copying and importing client module')
 
   mypath = os.path.dirname(fs_tracker.get_artifact('clientscript'))
-  module_name = os.path.basename(fs_tracker.get_artifcat('clientscript'))
+  module_name = os.path.basename(fs_tracker.get_artifact('clientscript'))
 
   client_module = importlib.import_module(module_name)
   logger.debug('loading args')
