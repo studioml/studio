@@ -36,9 +36,9 @@ def initialize_app(config):
         projectId = config['projectId']
 
         if 'authDomain' in config.keys():
-           config['authDomain'] = config['authDomain'].format(projectId)
+            config['authDomain'] = config['authDomain'].format(projectId)
         if 'databaseURL' in config.keys():
-            config['databaseURL'] = config['databaseURL'].format(projectId)       
+            config['databaseURL'] = config['databaseURL'].format(projectId)
         if 'storageBucket' in config.keys():
             config['storageBucket'] = config['storageBucket'].format(projectId)
 

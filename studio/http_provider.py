@@ -128,10 +128,10 @@ class HTTPProvider(object):
 
         self._raise_detailed_error(response)
         data = response.json()['experiments']
-        
-        experiments = [model.experiment_from_dict(edict) \
+
+        experiments = [model.experiment_from_dict(edict)
                        for edict in data]
-        
+
         return experiments
 
     def get_projects(self):
@@ -142,7 +142,7 @@ class HTTPProvider(object):
 
         self._raise_detailed_error(response)
         projects = response.json()['projects']
-        
+
         return projects
 
     def get_project_experiments(self, project):
@@ -154,10 +154,10 @@ class HTTPProvider(object):
 
         self._raise_detailed_error(response)
         data = response.json()['experiments']
-        
-        experiments = [model.experiment_from_dict(edict) \
+
+        experiments = [model.experiment_from_dict(edict)
                        for edict in data]
-        
+
         return experiments
 
     def get_artifacts(self):
@@ -175,7 +175,7 @@ class HTTPProvider(object):
 
         self._raise_detailed_error(response)
         users = response.json()['users']
-            
+
         return users
 
     def checkpoint_experiment(self, experiment):
