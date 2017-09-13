@@ -1,3 +1,4 @@
+import sys
 import os
 import subprocess
 import uuid
@@ -75,10 +76,11 @@ class CompletionService:
         self.resources_needed = resources_needed
         self.wm = runner.get_worker_manager(self.config, cloud)
         self.logger = logging.getLogger(self.__class__.__name__)
-        verbose = model.parse_verbosity(self.config['verbose'])
-        self.logger.setLevel(verbose)
+        self.verbose_level = model.parse_verbosity(self.config['verbose'])
+        self.logger.setLevel(self.verbose_level)
 
-        self.queue = runner.get_queue(self.queue_name, self.cloud, verbose)
+        self.queue = runner.get_queue(self.queue_name, self.cloud,
+            self.verbose_level)
 
         self.bid = '100%'
         self.cloud_timeout = 100
@@ -150,7 +152,7 @@ class CompletionService:
 
         experiment = model.create_experiment(
             'completion_service_client.py',
-            [],
+            [str(self.verbose_level)],
             experiment_name=experiment_name,
             project=self.project_name,
             artifacts=artifacts,
