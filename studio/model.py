@@ -592,9 +592,6 @@ class FirebaseProvider(object):
         if self.auth:
             self.auth.refresh_token(email, refresh_token)
 
-    def get_auth_domain(self):
-        return self.app.auth_domain
-
     def is_auth_expired(self):
         if self.auth:
             return self.auth.expired
@@ -671,9 +668,6 @@ class PostgresProvider(object):
     def refresh_auth_token(self, email, refresh_token):
         raise NotImplementedError()
 
-    def get_auth_domain(self):
-        raise NotImplementedError()
-
     def is_auth_expired(self):
         raise NotImplementedError()
 
@@ -702,8 +696,8 @@ def get_config(config_file=None):
 
             def replace_with_env(config):
                 for key, value in config.iteritems():
-                    if isinstance(value, basestring) and value.startswith('$'):
-                        config[key] = os.environ.get(value[1:])
+                    if isinstance(value, basestring):
+                        config[key] = os.path.expandvars(value)
 
                     elif isinstance(value, dict):
                         replace_with_env(value)

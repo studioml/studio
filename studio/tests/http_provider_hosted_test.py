@@ -68,8 +68,6 @@ class HTTPProviderHostedTest(unittest.TestCase):
             experiment = hp.get_experiment(experiment_tuple[1])
 
             self.assertTrue(experiment.status == 'running')
-            self.assertTrue(experiment.time_added <= time.time())
-            self.assertTrue(experiment.time_started <= time.time())
 
             self.assertEquals(experiment.key, experiment_tuple[0].key)
             self.assertEquals(

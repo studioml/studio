@@ -177,7 +177,7 @@ def main(args=sys.argv):
              "and shut down " +
              "as soon as no new messages are available. " +
              "If zero, don't wait at all." +
-             "Default value is %(default)",
+             "Default value is %(default)d",
         type=int,
         default=300)
 
