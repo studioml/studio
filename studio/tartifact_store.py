@@ -133,7 +133,12 @@ class TartifactStore(object):
                       + '.tgz'
 
             def finish_upload():
-                self._upload_file(key, tar_filename)
+                # test if the file is going to a blobstore
+                # and if is already there
+                if not key.startswith('blobstore/') or \
+                       self.get_file_timestamp(key) is not None:
+                    self._upload_file(key, tar_filename)
+
                 os.remove(tar_filename)
 
             t = Thread(target=finish_upload)

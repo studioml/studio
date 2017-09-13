@@ -12,11 +12,10 @@ logger.setLevel(10)
 
 logger.debug('copying and importing client module')
 
-mypath = os.path.dirname(os.path.realpath(__file__))
-shutil.copy(fs_tracker.get_artifact('clientscript'),
-            os.path.join(mypath, '_clientfile.py'))
-client_module = importlib.import_module('_clientfile')
-os.remove('_clientfile.py')
+mypath = os.path.dirname(fs_tracker.get_artifact('clientscript'))
+module_name = os.path.basename(fs_tracker.get_artifcat('clientscript'))
+
+client_module = importlib.import_module(module_name)
 
 logger.debug('loading args')
 with open(fs_tracker.get_artifact('args')) as f:
