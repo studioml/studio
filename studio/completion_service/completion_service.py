@@ -60,6 +60,8 @@ class CompletionService:
             num_workers=1,
             resources_needed=None,
             cloud=None,
+            cloud_timeout=100,
+            bid='100%',
             resumable=False,):
 
         self.config = model.get_config(config)
@@ -82,8 +84,8 @@ class CompletionService:
         self.queue = runner.get_queue(self.queue_name, self.cloud,
                                       self.verbose_level)
 
-        self.bid = '100%'
-        self.cloud_timeout = 100
+        self.bid = bid
+        self.cloud_timeout = cloud_timeout
         self.submitted = set([])
         self.num_workers = num_workers
         self.resumable = resumable
@@ -104,7 +106,7 @@ class CompletionService:
             self.logger.debug('Starting local worker')
             self.p = subprocess.Popen([
                 'studio-local-worker',
-                '--verbose=error',
+                '--verbose=%s' % self.config['verbose'],
                 '--timeout=' + str(self.cloud_timeout)],
                 close_fds=True)
 
@@ -152,7 +154,7 @@ class CompletionService:
 
         experiment = model.create_experiment(
             'completion_service_client.py',
-            [str(self.verbose_level)],
+            [self.config['verbose']],
             experiment_name=experiment_name,
             project=self.project_name,
             artifacts=artifacts,

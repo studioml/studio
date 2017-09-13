@@ -5,12 +5,12 @@ import os
 import logging
 import sys
 
-from studio import fs_tracker
+from studio import fs_tracker, model
 
 logging.basicConfig()
 logger = logging.getLogger('completion_service_client')
 try:
-    logger.setLevel(int(sys.argv[1]))
+    logger.setLevel(model.parse_verbosity(sys.argv[1]))
 except BaseException:
     logger.setLevel(10)
 
@@ -18,9 +18,10 @@ def main():
     logger.debug('copying and importing client module')
 
     script_path = fs_tracker.get_artifact('clientscript')
-    logger.debug("Script path: " + script_path)
+    logger.error("Script path: " + script_path)
 
     mypath = os.path.dirname(script_path)
+    sys.path.append(mypath)
     module_name = os.path.splitext(os.path.basename(script_path))[0]
 
     client_module = importlib.import_module(module_name)
@@ -37,7 +38,6 @@ def main():
     logger.debug('saving the return value')
     with open(fs_tracker.get_artifact('retval'), 'w') as f:
         f.write(pickle.dumps(retval))
-
 
 if __name__ == "__main__":
     main()
