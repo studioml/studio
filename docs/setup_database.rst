@@ -48,7 +48,7 @@ In what follows, deployment machine means either the local machine
 planning to run the API server
 
 Creating a Firebase project and deploying the API server 
---------------------------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 1. Create a new Firebase project: go to https://firebase.google.com,
    sign in, click add project, specify project name
@@ -78,10 +78,10 @@ Creating a Firebase project and deploying the API server
        
       ./deploy_apiserver.sh local 
       
-    when running on a dedicated instance
+   when running on a dedicated instance
     
 Configuring studio to work with API server
-------------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 For clients to work with the API server, you'll
 need to modify their config.yaml files as follows:
@@ -97,19 +97,14 @@ need to modify their config.yaml files as follows:
    authDomain: <project_name>.firebaseapp.com
        
 
-Creating a Firebase Project
----------------------------
-1. Go to https://firebase.google.com, sign in to console,
-   click Add project, specify project name
-2. Go to project settings (little cogwheel next to "Overview" on
-   the left-hand pane). 
-3. On the tab "General" 
+Setting up studio do access Firbase directly (deprecated)
+---------------------------------------------------------
 
-
-To configure Studio to work with Firebase, do the following:
+To configure Studio to work with a new Firebase project, 
+do the following:
 
 Creating a Firebase project and configuring Studio
------------------------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 1. Create a copy of studio/default\_config.yaml file. Let's call it
    new\_config.yaml
@@ -125,7 +120,7 @@ Creating a Firebase project and configuring Studio
    messagingSenderId of the database section of new\_config.yaml
 
 Configuring users
------------------
+~~~~~~~~~~~~~~~~~
 
 To enable email/password authentication within the Firebase client
 uncomment the use\_email\_auth tag in your new\_config.yaml. Add
@@ -153,38 +148,6 @@ by the creator, slightly more sophisticated rules are needed. Examples of such
 rules (that are used at the default Studio Firebase app) are given in
 ``auth/firebase_db.rules`` and ``auth/firebase_storage.rules`` for
 database and storage.
-
-Setting up an authentication app for Google account authentication
-------------------------------------------------------------------
-
-1.  Create a new Firebase project from the [console]
-    (https://console.firebase.google.com)
-2.  Under the authentication tab in the console, turn on the Google
-    authentication provider
-3.  Install the Firebase CLI (https://firebase.google.com/docs/cli/)
-4.  We will be deploying a Firebase app, so the following is the summary
-    of (https://firebase.google.com/docs/hosting/deploying). The app
-    iteslf is a modified authentication code example from here:
-    https://firebase.google.com/docs/samples/
-5.  Go to the studio/auth folder and run
-
-    ::
-
-        firebase init
-
-6.  Select Hosting by pressing space, press Enter to continue
-7.  Select the right Firebase project (if you have more than one)
-8.  Answer 'N' to the remaining questions
-9.  Run
-
-    ::
-
-        firebase deploy
-
-10. To test successful deployment, go the /index.html url (where
-    hosting\_url was output by Firebase deploy). You should see a page
-    titled "Firebase Authentication" that either has a button "SIGN IN"
-    or "SIGN OUT" and your authentication details below.
 
 Test run
 --------
