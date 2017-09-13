@@ -128,8 +128,6 @@ class CompletionService:
         tmpdir = tempfile.gettempdir()
         args_file = os.path.join(tmpdir, experiment_name + "_args.pkl")
 
-        import pdb
-        pdb.set_trace()
         workspace_orig = os.getcwd()
         ignore_arg = ''
         ignore_filepath = os.path.join(workspace_orig, ".studioml_ignore")
