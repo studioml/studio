@@ -137,7 +137,7 @@ class TartifactStore(object):
                 # and there is already a file there with
                 # the same name, skip upload
                 if not key.startswith('blobstore/') or \
-                       self.get_file_timestamp(key) is None:
+                       self._get_file_timestamp(key) is None:
                     self._upload_file(key, tar_filename)
 
                 os.remove(tar_filename)
