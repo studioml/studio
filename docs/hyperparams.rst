@@ -13,7 +13,7 @@ launched in a separate project, and can be compared in tensorboard or by
 the value of some scalar metrics reported in tensorboard logs.
 
 Consider the following code snippet (code in
-`here <../studio/examples/keras/train_mnist_keras.py>`__):
+`here <https://github.com/studioml/studio/blob/master/examples/keras/train_mnist_keras.py>`__):
 
 ::
 
@@ -157,7 +157,7 @@ contain a line with the fitness printed to stdout as shown below. For
 hyperparameters whose contents are numpy arrays, they must be loaded using
 the ``fs_tracker.get_artifact`` function call as shown below:
 
-```python
+::
 
     from studio import fs_tracker
 
@@ -165,7 +165,7 @@ the ``fs_tracker.get_artifact`` function call as shown below:
 
     print "fitness: %s" % np.sum(lr)
 
-```
+
 
 Cloud workers
 -------------
