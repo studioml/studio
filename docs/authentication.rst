@@ -24,7 +24,7 @@ Email / password authentication
 -------------------------------
 
 If you have an email & password account set up, you can use this method.
-In default\_config.yaml, uncomment "use\_email\_auth: true" under the
+In ``default\_config.yaml``, uncomment "use\_email\_auth: true" under the
 database section. If the token is not found or expired when you run
 ``studio ui`` / ``studio run``, you will be asked for your email and password
 for authentication. Note that the password is NOT stored on your
