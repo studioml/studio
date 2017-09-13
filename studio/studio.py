@@ -19,6 +19,9 @@ logging.basicConfig()
 app = Flask(__name__)
 
 
+DB_PROVIDER_EXPIRATION = 1800
+
+_db_provider_timestamp = None
 _db_provider = None
 _tensorboard_dirs = {}
 _grequest = google.auth.transport.requests.Request()
@@ -166,6 +169,31 @@ def get_user_experiments():
     return retval
 
 
+@app.route('/api/get_all_experiments', methods=['POST'])
+def get_all_experiments():
+    tic = time.time()
+    get_and_verify_user(request)
+
+    # TODO check is myuser_id is authorized to do that
+
+    getlogger().info('Getting all experiments')
+    users = get_db().get_users()
+
+    experiments = [e for user in users
+                   for e in get_db().get_user_experiments(
+                       user, blocking=False)]
+
+    status = "ok"
+    retval = json.dumps({
+        "status": status,
+        "experiments": [e.__dict__ for e in experiments]
+    })
+    toc = time.time()
+    getlogger().info('Processed get_user_experiments request in {} s'
+                     .format(toc - tic))
+    return retval
+
+
 @app.route('/api/get_projects', methods=['POST'])
 def get_projects():
     tic = time.time()
@@ -249,7 +277,7 @@ def delete_experiment():
             raise ValueError('Unauthorized')
 
     except BaseException as e:
-        status = e.message
+        status = traceback.format_exc()
 
     toc = time.time()
     getlogger().info('Processed delete_experiment request in {} s'
@@ -333,22 +361,20 @@ def add_experiment():
     tic = time.time()
     userid = get_and_verify_user(request)
 
-    # TODO check if user has access
-
     artifacts = {}
     try:
         experiment = model.experiment_from_dict(request.json['experiment'])
-        for tag, art in experiment.artifacts.iteritems():
-            art.pop('local', None)
+        if get_db().can_write_experiment(experiment.key, userid):
+            for tag, art in experiment.artifacts.iteritems():
+                art.pop('local', None)
 
-        get_db().add_experiment(experiment)
-        added_experiment = get_db().get_experiment(experiment.key)
+            get_db().add_experiment(experiment, userid)
+            added_experiment = get_db().get_experiment(experiment.key)
 
-        for tag, art in added_experiment.artifacts.iteritems():
-            if 'key' in art.keys():
-                get_db().store.grant_write(art['key'], userid)
-                artifacts[tag] = art
-        status = 'ok'
+            artifacts = _process_artifacts(added_experiment)
+            status = 'ok'
+        else:
+            raise ValueError('Unauthorized')
 
     except BaseException:
         status = traceback.format_exc()
@@ -370,20 +396,31 @@ def checkpoint_experiment():
         experiment = get_db().get_experiment(key)
         get_db().checkpoint_experiment(experiment)
 
-        for tag, art in experiment.artifacts.iteritems():
-            if 'key' in art.keys():
-                get_db().store.grant_write(art['key'], userid)
-                artifacts[tag] = art
+        artifacts = _process_artifacts(experiment)
         status = 'ok'
 
     except BaseException:
         status = traceback.format_exc()
 
     toc = time.time()
-    getlogger().info('Processed add_experiment request in {} s'
+    getlogger().info('Processed checkpoint_experiment request in {} s'
                      .format(toc - tic))
 
     return json.dumps({'status': status, 'artifacts': artifacts})
+
+
+def _process_artifacts(experiment):
+    artifacts = {}
+    for tag, art in experiment.artifacts.iteritems():
+        if 'key' in art.keys():
+            put_url, timestamp = get_db().store.get_artifact_url(
+                art, method='PUT', get_timestamp=True)
+
+            art['url'] = put_url
+            art['timestamp'] = timestamp
+            artifacts[tag] = art
+
+    return artifacts
 
 
 def get_and_verify_user(request):
@@ -413,8 +450,13 @@ def get_and_verify_user(request):
 
 def get_db():
     global _db_provider
-    if not _db_provider:
+    global _db_provider_timestamp
+
+    if not _db_provider or \
+       not _db_provider_timestamp or \
+            time.time() - _db_provider_timestamp > DB_PROVIDER_EXPIRATION:
         _db_provider = model.get_db_provider(blocking_auth=False)
+        _db_provider_timestamp = time.time()
 
     return _db_provider
 

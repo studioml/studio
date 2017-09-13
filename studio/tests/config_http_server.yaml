@@ -7,11 +7,11 @@ database:
     projectId: studio-ed756
     storageBucket: "{}.appspot.com"
     messagingSenderId: 81790704397
-    guest: true
+    serviceAccount: /Users/peter.zhokhov/gkeys/studio-ed756-firebase-adminsdk-4ug1o-7202e6402d.json
 
 storage:
-    type: s3
-    bucket: "studioml-artifacts"
+    type: gcloud
+    bucket: "studio-ed756.appspot.com"
 
 saveWorkspaceFrequencyMinutes: 1 #how often is workspace being saved (minutes)
 

@@ -178,7 +178,7 @@ def main(args=sys.argv):
              "and shut down " +
              "as soon as no new messages are available. " +
              "If zero, don't wait at all." +
-             "Default value is %(default)",
+             "Default value is %(default)d",
         type=int,
         default=300)
 
@@ -212,6 +212,9 @@ def main(args=sys.argv):
 
     if runner_args.verbose:
         config['verbose'] = runner_args.verbose
+
+    if runner_args.guest:
+        config['database']['guest'] = True
 
     verbose = model.parse_verbosity(config['verbose'])
     logger.setLevel(verbose)
@@ -332,7 +335,7 @@ def add_experiment(args):
         e.pythonenv = add_packages(e.pythonenv, python_pkg)
         with model.get_db_provider(config) as db:
             db.add_experiment(e)
-    except:
+    except BaseException:
         traceback.print_exc()
         raise
     return e

@@ -34,9 +34,13 @@ POOL_SIZE = 100
 def initialize_app(config):
     if 'projectId' in config.keys():
         projectId = config['projectId']
-        config['authDomain'] = config['authDomain'].format(projectId)
-        config['databaseURL'] = config['databaseURL'].format(projectId)
-        config['storageBucket'] = config['storageBucket'].format(projectId)
+
+        if 'authDomain' in config.keys():
+            config['authDomain'] = config['authDomain'].format(projectId)
+        if 'databaseURL' in config.keys():
+            config['databaseURL'] = config['databaseURL'].format(projectId)
+        if 'storageBucket' in config.keys():
+            config['storageBucket'] = config['storageBucket'].format(projectId)
 
     return Firebase(config)
 
@@ -503,9 +507,12 @@ class Storage:
         path = self.path
         self.path = None
         if isinstance(file, str):
-            file_object = open(file, 'rb')
+            with open(file, 'rb') as file_object:
+                return self._put_file(path, file_object, token, userid)
         else:
-            file_object = file
+            return self._put_file(path, file, path, token, userid)
+
+    def _put_file(self, path, file_object, token, userid):
         request_ref = self.storage_bucket + "/o?name={0}".format(path)
         if token:
             headers = {"Authorization": "Firebase " + token}
