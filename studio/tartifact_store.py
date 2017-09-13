@@ -133,10 +133,11 @@ class TartifactStore(object):
                       + '.tgz'
 
             def finish_upload():
-                # test if the file is going to a blobstore
-                # and if is already there
+                # if file is going to blobstore
+                # and there is already a file there with
+                # the same name, skip upload
                 if not key.startswith('blobstore/') or \
-                       self.get_file_timestamp(key) is not None:
+                       self.get_file_timestamp(key) is None:
                     self._upload_file(key, tar_filename)
 
                 os.remove(tar_filename)
