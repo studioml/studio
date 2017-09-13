@@ -22,18 +22,11 @@ class LocalExecutor(object):
     """
 
     def __init__(self, args):
-        self.config = model.get_config()
-        if args.config:
-            if isinstance(args.config, basestring):
-                with open(args.config) as f:
-                    self.config.update(yaml.load(f))
-            else:
-                self.config.update(args.config)
+        self.config = args.config
 
         if args.guest:
             self.config['database']['guest'] = True
 
-        self.db = model.get_db_provider(self.config)
         self.logger = logging.getLogger('LocalExecutor')
         self.logger.setLevel(model.parse_verbosity(self.config.get('verbose')))
         self.logger.debug("Config: ")
@@ -48,58 +41,59 @@ class LocalExecutor(object):
 
         self.logger.info("Experiment key: " + experiment.key)
 
-        self.db.start_experiment(experiment)
+        with model.get_db_provider(self.config) as db:
+            db.start_experiment(experiment)
 
-        """ Override env variables with those inside the queued message
-        """
-        env = dict(os.environ)
-        if 'env' in self.config.keys():
-            for k, v in self.config['env'].iteritems():
-                if v is not None:
-                    env[str(k)] = str(v)
+            """ Override env variables with those inside the queued message
+            """
+            env = dict(os.environ)
+            if 'env' in self.config.keys():
+                for k, v in self.config['env'].iteritems():
+                    if v is not None:
+                        env[str(k)] = str(v)
 
-        fs_tracker.setup_experiment(env, experiment, clean=True)
-        log_path = fs_tracker.get_artifact_cache('output', experiment.key)
+            fs_tracker.setup_experiment(env, experiment, clean=True)
+            log_path = fs_tracker.get_artifact_cache('output', experiment.key)
 
-        # log_path = os.path.join(model_dir, self.config['log']['name'])
+            # log_path = os.path.join(model_dir, self.config['log']['name'])
 
-        self.logger.debug('Child process environment:')
-        self.logger.debug(str(env))
+            self.logger.debug('Child process environment:')
+            self.logger.debug(str(env))
 
-        sched = BackgroundScheduler()
-        sched.start()
+            sched = BackgroundScheduler()
+            sched.start()
 
-        with open(log_path, 'w') as output_file:
-            p = subprocess.Popen(["python",
-                                  experiment.filename] +
-                                 experiment.args,
-                                 stdout=output_file,
-                                 stderr=subprocess.STDOUT,
-                                 env=env,
-                                 cwd=experiment
-                                 .artifacts['workspace']['local'])
-            # simple hack to show what's in the log file
-            ptail = subprocess.Popen(["tail", "-f", log_path])
+            with open(log_path, 'w') as output_file:
+                p = subprocess.Popen(["python",
+                                      experiment.filename] +
+                                     experiment.args,
+                                     stdout=output_file,
+                                     stderr=subprocess.STDOUT,
+                                     env=env,
+                                     cwd=experiment
+                                     .artifacts['workspace']['local'])
+                # simple hack to show what's in the log file
+                ptail = subprocess.Popen(["tail", "-f", log_path])
 
-            sched.add_job(
-                lambda: self.db.checkpoint_experiment(experiment),
-                'interval',
-                minutes=self.config['saveWorkspaceFrequencyMinutes'])
+                sched.add_job(
+                    lambda: db.checkpoint_experiment(experiment),
+                    'interval',
+                    minutes=self.config['saveWorkspaceFrequencyMinutes'])
 
-            def kill_if_stopped():
-                if self.db.get_experiment(
-                        experiment.key,
-                        getinfo=False).status == 'stopped':
-                    p.kill()
+                def kill_if_stopped():
+                    if db.get_experiment(
+                            experiment.key,
+                            getinfo=False).status == 'stopped':
+                        p.kill()
 
-            sched.add_job(kill_if_stopped, 'interval', seconds=10)
+                sched.add_job(kill_if_stopped, 'interval', seconds=10)
 
-            try:
-                p.wait()
-            finally:
-                ptail.kill()
-                self.db.finish_experiment(experiment)
-                sched.shutdown()
+                try:
+                    p.wait()
+                finally:
+                    ptail.kill()
+                    db.finish_experiment(experiment)
+                    sched.shutdown()
 
 
 def allocate_resources(experiment, config=None, verbose=10):
@@ -165,12 +159,15 @@ def main(args=sys.argv):
         '--guest',
         help='Guest mode (does not require db credentials)',
         action='store_true')
+    parser.add_argument(
+        '--timeout',
+        default=0, type=int)
 
     parsed_args, script_args = parser.parse_known_args(args)
 
     queue = LocalQueue()
     # queue = glob.glob(fs_tracker.get_queue_directory() + "/*")
-
+    wait_for_messages(queue, parsed_args.timeout)
     worker_loop(queue, parsed_args)
 
 
@@ -197,52 +194,50 @@ def worker_loop(queue, parsed_args,
                      format(experiment_key, config))
 
         executor = LocalExecutor(parsed_args)
-        experiment = executor.db.get_experiment(experiment_key)
+        with model.get_db_provider(config) as db:
+            experiment = db.get_experiment(experiment_key)
 
-        if allocate_resources(experiment, config, verbose=verbose):
-            def hold_job():
-                queue.hold(ack_key, hold_period)
+            if allocate_resources(experiment, config, verbose=verbose):
+                def hold_job():
+                    queue.hold(ack_key, hold_period)
 
-            hold_job()
-            sched = BackgroundScheduler()
-            sched.add_job(hold_job, 'interval', minutes=hold_period / 2)
-            sched.start()
+                hold_job()
+                sched = BackgroundScheduler()
+                sched.add_job(hold_job, 'interval', minutes=hold_period / 2)
+                sched.start()
 
-            try:
-                if setup_pyenv:
-                    logger.info('Setting up python packages for experiment')
-                    pipp = subprocess.Popen(
-                        ['pip', 'install'] + experiment.pythonenv,
-                        stdout=subprocess.PIPE,
-                        stderr=subprocess.STDOUT)
+                try:
+                    if setup_pyenv:
+                        logger.info(
+                            'Setting up python packages for experiment')
+                        pipp = subprocess.Popen(
+                            ['pip', 'install'] + experiment.pythonenv,
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.STDOUT)
 
-                    pipout, _ = pipp.communicate()
-                    logger.info("pip output: \n" + pipout)
+                        pipout, _ = pipp.communicate()
+                        logger.info("pip output: \n" + pipout)
 
-                    # pip.main(['install'] + experiment.pythonenv)
+                    for tag, art in experiment.artifacts.iteritems():
+                        if fetch_artifacts or 'local' not in art.keys():
+                            logger.info('Fetching artifact ' + tag)
+                            if tag == 'workspace':
+                                art['local'] = db.get_artifact(
+                                    art, only_newer=False)
+                            else:
+                                art['local'] = db.get_artifact(art)
+                    executor.run(experiment)
+                finally:
+                    sched.shutdown()
+                    queue.acknowledge(ack_key)
 
-                for tag, art in experiment.artifacts.iteritems():
-                    if fetch_artifacts or 'local' not in art.keys():
-                        logger.info('Fetching artifact ' + tag)
-                        if tag == 'workspace':
-                            # art['local'] = executor.db.store.get_artifact(
-                            #    art, '.', only_newer=False)
-                            art['local'] = executor.db.store.get_artifact(
-                                art, only_newer=False)
-                        else:
-                            art['local'] = executor.db.store.get_artifact(art)
-                executor.run(experiment)
-            finally:
-                sched.shutdown()
-                queue.acknowledge(ack_key)
-
-            if single_experiment:
-                logger.info('single_experiment is True, quitting')
-                return
-        else:
-            logger.info('Cannot run experiment ' + experiment.key +
-                        ' due lack of resources. Will retry')
-            time.sleep(config['sleep_time'])
+                if single_experiment:
+                    logger.info('single_experiment is True, quitting')
+                    return
+            else:
+                logger.info('Cannot run experiment ' + experiment.key +
+                            ' due lack of resources. Will retry')
+                time.sleep(config['sleep_time'])
 
         wait_for_messages(queue, timeout, logger)
 

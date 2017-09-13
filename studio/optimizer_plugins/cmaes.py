@@ -206,7 +206,7 @@ class Optimizer(object):
                     os.path.expanduser(self.config['result_dir']))
                 if not os.path.exists(result_dir):
                     os.makedirs(result_dir)
-            except:
+            except BaseException:
                 self.looger.warn("Cannot retrieve checkpoint directory,"
                                  " not saving checkpoint")
                 return

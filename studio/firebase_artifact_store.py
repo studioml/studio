@@ -13,7 +13,7 @@ logging.basicConfig()
 
 class FirebaseArtifactStore(TartifactStore):
 
-    def __init__(self, db_config, measure_timestamp_diff=True,
+    def __init__(self, db_config, measure_timestamp_diff=False,
                  blocking_auth=True, verbose=10):
 
         guest = db_config.get('guest')
@@ -115,7 +115,8 @@ class FirebaseArtifactStore(TartifactStore):
                 ("Deleting file {} from storage " +
                  "raised an exception: {}") .format(key, err))
 
-    def _get_file_url(self, key):
+    def _get_file_url(self, key, method='GET'):
+        assert method == 'GET'
         self.logger.debug("Getting a download url for a file at key {}"
                           .format(key))
 
