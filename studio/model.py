@@ -588,9 +588,6 @@ class FirebaseProvider(object):
         if self.auth:
             self.auth.refresh_token(email, refresh_token)
 
-    def get_auth_domain(self):
-        return self.app.auth_domain
-
     def is_auth_expired(self):
         if self.auth:
             return self.auth.expired
@@ -665,9 +662,6 @@ class PostgresProvider(object):
         raise NotImplementedError()
 
     def refresh_auth_token(self, email, refresh_token):
-        raise NotImplementedError()
-
-    def get_auth_domain(self):
         raise NotImplementedError()
 
     def is_auth_expired(self):

@@ -119,14 +119,46 @@ class HTTPProvider(object):
                                 )
         self._raise_detailed_error(request)
 
-    def get_user_experiments(self, user):
-        raise NotImplementedError()
+    def get_user_experiments(self, user, blocking=True):
+        headers = self._get_headers()
+        response = requests.post(
+            self.url + '/api/get_user_experiments',
+            headers=headers,
+            data=json.dumps({"user": user}))
+
+        self._raise_detailed_error(response)
+        data = response.json()['experiments']
+        
+        experiments = [model.experiment_from_dict(edict) \
+                       for edict in data]
+        
+        return experiments
 
     def get_projects(self):
-        raise NotImplementedError()
+        headers = self._get_headers()
+        response = requests.post(
+            self.url + '/api/get_projects',
+            headers=headers)
 
-    def get_project_experiments(self):
-        raise NotImplementedError()
+        self._raise_detailed_error(response)
+        projects = response.json()['projects']
+        
+        return projects
+
+    def get_project_experiments(self, project):
+        headers = self._get_headers()
+        response = requests.post(
+            self.url + '/api/get_project_experiments',
+            headers=headers,
+            data=json.dumps({"project": project}))
+
+        self._raise_detailed_error(response)
+        data = response.json()['experiments']
+        
+        experiments = [model.experiment_from_dict(edict) \
+                       for edict in data]
+        
+        return experiments
 
     def get_artifacts(self):
         raise NotImplementedError()
@@ -136,7 +168,15 @@ class HTTPProvider(object):
             .get_artifact(artifact)
 
     def get_users(self):
-        raise NotImplementedError()
+        headers = self._get_headers()
+        response = requests.post(
+            self.url + '/api/get_users',
+            headers=headers)
+
+        self._raise_detailed_error(response)
+        users = response.json()['users']
+            
+        return users
 
     def checkpoint_experiment(self, experiment):
         if isinstance(experiment, basestring):
@@ -157,10 +197,8 @@ class HTTPProvider(object):
         self._update_artifacts(experiment, artifacts)
 
     def refresh_auth_token(self, email, refresh_token):
-        raise NotImplementedError()
-
-    def get_auth_domain(self):
-        raise NotImplementedError()
+        if self.auth:
+            self.auth.refresh_token(email, refresh_token)
 
     def _get_headers(self):
         headers = {"content-type": "application/json"}
