@@ -76,26 +76,36 @@ Creating a Firebase project and deploying the API server
    
       ::
        
-      ./deploy_apiserver.sh local 
+      ./deploy_apiserver.sh local <port>
       
-   when running on a dedicated instance
-    
+   when running on a dedicated instance (where port is the port on which 
+   the server will be listening)
+
+
+Configuring authentication
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+1. Go the Firebase console, select Authentication in the left-hand pane
+2. Select Sign-in method tab
+3. Enable authentication using google account
+4. In the Authorized domains section, add the url of your server (if 
+   not there already)
+   
+       
 Configuring studio to work with API server
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 For clients to work with the API server, you'll
 need to modify their config.yaml files as follows:
 
-1. remove storage section
-2. in the database section, set type: http, 
+1. Remove storage section
+2. In the database section, set type: http, 
    serverUrl: <url of your deployed server>. 
    When deploying to GAE, the url will have format
-   https://<project_name>.appspot.com
- 
-3. the the database section, set apiKey: <firebase api key>
-   (from step 3 in previous section), and 
-   authDomain: <project_name>.firebaseapp.com
+   https://<project_name>.appspot.com. When deploying
+   on a dedicated instance, don't forget to specify the
+   port.
        
+
 
 Setting up studio do access Firbase directly (deprecated)
 ---------------------------------------------------------
