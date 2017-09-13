@@ -111,6 +111,8 @@ class TartifactStore(object):
                 debug_str += ", exclude = {}".format(ignore_filepath)
             self.logger.debug(debug_str)
 
+            
+
             tarcmd = 'tar {} -czf {} -C {} {}'.format(
                 ignore_arg,
                 tar_filename,

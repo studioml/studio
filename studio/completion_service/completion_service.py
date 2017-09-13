@@ -138,6 +138,11 @@ class CompletionService:
             'args': {
                 'mutable': False,
                 'local': args_file
+            },
+            'workspace': {
+                'mutable': False,
+                'local': fs_tracker.get_artifact_cache(
+                    'workspace', experiment_name)
             }
         }
 
