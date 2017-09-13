@@ -7,7 +7,7 @@ import time
 import pickle
 import tempfile
 
-from studio import runner, model
+from studio import runner, model, fs_tracker
 
 logging.basicConfig()
 
@@ -140,6 +140,11 @@ class CompletionService:
             'args': {
                 'mutable': False,
                 'local': args_file
+            },
+            'workspace': {
+                'mutable': False,
+                'local': fs_tracker.get_artifact_cache(
+                    'workspace', experiment_name)
             }
         }
 
