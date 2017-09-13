@@ -62,14 +62,15 @@ class CompletionService:
             cloud=None,
             cloud_timeout=100,
             bid='100%',
+            ssh_keypair='peterz-k1',
             resumable=False,):
 
         self.config = model.get_config(config)
         self.cloud = None
         self.experimentId = experimentId
         self.project_name = "completion_service_" + experimentId
-        self.queue_name = 'local'
 
+        self.queue_name = 'local'
         if cloud in ['gcloud', 'gcspot']:
             self.queue_name = 'pubsub_' + experimentId
         elif cloud in ['ec2', 'ec2spot']:
@@ -84,8 +85,10 @@ class CompletionService:
         self.queue = runner.get_queue(self.queue_name, self.cloud,
                                       self.verbose_level)
 
-        self.bid = bid
         self.cloud_timeout = cloud_timeout
+        self.bid = bid
+        self.ssh_keypair = ssh_keypair
+
         self.submitted = set([])
         self.num_workers = num_workers
         self.resumable = resumable
@@ -99,7 +102,7 @@ class CompletionService:
                 self.resources_needed,
                 start_workers=self.num_workers,
                 queue_upscaling=True,
-                ssh_keypair='peterz-k1',
+                ssh_keypair=self.ssh_keypair,
                 timeout=self.cloud_timeout)
             self.p = None
         else:
