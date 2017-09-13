@@ -7,7 +7,7 @@ import time
 import pickle
 import tempfile
 
-from studio import runner, model
+from studio import runner, model, fs_tracker
 
 logging.basicConfig()
 
