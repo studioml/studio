@@ -9,8 +9,13 @@ class CompletionServiceTest(unittest.TestCase):
     def test_two_experiments(self):
         experimentId = str(uuid.uuid4())
         mypath = os.path.dirname(os.path.realpath(__file__))
-        config_path = os.path.join(mypath,
-                                   '..', '..', 'studio', 'tests', 'test_config.yaml')
+        config_path = os.path.join(
+            mypath,
+            '..',
+            '..',
+            'studio',
+            'tests',
+            'test_config.yaml')
 
         n_experiments = 2
         results = {}
@@ -37,8 +42,13 @@ class CompletionServiceTest(unittest.TestCase):
     def test_two_experiments_gcloud(self):
         experimentId = str(uuid.uuid4())
         mypath = os.path.dirname(os.path.realpath(__file__))
-        config_path = os.path.join(mypath,
-                                   '..', '..', 'studio', 'tests', 'test_config.yaml')
+        config_path = os.path.join(
+            mypath,
+            '..',
+            '..',
+            'studio',
+            'tests',
+            'test_config.yaml')
 
         n_experiments = 2
         results = {}

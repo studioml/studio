@@ -16,7 +16,7 @@ logging.basicConfig()
 
 class GCloudWorkerManager(object):
     def __init__(self, zone='us-central1-f',
-                 auth_cookie=None, verbose=10, branch='master',
+                 auth_cookie=None, verbose=10, branch=None,
                  user_startup_script=None):
         assert 'GOOGLE_APPLICATION_CREDENTIALS' in os.environ.keys()
         with open(os.environ['GOOGLE_APPLICATION_CREDENTIALS'], 'r') as f:

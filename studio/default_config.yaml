@@ -29,7 +29,7 @@ saveWorkspaceFrequencyMinutes: 1
 verbose: error
 
 cloud:
-    google:
+    gcloud:
         zone: us-central1-f
 
 

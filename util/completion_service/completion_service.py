@@ -56,9 +56,10 @@ class CompletionService:
             self,
             experimentId,
             config=None,
+            num_workers=1,
             resources_needed=None,
             cloud=None,
-            resumable=False):
+            resumable=False,):
 
         self.config = model.get_config(config)
         self.cloud = None
@@ -82,6 +83,7 @@ class CompletionService:
         self.bid = '100%'
         self.cloud_timeout = 100
         self.submitted = set([])
+        self.num_workers = num_workers
         self.resumable = resumable
 
     def __enter__(self):
@@ -91,7 +93,7 @@ class CompletionService:
                 self.queue_name,
                 self.bid,
                 self.resources_needed,
-                start_workers=1,
+                start_workers=self.num_workers,
                 queue_upscaling=True,
                 ssh_keypair='peterz-k1',
                 timeout=self.cloud_timeout)

@@ -68,12 +68,13 @@ def get_commit(path='.'):
 
     return stdout.strip()
 
+
 def get_branch(path='.'):
     p = subprocess.Popen(
-            ['git', 'rev-parse', '--abbrev-ref', 'HEAD'],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            cwd=path)
+        ['git', 'rev-parse', '--abbrev-ref', 'HEAD'],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        cwd=path)
 
     stdout, _ = p.communicate()
     assert p.returncode == 0, "git returned non-zero return code"

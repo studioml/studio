@@ -189,8 +189,8 @@ def main(args=sys.argv):
     parser.add_argument(
         '--branch',
         help='Branch of studioml to use when running remote worker, useful ' +
-             'for debugging pull requests',
-        default='master')
+             'for debugging pull requests. Default is current',
+        default=None)
 
     # detect which argument is the script filename
     # and attribute all arguments past that index as related to the script
@@ -379,6 +379,8 @@ def get_worker_manager(config, cloud=None, verbose=10):
         return None
 
     assert cloud in ['gcloud', 'gcspot', 'ec2', 'ec2spot']
+    logger = logging.getLogger('runner.get_worker_manager')
+    logger.setLevel(verbose)
 
     auth_cookie = None if config['database'].get('guest') \
         else os.path.join(
@@ -388,15 +390,19 @@ def get_worker_manager(config, cloud=None, verbose=10):
 
     branch = config['cloud'].get('branch')
     if branch is None:
-        branch = git_util.get_branch(os.path.dirname(os.path.realpath(__file__)))
+        branch = git_util.get_branch(
+            os.path.dirname(
+                os.path.realpath(__file__)))
+
+    logger.info('using branch {}'.format(branch))
 
     if cloud in ['gcloud', 'gcspot']:
 
-        cloudconfig = config['cloud']['google']
+        cloudconfig = config['cloud']['gcloud']
         worker_manager = GCloudWorkerManager(
             auth_cookie=auth_cookie,
             zone=cloudconfig['zone'],
-            branch=config['cloud'].get('branch'),
+            branch=branch,
             user_startup_script=config['cloud'].get('user_startup_script')
         )
 
