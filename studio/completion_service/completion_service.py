@@ -105,7 +105,7 @@ class CompletionService:
             self.logger.debug('Starting local worker')
             self.p = subprocess.Popen([
                 'studio-local-worker',
-                '--verbose=debug',
+                '--verbose=error',
                 '--timeout=' + str(self.cloud_timeout)],
                 close_fds=True)
 
