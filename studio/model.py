@@ -356,15 +356,15 @@ class FirebaseProvider(object):
 
         self._delete(self._get_experiments_keybase() + experiment.key)
 
-    def checkpoint_experiment(self, experiment, blocking=False):
+    def checkpoint_experiment(self, experiment, blocking=True):
         if isinstance(experiment, basestring):
             key = experiment
             experiment = self.get_experiment(key, getinfo=False)
         else:
             key = experiment.key
 
-        self.logger.info("%s, %s: checkpointing experiment" % \
-                         (os.getpid(), key))
+        # self.logger.info("%s, %s: checkpointing experiment" %
+        #                  (os.getpid(), key))
         checkpoint_threads = [
             Thread(
                 target=self.store.put_artifact,
@@ -378,11 +378,11 @@ class FirebaseProvider(object):
         self.__setitem__(self._get_experiments_keybase() +
                          key + "/time_last_checkpoint",
                          time.time())
-        if True:
+        if blocking:
             for t in checkpoint_threads:
                 t.join()
-            self.logger.info("%s, %s: finish checkpointing experiment" % \
-                             (os.getpid(), key))
+            # self.logger.info("%s, %s: finish checkpointing experiment" %
+            #                  (os.getpid(), key))
         else:
             return checkpoint_threads
 
