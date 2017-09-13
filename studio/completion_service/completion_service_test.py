@@ -12,8 +12,6 @@ class CompletionServiceTest(unittest.TestCase):
         config_path = os.path.join(
             mypath,
             '..',
-            '..',
-            'studio',
             'tests',
             'test_config.yaml')
 
@@ -45,8 +43,6 @@ class CompletionServiceTest(unittest.TestCase):
         config_path = os.path.join(
             mypath,
             '..',
-            '..',
-            'studio',
             'tests',
             'test_config.yaml')
 
