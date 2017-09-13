@@ -127,6 +127,9 @@ class CompletionService:
         tmpdir = tempfile.gettempdir()
         args_file = os.path.join(tmpdir, experiment_name + "_args.pkl")
 
+        workspace = fs_tracker.get_artifact_cache('workspace', experiment_name)
+        os.makedirs(workspace)
+
         artifacts = {
             'retval': {
                 'mutable': True
@@ -141,9 +144,8 @@ class CompletionService:
             },
             'workspace': {
                 'mutable': False,
-                'local': fs_tracker.get_artifact_cache(
-                    'workspace', experiment_name)
-            }
+                'local': workspace
+           }
         }
 
         for tag, name in files.iteritems():
