@@ -80,7 +80,7 @@ class CompletionService:
         self.logger.setLevel(self.verbose_level)
 
         self.queue = runner.get_queue(self.queue_name, self.cloud,
-            self.verbose_level)
+                                      self.verbose_level)
 
         self.bid = '100%'
         self.cloud_timeout = 100
