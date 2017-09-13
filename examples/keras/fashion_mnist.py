@@ -64,7 +64,6 @@ tbcallback = TensorBoard(log_dir=fs_tracker.get_tensorboard_dir(),
                          write_images=True)
 
 
-
 model.fit(
     x_train, y_train, validation_data=(
         x_test,
@@ -72,7 +71,6 @@ model.fit(
     epochs=no_epochs,
     callbacks=[checkpointer, tbcallback],
     batch_size=batch_size)
-
 
 
 class_labels = [
@@ -99,8 +97,8 @@ pipe.add(lambda x: np.argmax(x, axis=1))
 pipe.add(lambda x: [class_labels[int(x)]])
 
 url_pants = 'https://asda.scene7.com/is/image/Asda/5054622127954_A'
-url_boot = 'https://images-na.ssl-images-amazon.com/images/I/714sb6gwMpL._UL1500_.jpg'
+url_boot = 'https://images-na.ssl-images-amazon.com/' + \
+           'images/I/714sb6gwMpL._UL1500_.jpg'
 
-output = pipe({'pants': url_pants, 'boot':url_boot})
+output = pipe({'pants': url_pants, 'boot': url_boot})
 print output
-
