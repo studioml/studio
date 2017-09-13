@@ -84,6 +84,7 @@ class CompletionService:
 
         self.queue = runner.get_queue(self.queue_name, self.cloud,
                                       self.verbose_level)
+        self.queue.clean()
 
         self.cloud_timeout = cloud_timeout
         self.bid = bid

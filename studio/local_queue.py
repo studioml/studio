@@ -18,6 +18,10 @@ class LocalQueue:
         while self.has_next():
             self.dequeue()
 
+    # Delete and clean are the same for local queue
+    def delete(self):
+        self.clean()
+
     def dequeue(self, acknowledge=True):
         files = glob.glob(self.path + '/*')
         if not any(files):
