@@ -40,7 +40,7 @@ google app engine, GAE, but these steps can be trivially adapted
 for heroku or just running API server on a dedicated instance)
 
 Prerequisites
-------------
+~~~~~~~~~~~~~
 If deploying onto google app engine, you'll need to have gcloud cli installed
 (link)
 In what follows, deployment machine means either the local machine 
