@@ -8,6 +8,7 @@ import pickle
 import tempfile
 
 from studio import runner, model, fs_tracker
+from studio.util import rsync_cp
 
 logging.basicConfig()
 
@@ -104,7 +105,7 @@ class CompletionService:
             self.logger.debug('Starting local worker')
             self.p = subprocess.Popen([
                 'studio-local-worker',
-                '--verbose=error',
+                '--verbose=debug',
                 '--timeout=' + str(self.cloud_timeout)],
                 close_fds=True)
 
@@ -127,8 +128,20 @@ class CompletionService:
         tmpdir = tempfile.gettempdir()
         args_file = os.path.join(tmpdir, experiment_name + "_args.pkl")
 
-        workspace = fs_tracker.get_artifact_cache('workspace', experiment_name)
-        os.makedirs(workspace)
+        import pdb
+        pdb.set_trace()
+        workspace_orig = os.getcwd()
+        ignore_arg = ''
+        ignore_filepath = os.path.join(workspace_orig, ".studioml_ignore")
+        if os.path.exists(ignore_filepath) and \
+                not os.path.isdir(ignore_filepath):
+            ignore_arg = "--exclude-from=%s" % ignore_filepath
+
+        workspace_new = fs_tracker.get_artifact_cache(
+            'workspace', experiment_name)
+        rsync_cp(workspace_orig, workspace_new, ignore_arg, self.logger)
+
+        self.logger.info('Created workspace ' + workspace_new)
 
         artifacts = {
             'retval': {
@@ -143,9 +156,9 @@ class CompletionService:
                 'local': args_file
             },
             'workspace': {
-                'mutable': False,
-                'local': workspace
-           }
+                'mutable': True,
+                'local': workspace_new
+            }
         }
 
         for tag, name in files.iteritems():
