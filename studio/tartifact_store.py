@@ -279,7 +279,7 @@ class TartifactStore(object):
         fileobj = urllib.urlopen(url)
         if fileobj:
             try:
-                retval = tarfile.open(fileobj=fileobj, mode='r|gz')
+                retval = tarfile.open(fileobj=fileobj, mode='r|')
                 return retval
             except BaseException as e:
                 self.logger.info('Streaming artifact error:\n' + e.message)
