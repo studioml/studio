@@ -160,7 +160,7 @@ class CompletionService:
                 'local': args_file
             },
             'workspace': {
-                'mutable': True,
+                'mutable': False,
                 'local': workspace_new
             }
         }
