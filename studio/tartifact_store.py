@@ -12,6 +12,9 @@ import fs_tracker
 import util
 import tarfile
 import urllib
+import hashlib
+
+from util import download_file
 
 logging.basicConfig()
 
@@ -137,7 +140,7 @@ class TartifactStore(object):
                 # and there is already a file there with
                 # the same name, skip upload
                 if not key.startswith('blobstore/') or \
-                       self._get_file_timestamp(key) is None:
+                        self._get_file_timestamp(key) is None:
                     self._upload_file(key, tar_filename)
 
                 os.remove(tar_filename)
@@ -161,7 +164,20 @@ class TartifactStore(object):
             only_newer=True,
             background=False):
 
-        key = artifact['key']
+        key = artifact.get('key')
+
+        if key is None:
+            assert artifact.get('url') is not None
+            assert not artifact['mutable']
+            key = hashlib.sha256(artifact['url']).hexdigest()
+            local_path = fs_tracker.get_blob_cache(key)
+            if os.path.exists(local_path):
+                self.logger.info((
+                    'Immutable artifact exists at local_path {},' +
+                    ' skipping the download').format(local_path))
+                return local_path
+
+            download_file(artifact['url'], local_path, self.logger)
 
         if local_path is None:
             if 'local' in artifact.keys() and \
@@ -172,6 +188,11 @@ class TartifactStore(object):
                     local_path = fs_tracker.get_artifact_cache(key)
                 else:
                     local_path = fs_tracker.get_blob_cache(key)
+                    if os.path.exists(local_path):
+                        self.logger.info((
+                            'Immutable artifact exists at local_path {},' +
+                            ' skipping the download').format(local_path))
+                        return local_path
 
         local_path = re.sub('\/\Z', '', local_path)
         local_basepath = os.path.dirname(local_path)
