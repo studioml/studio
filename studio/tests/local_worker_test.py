@@ -125,6 +125,22 @@ class LocalWorkerTest(unittest.TestCase, QueueTest):
         ):
             pass
 
+    def test_local_worker_co_url(self):
+        expected_str = 'Zabil zaryad ya v pushku tugo'
+        url = 'https://storage.googleapis.com/studio-ed756.appspot.com/' + \
+              'tests/url_artifact.txt'
+
+        with stubtest_worker(
+            self,
+            experiment_name='test_local_worker_co_url' + str(uuid.uuid4()),
+            runner_args=['--capture-once=' + url + ':f'],
+            config_name='test_config.yaml',
+            test_script='art_hello_world.py',
+            script_args=[],
+            expected_output=expected_str
+        ):
+            pass
+
     @unittest.skipIf(keras is None,
                      'keras is required for this test')
     def test_save_get_model(self):

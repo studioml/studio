@@ -184,8 +184,9 @@ class FirebaseProviderTest(unittest.TestCase):
                 f.write(random_str)
 
             checkpoint_threads = fb.checkpoint_experiment(experiment)
-            for t in checkpoint_threads:
-                t.join()
+            if checkpoint_threads:
+                for t in checkpoint_threads:
+                    t.join()
 
             shutil.rmtree(modeldir)
             fb.store.get_artifact(

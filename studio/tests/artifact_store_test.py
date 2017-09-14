@@ -8,6 +8,8 @@ import shutil
 import requests
 import subprocess
 
+from urlparse import urlparse
+
 from studio import model
 from studio.auth import remove_all_keys
 
@@ -114,7 +116,7 @@ class ArtifactStoreTest(object):
         with open(tar_filename, 'wb') as f:
             f.write(response.content)
 
-        ptar = subprocess.Popen(['tar', '-xzf', tar_filename],
+        ptar = subprocess.Popen(['tar', '-xf', tar_filename],
                                 cwd=tempfile.gettempdir())
 
         tarout, _ = ptar.communicate()
@@ -333,8 +335,8 @@ class S3ArtifactStoreTest(ArtifactStoreTest, unittest.TestCase):
 
     def get_qualified_location_prefix(self):
         store = self.get_store()
-        endpoint = boto3.client('s3')._endpoint.host
-        return "s3://" + endpoint + "/" + store.bucket + "/"
+        endpoint = urlparse(boto3.client('s3')._endpoint.host)
+        return "s3://" + endpoint.netloc + "/" + store.bucket + "/"
 
 
 if __name__ == "__main__":

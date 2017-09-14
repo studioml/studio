@@ -44,5 +44,6 @@ def main():
     with open(fs_tracker.get_artifact('retval'), 'w') as f:
         f.write(pickle.dumps(retval))
 
+
 if __name__ == "__main__":
     main()
