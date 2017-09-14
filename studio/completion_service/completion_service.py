@@ -166,10 +166,13 @@ class CompletionService:
         }
 
         for tag, name in files.iteritems():
-            artifacts[tag] = {
-                'mutable': False,
-                'local': os.path.abspath(os.path.expanduser(name))
-            }
+            url_schema = re.compile('^https{0,1}://')
+            if url_schema.match(name):
+                artifacts[tag]['url'] = name
+            else:
+                artifacts[tag]['local'] = os.path.abspath(
+                    os.path.expanduser(name))
+            artifacts[tag]['mutable'] = False
 
         with open(args_file, 'w') as f:
             f.write(pickle.dumps(args))
