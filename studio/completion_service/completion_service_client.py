@@ -19,6 +19,10 @@ def main():
     logger.debug('copying and importing client module')
 
     script_path = fs_tracker.get_artifact('clientscript')
+    script_name = os.path.basename(script_path)
+    new_script_path = os.path.join(os.getcwd(), script_name)
+    shutil.copy(script_path, new_script_path)
+    script_path = new_script_path
     logger.debug("script path: " + script_path)
 
     mypath = os.path.dirname(script_path)
