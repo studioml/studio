@@ -1,27 +1,34 @@
 Frequently Asked Questions
 ==========================
 
-What is the complete list of tools Studio.ML is compatible with?
+`What is the complete list of tools Studio.ML is compatible with?`_
+`Do I need to change my code to use Studio.ML?`_
+`How can I track the training of my models?`_
+`How does Studio.ml integrate with Google Cloud or Amazon EC2?`_
+`Is it possible to view the experiment artifacts outside of the Web UI?_
+
+
+_`What is the complete list of tools Studio.ML is compatible with?`
 -------------
 
 Keras, TensorFlow, PyTorch, scikit-learn
 
-Do I need to change my code to use Studio.ML?
+_`Do I need to change my code to use Studio.ML?`
 ---------------------------------------------
 
 Studio is designed to minimize any invasion of your existing code. Running an experiment with Studio should be as simple as replacing ``python`` with ``studio run`` in your command line with a few flags for capturing your workspace or naming your experiments.
 
-How can I track the training of my models?
+_`How can I track the training of my models?`
 --------------------
 
 You can manage any of your experiments- current, old or queued- through the web interface. Simply run ``studio ui`` to launch the UI to view details of any of your experiments.
 
-How does Studio.ml integrate with Google Cloud or Amazon EC2?
+_`How does Studio.ml integrate with Google Cloud or Amazon EC2?`
 -----------------
 
 We use standard Python tools like Boto and Google Cloud Python Client to launch GPU instances that are used for model training and de-provision them when the experiment is finished.
 
-Is it possible to view the experiment artifacts outside of the Web UI?
+_`Is it possible to view the experiment artifacts outside of the Web UI?`
 -------------------
 
 Yes! 
