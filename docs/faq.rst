@@ -1,6 +1,8 @@
 Frequently Asked Questions
 ==========================
 
+`Join us on Slack <https://studioml.now.sh/>`_!
+
 - `What is the complete list of tools Studio.ML is compatible with?`_
 
 - `Do I need to change my code to use Studio.ML?`_
