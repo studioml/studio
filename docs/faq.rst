@@ -7,6 +7,7 @@ Yes!
    ::
        
        from studio import model
+
        with model.get_db_provider() as db:
            experiment = db.get_experiment(<experiment_key>)
 
