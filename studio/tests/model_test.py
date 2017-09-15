@@ -40,47 +40,47 @@ class FirebaseProviderTest(unittest.TestCase):
 
     def test_get_set_firebase(self):
         with self.get_firebase_provider() as fb:
-            response = fb.__getitem__("test/hello")
+            response = fb._get("test/hello")
             self.assertEquals(response, "world")
 
             random_str = str(uuid.uuid4())
             key_path = 'test/randomKey'
             fb.__setitem__(key_path, random_str)
 
-            self.assertTrue(fb.__getitem__(key_path) == random_str)
+            self.assertTrue(fb._get(key_path) == random_str)
             fb._delete(key_path)
 
     def test_get_set_auth_firebase(self):
         remove_all_keys()
         with self.get_firebase_provider('test_config_auth.yaml') as fb:
-            response = fb.__getitem__("authtest/hello")
+            response = fb._get("authtest/hello")
             self.assertEquals(response, "world")
 
             random_str = str(uuid.uuid4())
             key_path = 'authtest/randomKey'
             fb.__setitem__(key_path, random_str)
 
-            self.assertTrue(fb.__getitem__(key_path) == random_str)
+            self.assertTrue(fb._get(key_path) == random_str)
             fb._delete(key_path)
             remove_all_keys()
 
     def test_get_set_noauth_firebase(self):
         remove_all_keys()
         with self.get_firebase_provider('test_config.yaml') as fb:
-            response = fb.__getitem__("authtest/hello")
+            response = fb._get("authtest/hello")
             self.assertTrue(response is None)
 
             random_str = str(uuid.uuid4())
             key_path = 'authtest/randomKey'
             fb.__setitem__(key_path, random_str)
-            self.assertTrue(fb.__getitem__(key_path) is None)
+            self.assertTrue(fb._get(key_path) is None)
             remove_all_keys()
 
     def test_get_set_firebase_bad(self):
         # smoke test to make sure access to a database at wrong
         # url is reported, but does not crash the system
         with self.get_firebase_provider('test_bad_config.yaml') as fb:
-            response = fb.__getitem__("test/hello")
+            response = fb._get("test/hello")
             self.assertTrue(response is None)
 
             fb.__setitem__("test/hello", "bla")
@@ -109,7 +109,7 @@ class FirebaseProviderTest(unittest.TestCase):
 
             self.assertTrue(experiment.status == 'waiting')
             self.assertTrue(experiment.time_added <= time.time())
-            actual_experiment_dict = fb.__getitem__(
+            actual_experiment_dict = fb._get(
                 fb._get_experiments_keybase() + '/' + experiment_name)
             for key, value in experiment.__dict__.iteritems():
                 if value:
@@ -130,7 +130,7 @@ class FirebaseProviderTest(unittest.TestCase):
             self.assertTrue(experiment.time_added <= time.time())
             self.assertTrue(experiment.time_started <= time.time())
 
-            actual_experiment_dict = fb.__getitem__(
+            actual_experiment_dict = fb._get(
                 fb._get_experiments_keybase() + '/' + experiment_name)
             for key, value in experiment.__dict__.iteritems():
                 if value:
@@ -153,7 +153,7 @@ class FirebaseProviderTest(unittest.TestCase):
             self.assertTrue(experiment.time_started <= time.time())
             self.assertTrue(experiment.time_finished <= time.time())
 
-            actual_experiment_dict = fb.__getitem__(
+            actual_experiment_dict = fb._get(
                 fb._get_experiments_keybase() + '/' + experiment_name)
             for key, value in experiment.__dict__.iteritems():
                 if value:
