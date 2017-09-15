@@ -2,7 +2,7 @@ dist: trusty
 
 language: python
 python:
-  - "2.7"
+  - "3.6"
 
 env:
   fast_finish: true
