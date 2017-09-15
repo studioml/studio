@@ -21,6 +21,8 @@ try:
 except ImportError:
     ThreadPool = None
 
+ThreadPool = None
+
 import fs_tracker
 import util
 import git_util
@@ -187,14 +189,14 @@ class FirebaseProvider(object):
 
         self.max_keys = db_config.get('max_keys', 100)
 
-    def __getitem__(self, key):
+    def _get(self, key, shallow=False):
         try:
             splitKey = key.split('/')
             key_path = '/'.join(splitKey[:-1])
             key_name = splitKey[-1]
             dbobj = self.app.database().child(key_path).child(key_name)
-            return dbobj.get(self.auth.get_token()).val() if self.auth \
-                else dbobj.get().val()
+            return dbobj.get(self.auth.get_token(),shallow=shallow).val() \
+                if self.auth else dbobj.get(shallow=shallow).val()
         except Exception as err:
             self.logger.warn(("Getting key {} from a database " +
                               "raised an exception: {}").format(key, err))
@@ -462,7 +464,7 @@ class FirebaseProvider(object):
             return None
 
     def get_experiment(self, key, getinfo=True):
-        data = self.__getitem__(self._get_experiments_keybase() + key)
+        data = self._get(self._get_experiments_keybase() + key)
         assert data, "data at path %s not found! " % (
             self._get_experiments_keybase() + key)
         data['key'] = key
@@ -513,7 +515,7 @@ class FirebaseProvider(object):
             else:
                 userid = user_ids[0]
 
-        experiment_keys = self.__getitem__(
+        experiment_keys = self._get(
             self._get_user_keybase(userid) + "/experiments")
         if not experiment_keys:
             experiment_keys = {}
@@ -526,7 +528,7 @@ class FirebaseProvider(object):
             keys, getinfo=True, blocking=blocking)
 
     def get_project_experiments(self, project):
-        experiment_keys = self.__getitem__(self._get_projects_keybase() +
+        experiment_keys = self._get(self._get_projects_keybase() +
                                            project)
         if not experiment_keys:
             experiment_keys = {}
@@ -557,7 +559,7 @@ class FirebaseProvider(object):
             try:
                 self._experiment_cache[key] = self.get_experiment(
                     key, getinfo=getinfo)
-            except AssertionError:
+            except BaseException:
                 self.logger.warn(
                     ("Experiment {} does not exist " +
                      "or is corrupted, try to delete record").format(key))
@@ -579,10 +581,16 @@ class FirebaseProvider(object):
                 if key in self._experiment_cache.keys()]
 
     def get_projects(self):
-        return self.__getitem__(self._get_projects_keybase())
+        return self._get(self._get_projects_keybase(), shallow=True)
 
     def get_users(self):
-        return self.__getitem__('users/')
+        user_ids = self._get('users/', shallow=True)
+        retval = {}
+        for user_id in user_ids.keys():
+            retval[user_id] = {
+                'email':self._get('users/' + user_id + '/email')
+            }
+        return retval
 
     def refresh_auth_token(self, email, refresh_token):
         if self.auth:
@@ -598,7 +606,7 @@ class FirebaseProvider(object):
         assert key is not None
         user = user if user else self._get_userid()
 
-        owner = self.__getitem__(
+        owner = self._get(
             self._get_experiments_keybase() + key + "/owner")
         if owner is None:
             return True
