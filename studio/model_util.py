@@ -138,7 +138,7 @@ class BufferedPipe:
                 return (x[0], self.func(x[1]))
             except BaseException as e:
                 self.logger.warn('Applying function to {} raised exception {}'
-                                 .format(x[1], str(e))
+                                 .format(x[1], str(e)))
                 self.logger.exception(e)
                 return (x[0], None)
 
@@ -149,7 +149,7 @@ class BufferedPipe:
                 batch_output = self.func(batch_input)
             except BaseException as e:
                 self.logger.warn('Applying function to {} raised exception {}'
-                                 .format(batch_input, str(e))
+                                 .format(batch_input, str(e)))
                 self.logger.exception(e)
                 batch_output = [None] * len(batch_index)
 
@@ -157,7 +157,7 @@ class BufferedPipe:
                 return zip(batch_index, batch_output)
             except BaseException as e:
                 self.logger.warn('Applying function to {} raised exception {}'
-                                 .format(x, str(e))
+                                 .format(x, str(e)))
                 self.logger.exception(e)
                 return None
 
@@ -166,7 +166,7 @@ class BufferedPipe:
                 return self.func(x)
             except BaseException as e:
                 self.logger.warn('Applying function to {} raised exception {}'
-                                 .format(x, str(e))
+                                 .format(x, str(e)))
                 self.logger.exception(e)
                 return None
 

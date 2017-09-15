@@ -1,5 +1,6 @@
 import re
 import subprocess
+import sys
 
 
 def get_git_info(path='.', abort_dirty=True):
@@ -52,7 +53,7 @@ def get_repo_url(path='.', remove_user=True):
 
     url = stdout.strip()
     if remove_user:
-        url = re.sub('(?<=://).*@', '', url)
+        url = re.sub('(?<=://).*@', '', url.decode('utf-8'))
     return url
 
 

@@ -4,9 +4,11 @@ from setuptools import setup
 from subprocess import call
 from setuptools.command.install import install
 from setuptools.command.develop import develop
+import sys
 
 VERSION = ""
 
+sys.path.append('studio/')
 # This file contains metadata related to the studioml client and python base
 # server software
 
