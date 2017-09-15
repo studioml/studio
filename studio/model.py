@@ -21,8 +21,6 @@ try:
 except ImportError:
     ThreadPool = None
 
-ThreadPool = None
-
 import fs_tracker
 import util
 import git_util
@@ -173,9 +171,6 @@ class FirebaseProvider(object):
         self.store = store if store else FirebaseArtifactStore(
             db_config, verbose=verbose, blocking_auth=blocking_auth)
 
-        self._experiment_info_cache = {}
-        self._experiment_cache = {}
-
         iothreads = 10
 
         if ThreadPool:
@@ -195,7 +190,7 @@ class FirebaseProvider(object):
             key_path = '/'.join(splitKey[:-1])
             key_name = splitKey[-1]
             dbobj = self.app.database().child(key_path).child(key_name)
-            return dbobj.get(self.auth.get_token(),shallow=shallow).val() \
+            return dbobj.get(self.auth.get_token(), shallow=shallow).val() \
                 if self.auth else dbobj.get(shallow=shallow).val()
         except Exception as err:
             self.logger.warn(("Getting key {} from a database " +
@@ -397,25 +392,6 @@ class FirebaseProvider(object):
     def _get_experiment_info(self, experiment):
         info = {}
         type_found = False
-        '''
-        local_modeldir = self.store.get_artifact(
-            experiment.artifacts['modeldir'])
-        hdf5_files = glob.glob(os.path.join(local_modeldir, '*.hdf*'))
-        type_found = False
-        if any(hdf5_files):
-            info['type'] = 'keras'
-            info['no_checkpoints'] = len(hdf5_files)
-            type_found = True
-
-        meta_files = glob.glob(os.path.join(local_modeldir, '*.meta'))
-        if any(meta_files) and not type_found:
-            info['type'] = 'tensorflow'
-            global_step = checkpoint_utils.load_variable(
-                local_modeldir, 'global_step')
-
-            info['global_step'] = global_step
-            type_found = True
-        '''
 
         if not type_found:
             info['type'] = 'unknown'
@@ -471,40 +447,17 @@ class FirebaseProvider(object):
 
         experiment_stub = experiment_from_dict(data)
 
+        expinfo = {}
         if getinfo:
-            self._start_info_download(experiment_stub)
-
-        info = self._experiment_info_cache.get(key)[0] \
-            if self._experiment_info_cache.get(key) else None
-
-        return experiment_from_dict(data, info)
-
-    def _start_info_download(self, experiment):
-        key = experiment.key
-        if key not in self._experiment_info_cache.keys():
-            self._experiment_info_cache[key] = ({}, time.time())
-
-        def download_info():
             try:
-                self._experiment_info_cache[key] = (
-                    self._get_experiment_info(experiment),
-                    time.time())
+                expinfo = self._get_experiment_info(experiment_stub)
 
-                self.logger.debug("Finished info download for " + key)
             except Exception as e:
                 self.logger.info(
                     "Exception {} while info download for {}".format(
                         e, key))
 
-        if not(any(self._experiment_info_cache[key][0])) or \
-           self._experiment_info_cache[key][1] < \
-           experiment.time_last_checkpoint:
-
-            self.logger.debug("Starting info download for " + key)
-            if self.pool:
-                Thread(target=download_info).start()
-            else:
-                download_info()
+        return experiment_from_dict(data, expinfo)
 
     def get_user_experiments(self, userid=None, blocking=True):
         if userid and '@' in userid:
@@ -524,16 +477,15 @@ class FirebaseProvider(object):
                       key=lambda k: experiment_keys[k],
                       reverse=True)
 
-        return self._get_valid_experiments(
-            keys, getinfo=True, blocking=blocking)
+        return keys
 
     def get_project_experiments(self, project):
         experiment_keys = self._get(self._get_projects_keybase() +
-                                           project)
+                                    project)
         if not experiment_keys:
             experiment_keys = {}
-        return self._get_valid_experiments(
-            experiment_keys.keys(), getinfo=True)
+
+        return experiment_keys
 
     def get_artifacts(self, key):
         experiment = self.get_experiment(key, getinfo=False)
@@ -588,7 +540,7 @@ class FirebaseProvider(object):
         retval = {}
         for user_id in user_ids.keys():
             retval[user_id] = {
-                'email':self._get('users/' + user_id + '/email')
+                'email': self._get('users/' + user_id + '/email')
             }
         return retval
 

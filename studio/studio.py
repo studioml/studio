@@ -161,7 +161,7 @@ def get_user_experiments():
     status = "ok"
     retval = json.dumps({
         "status": status,
-        "experiments": [e.__dict__ for e in experiments]
+        "experiments": experiments
     })
     toc = time.time()
     getlogger().info('Processed get_user_experiments request in {} s'
@@ -186,7 +186,7 @@ def get_all_experiments():
     status = "ok"
     retval = json.dumps({
         "status": status,
-        "experiments": [e.__dict__ for e in experiments]
+        "experiments": experiments
     })
     toc = time.time()
     getlogger().info('Processed get_user_experiments request in {} s'
@@ -255,7 +255,7 @@ def get_project_experiments():
     status = "ok"
     retval = json.dumps({
         "status": status,
-        "experiments": [e.__dict__ for e in experiments]
+        "experiments": experiments
     })
     toc = time.time()
     getlogger().info('Processed get_project_experiments request in {} s'
