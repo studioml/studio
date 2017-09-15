@@ -15,7 +15,7 @@ script:
   - nosetests
   - pep8 --show-source .
   - python setup.py sdist
-
+  - export PYTHONPATH=$PYTHONPATH:/home/travis/virtualenv/python3.6.2/lib/python3.6/site-packages
 deploy:
   provider: pypi
   distributions: "sdist"
