@@ -1,11 +1,15 @@
 Frequently Asked Questions
 ==========================
 
-`What is the complete list of tools Studio.ML is compatible with?`_
-`Do I need to change my code to use Studio.ML?`_
-`How can I track the training of my models?`_
-`How does Studio.ml integrate with Google Cloud or Amazon EC2?`_
-`Is it possible to view the experiment artifacts outside of the Web UI?_
+- `What is the complete list of tools Studio.ML is compatible with?`_
+
+- `Do I need to change my code to use Studio.ML?`_
+
+- `How can I track the training of my models?`_
+
+- `How does Studio.ml integrate with Google Cloud or Amazon EC2?`_
+
+- `Is it possible to view the experiment artifacts outside of the Web UI?`_
 
 
 _`What is the complete list of tools Studio.ML is compatible with?`
