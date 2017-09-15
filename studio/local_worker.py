@@ -168,7 +168,7 @@ def main(args=sys.argv):
     queue = LocalQueue()
     # queue = glob.glob(fs_tracker.get_queue_directory() + "/*")
     wait_for_messages(queue, parsed_args.timeout)
-    worker_loop(queue, parsed_args)
+    worker_loop(queue, parsed_args, timeout=parsed_args.timeout)
 
 
 def worker_loop(queue, parsed_args,

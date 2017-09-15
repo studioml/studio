@@ -57,15 +57,26 @@ class CompletionService:
 
     def __init__(
             self,
+            # Name of experiment
             experimentId,
+            # Config yaml file
             config=None,
+            # Number of remote workers to spin up
             num_workers=1,
+            # Compute requirements, amount of RAM, GPU, etc
             resources_needed=None,
+            # What computer resource to use, either AWS, Google, or local
             cloud=None,
+            # Timeout for cloud instances
             cloud_timeout=100,
+            # Bid price for EC2 spot instances
             bid='100%',
+            # Keypair to use for EC2 workers
             ssh_keypair='peterz-k1',
-            resumable=False,):
+            # If true, get results that are submitted by other instances of CS
+            resumable=False,
+            # Whether to clean the submission queue on initialization
+            clean_queue=True):
 
         self.config = model.get_config(config)
         self.cloud = None
@@ -86,7 +97,9 @@ class CompletionService:
 
         self.queue = runner.get_queue(self.queue_name, self.cloud,
                                       self.verbose_level)
-        self.queue.clean()
+        self.clean_queue = clean_queue
+        if self.clean_queue:
+            self.queue.clean()
 
         self.cloud_timeout = cloud_timeout
         self.bid = bid
@@ -123,7 +136,7 @@ class CompletionService:
             self.queue.delete()
 
         if self.p:
-            self.p.wait()
+            self.p.kill()
 
     def submitTaskWithFiles(self, clientCodeFile, args, files={}):
         old_cwd = os.getcwd()
