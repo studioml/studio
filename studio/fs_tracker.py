@@ -98,6 +98,10 @@ def get_artifact_cache(tag, experiment_name=None):
 
 
 def get_blob_cache(blobkey):
+    blobcache_dir = os.path.join(get_studio_home(), 'blobcache')
+    if not os.path.exists(blobcache_dir):
+        os.makedirs(blobcache_dir)
+
     blobkey = re.sub('.tgz\Z', '', blobkey)
     if blobkey.startswith('blobstore/'):
         blobkey = re.sub('.*/', '', blobkey)

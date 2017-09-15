@@ -6,6 +6,7 @@ import logging
 import time
 import pickle
 import tempfile
+import re
 
 from studio import runner, model, fs_tracker
 from studio.util import rsync_cp
@@ -166,6 +167,7 @@ class CompletionService:
         }
 
         for tag, name in files.iteritems():
+            artifacts[tag] = {}
             url_schema = re.compile('^https{0,1}://')
             if url_schema.match(name):
                 artifacts[tag]['url'] = name
