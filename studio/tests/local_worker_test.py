@@ -252,7 +252,7 @@ def stubtest_worker(
             testclass.assertTrue(len(saved_args) == len(script_args))
             for i in range(len(saved_args)):
                 testclass.assertTrue(saved_args[i] == script_args[i])
-            testclass.assertTrue(db._get(keybase + '/filename'] == test_script))
+            testclass.assertTrue(db._get(keybase + '/filename') == test_script)
         else:
             testclass.assertTrue(script_args is None or len(script_args) == 0)
 
