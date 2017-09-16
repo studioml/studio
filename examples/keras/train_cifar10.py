@@ -1,16 +1,24 @@
 import sys
 
+from studio import fs_tracker
+
 from keras.layers import Dense, Flatten, Conv2D, BatchNormalization
 
 from keras.models import Sequential
 from keras.datasets import cifar10
 from keras.utils import to_categorical
 
-from keras.callbacks import ModelCheckpoint, TensorBoard
 from keras import optimizers
+from keras.callbacks import ModelCheckpoint, TensorBoard
 
-from studio import fs_tracker
+import tensorflow as tf
 
+config = tf.ConfigProto()
+config.gpu_options.allow_growth = True
+sess = tf.Session(config=config)
+
+from keras import backend as backend
+backend.set_session(sess)
 
 (x_train, y_train), (x_test, y_test) = cifar10.load_data()
 
@@ -43,7 +51,7 @@ model.summary()
 
 
 batch_size = 128
-no_epochs = int(sys.argv[1]) if len(sys.argv) > 1 else 10
+no_epochs = int(sys.argv[1]) if len(sys.argv) > 1 else 40
 lr = 0.01
 
 print('learning rate = {}'.format(lr))
