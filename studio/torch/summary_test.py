@@ -2,7 +2,7 @@ import sys
 
 import unittest
 from contextlib import contextmanager
-from StringIO import StringIO
+from io import StringIO
 
 import summary
 
