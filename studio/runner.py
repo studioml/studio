@@ -250,8 +250,7 @@ def main(args=sys.argv):
                 resources_needed,
                 config,
                 runner_args,
-                logger,
-                resources_needed)
+                logger)
         else:
             opt_modulepath = os.path.join(
                 os.path.dirname(os.path.abspath(__file__)),
