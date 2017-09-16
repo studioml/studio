@@ -3,7 +3,7 @@ import logging
 import os
 import json
 
-from model import parse_verbosity
+from .model import parse_verbosity
 
 logging.basicConfig()
 

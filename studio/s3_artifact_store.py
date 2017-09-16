@@ -6,7 +6,7 @@ try:
 except BaseException:
     boto3 = None
 
-from tartifact_store import TartifactStore
+from .tartifact_store import TartifactStore
 logging.basicConfig()
 
 

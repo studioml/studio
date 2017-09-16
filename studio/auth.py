@@ -9,7 +9,7 @@ try:
 except BaseException:
     BackgroundScheduler = None
 
-from util import rand_string
+from .util import rand_string
 
 TOKEN_DIR = os.path.expanduser('~/.studioml/keys')
 HOUR = 3600

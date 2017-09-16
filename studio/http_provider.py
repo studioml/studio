@@ -2,9 +2,9 @@ import requests
 import json
 import six
 
-import model
-import pyrebase
-from auth import FirebaseAuth
+from. import model
+from . import pyrebase
+from .auth import FirebaseAuth
 
 import logging
 logging.basicConfig()

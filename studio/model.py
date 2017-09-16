@@ -5,7 +5,7 @@ import uuid
 import pip
 
 import yaml
-import pyrebase
+from . import pyrebase
 import logging
 import time
 import glob
@@ -16,14 +16,14 @@ except ImportError:
     ThreadPool = None
 import six
 
-import fs_tracker
-import util
-import git_util
-from auth import FirebaseAuth
-from artifact_store import get_artifact_store
-from firebase_artifact_store import FirebaseArtifactStore
+from . import fs_tracker
+from . import util
+from . import git_util
+from .auth import FirebaseAuth
+from .artifact_store import get_artifact_store
+from .firebase_artifact_store import FirebaseArtifactStore
 
-from http_provider import HTTPProvider
+from .http_provider import HTTPProvider
 
 logging.basicConfig()
 

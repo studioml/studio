@@ -1,5 +1,5 @@
 import os
-import fs_tracker
+from . import fs_tracker
 import uuid
 import glob
 

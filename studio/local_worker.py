@@ -10,10 +10,10 @@ import six
 
 from apscheduler.schedulers.background import BackgroundScheduler
 
-import fs_tracker
-import model
-from local_queue import LocalQueue
-from gpu_util import get_available_gpus, get_gpu_mapping
+from . import fs_tracker
+from . import model
+from .local_queue import LocalQueue
+from .gpu_util import get_available_gpus, get_gpu_mapping
 
 logging.basicConfig()
 

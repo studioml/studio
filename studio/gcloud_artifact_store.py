@@ -3,10 +3,10 @@ import time
 import calendar
 
 from google.cloud import storage
-from tartifact_store import TartifactStore
+from .tartifact_store import TartifactStore
 
-from auth import FirebaseAuth
-import pyrebase
+from .auth import FirebaseAuth
+from . import pyrebase
 
 logging.basicConfig()
 

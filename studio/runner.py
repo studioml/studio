@@ -13,19 +13,19 @@ import six
 
 import numpy as np
 
-from local_queue import LocalQueue
-from pubsub_queue import PubsubQueue
-from sqs_queue import SQSQueue
-from gcloud_worker import GCloudWorkerManager
-from ec2cloud_worker import EC2WorkerManager
-from hyperparameter import HyperparameterParser
-from util import rand_string, Progbar
+from .local_queue import LocalQueue
+from .pubsub_queue import PubsubQueue
+from .sqs_queue import SQSQueue
+from .gcloud_worker import GCloudWorkerManager
+from .ec2cloud_worker import EC2WorkerManager
+from .hyperparameter import HyperparameterParser
+from .util import rand_string, Progbar
 
-import model
-import auth
-import git_util
-import local_worker
-import fs_tracker
+from . import model
+from . import auth
+from . import git_util
+from . import local_worker
+from . import fs_tracker
 
 
 logging.basicConfig()
