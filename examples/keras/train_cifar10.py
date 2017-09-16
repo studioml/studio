@@ -12,12 +12,12 @@ from keras import optimizers
 from keras.callbacks import ModelCheckpoint, TensorBoard
 
 import tensorflow as tf
+from keras import backend as backend
 
 config = tf.ConfigProto()
 config.gpu_options.allow_growth = True
 sess = tf.Session(config=config)
 
-from keras import backend as backend
 backend.set_session(sess)
 
 (x_train, y_train), (x_test, y_test) = cifar10.load_data()
