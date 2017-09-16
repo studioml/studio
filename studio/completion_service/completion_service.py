@@ -6,6 +6,7 @@ import logging
 import time
 import pickle
 import tempfile
+import signal
 import re
 
 from studio import runner, model, fs_tracker
@@ -136,7 +137,8 @@ class CompletionService:
             self.queue.delete()
 
         if self.p:
-            self.p.kill()
+            os.kill(self.p.pid, signal.SIGKILL)
+            # self.p.terminate()
 
     def submitTaskWithFiles(self, clientCodeFile, args, files={}):
         old_cwd = os.getcwd()
