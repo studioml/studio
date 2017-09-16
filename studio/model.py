@@ -21,8 +21,6 @@ try:
 except ImportError:
     ThreadPool = None
 
-ThreadPool = None
-
 import fs_tracker
 import util
 import git_util
@@ -195,7 +193,7 @@ class FirebaseProvider(object):
             key_path = '/'.join(splitKey[:-1])
             key_name = splitKey[-1]
             dbobj = self.app.database().child(key_path).child(key_name)
-            return dbobj.get(self.auth.get_token(),shallow=shallow).val() \
+            return dbobj.get(self.auth.get_token(), shallow=shallow).val() \
                 if self.auth else dbobj.get(shallow=shallow).val()
         except Exception as err:
             self.logger.warn(("Getting key {} from a database " +
@@ -529,7 +527,7 @@ class FirebaseProvider(object):
 
     def get_project_experiments(self, project):
         experiment_keys = self._get(self._get_projects_keybase() +
-                                           project)
+                                    project)
         if not experiment_keys:
             experiment_keys = {}
         return self._get_valid_experiments(
@@ -588,7 +586,7 @@ class FirebaseProvider(object):
         retval = {}
         for user_id in user_ids.keys():
             retval[user_id] = {
-                'email':self._get('users/' + user_id + '/email')
+                'email': self._get('users/' + user_id + '/email')
             }
         return retval
 
