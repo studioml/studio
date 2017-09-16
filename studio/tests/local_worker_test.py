@@ -247,12 +247,12 @@ def stubtest_worker(
     try:
         # test saved arguments
         keybase = "/experiments/" + experiment_name
-        saved_args = db[keybase + '/args']
+        saved_args = db._get(keybase + '/args')
         if saved_args is not None:
             testclass.assertTrue(len(saved_args) == len(script_args))
             for i in range(len(saved_args)):
                 testclass.assertTrue(saved_args[i] == script_args[i])
-            testclass.assertTrue(db[keybase + '/filename'] == test_script)
+            testclass.assertTrue(db._get(keybase + '/filename'] == test_script))
         else:
             testclass.assertTrue(script_args is None or len(script_args) == 0)
 
