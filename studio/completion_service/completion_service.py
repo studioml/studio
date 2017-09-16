@@ -53,6 +53,7 @@ class CompletionServiceManager:
             cs.__exit__()
 '''
 
+
 class CompletionService:
 
     def __init__(
