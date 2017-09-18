@@ -186,7 +186,7 @@ class LocalWorkerTest(unittest.TestCase, QueueTest):
         db.stop_experiment(key)
         pout, _ = p.communicate()
         if pout:
-            logger.debug("studio run output: \n" + pout)
+            logger.debug("studio run output: \n" + str(pout))
 
         db.delete_experiment(key)
 
@@ -230,12 +230,12 @@ def stubtest_worker(
     pout, _ = p.communicate()
 
     if pout:
-        logger.debug("studio run output: \n" + pout)
+        logger.debug("studio run output: \n" + str(pout))
 
     experiments = [e for e in db.get_user_experiments()
                    if e.key.startswith(experiment_name)]
 
-    assert len(experiments) == 1
+    assert len(experiments) == 1, "actually {} number of experiments".format(len(experiments))
 
     experiment_name = experiments[0].key
 

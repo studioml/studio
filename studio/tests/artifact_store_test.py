@@ -68,7 +68,7 @@ class ArtifactStoreTest(object):
             tmp_dir, 'test_dir', str(uuid.uuid4()) + '.txt')
 
         with open(tmp_filename, 'w') as f:
-            f.write(random_str)
+            f.write(random_str.decode('utf8'))
 
         artifact = {'key': 'tests/' + str(uuid.uuid4()) + '.tgz'}
 

@@ -199,7 +199,7 @@ class TartifactStore(object):
                                               stdout=subprocess.PIPE,
                                               stderr=subprocess.PIPE
                                               ).communicate()
-                listtar = listtar.strip().split('\n')
+                listtar = listtar.strip().split(b'\n')
                 self.logger.info('List of files in the tar: ' + str(listtar))
                 if listtar[0].startswith('./'):
                     # Files are archived into tar from .; adjust path

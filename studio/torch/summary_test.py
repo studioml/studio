@@ -4,7 +4,7 @@ import unittest
 from contextlib import contextmanager
 from io import StringIO
 
-import summary
+from . import summary
 
 
 @contextmanager
