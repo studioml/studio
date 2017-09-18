@@ -10,7 +10,7 @@ from model_test import get_test_experiment
 
 
 @unittest.skipIf(not has_aws_credentials(),
-                 "boto3 module is missing, needed for " +
+                 "AWS credentials is missing, needed for " +
                  "server to communicate with storage")
 class HTTPProviderTest(unittest.TestCase):
 
@@ -44,7 +44,7 @@ class HTTPProviderTest(unittest.TestCase):
 
     @classmethod
     def tearDownClass(self):
-        if boto3 is None:
+        if not has_aws_credentials():
             return
 
         print "Shutting down the API server"
