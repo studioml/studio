@@ -1,6 +1,7 @@
 import unittest
 import numpy as np
 import urllib
+import unittest
 
 from PIL import Image
 from io import BytesIO
@@ -108,7 +109,6 @@ class BufferedPipeTest(unittest.TestCase):
         expected_l = [4, 9, 16, 25]
 
         self.assertEquals(l, expected_l)
-
 
     @uniittest.skip('ordering problem')
     def test_pipe_buffer(self):
