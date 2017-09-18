@@ -209,8 +209,6 @@ def stubtest_worker(
         delete_when_done=True,
         test_output=True):
 
-    import pdb
-    pdb.set_trace()
     my_path = os.path.dirname(os.path.realpath(__file__))
     config_name = os.path.join(my_path, config_name)
     logger = logging.getLogger('stubtest_worker')
