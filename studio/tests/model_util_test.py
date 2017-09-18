@@ -110,7 +110,7 @@ class BufferedPipeTest(unittest.TestCase):
 
         self.assertEquals(l, expected_l)
 
-    @uniittest.skip('ordering problem')
+    @unittest.skip('ordering problem')
     def test_pipe_buffer(self):
         p = model_util.BufferedPipe() \
             .add(lambda x: x + 1, num_workers=32) \
