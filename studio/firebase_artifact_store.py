@@ -164,7 +164,7 @@ class FirebaseArtifactStore(TartifactStore):
                 url, headers=headers, verify=certifi.old_where())
             if response.status_code != 200:
                 self.logger.debug("Response error with code {}"
-                                 .format(response.status_code))
+                                  .format(response.status_code))
                 return (None, None)
 
             return (json.loads(response.content), url)
