@@ -340,12 +340,6 @@ class FirebaseProvider(object):
 
         self._delete(self._get_user_keybase() + 'experiments/' +
                      experiment_key)
-
-        if experiment_key in self._experiment_cache.keys():
-            del self._experiment_cache[experiment_key]
-        if experiment_key in self._experiment_info_cache.keys():
-            del self._experiment_info_cache[experiment_key]
-
         if experiment is not None:
             for tag, art in experiment.artifacts.iteritems():
                 if art.get('key') is not None:
