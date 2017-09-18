@@ -16,7 +16,7 @@ class HTTPProviderTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(self):
-        if boto3 is None:
+        if not has_aws_credentials():
             return
         print "Starting up the API server"
         self.port = randint(5000, 9000)
