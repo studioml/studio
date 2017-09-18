@@ -182,8 +182,13 @@ class CompletionService:
         for tag, name in files.iteritems():
             artifacts[tag] = {}
             url_schema = re.compile('^https{0,1}://')
+            s3_schema = re.compile('^s3://')
+            gcs_schema = re.compile('^gs://')
+
             if url_schema.match(name):
                 artifacts[tag]['url'] = name
+            elif s3_schema.match(name) or gcs_schema.match(name):
+                artifacts[tag]['qualified'] = name
             else:
                 artifacts[tag]['local'] = os.path.abspath(
                     os.path.expanduser(name))
