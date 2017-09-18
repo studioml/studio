@@ -14,6 +14,9 @@ import requests
 
 from tensorflow.core.util import event_pb2
 
+import boto3
+from google.cloud import storage as gstorage
+
 
 def remove_backspaces(line):
     splitline = re.split('(\x08+)', line)
@@ -218,8 +221,30 @@ def download_file(url, local_path, logger=None):
         with open(local_path, 'wb') as f:
             for chunk in response:
                 f.write(chunk)
-    else:
+    elif logger:
         logger.info("Response error with code {}"
                     .format(response.status_code))
 
     return response
+
+
+def download_file_from_qualified(qualified, local_path, logger=None):
+    assert qualified.startswith('s3://') or \
+        qualified.startswith('gs://')
+
+    bucket = qualified.split('/')[2]
+    key = '/'.join(qualified.split('/')[3:])
+
+    if logger is not None:
+        logger.debug(('Downloading file from bucket {} ' +
+                      ' and key {} to local path {}')
+                     .format(bucket, key, local_path))
+
+    if qualified.startswith('s3://'):
+        boto3.client('s3').download_file(bucket, key, local_path)
+    else:
+        raise NotImplementedError
+
+
+def has_aws_credentials():
+    return boto3.client('s3')._request_signer._credentials is not None

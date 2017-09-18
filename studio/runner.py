@@ -640,14 +640,24 @@ def get_experiment_fitnesses(experiments, optimizer, config, logger):
 def parse_artifacts(art_list, mutable):
     retval = {}
     url_schema = re.compile('^https{0,1}://')
+    s3_schema = re.compile('^s3://')
+    gcs_schema = re.compile('^gs://')
     for entry in art_list:
         path = re.sub(':[^:]*\Z', '', entry)
         tag = re.sub('.*:(?=[^:]*\Z)', '', entry)
+
         if url_schema.match(entry):
             assert not mutable, \
                 'artifacts specfied by url can only be immutable'
             retval[tag] = {
                 'url': path,
+                'mutable': False
+            }
+        elif s3_schema.match(entry) or gcs_schema.match(entry):
+            assert not mutable, \
+                'artifacts specfied by url can only be immutable'
+            retval[tag] = {
+                'qualified': path,
                 'mutable': False
             }
         else:

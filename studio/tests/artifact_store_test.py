@@ -13,13 +13,9 @@ from urlparse import urlparse
 from studio import model
 from studio.auth import remove_all_keys
 
-try:
-    import boto3
-except BaseException:
-    boto3 = None
-
 from studio.gcloud_artifact_store import GCloudArtifactStore
 from studio.s3_artifact_store import S3ArtifactStore
+from studio.util import has_aws_credentials
 
 
 class ArtifactStoreTest(object):
@@ -322,8 +318,8 @@ class GCloudArtifactStoreTest(ArtifactStoreTest, unittest.TestCase):
 
 
 @unittest.skipIf(
-    boto3 is None,
-    'boto3 module not found, '
+    not has_aws_credentials(),
+    'AWS credentials not found, '
     'won'' be able to use S3')
 class S3ArtifactStoreTest(ArtifactStoreTest, unittest.TestCase):
 

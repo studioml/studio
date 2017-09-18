@@ -17,6 +17,7 @@ except BaseException:
 
 from studio import model
 from studio.local_queue import LocalQueue
+from studio.util import has_aws_credentials
 
 from queue_test import QueueTest
 
@@ -141,6 +142,24 @@ class LocalWorkerTest(unittest.TestCase, QueueTest):
         ):
             pass
 
+    @unittest.skipIf(
+        not has_aws_credentials(),
+        'AWS credentials not found, cannot download s3://-like links')
+    def test_local_worker_co_s3(self):
+        expected_str = 'No4 ulica fonar apteka, bessmyslennyj i tusklyj svet'
+        s3loc = 's3://studioml-artifacts/tests/download_test/download_test.txt'
+
+        with stubtest_worker(
+            self,
+            experiment_name='test_local_worker_co_s3' + str(uuid.uuid4()),
+            runner_args=['--capture-once=' + s3loc + ':f'],
+            config_name='test_config.yaml',
+            test_script='art_hello_world.py',
+            script_args=[],
+            expected_output=expected_str
+        ):
+            pass
+
     @unittest.skipIf(keras is None,
                      'keras is required for this test')
     def test_save_get_model(self):
@@ -244,8 +263,8 @@ def stubtest_worker(
                           '--force-git',
                           '--experiment=' + experiment_name,
                           test_script] + script_args,
-                         # stdout=subprocess.PIPE,
-                         # stderr=subprocess.STDOUT,
+                         stdout=subprocess.PIPE,
+                         stderr=subprocess.STDOUT,
                          close_fds=True,
                          cwd=my_path)
 
