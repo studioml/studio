@@ -5,14 +5,10 @@ import time
 import logging
 
 
-try:
-    import boto3
-except BaseException:
-    boto3 = None
-
-
 from studio.pubsub_queue import PubsubQueue
 from studio.sqs_queue import SQSQueue
+
+from studio.util import has_aws_credentials
 
 logging.basicConfig()
 
@@ -155,8 +151,8 @@ class PubSubQueueTest(DistributedQueueTest, unittest.TestCase):
 
 
 @unittest.skipIf(
-    boto3 is None,
-    "boto3 is not present, cannot use SQSQueue")
+    not has_aws_credentials(),
+    "AWS credentials is not present, cannot use SQSQueue")
 class SQSQueueTest(DistributedQueueTest, unittest.TestCase):
     _multiprocess_can_split_ = True
 
