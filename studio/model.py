@@ -554,7 +554,7 @@ class FirebaseProvider(object):
 
         owner = self._get(
             self._get_experiments_keybase() + key + "/owner")
-        if owner is None:
+        if owner is None or owner == 'guest':
             return True
         else:
             return (owner == user)
