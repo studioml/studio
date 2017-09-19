@@ -24,7 +24,7 @@ the command:
 
     studio run --cloud={gcloud|ec2|gcspot|ec2spot} --cpus=8 --gpus=1 my_script.py 
 
-will create an instance with 8 cpus and 2 gpu. The top of the line gpu
+will create an instance with 8 cpus and 1 gpu. The top of the line gpu
 in Amazon EC2 is Tesla K80 at the moment, and that's the only one
 available through Studio; we might provide some gpu selection flags
 in the future as well.
