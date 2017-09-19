@@ -82,7 +82,7 @@ class LocalExecutor(object):
                     'interval',
                     minutes=self.config['saveWorkspaceFrequencyMinutes'])
 
-                metrics_path = fs_tracker.get_artifact_cache('metrics', experiment.key)
+                metrics_path = fs_tracker.get_artifact_cache('_metrics', experiment.key)
 
                 sched.add_job(
                     lambda: save_metrics(metrics_path),
