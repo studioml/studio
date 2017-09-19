@@ -182,8 +182,11 @@ class FirebaseProvider(object):
             self.pool = None
 
         if self.auth and not self.auth.expired:
-            self.__setitem__(self._get_user_keybase() + "email",
-                             self.auth.get_user_email())
+            myemail = self.__getitem__(self._get_user_keybase() + "email")
+            if not myemail or myemail != self.auth.get_user_email():
+                self.__setitem__(self._get_user_keybase() + "email",
+                                 self.auth.get_user_email())
+        
 
         self.max_keys = db_config.get('max_keys', 100)
 
@@ -614,8 +617,11 @@ class FirebaseProvider(object):
 
     def __exit__(self, *args):
         if self.pool:
+            print "**** firbase provder: closing pool of workers****"
             self.pool.close()
+            self.pool.join()
         if self.app:
+            print "**** firebase provider: closing app.requests ****"
             self.app.requests.close()
 
 
