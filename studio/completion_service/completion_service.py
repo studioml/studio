@@ -144,7 +144,8 @@ class CompletionService:
 
     def __exit__(self, delete_queue=True):
         self.logger.info("Studioml completion service shutting down")
-        if self.queue_name != 'local' and delete_queue:
+        # if self.queue_name != 'local' and delete_queue:
+        if delete_queue:
             self.queue.delete()
 
         if self.p:
