@@ -53,6 +53,12 @@ class CompletionServiceManager:
             cs.__exit__()
 '''
 
+DEFAULT_RESOURCES_NEEDED = {
+    'cpus': 2,
+    'ram' : '3g',
+    'hdd' : '10g',
+    'gpus': 0
+}
 
 class CompletionService:
 
@@ -65,7 +71,7 @@ class CompletionService:
             # Number of remote workers to spin up
             num_workers=1,
             # Compute requirements, amount of RAM, GPU, etc
-            resources_needed=None,
+            resources_needed={},
             # What computer resource to use, either AWS, Google, or local
             cloud=None,
             # Timeout for cloud instances
@@ -90,7 +96,11 @@ class CompletionService:
         elif cloud in ['ec2', 'ec2spot']:
             self.queue_name = 'sqs_' + experimentId
 
-        self.resources_needed = resources_needed
+        self.resources_needed = DEFAULT_RESOURCES_NEEDED
+        for key in self.resources_needed:
+            if key in resources_needed:
+                self.resources_needed[key] = resources_needed[key]
+
         self.wm = runner.get_worker_manager(self.config, cloud)
         self.logger = logging.getLogger(self.__class__.__name__)
         self.verbose_level = model.parse_verbosity(self.config['verbose'])
