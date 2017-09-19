@@ -73,6 +73,10 @@ class Experiment(object):
             'tb': {
                 'local': fs_tracker.get_tensorboard_dir(key),
                 'mutable': True
+            },
+            'metrics': {
+                'local': fs_tracker.get_artifact_cache('metrics', key),
+                'mutable': True
             }
         }
         if artifacts is not None:

@@ -6,6 +6,7 @@ import yaml
 import logging
 import time
 import json
+import psutil
 
 from apscheduler.schedulers.background import BackgroundScheduler
 
@@ -54,7 +55,7 @@ class LocalExecutor(object):
 
             fs_tracker.setup_experiment(env, experiment, clean=True)
             log_path = fs_tracker.get_artifact_cache('output', experiment.key)
-
+            
             # log_path = os.path.join(model_dir, self.config['log']['name'])
 
             self.logger.debug('Child process environment:')
@@ -80,6 +81,14 @@ class LocalExecutor(object):
                     'interval',
                     minutes=self.config['saveWorkspaceFrequencyMinutes'])
 
+                metrics_path = fs_tracker.get_artifact_cache('metrics', experiment.key)
+
+                sched.add_job(
+                    lambda: save_metrics(metrics_path),
+                    'interval',
+                    minutes=self.config['saveMetricsIntervalMinutes']
+                )
+
                 def kill_if_stopped():
                     if db.get_experiment(
                             experiment.key,
@@ -91,6 +100,7 @@ class LocalExecutor(object):
                 try:
                     p.wait()
                 finally:
+                    save_metrics(metrics_path)
                     ptail.kill()
                     db.finish_experiment(experiment)
                     sched.shutdown()
@@ -267,6 +277,18 @@ def wait_for_messages(queue, timeout, logger=None):
                             format(timeout))
             return
 
+
+def save_metrics(path):
+    cpu_load = psutil.cpu_percent()
+    cpu_mem = psutil.virtual_memory().used
+
+    with open(path, 'a') as f:
+        f.write('CPU: {}, mem: {}'.format(cpu_load, cpu_mem))
+
+    
+    
+    
+    
 
 if __name__ == "__main__":
     main()
