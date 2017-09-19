@@ -85,12 +85,11 @@ def _list(args, cli_args):
             get_logger().critical('Unknown command ' + args[0])
             return
 
-        
         if cli_args.short:
             for e in experiments:
                 print e
             return
-        
+
         experiments = [db.get_experiment(e) for e in experiments]
 
     experiments.sort(key=lambda e: -e.time_added)

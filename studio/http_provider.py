@@ -214,8 +214,6 @@ class HTTPProvider(object):
         userid = userid if userid else 'guest'
         return userid
 
-
-
     def _raise_detailed_error(self, request):
         if request.status_code != 200:
             raise ValueError(request.message)
@@ -225,7 +223,6 @@ class HTTPProvider(object):
             return
 
         raise ValueError(data['status'])
-
 
     def __enter__(self):
         return self
