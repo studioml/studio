@@ -7,6 +7,7 @@ import logging
 import time
 import json
 import psutil
+import time
 
 from apscheduler.schedulers.background import BackgroundScheduler
 
@@ -281,9 +282,10 @@ def wait_for_messages(queue, timeout, logger=None):
 def save_metrics(path):
     cpu_load = psutil.cpu_percent()
     cpu_mem = psutil.virtual_memory().used
-
+    timestamp = time.time()
     with open(path, 'a') as f:
-        f.write('CPU: {}, mem: {}'.format(cpu_load, cpu_mem))
+        f.write('time: {} CPU: {} mem: {}'
+            .format(timestamp, cpu_load, cpu_mem))
 
     
     
