@@ -171,9 +171,6 @@ class FirebaseProvider(object):
         self.store = store if store else FirebaseArtifactStore(
             db_config, verbose=verbose, blocking_auth=blocking_auth)
 
-        self._experiment_info_cache = {}
-        self._experiment_cache = {}
-
         iothreads = 10
 
         if ThreadPool:
@@ -190,14 +187,14 @@ class FirebaseProvider(object):
 
         self.max_keys = db_config.get('max_keys', 100)
 
-    def __getitem__(self, key):
+    def _get(self, key, shallow=False):
         try:
             splitKey = key.split('/')
             key_path = '/'.join(splitKey[:-1])
             key_name = splitKey[-1]
             dbobj = self.app.database().child(key_path).child(key_name)
-            return dbobj.get(self.auth.get_token()).val() if self.auth \
-                else dbobj.get().val()
+            return dbobj.get(self.auth.get_token(), shallow=shallow).val() \
+                if self.auth else dbobj.get(shallow=shallow).val()
         except Exception as err:
             self.logger.warn(("Getting key {} from a database " +
                               "raised an exception: {}").format(key, err))
@@ -346,12 +343,6 @@ class FirebaseProvider(object):
 
         self._delete(self._get_user_keybase() + 'experiments/' +
                      experiment_key)
-
-        if experiment_key in self._experiment_cache.keys():
-            del self._experiment_cache[experiment_key]
-        if experiment_key in self._experiment_info_cache.keys():
-            del self._experiment_info_cache[experiment_key]
-
         if experiment is not None:
             for tag, art in experiment.artifacts.iteritems():
                 if art.get('key') is not None:
@@ -360,14 +351,14 @@ class FirebaseProvider(object):
                          'artifact key {}').format(tag, art['key']))
                     self.store.delete_artifact(art)
 
-        if experiment.project is not None:
-            self._delete(
-                self._get_projects_keybase() +
-                experiment.project +
-                "/" +
-                experiment.key)
+            if experiment.project is not None:
+                self._delete(
+                    self._get_projects_keybase() +
+                    experiment.project +
+                    "/" +
+                    experiment_key)
 
-        self._delete(self._get_experiments_keybase() + experiment.key)
+        self._delete(self._get_experiments_keybase() + experiment_key)
 
     def checkpoint_experiment(self, experiment, blocking=True):
         if isinstance(experiment, basestring):
@@ -402,25 +393,6 @@ class FirebaseProvider(object):
     def _get_experiment_info(self, experiment):
         info = {}
         type_found = False
-        '''
-        local_modeldir = self.store.get_artifact(
-            experiment.artifacts['modeldir'])
-        hdf5_files = glob.glob(os.path.join(local_modeldir, '*.hdf*'))
-        type_found = False
-        if any(hdf5_files):
-            info['type'] = 'keras'
-            info['no_checkpoints'] = len(hdf5_files)
-            type_found = True
-
-        meta_files = glob.glob(os.path.join(local_modeldir, '*.meta'))
-        if any(meta_files) and not type_found:
-            info['type'] = 'tensorflow'
-            global_step = checkpoint_utils.load_variable(
-                local_modeldir, 'global_step')
-
-            info['global_step'] = global_step
-            type_found = True
-        '''
 
         if not type_found:
             info['type'] = 'unknown'
@@ -469,47 +441,24 @@ class FirebaseProvider(object):
             return None
 
     def get_experiment(self, key, getinfo=True):
-        data = self.__getitem__(self._get_experiments_keybase() + key)
+        data = self._get(self._get_experiments_keybase() + key)
         assert data, "data at path %s not found! " % (
             self._get_experiments_keybase() + key)
         data['key'] = key
 
         experiment_stub = experiment_from_dict(data)
 
+        expinfo = {}
         if getinfo:
-            self._start_info_download(experiment_stub)
-
-        info = self._experiment_info_cache.get(key)[0] \
-            if self._experiment_info_cache.get(key) else None
-
-        return experiment_from_dict(data, info)
-
-    def _start_info_download(self, experiment):
-        key = experiment.key
-        if key not in self._experiment_info_cache.keys():
-            self._experiment_info_cache[key] = ({}, time.time())
-
-        def download_info():
             try:
-                self._experiment_info_cache[key] = (
-                    self._get_experiment_info(experiment),
-                    time.time())
+                expinfo = self._get_experiment_info(experiment_stub)
 
-                self.logger.debug("Finished info download for " + key)
             except Exception as e:
                 self.logger.info(
                     "Exception {} while info download for {}".format(
                         e, key))
 
-        if not(any(self._experiment_info_cache[key][0])) or \
-           self._experiment_info_cache[key][1] < \
-           experiment.time_last_checkpoint:
-
-            self.logger.debug("Starting info download for " + key)
-            if self.pool:
-                Thread(target=download_info).start()
-            else:
-                download_info()
+        return experiment_from_dict(data, expinfo)
 
     def get_user_experiments(self, userid=None, blocking=True):
         if userid and '@' in userid:
@@ -520,7 +469,7 @@ class FirebaseProvider(object):
             else:
                 userid = user_ids[0]
 
-        experiment_keys = self.__getitem__(
+        experiment_keys = self._get(
             self._get_user_keybase(userid) + "/experiments")
         if not experiment_keys:
             experiment_keys = {}
@@ -529,16 +478,15 @@ class FirebaseProvider(object):
                       key=lambda k: experiment_keys[k],
                       reverse=True)
 
-        return self._get_valid_experiments(
-            keys, getinfo=True, blocking=blocking)
+        return keys
 
     def get_project_experiments(self, project):
-        experiment_keys = self.__getitem__(self._get_projects_keybase() +
-                                           project)
+        experiment_keys = self._get(self._get_projects_keybase() +
+                                    project)
         if not experiment_keys:
             experiment_keys = {}
-        return self._get_valid_experiments(
-            experiment_keys.keys(), getinfo=True)
+
+        return experiment_keys
 
     def get_artifacts(self, key):
         experiment = self.get_experiment(key, getinfo=False)
@@ -564,7 +512,7 @@ class FirebaseProvider(object):
             try:
                 self._experiment_cache[key] = self.get_experiment(
                     key, getinfo=getinfo)
-            except AssertionError:
+            except BaseException:
                 self.logger.warn(
                     ("Experiment {} does not exist " +
                      "or is corrupted, try to delete record").format(key))
@@ -586,10 +534,16 @@ class FirebaseProvider(object):
                 if key in self._experiment_cache.keys()]
 
     def get_projects(self):
-        return self.__getitem__(self._get_projects_keybase())
+        return self._get(self._get_projects_keybase(), shallow=True)
 
     def get_users(self):
-        return self.__getitem__('users/')
+        user_ids = self._get('users/', shallow=True)
+        retval = {}
+        for user_id in user_ids.keys():
+            retval[user_id] = {
+                'email': self._get('users/' + user_id + '/email')
+            }
+        return retval
 
     def refresh_auth_token(self, email, refresh_token):
         if self.auth:
@@ -605,9 +559,9 @@ class FirebaseProvider(object):
         assert key is not None
         user = user if user else self._get_userid()
 
-        owner = self.__getitem__(
+        owner = self._get(
             self._get_experiments_keybase() + key + "/owner")
-        if owner is None:
+        if owner is None or owner == 'guest':
             return True
         else:
             return (owner == user)
@@ -743,7 +697,7 @@ def get_db_provider(config=None, blocking_auth=True):
             verbose=verbose,
             store=artifact_store)
     elif db_config['type'].lower() == 'http':
-        return HTTPProvider(db_config)
+        return HTTPProvider(db_config, blocking_auth=blocking_auth)
     else:
         raise ValueError('Unknown type of the database ' + db_config['type'])
 

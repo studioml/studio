@@ -114,7 +114,7 @@ class TartifactStore(object):
                 debug_str += ", exclude = {}".format(ignore_filepath)
             self.logger.debug(debug_str)
 
-            tarcmd = 'tar {} -cf {} -C {} {}'.format(
+            tarcmd = 'tar {} -cjf {} -C {} {}'.format(
                 ignore_arg,
                 tar_filename,
                 local_basepath,
@@ -310,7 +310,7 @@ class TartifactStore(object):
         fileobj = urllib.urlopen(url)
         if fileobj:
             try:
-                retval = tarfile.open(fileobj=fileobj, mode='r|')
+                retval = tarfile.open(fileobj=fileobj, mode='r|*')
                 return retval
             except BaseException as e:
                 self.logger.info('Streaming artifact error:\n' + e.message)
