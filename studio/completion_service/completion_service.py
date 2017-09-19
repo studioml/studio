@@ -55,10 +55,11 @@ class CompletionServiceManager:
 
 DEFAULT_RESOURCES_NEEDED = {
     'cpus': 2,
-    'ram' : '3g',
-    'hdd' : '10g',
+    'ram': '3g',
+    'hdd': '10g',
     'gpus': 0
 }
+
 
 class CompletionService:
 
