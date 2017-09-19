@@ -348,14 +348,14 @@ class FirebaseProvider(object):
                          'artifact key {}').format(tag, art['key']))
                     self.store.delete_artifact(art)
 
-        if experiment.project is not None:
-            self._delete(
-                self._get_projects_keybase() +
-                experiment.project +
-                "/" +
-                experiment.key)
+            if experiment.project is not None:
+                self._delete(
+                    self._get_projects_keybase() +
+                    experiment.project +
+                    "/" +
+                    experiment_key)
 
-        self._delete(self._get_experiments_keybase() + experiment.key)
+        self._delete(self._get_experiments_keybase() + experiment_key)
 
     def checkpoint_experiment(self, experiment, blocking=False):
         if isinstance(experiment, basestring):
