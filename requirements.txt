@@ -24,6 +24,7 @@ terminaltables
 google-api-python-client
 google-cloud-storage
 google-cloud-pubsub
+google-gax <= 0.15.14
 
 oauth2client==3.0.0
 boto3
