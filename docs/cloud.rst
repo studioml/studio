@@ -3,9 +3,10 @@ Cloud computing
 
 Studio can be configured to submit jobs to the cloud. Right
 now, only Google Cloud is supported (CPU only), as well as Amazon EC2
-(CPU and GPU). Specifically, once configured (see
-`here <http://docs.studio.ml/en/latest/gcloud_setup.html>`__ for configuration instructions for Google
-Cloud, and `here <http://docs.studio.ml/en/latest/ec2_setup.html>`__ for EC2) the command
+(CPU and GPU). 
+Once configured (see configuration instructions for `Google
+Cloud <http://docs.studio.ml/en/latest/gcloud_setup.html>`__, and
+`Amazon AWS <http://docs.studio.ml/en/latest/ec2_setup.html>`__) the command
 
 ::
 
@@ -28,7 +29,13 @@ in Amazon EC2 is Tesla K80 at the moment, and that's the only one
 available through Studio; we might provide some gpu selection flags
 in the future as well.
   
-The amount of ram and hard drive space can be configured via the ``--ram`` / ``--hdd`` flags (using standard suffixes like g(G,Gb,GiB), m(M,MiB)). Note that the amount of RAM will be rounded up to the next factor of 256 Mb. Also note that for now extended RAM for Google Cloud is not supported, which means the amount of RAM per CPU should be between 1 and 6 Gb. For Amazon EC2, Studio will find the cheapest instances with higher specs than required, or throw an exception for too extravagant of a request.
+The amount of ram and hard drive space can be configured via the 
+``--ram`` / ``--hdd`` flags (using standard suffixes like g(G,Gb,GiB), m(M,MiB)). 
+Note that the amount of RAM will be rounded up to the next factor of 256 Mb. 
+Also note that for now extended RAM for Google Cloud is not supported, 
+which means the amount of RAM per CPU should be between 1 and 6 Gb. 
+For Amazon EC2, Studio will find the cheapest instances with higher specs than required, 
+or throw an exception for too extravagant of a request.
 
 Running on EC2 spot instances
 -----------------------------
@@ -44,7 +51,7 @@ short, for spot instances the user specifies the max price to pay per
 instance-hour. As long as the instance-hour price is below the specified
 limit (bid), the user is pays the current price and uses the instance.
 Otherwise, the instance shuts down and is given to the higher
-bidder. For a more detailed explanation, refer to the spot instnces user guide
+bidder. For a more detailed explanation, refer to the spot instances user guide
 https://aws.amazon.com/ec2/spot/. 
 
 As you might have guessed,
@@ -80,8 +87,9 @@ queue is above 0.
 Running on Google Cloud spot (preemptible) instances
 ----------------------------------------------------
 
-The Google Cloud analog of EC2 spot instances is called preemtible
-instances. Preemtible instances are similar to EC2 spot instances in that
+Google Cloud's analog of EC2 spot instances are called `preemptible
+instances <https://cloud.google.com/preemptible-vms/>`__. 
+Preemptible instances are similar to EC2 spot instances in that
 they are much cheaper than regular (on-demand) instances and that
 they can be taken away at any moment with very little or no notice. They
 are different from EC2 spot instances in the bidding / market system -
@@ -95,4 +103,4 @@ support it just yet. The required number of workers has to be
 specified via ``--num-workers`` (the default is 1), and Google group will
 try to keep it constant (that is, if the instances are taken away, it
 will try to spin up their replacements). When instances run out
-of work, they automatically spin down and eventially the instance group is deleted.
+of work, they automatically spin down and eventually the instance group is deleted.
