@@ -1,6 +1,7 @@
-
 import fs_tracker
 import torch
+import os
+
 
 def _read_version():
     mypath = os.path.dirname(os.path.realpath(__file__))
@@ -12,7 +13,5 @@ def _read_version():
 
     return ver
 
+
 __version__ = _read_version()
-
-
-
