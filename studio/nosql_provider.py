@@ -1,3 +1,11 @@
+import pyrebase
+import logging
+
+from firebase_artifact_store import FirebaseArtifactStore
+from auth import FirebaseAuth
+
+logging.basicConfig()
+
 class NoSQLProvider(object):
     """Data provider for Firebase."""
 
@@ -18,13 +26,6 @@ class NoSQLProvider(object):
 
         self.store = store if store else FirebaseArtifactStore(
             db_config, verbose=verbose, blocking_auth=blocking_auth)
-
-        iothreads = 10
-
-        if ThreadPool:
-            self.pool = ThreadPool(iothreads)
-        else:
-            self.pool = None
 
         if self.auth and not self.auth.expired:
             self.__setitem__(self._get_user_keybase() + "email",
@@ -376,8 +377,6 @@ class NoSQLProvider(object):
         return self
 
     def __exit__(self, *args):
-        if self.pool:
-            self.pool.close()
         if self.app:
             self.app.requests.close()
 

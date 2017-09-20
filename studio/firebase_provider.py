@@ -1,4 +1,5 @@
 from nosql_provider import NoSQLProvider
+import pyrebase
 
 class FirebaseProvider(NoSQLProvider):
  

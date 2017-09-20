@@ -8,6 +8,8 @@ import pip
 import shutil
 
 from studio import model
+from studio.firebase_provider import FirebaseProvider
+from studio.postgres_provider import PostgresProvider
 from studio.auth import remove_all_keys
 
 
@@ -20,8 +22,8 @@ class ProvidersTest(unittest.TestCase):
 
     def test_providers_compatible(self):
         # Check that all available providers are compatible.
-        firebase_methods = get_methods(model.FirebaseProvider)
-        postgres_methods = get_methods(model.PostgresProvider)
+        firebase_methods = get_methods(FirebaseProvider)
+        postgres_methods = get_methods(PostgresProvider)
         self.assertEqual(firebase_methods, postgres_methods)
 
 
