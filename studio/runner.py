@@ -409,7 +409,7 @@ def get_worker_manager(config, cloud=None, verbose=10):
     if cloud in ['ec2', 'ec2spot']:
         worker_manager = EC2WorkerManager(
             auth_cookie=auth_cookie,
-            branch=config['cloud'].get('branch'),
+            branch=branch,
             user_startup_script=config['cloud'].get('user_startup_script')
         )
     return worker_manager

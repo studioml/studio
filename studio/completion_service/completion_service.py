@@ -1,4 +1,3 @@
-import sys
 import os
 import subprocess
 import uuid
@@ -64,35 +63,35 @@ DEFAULT_RESOURCES_NEEDED = {
 class CompletionService:
 
     def __init__(
-            self,
-            # Name of experiment
-            experimentId,
-            # Config yaml file
-            config=None,
-            # Number of remote workers to spin up
-            num_workers=1,
-            # Compute requirements, amount of RAM, GPU, etc
-            resources_needed={},
-            # What computer resource to use, either AWS, Google, or local
-            cloud=None,
-            # Timeout for cloud instances
-            cloud_timeout=100,
-            # Bid price for EC2 spot instances
-            bid='100%',
-            # Keypair to use for EC2 workers
-            ssh_keypair='peterz-k1',
-            # If true, get results that are submitted by other instances of CS
-            resumable=False,
-            # Whether to clean the submission queue on initialization
-            clean_queue=True,
-            # Whether to enable autoscaling for EC2 instances
-            queue_upscaling=True,
-            # Whether to delete the queue on shutdown
-            shutdown_del_queue=False,
-        ):
+        self,
+        # Name of experiment
+        experimentId,
+        # Config yaml file
+        config=None,
+        # Number of remote workers to spin up
+        num_workers=1,
+        # Compute requirements, amount of RAM, GPU, etc
+        resources_needed={},
+        # What computer resource to use, either AWS, Google, or local
+        cloud=None,
+        # Timeout for cloud instances
+        cloud_timeout=100,
+        # Bid price for EC2 spot instances
+        bid='100%',
+        # Keypair to use for EC2 workers
+        ssh_keypair='peterz-k1',
+        # If true, get results that are submitted by other instances of CS
+        resumable=False,
+        # Whether to clean the submission queue on initialization
+        clean_queue=True,
+        # Whether to enable autoscaling for EC2 instances
+        queue_upscaling=True,
+        # Whether to delete the queue on shutdown
+        shutdown_del_queue=False,
+    ):
 
         self.config = model.get_config(config)
-        self.cloud = None
+        self.cloud = cloud
         self.experimentId = experimentId
         self.project_name = "completion_service_" + experimentId
 
@@ -107,7 +106,9 @@ class CompletionService:
             if key in resources_needed:
                 self.resources_needed[key] = resources_needed[key]
 
-        self.wm = runner.get_worker_manager(self.config, cloud)
+        self.wm = runner.get_worker_manager(
+            self.config, self.cloud)
+
         self.logger = logging.getLogger(self.__class__.__name__)
         self.verbose_level = model.parse_verbosity(self.config['verbose'])
         self.logger.setLevel(self.verbose_level)
@@ -150,7 +151,10 @@ class CompletionService:
 
         return self
 
-    def __exit__(self):
+    def __exit__(self, *args):
+        self.close()
+
+    def close(self, delete_queue=True):
         self.logger.info("Studioml completion service shutting down")
         # if self.queue_name != 'local' and delete_queue:
         if self.shutdown_del_queue:
@@ -243,7 +247,6 @@ class CompletionService:
         return self.submitTaskWithFiles(clientCodeFile, args, {})
 
     def getResultsWithTimeout(self, timeout=0):
-
         total_sleep_time = 0
         sleep_time = 1
 
@@ -255,20 +258,20 @@ class CompletionService:
                     experiments = [db.get_experiment(key)
                                    for key in self.submitted]
 
-            for e in experiments:
-                if e.status == 'finished':
-                    self.logger.debug('Experiment {} finished, getting results'
-                                      .format(e.key))
-                    with open(db.get_artifact(e.artifacts['retval'])) as f:
-                        data = pickle.load(f)
+                for e in experiments:
+                    if e.status == 'finished':
+                        self.logger.debug(
+                            'Experiment {} finished, getting results' .format(
+                                e.key))
+                        with open(db.get_artifact(e.artifacts['retval'])) as f:
+                            data = pickle.load(f)
 
-                    if not self.resumable:
-                        self.submitted.remove(e.key)
-                    else:
-                        with model.get_db_provider(self.config) as db:
+                        if not self.resumable:
+                            self.submitted.remove(e.key)
+                        else:
                             db.delete_experiment(e.key)
 
-                    return (e.key, data)
+                        return (e.key, data)
 
             if timeout == 0 or \
                (timeout > 0 and total_sleep_time > timeout):
