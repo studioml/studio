@@ -5,8 +5,8 @@ from subprocess import call
 from setuptools.command.install import install
 from setuptools.command.develop import develop
 
-TRAVIS_BUILD_NUMBER = os.environ.get("TRAVIS_BUILD_NUMBER", "")
-VERSION = "0.0.1.dev" + TRAVIS_BUILD_NUMBER
+TRAVIS_BUILD_NUMBER = os.environ.get("TRAVIS_BUILD_NUMBER", "0")
+VERSION = "0.0.2.dev" + TRAVIS_BUILD_NUMBER
 
 # This file contains metadata related to the studioml client and python base
 # server software
@@ -99,5 +99,4 @@ setup(
         "License :: OSI Approved :: Apache Software License",
     ],
     install_requires=required,
-    include_package_data=True,
     zip_safe=False)
