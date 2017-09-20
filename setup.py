@@ -33,7 +33,7 @@ if not VERSION:
     else:
         VERSION = "0.0.2.post" + TRAVIS_BUILD_NUMBER
 
-    write('.version', VERSION)
+    # write('.version', VERSION)
 
 
 # This file contains metadata related to the studioml client and python base
