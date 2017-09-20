@@ -5,6 +5,7 @@ from subprocess import call
 from setuptools.command.install import install
 from setuptools.command.develop import develop
 
+
 def read(fname):
     try:
         with open(os.path.join(os.path.dirname(__file__), fname)) as f:
@@ -13,12 +14,14 @@ def read(fname):
     except BaseException:
         return None
 
+
 def write(fname, data):
     try:
         with open(os.path.join(os.path.dirname(__file__), fname), 'w') as f:
             f.write(data)
-    except BaseException: 
+    except BaseException:
         pass
+
 
 TRAVIS_BUILD_NUMBER = os.environ.get("TRAVIS_BUILD_NUMBER", "0")
 TRAVIS_TAG = os.environ.get("TRAVIS_TAG", None)
@@ -29,7 +32,7 @@ if not VERSION:
         VERSION = TRAVIS_TAG + ".post" + TRAVIS_BUILD_NUMBER
     else:
         VERSION = "0.0.2.post" + TRAVIS_BUILD_NUMBER
-    
+
     write('.version', VERSION)
 
 
@@ -67,7 +70,6 @@ def copyconfig():
         shutil.copyfile(
             default_config_path,
             os.path.expanduser('~/.studioml/config.yaml'))
-
 
 
 with open('requirements.txt') as f:
