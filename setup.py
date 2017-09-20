@@ -5,9 +5,23 @@ from subprocess import call
 from setuptools.command.install import install
 from setuptools.command.develop import develop
 
+def read(fname):
+    try:
+        with open(os.path.join(os.path.dirname(__file__), fname)) as f:
+            data = f.read()
+            return data
+    except BaseException:
+        return None
+
+def write(fname, data):
+    try:
+        with open(os.path.join(os.path.dirname(__file__), fname), 'w') as f:
+            f.write(data)
+    except BaseException: 
+        pass
+
 TRAVIS_BUILD_NUMBER = os.environ.get("TRAVIS_BUILD_NUMBER", "0")
 TRAVIS_TAG = os.environ.get("TRAVIS_TAG", None)
-
 
 VERSION = read('.version')
 if not VERSION:
@@ -15,6 +29,9 @@ if not VERSION:
         VERSION = TRAVIS_TAG + ".post" + TRAVIS_BUILD_NUMBER
     else:
         VERSION = "0.0.2.post" + TRAVIS_BUILD_NUMBER
+    
+    write('.version', VERSION)
+
 
 # This file contains metadata related to the studioml client and python base
 # server software
@@ -52,13 +69,6 @@ def copyconfig():
             os.path.expanduser('~/.studioml/config.yaml'))
 
 
-def read(fname):
-    try:
-        with open(os.path.join(os.path.dirname(__file__), fname)) as f:
-            data = f.read()
-            return data
-    except BaseException:
-        return None
 
 with open('requirements.txt') as f:
     required = f.read().splitlines()
