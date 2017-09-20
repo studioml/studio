@@ -25,3 +25,4 @@ deploy:
   on:
     # tags: true
     # branch: master
+    branch: peterz_pypi_autopush
