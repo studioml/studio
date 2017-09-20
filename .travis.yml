@@ -26,3 +26,4 @@ deploy:
     # tags: true
     # branch: master
     branch: peterz_pypi_autopush
+    skip_cleanup: true

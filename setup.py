@@ -8,10 +8,13 @@ from setuptools.command.develop import develop
 TRAVIS_BUILD_NUMBER = os.environ.get("TRAVIS_BUILD_NUMBER", "0")
 TRAVIS_TAG = os.environ.get("TRAVIS_TAG", None)
 
-if TRAVIS_TAG:
-    VERSION = TRAVIS_TAG + ".post" + TRAVIS_BUILD_NUMBER
-else:
-    VERSION = "0.0.2.post" + TRAVIS_BUILD_NUMBER
+
+VERSION = read('.version')
+if not VERSION:
+    if TRAVIS_TAG:
+        VERSION = TRAVIS_TAG + ".post" + TRAVIS_BUILD_NUMBER
+    else:
+        VERSION = "0.0.2.post" + TRAVIS_BUILD_NUMBER
 
 # This file contains metadata related to the studioml client and python base
 # server software
@@ -50,8 +53,12 @@ def copyconfig():
 
 
 def read(fname):
-    return open(os.path.join(os.path.dirname(__file__), fname)).read()
-
+    try:
+        with open(os.path.join(os.path.dirname(__file__), fname)) as f:
+            data = f.read()
+            return data
+    except BaseException:
+        return None
 
 with open('requirements.txt') as f:
     required = f.read().splitlines()
