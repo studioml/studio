@@ -1,6 +1,6 @@
 include README.rst
 include README
-include .version
+include studio/.version
 include studio/torch/*
 include studio/default_config.yaml
 include studio/templates/*.html

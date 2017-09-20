@@ -26,14 +26,14 @@ def write(fname, data):
 TRAVIS_BUILD_NUMBER = os.environ.get("TRAVIS_BUILD_NUMBER", "0")
 TRAVIS_TAG = os.environ.get("TRAVIS_TAG", None)
 
-VERSION = read('.version')
+VERSION = read('studio/.version')
 if not VERSION:
     if TRAVIS_TAG:
         VERSION = TRAVIS_TAG + ".post" + TRAVIS_BUILD_NUMBER
     else:
         VERSION = "0.0.2.post" + TRAVIS_BUILD_NUMBER
 
-    # write('.version', VERSION)
+    write('studio/.version', VERSION)
 
 
 # This file contains metadata related to the studioml client and python base
