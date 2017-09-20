@@ -187,7 +187,7 @@ def worker_loop(queue, parsed_args,
         experiment_key = json.loads(first_exp)['experiment']['key']
         config = json.loads(first_exp)['config']
         parsed_args.config = config
-        verbose = model.parse_verbosity(config.get('verbose'))
+        # verbose = model.parse_verbosity(config.get('verbose'))
         logger.setLevel(verbose)
 
         logger.debug('Received experiment {} with config {} from the queue'.
