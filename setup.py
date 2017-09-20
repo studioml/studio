@@ -11,7 +11,7 @@ TRAVIS_TAG = os.environ.get("TRAVIS_TAG", None)
 if TRAVIS_TAG:
     VERSION = TRAVIS_TAG + ".post" + TRAVIS_BUILD_NUMBER
 else:
-    VERSION = "0.0.2.dev" + TRAVIS_BUILD_NUMBER
+    VERSION = "0.0.2.post" + TRAVIS_BUILD_NUMBER
 
 # This file contains metadata related to the studioml client and python base
 # server software
