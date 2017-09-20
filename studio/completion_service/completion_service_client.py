@@ -20,14 +20,14 @@ def main():
 
     script_path = fs_tracker.get_artifact('clientscript')
     script_name = os.path.basename(script_path)
-    new_script_path = os.path.join(os.getcwd(), script_name)
+    new_script_path = os.path.join(os.getcwd(), '_clientscript.py')
     shutil.copy(script_path, new_script_path)
     script_path = new_script_path
     logger.debug("script path: " + script_path)
 
     mypath = os.path.dirname(script_path)
     sys.path.append(mypath)
-    module_name = os.path.splitext(os.path.basename(script_path))[0]
+    module_name = '_clientscript' #os.path.splitext(os.path.basename(script_path))[0]
 
     client_module = importlib.import_module(module_name)
     logger.debug('loading args')
