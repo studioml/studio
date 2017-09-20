@@ -212,7 +212,7 @@ def worker_loop(queue, parsed_args,
                             'Setting up python packages for experiment')
                         for pkg in experiment.pythonenv:
                             pipp = subprocess.Popen(
-                                ['pip', 'install'] + pkg,
+                                ['pip', 'install', pkg],
                                 stdout=subprocess.PIPE,
                                 stderr=subprocess.STDOUT)
 
