@@ -4,6 +4,7 @@ import torch
 
 __version = _read_version()
 
+
 def _read_version():
     mypath = os.path.dirname(os.path.realpath(__file__))
     try:
@@ -11,5 +12,5 @@ def _read_version():
             ver = f.read()
     except BaseException:
         ver = 'unknown'
-    
+
     return ver
