@@ -5,7 +5,8 @@ from subprocess import call
 from setuptools.command.install import install
 from setuptools.command.develop import develop
 
-VERSION = ""
+TRAVIS_BUILD_NUMBER = os.environ.get("TRAVIS_BUILD_NUMBER", "")
+VERSION = "0.0.1.dev" + TRAVIS_BUILD_NUMBER
 
 # This file contains metadata related to the studioml client and python base
 # server software
