@@ -84,7 +84,12 @@ class CompletionService:
             # If true, get results that are submitted by other instances of CS
             resumable=False,
             # Whether to clean the submission queue on initialization
-            clean_queue=True):
+            clean_queue=True,
+            # Whether to enable autoscaling for EC2 instances
+            queue_upscaling=True,
+            # Whether to delete the queue on shutdown
+            shutdown_del_queue=False,
+        ):
 
         self.config = model.get_config(config)
         self.cloud = None
@@ -120,6 +125,8 @@ class CompletionService:
         self.submitted = set([])
         self.num_workers = num_workers
         self.resumable = resumable
+        self.queue_upscaling = queue_upscaling
+        self.shutdown_del_queue = shutdown_del_queue
 
     def __enter__(self):
         if self.wm:
@@ -129,7 +136,7 @@ class CompletionService:
                 self.bid,
                 self.resources_needed,
                 start_workers=self.num_workers,
-                queue_upscaling=True,
+                queue_upscaling=self.queue_upscaling,
                 ssh_keypair=self.ssh_keypair,
                 timeout=self.cloud_timeout)
             self.p = None
@@ -143,10 +150,10 @@ class CompletionService:
 
         return self
 
-    def __exit__(self, delete_queue=True):
+    def __exit__(self):
         self.logger.info("Studioml completion service shutting down")
         # if self.queue_name != 'local' and delete_queue:
-        if delete_queue:
+        if self.shutdown_del_queue:
             self.queue.delete()
 
         if self.p:
