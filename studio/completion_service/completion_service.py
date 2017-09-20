@@ -101,7 +101,7 @@ class CompletionService:
             if key in resources_needed:
                 self.resources_needed[key] = resources_needed[key]
 
-        self.wm = runner.get_worker_manager(self.config, self.cloud)
+        self.wm = runner.get_worker_manager(self.config, self.cloud, branch=')
         self.logger = logging.getLogger(self.__class__.__name__)
         self.verbose_level = model.parse_verbosity(self.config['verbose'])
         self.logger.setLevel(self.verbose_level)
@@ -259,7 +259,6 @@ class CompletionService:
                             db.delete_experiment(e.key)
 
                         return (e.key, data)
-                print "**** before context manager exit ****"
 
             if timeout == 0 or \
                (timeout > 0 and total_sleep_time > timeout):

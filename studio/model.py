@@ -16,10 +16,6 @@ import logging
 import time
 import glob
 from threading import Thread
-try:
-    from multiprocessing.pool import ThreadPool
-except ImportError:
-    ThreadPool = None
 
 import fs_tracker
 import util
@@ -171,15 +167,8 @@ class FirebaseProvider(object):
         self.store = store if store else FirebaseArtifactStore(
             db_config, verbose=verbose, blocking_auth=blocking_auth)
 
-        iothreads = 10
-
-        if ThreadPool:
-            self.pool = ThreadPool(iothreads)
-        else:
-            self.pool = None
-
         if self.auth and not self.auth.expired:
-            myemail = self.__getitem__(self._get_user_keybase() + "email")
+            myemail = self._get(self._get_user_keybase() + "email")
             if not myemail or myemail != self.auth.get_user_email():
                 self.__setitem__(self._get_user_keybase() + "email",
                                  self.auth.get_user_email())
@@ -435,10 +424,15 @@ class FirebaseProvider(object):
             logdata = tarf.extractfile(tarf.members[0]).read()
             logdata = util.remove_backspaces(logdata).split('\n')
             return logdata
+
         except BaseException as e:
             self.logger.info('Getting experiment logtail raised an exception:')
             self.logger.info(e)
             return None
+
+        finally:
+            if tarf:
+                tarf.close()
 
     def get_experiment(self, key, getinfo=True):
         data = self._get(self._get_experiments_keybase() + key)
@@ -502,37 +496,6 @@ class FirebaseProvider(object):
     def get_artifact(self, artifact, only_newer=True):
         return self.store.get_artifact(artifact, only_newer=only_newer)
 
-    def _get_valid_experiments(self, experiment_keys,
-                               getinfo=False, blocking=True):
-
-        if self.max_keys > 0:
-            experiment_keys = experiment_keys[:self.max_keys]
-
-        def cache_valid_experiment(key):
-            try:
-                self._experiment_cache[key] = self.get_experiment(
-                    key, getinfo=getinfo)
-            except BaseException:
-                self.logger.warn(
-                    ("Experiment {} does not exist " +
-                     "or is corrupted, try to delete record").format(key))
-                try:
-                    self.delete_experiment(key)
-                except BaseException:
-                    pass
-
-        if self.pool:
-            if blocking:
-                self.pool.map(cache_valid_experiment, experiment_keys)
-            else:
-                self.pool.map_async(cache_valid_experiment, experiment_keys)
-        else:
-            for e in experiment_keys:
-                cache_valid_experiment(e)
-
-        return [self._experiment_cache[key] for key in experiment_keys
-                if key in self._experiment_cache.keys()]
-
     def get_projects(self):
         return self._get(self._get_projects_keybase(), shallow=True)
 
@@ -570,13 +533,11 @@ class FirebaseProvider(object):
         return self
 
     def __exit__(self, *args):
-        if self.pool:
-            print "**** firbase provder: closing pool of workers****"
-            self.pool.close()
-            self.pool.join()
         if self.app:
-            print "**** firebase provider: closing app.requests ****"
             self.app.requests.close()
+
+        if self.store:
+            self.store.__exit__()
 
 
 class PostgresProvider(object):
