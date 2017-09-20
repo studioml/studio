@@ -6,7 +6,12 @@ from setuptools.command.install import install
 from setuptools.command.develop import develop
 
 TRAVIS_BUILD_NUMBER = os.environ.get("TRAVIS_BUILD_NUMBER", "0")
-VERSION = "0.0.2.dev" + TRAVIS_BUILD_NUMBER
+TRAVIS_TAG = os.environ.get("TRAVIS_TAG", None)
+
+if TRAVIS_TAG:
+    VERSION = TRAVIS_TAG + ".post" + TRAVIS_BUILD_NUMBER
+else:
+    VERSION = "0.0.2.dev" + TRAVIS_BUILD_NUMBER
 
 # This file contains metadata related to the studioml client and python base
 # server software
@@ -14,9 +19,6 @@ VERSION = "0.0.2.dev" + TRAVIS_BUILD_NUMBER
 
 class MyDevelop(develop):
     def run(self):
-        if "TRAVIS_TAG" in os.environ:
-            global VERSION
-            VERSION = os.environ["TRAVIS_TAG"] + ".dev" + TRAVIS_BUILD_NUMBER
         print " >>> MyDevelop with verison {} <<< ".format(VERSION)
         call(["pip install -r requirements.txt --no-clean"], shell=True)
         copyconfig()
@@ -24,13 +26,9 @@ class MyDevelop(develop):
 
 
 class MyInstall(install):
-    if "TRAVIS_TAG" in os.environ:
-        global VERSION
-        VERSION = os.environ["TRAVIS_TAG"] + ".post" + TRAVIS_BUILD_NUMBER
-
-    print " >>> MyInstall with verison {} <<< ".format(VERSION)
 
     def run(self):
+        print " >>> MyInstall with verison {} <<< ".format(VERSION)
         call(["pip install -r requirements.txt --no-clean"], shell=True)
         copyconfig()
         install.run(self)
