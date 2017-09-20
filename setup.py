@@ -16,7 +16,8 @@ class MyDevelop(develop):
     def run(self):
         if "TRAVIS_TAG" in os.environ:
             global VERSION
-            VERSION = os.environ["TRAVIS_TAG"]
+            VERSION = os.environ["TRAVIS_TAG"] + ".dev" + TRAVIS_BUILD_NUMBER
+        print " >>> MyDevelop with verison {} <<< ".format(VERSION)
         call(["pip install -r requirements.txt --no-clean"], shell=True)
         copyconfig()
         develop.run(self)
@@ -25,7 +26,9 @@ class MyDevelop(develop):
 class MyInstall(install):
     if "TRAVIS_TAG" in os.environ:
         global VERSION
-        VERSION = os.environ["TRAVIS_TAG"]
+        VERSION = os.environ["TRAVIS_TAG"] + ".post" + TRAVIS_BUILD_NUMBER
+
+    print " >>> MyInstall with verison {} <<< ".format(VERSION)
 
     def run(self):
         call(["pip install -r requirements.txt --no-clean"], shell=True)
