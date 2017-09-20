@@ -63,32 +63,32 @@ DEFAULT_RESOURCES_NEEDED = {
 class CompletionService:
 
     def __init__(
-            self,
-            # Name of experiment
-            experimentId,
-            # Config yaml file
-            config=None,
-            # Number of remote workers to spin up
-            num_workers=1,
-            # Compute requirements, amount of RAM, GPU, etc
-            resources_needed={},
-            # What computer resource to use, either AWS, Google, or local
-            cloud=None,
-            # Timeout for cloud instances
-            cloud_timeout=100,
-            # Bid price for EC2 spot instances
-            bid='100%',
-            # Keypair to use for EC2 workers
-            ssh_keypair='peterz-k1',
-            # If true, get results that are submitted by other instances of CS
-            resumable=False,
-            # Whether to clean the submission queue on initialization
-            clean_queue=True,
-            # Whether to enable autoscaling for EC2 instances
-            queue_upscaling=True,
-            # Whether to delete the queue on shutdown
-            shutdown_del_queue=False,
-        ):
+        self,
+        # Name of experiment
+        experimentId,
+        # Config yaml file
+        config=None,
+        # Number of remote workers to spin up
+        num_workers=1,
+        # Compute requirements, amount of RAM, GPU, etc
+        resources_needed={},
+        # What computer resource to use, either AWS, Google, or local
+        cloud=None,
+        # Timeout for cloud instances
+        cloud_timeout=100,
+        # Bid price for EC2 spot instances
+        bid='100%',
+        # Keypair to use for EC2 workers
+        ssh_keypair='peterz-k1',
+        # If true, get results that are submitted by other instances of CS
+        resumable=False,
+        # Whether to clean the submission queue on initialization
+        clean_queue=True,
+        # Whether to enable autoscaling for EC2 instances
+        queue_upscaling=True,
+        # Whether to delete the queue on shutdown
+        shutdown_del_queue=False,
+    ):
 
         self.config = model.get_config(config)
         self.cloud = cloud

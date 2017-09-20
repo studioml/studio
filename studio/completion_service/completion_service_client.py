@@ -27,7 +27,8 @@ def main():
 
     mypath = os.path.dirname(script_path)
     sys.path.append(mypath)
-    module_name = '_clientscript' #os.path.splitext(os.path.basename(script_path))[0]
+    # os.path.splitext(os.path.basename(script_path))[0]
+    module_name = '_clientscript'
 
     client_module = importlib.import_module(module_name)
     logger.debug('loading args')
