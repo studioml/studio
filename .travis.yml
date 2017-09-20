@@ -11,7 +11,12 @@ install:
   - pip install -e .
   - pip install pep8
 
+env:
+  - secure: "JFjDyOimv4Gpmx+LKG4SLabJJcLwnj+DdPm0wPcNA1V8aJUWXgkjP0qndQxi0F4Ulj0iEyEGdrSP+hJd2+zuujJled/uPH/uAcwyL312xKMyYFN0EW6vKPLgPriUwqKcq21CcwI0NS0cj3nLRpbkNcm0yMfYX84DdI7Y44T4ypdbDfLQ90m4SmfbB3oLh7iKU/71P42pNkCVct2ADjb0XUSuoW0sAqrpLpzsYzE5+ngywIT5r9TF4fHEfUHM6x4Ofwowlb068M+7HVPFEzg/cGeFC1o2VpLJXxafa8QBJJ7NDaaYUKDOLN6Iph3QKc69T9wxWcLT2GyPdIJttZXf2c6YNczjVMv6gRc3iE+X3qzMvwz2s+TyDbzV84v8iF2k02z5ruZORrxEJoqBSntFsXi2agVk5Gj2UmX7Su3oTOK5c3IxPjeOzUZetvfVkfmPv3i2kCz8J/UkIJqbEx7V6qZHQkuUAnEGz/I7tBiEz7MrwTQWhhUHds5Rg4Ky/p3P7vmDZr2i80dVgvVhYyJz1NoQmfatr9922Z+coPrSxCnnNcKMZT8UO3d9GzQIsuxnJVm7zxdBdbmtYQTWqj9R4UKROcSUU4FPDRr5o0WglVDIUO5sKxfvIgsAPFxcs9wvj/2ap8DiA4v6gInPz28RUEo697g3jq06Gokuuqx/0ss="
+
+
 script:
+  - echo $AWS_ACCESS_KEY_ID
   - nosetests -v
   - pep8 --show-source .
   - python setup.py sdist
