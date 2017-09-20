@@ -14,7 +14,7 @@ install:
 script:
   # - nosetests -v
   - pep8 --show-source .
-  - python setup.py sdist
+  # - python setup.py sdist
 
 deploy:
   provider: pypi
