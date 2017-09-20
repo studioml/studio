@@ -101,7 +101,9 @@ class CompletionService:
             if key in resources_needed:
                 self.resources_needed[key] = resources_needed[key]
 
-        self.wm = runner.get_worker_manager(self.config, self.cloud, branch=')
+        self.wm = runner.get_worker_manager(
+            self.config, self.cloud)
+
         self.logger = logging.getLogger(self.__class__.__name__)
         self.verbose_level = model.parse_verbosity(self.config['verbose'])
         self.logger.setLevel(self.verbose_level)
@@ -142,7 +144,10 @@ class CompletionService:
 
         return self
 
-    def __exit__(self, delete_queue=True):
+    def __exit__(self, *args):
+        self.close()
+
+    def close(self, delete_queue=True):
         self.logger.info("Studioml completion service shutting down")
         # if self.queue_name != 'local' and delete_queue:
         if delete_queue:
@@ -248,8 +253,9 @@ class CompletionService:
 
                 for e in experiments:
                     if e.status == 'finished':
-                        self.logger.debug('Experiment {} finished, getting results'
-                                          .format(e.key))
+                        self.logger.debug(
+                            'Experiment {} finished, getting results' .format(
+                                e.key))
                         with open(db.get_artifact(e.artifacts['retval'])) as f:
                             data = pickle.load(f)
 

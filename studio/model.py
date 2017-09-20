@@ -172,7 +172,6 @@ class FirebaseProvider(object):
             if not myemail or myemail != self.auth.get_user_email():
                 self.__setitem__(self._get_user_keybase() + "email",
                                  self.auth.get_user_email())
-        
 
         self.max_keys = db_config.get('max_keys', 100)
 

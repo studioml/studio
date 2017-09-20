@@ -182,9 +182,8 @@ class FirebaseArtifactStore(TartifactStore):
     def get_bucket(self):
         return self.app.storage_bucket
 
-
-    def __exit__(self):
+    def __exit__(self, *args):
         self.app.requests.close()
 
-    def __enter__(self, *args):
+    def __enter__(self):
         return self
