@@ -97,5 +97,6 @@ class CompletionServiceTest(unittest.TestCase):
 
         self.assertEquals(results, expected_results)
 
+
 if __name__ == '__main__':
     unittest.main()

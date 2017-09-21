@@ -145,11 +145,11 @@ class CompletionService:
             else:
                 for i in range(self.num_workers):
                     worker_manager.start_worker(
-                        self.queue_name, 
+                        self.queue_name,
                         self.resources_needed,
                         ssh_keypair=seld.ssh_keypair,
                         timeout=self.cloud_timeout)
-        
+
             self.p = None
         else:
             self.logger.debug('Starting local worker')
