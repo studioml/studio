@@ -2,7 +2,6 @@ import os
 import sys
 import subprocess
 import argparse
-import yaml
 import logging
 import time
 import json

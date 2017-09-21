@@ -6,13 +6,11 @@ import pickle
 import os
 import pprint
 import time
-import traceback
-import sys
 import six
 
 import numpy as np
 
-from opt_util import scale_var, unscale_var, EPSILON
+from opt_util import EPSILON
 
 
 class Optimizer(object):

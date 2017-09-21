@@ -67,10 +67,6 @@ def event_reader(fileobj):
     fileobj.close()
 
 
-<< << << < HEAD
-== == == =
-
-
 def rsync_cp(source, dest, ignore_arg='', logger=None):
     if os.path.exists(dest):
         shutil.rmtree(dest) if os.path.isdir(dest) else os.remove(dest)
@@ -91,9 +87,6 @@ def rsync_cp(source, dest, ignore_arg='', logger=None):
     if pcp.returncode != 0 and logger is not None:
         logger.info('%s returned non-zero exit code. Output:' % tool)
         logger.info(cpout)
-
-
->>>>>> > peterz_db_providers
 
 
 class Progbar(object):

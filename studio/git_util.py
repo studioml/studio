@@ -1,6 +1,5 @@
 import re
 import subprocess
-import sys
 
 
 def get_git_info(path='.', abort_dirty=True):

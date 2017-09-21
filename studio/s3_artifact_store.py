@@ -65,7 +65,7 @@ class S3ArtifactStore(TartifactStore):
 
         try:
             time_updated = obj.last_modified
-        except BaseException as e:
+        except BaseException:
             return None
 
         if time_updated:

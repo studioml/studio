@@ -1,7 +1,5 @@
 import unittest
 import numpy as np
-import uuid
-from timeout_decorator import timeout
 import logging
 
 from studio.hyperparameter import HyperparameterParser, Hyperparameter

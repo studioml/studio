@@ -276,7 +276,7 @@ def delete_experiment():
         else:
             raise ValueError('Unauthorized')
 
-    except BaseException as e:
+    except BaseException:
         status = traceback.format_exc()
 
     toc = time.time()
@@ -393,11 +393,14 @@ def checkpoint_experiment():
     artifacts = {}
     try:
         key = request.json['key']
-        experiment = get_db().get_experiment(key)
-        get_db().checkpoint_experiment(experiment)
+        if get_db().can_write_experiment(key, userid):
+            experiment = get_db().get_experiment(key)
+            get_db().checkpoint_experiment(experiment)
 
-        artifacts = _process_artifacts(experiment)
-        status = 'ok'
+            artifacts = _process_artifacts(experiment)
+            status = 'ok'
+        else:
+            raise ValueError('Unauthorized')
 
     except BaseException:
         status = traceback.format_exc()

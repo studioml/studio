@@ -1,7 +1,5 @@
 """Data providers."""
-
 import os
-import uuid
 
 try:
     # try-except statement needed because
@@ -11,22 +9,12 @@ except ImportError:
     pip = None
 
 import yaml
-from . import pyrebase
 import logging
-import time
-import glob
-from threading import Thread
 import six
 
-from . import fs_tracker
-from . import util
-from . import git_util
-from .auth import FirebaseAuth
 from .artifact_store import get_artifact_store
-from .firebase_artifact_store import FirebaseArtifactStore
 from .http_provider import HTTPProvider
 from .firebase_provider import FirebaseProvider
-from .experiment import create_experiment, experiment_from_dict
 
 logging.basicConfig()
 

@@ -1,13 +1,9 @@
 import logging
 import time
 import calendar
-import json
 
 from google.cloud import storage
 from .tartifact_store import TartifactStore
-
-from .auth import FirebaseAuth
-from . import pyrebase
 
 logging.basicConfig()
 
@@ -30,7 +26,7 @@ class GCloudArtifactStore(TartifactStore):
     def getclient(self):
         if 'credentials' in self.config.keys():
             return storage.Client \
-                .from_service_account_json(config['serviceAccount'])
+                .from_service_account_json(self.config['serviceAccount'])
         else:
             return storage.Client()
 
