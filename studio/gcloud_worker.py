@@ -15,7 +15,7 @@ logging.basicConfig()
 
 
 class GCloudWorkerManager(object):
-    def __init__(self, zone='us-central1-f',
+    def __init__(self, zone='us-east1-c',
                  auth_cookie=None, verbose=10, branch=None,
                  user_startup_script=None):
         assert 'GOOGLE_APPLICATION_CREDENTIALS' in os.environ.keys()
@@ -137,7 +137,7 @@ class GCloudWorkerManager(object):
     def _get_instance_config(self, resources_needed, queue_name, timeout=300):
         image_response = self.compute.images().getFromFamily(
             project='studio-ed756', family='studioml').execute()
-        
+
         if image_response is None:
             image_response = self.compute.images().getFromFamily(
                 project='debian-cloud', family='debian-9').execute()
@@ -234,6 +234,20 @@ class GCloudWorkerManager(object):
             config['disks'][0]['initializeParams']['diskSizeGb'] = \
                 memstr2int(resources_needed['hdd']) / memstr2int('1Gb')
 
+        if resources_needed['gpus'] > 0:
+            gpu_type = "nvidia-tesla-k80"
+            config['guestAccelerators'] = [
+                {
+                    "acceleratorType":
+                        "projects/{}/zones/{}/acceleratorTypes/{}"
+                        .format(self.projectid, self.zone, gpu_type),
+                    "acceleratorCount": resources_needed['gpus']
+                }
+            ]
+
+            config["scheduling"]['onHostMaintenance'] = "TERMINATE"
+            config["automaticRestart"] = True
+  
         return config
 
     def _stop_worker(self, worker_id, blocking=True):

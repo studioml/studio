@@ -75,7 +75,11 @@ studio remote worker --queue=$queue_name  --verbose=debug --timeout={timeout}
 # shutdown the instance
 echo "Work done"
 
-exit 0
+if [[ -n $(who) ]]; then
+    echo "Users are logged in, not shutting down"
+    exit 0
+fi
+
 
 
 if [ -n $autoscaling_group ]; then
