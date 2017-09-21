@@ -7,6 +7,7 @@ import tempfile
 import shutil
 import requests
 import subprocess
+import boto3
 
 from urlparse import urlparse
 

@@ -285,6 +285,11 @@ class TartifactStore(object):
     def get_artifact_url(self, artifact, method='GET', get_timestamp=False):
         if 'key' in artifact.keys():
             url = self._get_file_url(artifact['key'], method=method)
+        elif 'url' in artifact.keys():
+            url = artifact['url']
+        else:
+            url = None
+
         if get_timestamp:
             timestamp = self._get_file_timestamp(artifact['key'])
             return (url, timestamp)
