@@ -128,18 +128,28 @@ class CompletionService:
         self.resumable = resumable
         self.queue_upscaling = queue_upscaling
         self.shutdown_del_queue = shutdown_del_queue
+        self.use_spot = cloud in ['ec2spot', 'gcspot']
 
     def __enter__(self):
         if self.wm:
             self.logger.debug('Spinning up cloud workers')
-            self.wm.start_spot_workers(
-                self.queue_name,
-                self.bid,
-                self.resources_needed,
-                start_workers=self.num_workers,
-                queue_upscaling=self.queue_upscaling,
-                ssh_keypair=self.ssh_keypair,
-                timeout=self.cloud_timeout)
+            if self.use_spot:
+                self.wm.start_spot_workers(
+                    self.queue_name,
+                    self.bid,
+                    self.resources_needed,
+                    start_workers=self.num_workers,
+                    queue_upscaling=self.queue_upscaling,
+                    ssh_keypair=self.ssh_keypair,
+                    timeout=self.cloud_timeout)
+            else:
+                for i in range(self.num_workers):
+                    worker_manager.start_worker(
+                        self.queue_name, 
+                        self.resources_needed,
+                        ssh_keypair=seld.ssh_keypair,
+                        timeout=self.cloud_timeout)
+        
             self.p = None
         else:
             self.logger.debug('Starting local worker')

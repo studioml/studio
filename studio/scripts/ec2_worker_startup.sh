@@ -77,6 +77,7 @@ echo "Work done"
 
 if [[ -n $(who) ]]; then
     echo "Users are logged in, not shutting down"
+    echo "Do not forget to shut the instance down manually"
     exit 0
 fi
 

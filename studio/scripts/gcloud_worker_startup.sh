@@ -77,7 +77,7 @@ git checkout $branch
 sudo pip install -e . --upgrade
 studio-remote-worker --queue=$queue_name --verbose=debug --timeout=${timeout}
 
-if [ -n $(who) ]; then
+if [[ -n $(who) ]]; then
     echo "Users logged in, preventing auto-shutdown"
     echo "Do not forget to turn the instance off manually"
     exit 0
