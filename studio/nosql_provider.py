@@ -1,8 +1,16 @@
 import pyrebase
 import logging
+import time
+import os
+from threading import Thread
+
 
 from firebase_artifact_store import FirebaseArtifactStore
 from auth import FirebaseAuth
+import util
+import git_util
+
+from experiment import experiment_from_dict
 
 logging.basicConfig()
 
@@ -116,7 +124,7 @@ class NoSQLProvider(object):
         # can be called remotely (the assumption is
         # that remote worker checks experiments status periodically,
         # and if it is 'stopped', kills the experiment.
-        if isinstance(key, Experiment):
+        if not isinstance(key, str):
             key = key.key
 
         self.__setitem__(self._get_experiments_keybase() +
