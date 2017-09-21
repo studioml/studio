@@ -77,6 +77,12 @@ git checkout $branch
 sudo pip install -e . --upgrade
 studio-remote-worker --queue=$queue_name --verbose=debug --timeout=${timeout}
 
+if [ -n $(who) ]; then
+    echo "Users logged in, preventing auto-shutdown"
+    echo "Do not forget to turn the instance off manually"
+    exit 0
+fi
+
 # shutdown the instance
 not_spot=$(echo "$group_name" | grep "Error 404" | wc -l)
 echo "not_spot = $not_spot"
