@@ -1,11 +1,8 @@
 """Tools to simplify PyTorch reporting and integrate with TensorBoard."""
 
 import collections
-<<<<<<< HEAD
 import six
-=======
 import time
->>>>>>> peterz_db_providers
 
 try:
     from tensorflow import summary as tb_summary
