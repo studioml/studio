@@ -247,7 +247,7 @@ class GCloudWorkerManager(object):
 
             config["scheduling"]['onHostMaintenance'] = "TERMINATE"
             config["automaticRestart"] = True
-  
+
         return config
 
     def _stop_worker(self, worker_id, blocking=True):
