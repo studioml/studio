@@ -47,10 +47,8 @@ class PostgresProvider(object):
     def refresh_auth_token(self, email, refresh_token):
         raise NotImplementedError()
 
-
     def is_auth_expired(self):
         raise NotImplementedError()
- 
+
     def can_write_experiment(self, key=None, user=None):
         raise NotImplementedError()
-

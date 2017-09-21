@@ -1,10 +1,17 @@
 from nosql_provider import NoSQLProvider
 import pyrebase
 
+
 class FirebaseProvider(NoSQLProvider):
- 
+
     def __init__(self, db_config, blocking_auth=True, verbose=10, store=None):
-        super(FirebaseProvider, self).__init__(db_config, blocking_auth, verbose, store)
+        super(
+            FirebaseProvider,
+            self).__init__(
+            db_config,
+            blocking_auth,
+            verbose,
+            store)
 
     def _get(self, key, shallow=False):
         try:
@@ -41,5 +48,3 @@ class FirebaseProvider(NoSQLProvider):
             dbobj.remove(self.auth.get_token())
         else:
             dbobj.remove()
-
-

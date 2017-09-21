@@ -14,6 +14,7 @@ from experiment import experiment_from_dict
 
 logging.basicConfig()
 
+
 class NoSQLProvider(object):
     """Data provider for Firebase."""
 
@@ -41,7 +42,6 @@ class NoSQLProvider(object):
 
         self.max_keys = db_config.get('max_keys', 100)
 
-   
     def _get_userid(self):
         userid = None
         if self.auth:
@@ -387,5 +387,3 @@ class NoSQLProvider(object):
     def __exit__(self, *args):
         if self.app:
             self.app.requests.close()
-
-

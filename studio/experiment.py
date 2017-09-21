@@ -121,4 +121,3 @@ def experiment_from_dict(data, info={}):
         git=data.get('git'),
         metric=data.get('metric')
     )
-
