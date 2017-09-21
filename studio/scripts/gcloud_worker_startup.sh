@@ -41,20 +41,21 @@ gac_name=${GOOGLE_APPLICATION_CREDENTIALS##*/}
 repo_url="https://github.com/studioml/studio"
 branch="{studioml_branch}"
 
-sudo apt -y update
-sudo apt install -y wget python-pip git python-dev
 
-git clone $repo_url
+if [ ! -d "studio" ]; then
+    sudo apt -y update
+    sudo apt install -y wget python-pip git python-dev
+    sudo pip install --upgrade pip
+    git clone $repo_url
+fi
+
 cd studio
 git checkout $branch
-#wget $code_url_base/$code_ver
-#tar -xzf $code_ver
-#cd studio
 
-sudo pip install --upgrade pip
 sudo pip install -e . --upgrade
-mkdir ~/workspace && cd ~/workspace
 studio-remote-worker --queue=$queue_name --verbose=debug --timeout=${timeout}
+
+exit 0
 
 # shutdown the instance
 not_spot=$(echo "$group_name" | grep "Error 404" | wc -l)

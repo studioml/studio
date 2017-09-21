@@ -136,7 +136,12 @@ class GCloudWorkerManager(object):
 
     def _get_instance_config(self, resources_needed, queue_name, timeout=300):
         image_response = self.compute.images().getFromFamily(
-            project='debian-cloud', family='debian-9').execute()
+            project='studio-ed756', family='studioml').execute()
+        
+        if image_response is None:
+            image_response = self.compute.images().getFromFamily(
+                project='debian-cloud', family='debian-9').execute()
+
         source_disk_image = image_response['selfLink']
 
         # Configure the machine

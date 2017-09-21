@@ -274,12 +274,12 @@ class TartifactStore(object):
                 self.logger.warn(
                     'file {} download failed'.format(tar_filename))
 
-        t = Thread(target=finish_download)
-        t.start()
         if background:
+            t = Thread(target=finish_download)
+            t.start()
             return (local_path, t)
         else:
-            t.join()
+            finish_download()
             return local_path
 
     def get_artifact_url(self, artifact, method='GET', get_timestamp=False):
