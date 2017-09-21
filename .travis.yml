@@ -12,7 +12,7 @@ install:
   - pip install pep8
 
 script:
-  # - nosetests -v
+  - nosetests -v
   - pep8 --show-source .
   - python setup.py sdist
 
@@ -25,5 +25,4 @@ deploy:
   skip_cleanup: true
   on:
     # tags: true
-    # branch: master
-    branch: peterz_pypi_autopush
+    branch: master
