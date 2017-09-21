@@ -30,47 +30,50 @@ autoscaling_group="{autoscaling_group}"
 echo "Environment varibles:"
 env
 
-sudo apt -y update
-sudo apt install -y wget python-pip git python-dev jq
-sudo pip install --upgrade pip
-sudo pip install --upgrade awscli boto3
-
-#wget $code_url_base/$code_ver
-#tar -xzf $code_ver
-#cd studio
-git clone $repo_url
-cd studio
-git checkout $branch
-
-if [[ "{use_gpus}" -eq 1 ]]; then
-    cudnn5="libcudnn5_5.1.10-1_cuda8.0_amd64.deb"
-    cudnn6="libcudnn6_6.0.21-1_cuda8.0_amd64.deb"
-    cuda_base="https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1604/x86_64/"
-    cuda_ver="cuda-repo-ubuntu1604_8.0.61-1_amd64.deb"
-
-    # install cuda
-    wget $cuda_base/$cuda_ver
-    sudo dpkg -i $cuda_ver
+if [ ! -d "studio" ]; then
     sudo apt -y update
-    sudo apt install -y cuda
+    sudo apt install -y wget python-pip git python-dev jq
+    sudo pip install --upgrade pip
+    sudo pip install --upgrade awscli boto3
 
-    # install cudnn
-    wget $code_url_base/$cudnn5
-    wget $code_url_base/$cudnn6
-    sudo dpkg -i $cudnn5
-    sudo dpkg -i $cudnn6
+    #wget $code_url_base/$code_ver
+    #tar -xzf $code_ver
+    #cd studio
+    git clone $repo_url
 
-    sudo pip install tensorflow tensorflow-gpu --upgrade
+    if [[ "{use_gpus}" -eq 1 ]]; then
+        cudnn5="libcudnn5_5.1.10-1_cuda8.0_amd64.deb"
+        cudnn6="libcudnn6_6.0.21-1_cuda8.0_amd64.deb"
+        cuda_base="https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1604/x86_64/"
+        cuda_ver="cuda-repo-ubuntu1604_8.0.61-1_amd64.deb"
+
+        # install cuda
+        wget $cuda_base/$cuda_ver
+        sudo dpkg -i $cuda_ver
+        sudo apt -y update
+        sudo apt install -y cuda
+
+        # install cudnn
+        wget $code_url_base/$cudnn5
+        wget $code_url_base/$cudnn6
+        sudo dpkg -i $cudnn5
+        sudo dpkg -i $cudnn6
+
+        sudo pip install tensorflow tensorflow-gpu --upgrade
+    else
+        sudo apt-get install default-jre
+    fi
 fi
-sudo apt-get install default-jre
+
+cd studio
+git pull
+git checkout $branch
 sudo pip install -e . --upgrade
 
-mkdir ~/workspace && cd ~/workspace
 studio remote worker --queue=$queue_name  --verbose=debug --timeout={timeout}
 
 # shutdown the instance
 echo "Work done"
-
 
 exit 0
 

@@ -87,9 +87,8 @@ class EC2WorkerManager(object):
             self.logger.warn('User startup script argument is deprecated')
 
     def _get_image_id(self):
-        # vanilla ubuntu 16.04 image
-        # return 'ami-d15a75c7'
-        return 'ami-cd0f5cb6'
+        # return 'ami-cd0f5cb6' # vanilla ubuntu 16.04 image
+        return 'ami-eb7d9491' # studio.ml gpu image
 
     def _get_block_device_mappings(self, resources_needed):
         return [{

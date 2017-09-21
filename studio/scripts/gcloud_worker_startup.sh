@@ -36,7 +36,7 @@ gac_name=${GOOGLE_APPLICATION_CREDENTIALS##*/}
 #            mkdir /workspace && cd /workspace && \
 #            studio-rworker --queue=$queue_name"
 
-#code_url_base="https://storage.googleapis.com/studio-ed756.appspot.com/src"
+code_url_base="https://storage.googleapis.com/studio-ed756.appspot.com/src"
 #code_ver="tfstudio-64_config_location-2017-08-04_1.tgz"
 repo_url="https://github.com/studioml/studio"
 branch="{studioml_branch}"
@@ -47,15 +47,35 @@ if [ ! -d "studio" ]; then
     sudo apt install -y wget python-pip git python-dev
     sudo pip install --upgrade pip
     git clone $repo_url
+
+    if [[ "{use_gpus}" -eq 1 ]]; then
+        cudnn5="libcudnn5_5.1.10-1_cuda8.0_amd64.deb"
+        cudnn6="libcudnn6_6.0.21-1_cuda8.0_amd64.deb"
+        cuda_base="https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1604/x86_64/"
+        cuda_ver="cuda-repo-ubuntu1604_8.0.61-1_amd64.deb"
+
+        # install cuda
+        wget $cuda_base/$cuda_ver
+        sudo dpkg -i $cuda_ver
+        sudo apt -y update
+        sudo apt install -y cuda
+
+        # install cudnn
+        wget $code_url_base/$cudnn5
+        wget $code_url_base/$cudnn6
+        sudo dpkg -i $cudnn5
+        sudo dpkg -i $cudnn6
+
+        sudo pip install tensorflow tensorflow-gpu --upgrade
+    fi
 fi
 
 cd studio
+git pull
 git checkout $branch
 
 sudo pip install -e . --upgrade
 studio-remote-worker --queue=$queue_name --verbose=debug --timeout=${timeout}
-
-exit 0
 
 # shutdown the instance
 not_spot=$(echo "$group_name" | grep "Error 404" | wc -l)
