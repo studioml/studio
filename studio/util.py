@@ -38,6 +38,7 @@ def rand_string(length):
     return "".join([random.choice(string.ascii_letters + string.digits)
                     for n in range(length)])
 
+
 def event_reader(fileobj):
 
     if isinstance(fileobj, str):
@@ -66,8 +67,10 @@ def event_reader(fileobj):
     fileobj.close()
 
 
-<<<<<<< HEAD
-=======
+<< << << < HEAD
+== == == =
+
+
 def rsync_cp(source, dest, ignore_arg='', logger=None):
     if os.path.exists(dest):
         shutil.rmtree(dest) if os.path.isdir(dest) else os.remove(dest)
@@ -90,7 +93,9 @@ def rsync_cp(source, dest, ignore_arg='', logger=None):
         logger.info(cpout)
 
 
->>>>>>> peterz_db_providers
+>>>>>> > peterz_db_providers
+
+
 class Progbar(object):
     """Displays a progress bar.
 

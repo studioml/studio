@@ -152,7 +152,7 @@ class Optimizer(object):
         self.mean_fitnesses.append(float(np.mean(fitnesses)))
         self.best = (hyperparameter_pop[np.argmax(fitnesses)],
                      self.__pack_solution(
-                        hyperparameter_pop[np.argmax(fitnesses)]))
+            hyperparameter_pop[np.argmax(fitnesses)]))
 
         solutions = [self.__pack_solution(hyperparameters) for hyperparameters
                      in hyperparameter_pop]

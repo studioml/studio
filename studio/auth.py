@@ -19,7 +19,6 @@ SLEEP_TIME = 0.5
 MAX_NUM_RETRIES = 100
 
 
-
 class FirebaseAuth(object):
     def __init__(
             self,

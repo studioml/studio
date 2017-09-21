@@ -47,5 +47,6 @@ class HyperparamTest(unittest.TestCase):
             sorted(h.convert_to_tuples(hyperparams), key=lambda x: str(x)),
             sorted(expected_tuples, key=lambda x: str(x)))
 
+
 if __name__ == '__main__':
     unittest.main()
