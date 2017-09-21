@@ -200,6 +200,7 @@ class TartifactStore(object):
                                               stderr=subprocess.PIPE
                                               ).communicate()
                 listtar = listtar.strip().split(b'\n')
+                listtar = [s.decode('utf-8') for s in listtar]
                 self.logger.info('List of files in the tar: ' + str(listtar))
                 if listtar[0].startswith('./'):
                     # Files are archived into tar from .; adjust path
@@ -220,7 +221,7 @@ class TartifactStore(object):
                 if tarp.returncode != 0:
                     self.logger.info('tar had a non-zero return code!')
                     self.logger.info('tar cmd = ' + tarcmd)
-                    self.logger.info('tar output: \n ' + tarout)
+                    self.logger.info('tar output: \n ' + str(tarout))
 
                 if len(listtar) == 1:
                     actual_path = os.path.join(basepath, listtar[0])

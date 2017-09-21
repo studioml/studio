@@ -2,7 +2,7 @@ import requests
 import json
 import six
 
-from. import model
+from . import model
 from . import pyrebase
 from .auth import FirebaseAuth
 

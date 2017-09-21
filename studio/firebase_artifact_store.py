@@ -111,7 +111,7 @@ class FirebaseArtifactStore(TartifactStore):
 
             self.logger.debug("Done")
         except Exception as err:
-            self.logger.warn(
+            self.logger.warning(
                 ("Deleting file {} from storage " +
                  "raised an exception: {}") .format(key, err))
 

@@ -61,7 +61,7 @@ class ArtifactStoreTest(object):
         fb = self.get_store()
         tmp_dir = os.path.join(tempfile.gettempdir(), str(uuid.uuid4()))
         strlen = 10000000
-        random_str = os.urandom(strlen)
+        random_str = str(os.urandom(strlen))
 
         os.makedirs(os.path.join(tmp_dir, 'test_dir'))
         tmp_filename = os.path.join(
@@ -178,7 +178,7 @@ class FirebaseArtifactStoreTest(ArtifactStoreTest, unittest.TestCase):
             str(uuid.uuid4()) + '.txt')
 
         random_str = str(uuid.uuid4())
-        with open(tmp_filename, 'w') as f:
+        with open(tmp_filename, 'wt') as f:
             f.write(random_str)
 
         key = 'tests/' + str(uuid.uuid4()) + '.txt'
@@ -187,7 +187,8 @@ class FirebaseArtifactStoreTest(ArtifactStoreTest, unittest.TestCase):
         url = fb._get_file_url(key)
         response = requests.get(url)
         self.assertEquals(response.status_code, 200)
-        self.assertEquals(response.content, random_str)
+        self.assertEquals(response.content.decode('utf-8'),
+                          random_str)
         fb._delete_file(key)
         os.remove(tmp_filename)
 
@@ -207,7 +208,8 @@ class FirebaseArtifactStoreTest(ArtifactStoreTest, unittest.TestCase):
         url = fb._get_file_url(key)
         response = requests.get(url)
         self.assertEquals(response.status_code, 200)
-        self.assertEquals(response.content, random_str)
+        self.assertEquals(response.content.decode('utf-8'),
+                          random_str)
         fb._delete_file(key)
         os.remove(tmp_filename)
 

@@ -223,8 +223,8 @@ def stubtest_worker(
                           '--force-git',
                           '--experiment=' + experiment_name,
                           test_script] + script_args,
-                         stdout=subprocess.PIPE,
-                         stderr=subprocess.STDOUT,
+                         #stdout=subprocess.PIPE,
+                         #stderr=subprocess.STDOUT,
                          cwd=my_path)
 
     pout, _ = p.communicate()
@@ -290,6 +290,9 @@ def check_workspace(testclass, db, key):
     for _, _, files in os.walk(artifact['local'], topdown=False):
         for filename in files:
             downloaded_filename = os.path.join(tmpdir, filename)
+            if downloaded_filename.endswith('.pyc'):
+                continue
+
             with open(downloaded_filename, 'rb') as f1:
                 data1 = f1.read()
             with open(os.path.join(artifact['local'], filename), 'rb') as f2:
