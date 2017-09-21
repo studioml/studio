@@ -114,7 +114,7 @@ class ArtifactStoreTest(object):
         with open(tar_filename, 'wb') as f:
             f.write(response.content)
 
-        ptar = subprocess.Popen(['tar', '-xzf', tar_filename],
+        ptar = subprocess.Popen(['tar', '-xf', tar_filename],
                                 cwd=tempfile.gettempdir())
 
         tarout, _ = ptar.communicate()
