@@ -25,7 +25,7 @@ class GCloudWorkerTest(unittest.TestCase):
 
     def test_worker(self):
         experiment_name = 'test_gcloud_worker_' + str(uuid.uuid4())
-        stubtest_worker(
+        with stubtest_worker(
             self,
             experiment_name=experiment_name,
             runner_args=['--cloud=gcloud', '--force-git',
@@ -34,11 +34,12 @@ class GCloudWorkerTest(unittest.TestCase):
             test_script='tf_hello_world.py',
             script_args=['arg0'],
             expected_output='[ 2.  6.]',
-        )
+        ):
+            pass
 
     def test_worker_spot(self):
         experiment_name = 'test_gcloud_spot_worker_' + str(uuid.uuid4())
-        stubtest_worker(
+        with stubtest_worker(
             self,
             experiment_name=experiment_name,
             runner_args=['--cloud=gcspot', '--force-git',
@@ -47,7 +48,8 @@ class GCloudWorkerTest(unittest.TestCase):
             test_script='tf_hello_world.py',
             script_args=['arg0'],
             expected_output='[ 2.  6.]',
-        )
+        ):
+            pass
 
 
 @unittest.skipIf(
@@ -61,7 +63,7 @@ class EC2WorkerTest(unittest.TestCase):
 
     def test_worker(self):
         experiment_name = 'test_ec2_worker_' + str(uuid.uuid4())
-        stubtest_worker(
+        with stubtest_worker(
             self,
             experiment_name=experiment_name,
             runner_args=['--cloud=ec2', '--force-git', '--gpus=1',
@@ -70,7 +72,8 @@ class EC2WorkerTest(unittest.TestCase):
             test_script='tf_hello_world.py',
             script_args=['arg0'],
             expected_output='[ 2.  6.]',
-        )
+        ):
+            pass
 
     def test_worker_spot(self):
         experiment_name = 'test_ec2_worker_' + str(uuid.uuid4())

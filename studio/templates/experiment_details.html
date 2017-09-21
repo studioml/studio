@@ -45,8 +45,22 @@
 
     <script>
         $(authWidget(function() {
-            reload(() => data_ajax('get_experiment', data={"key": "{{ experiment }}"}), updateExperimentPage)
+            reload(() => data_ajax('get_experiment', data={"key": "{{ experiment }}"}), updateExperimentPage, 1, 120,
+                                   compareExperimentData)
         }));
+
+        function compareExperimentData(expA, expB) {
+            if (expA == null || expB == null) {
+                return false;
+            }
+            expA = JSON.parse(expA)
+            expB = JSON.parse(expB)
+
+            if (JSON.stringify(expA.experiment.info) == JSON.stringify(expB.experiment.info)) {
+                return true;
+            }
+            return false;
+        }
 
         function deleteExperiment(key) {
             if (confirm("The experiment and its artfacts will be lost. Proceed?")) {
@@ -109,14 +123,17 @@
                 $('#container-artifacts').html('<dt>Experiemnt artifacts</dt>')
                 for (var key in e.artifacts) {
                     art = e.artifacts[key]
-                    var artifactHtml = '<dd>';
-                    artifactHtml += '<a href="' + art.url + '">' + key + '</a>';
-                    if (art.qualified && qualifiedLocationToBrowsable(art.qualified)) {
-                        artifactHtml += '<a href="' + qualifiedLocationToBrowsable(art.qualified) + '"> (view in console)</a>';
+                    if (art.url) {
+                        var artifactHtml = '<dd>';
+                        artifactHtml += '<a href="' + art.url + '">' + key + '</a>';
+                    
+                        if (art.qualified && qualifiedLocationToBrowsable(art.qualified)) {
+                            artifactHtml += '<a href="' + qualifiedLocationToBrowsable(art.qualified) + '"> (view in console)</a>';
+                        }
+                        artifactHtml += '</dd>';
+                        console.log(artifactHtml)
+                        $('#container-artifacts').append(artifactHtml)
                     }
-                    artifactHtml += '</dd>';
-                    console.log(artifactHtml)
-                    $('#container-artifacts').append(artifactHtml)
                 }
                 $('#container-artifacts').show()
             

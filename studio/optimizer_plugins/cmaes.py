@@ -152,7 +152,7 @@ class Optimizer(object):
         self.mean_fitnesses.append(float(np.mean(fitnesses)))
         self.best = (hyperparameter_pop[np.argmax(fitnesses)],
                      self.__pack_solution(
-            hyperparameter_pop[np.argmax(fitnesses)]))
+                        hyperparameter_pop[np.argmax(fitnesses)]))
 
         solutions = [self.__pack_solution(hyperparameters) for hyperparameters
                      in hyperparameter_pop]
@@ -200,14 +200,18 @@ class Optimizer(object):
 
     def __save_checkpoint(self):
         if (int(self.config['checkpoint_interval']) >= 1 and
-                self.gen %
-                int(self.config['checkpoint_interval']) == 0) or \
+            self.gen % int(self.config['checkpoint_interval']) == 0) or \
                 self.stop():
 
-            result_dir = os.path.abspath(
-                os.path.expanduser(self.config['result_dir']))
-            if not os.path.exists(result_dir):
-                os.makedirs(result_dir)
+            try:
+                result_dir = os.path.abspath(
+                    os.path.expanduser(self.config['result_dir']))
+                if not os.path.exists(result_dir):
+                    os.makedirs(result_dir)
+            except BaseException:
+                self.looger.warn("Cannot retrieve checkpoint directory,"
+                                 " not saving checkpoint")
+                return
 
             checkpoint_file = os.path.join(
                 result_dir, "G%s_F%s_checkpoint.pkl" %
@@ -218,6 +222,12 @@ class Optimizer(object):
                 copy_of_self.config = None
                 # copy_of_self.es = None
                 pickle.dump(copy_of_self, f, protocol=-1)
+
+            best_file = os.path.join(
+                result_dir, "G%s_F%s_best.pkl" %
+                (self.gen, self.best_fitness))
+            with open(best_file, 'wb') as f:
+                pickle.dump(self.best, f, protocol=-1)
 
             with open(os.path.join(result_dir, "fitness.txt"), 'wb') as f:
                 for best, mean in zip(

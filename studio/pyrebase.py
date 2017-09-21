@@ -34,9 +34,13 @@ POOL_SIZE = 100
 def initialize_app(config):
     if 'projectId' in config.keys():
         projectId = config['projectId']
-        config['authDomain'] = config['authDomain'].format(projectId)
-        config['databaseURL'] = config['databaseURL'].format(projectId)
-        config['storageBucket'] = config['storageBucket'].format(projectId)
+
+        if 'authDomain' in config.keys():
+            config['authDomain'] = config['authDomain'].format(projectId)
+        if 'databaseURL' in config.keys():
+            config['databaseURL'] = config['databaseURL'].format(projectId)
+        if 'storageBucket' in config.keys():
+            config['storageBucket'] = config['storageBucket'].format(projectId)
 
     return Firebase(config)
 
@@ -318,10 +322,13 @@ class Database:
             self.path = new_path
         return self
 
-    def build_request_url(self, token):
+    def build_request_url(self, token, shallow=False):
         parameters = {}
         if token:
             parameters['auth'] = token
+        if shallow:
+            parameters['shallow'] = 'true'
+
         for param in list(self.build_query):
             if isinstance(self.build_query[param], str):
                 parameters[param] = quote('"' + self.build_query[param] + '"')
@@ -344,10 +351,10 @@ class Database:
             headers['Authorization'] = 'Bearer ' + access_token
         return headers
 
-    def get(self, token=None, json_kwargs={}):
+    def get(self, token=None, json_kwargs={}, shallow=False):
         build_query = self.build_query
         query_key = self.path.split("/")[-1]
-        request_ref = self.build_request_url(token)
+        request_ref = self.build_request_url(token, shallow=shallow)
         # headers
         headers = self.build_headers(token)
         # do request
@@ -503,9 +510,12 @@ class Storage:
         path = self.path
         self.path = None
         if isinstance(file, str):
-            file_object = open(file, 'rb')
+            with open(file, 'rb') as file_object:
+                return self._put_file(path, file_object, token, userid)
         else:
-            file_object = file
+            return self._put_file(path, file, path, token, userid)
+
+    def _put_file(self, path, file_object, token, userid):
         request_ref = self.storage_bucket + "/o?name={0}".format(path)
         if token:
             headers = {"Authorization": "Firebase " + token}

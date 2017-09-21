@@ -1,27 +1,25 @@
 database:
-    #type: FireBase
-    type: http
-    serverUrl: https://studio-ed756.appspot.com
+    type: FireBase
+
     apiKey: AIzaSyCLQbp5X2B4SWzBw-sz9rUnGHNSdMl0Yx8
+    projectId: studio-ed756
+    messagingSenderId: 81790704397
 
-    #projectId: studio-ed756
-    #messagingSenderId: 81790704397
+    authDomain: "{}.firebaseapp.com"
+    databaseURL: "https://{}.firebaseio.com"
+    storageBucket: "{}.appspot.com"
 
-    #authDomain: "{}.firebaseapp.com"
-    #databaseURL: "https://{}.firebaseio.com"
-    #storageBucket: "{}.appspot.com"
-
-    # serviceAccount: $GOOGLE_APPLICATION_CREDENTIALS
+    serviceAccount: ./firebase_admin_creds.json
     # guest: true
-    #use_email_auth: false
+    use_email_auth: false
 
 
 
-#storage:
+storage:
     #type: s3
     #bucket: "studioml-artifacts"
-    #type: gcloud
-    #bucket: studio-ed756.appspot.com
+    type: gcloud
+    bucket: studio-ed756.appspot.com
 
    
 

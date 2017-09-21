@@ -29,7 +29,7 @@ class LocalWorkerTest(unittest.TestCase, QueueTest):
         return LocalQueue()
 
     def test_runner_local(self):
-        stubtest_worker(
+        with stubtest_worker(
             self,
             experiment_name='test_runner_local_' + str(uuid.uuid4()),
             runner_args=['--verbose=debug'],
@@ -37,26 +37,29 @@ class LocalWorkerTest(unittest.TestCase, QueueTest):
             test_script='tf_hello_world.py',
             script_args=['arg0'],
             expected_output='[ 2.  6.]'
-        )
+        ):
+            pass
 
     def test_local_hyperparam(self):
-        stubtest_worker(
+        with stubtest_worker(
             self,
             experiment_name='test_local_hyperparam' + str(uuid.uuid4()),
             runner_args=['--verbose=debug'],
             config_name='test_config.yaml',
             test_script='hyperparam_hello_world.py',
             expected_output='0.3'
-        )
+        ):
+            pass
 
-        stubtest_worker(
+        with stubtest_worker(
             self,
             experiment_name='test_local_hyperparam' + str(uuid.uuid4()),
             runner_args=['--verbose=debug', '--hyperparam=learning_rate=0.4'],
             config_name='test_config.yaml',
             test_script='hyperparam_hello_world.py',
             expected_output='0.4'
-        )
+        ):
+            pass
 
     def test_local_worker_ce(self):
         tmpfile = os.path.join(tempfile.gettempdir(),
@@ -69,7 +72,7 @@ class LocalWorkerTest(unittest.TestCase, QueueTest):
         random_str2 = str(uuid.uuid4())
         experiment_name = 'test_local_worker_c' + str(uuid.uuid4())
 
-        db = stubtest_worker(
+        with stubtest_worker(
             self,
             experiment_name=experiment_name,
             runner_args=['--capture=' + tmpfile + ':f',
@@ -79,19 +82,19 @@ class LocalWorkerTest(unittest.TestCase, QueueTest):
             script_args=[random_str2],
             expected_output=random_str1,
             delete_when_done=False
-        )
+        ) as db:
 
-        tmppath = os.path.join(tempfile.gettempdir(), str(uuid.uuid4()))
+            tmppath = os.path.join(tempfile.gettempdir(), str(uuid.uuid4()))
 
-        db.store.get_artifact(
-            db.get_experiment(experiment_name).artifacts['f'],
-            tmppath)
+            db.store.get_artifact(
+                db.get_experiment(experiment_name).artifacts['f'],
+                tmppath)
 
-        with open(tmppath, 'r') as f:
-            self.assertTrue(f.read() == random_str2)
-        os.remove(tmppath)
+            with open(tmppath, 'r') as f:
+                self.assertTrue(f.read() == random_str2)
+            os.remove(tmppath)
 
-        stubtest_worker(
+        with stubtest_worker(
             self,
             experiment_name='test_local_worker_e' + str(uuid.uuid4()),
             runner_args=['--reuse={}/f:f'.format(experiment_name)],
@@ -99,8 +102,9 @@ class LocalWorkerTest(unittest.TestCase, QueueTest):
             test_script='art_hello_world.py',
             script_args=[],
             expected_output=random_str2
-        )
-        db.delete_experiment(experiment_name)
+        ) as db:
+
+            db.delete_experiment(experiment_name)
 
     def test_local_worker_co(self):
         tmpfile = os.path.join(tempfile.gettempdir(),
@@ -110,7 +114,7 @@ class LocalWorkerTest(unittest.TestCase, QueueTest):
         with open(tmpfile, 'w') as f:
             f.write(random_str)
 
-        stubtest_worker(
+        with stubtest_worker(
             self,
             experiment_name='test_local_worker_co' + str(uuid.uuid4()),
             runner_args=['--capture-once=' + tmpfile + ':f'],
@@ -118,13 +122,14 @@ class LocalWorkerTest(unittest.TestCase, QueueTest):
             test_script='art_hello_world.py',
             script_args=[],
             expected_output=random_str
-        )
+        ):
+            pass
 
     @unittest.skipIf(keras is None,
                      'keras is required for this test')
     def test_save_get_model(self):
         experiment_name = 'test_save_get_model' + str(uuid.uuid4())
-        db = stubtest_worker(
+        with stubtest_worker(
             self,
             experiment_name=experiment_name,
             runner_args=[],
@@ -134,18 +139,18 @@ class LocalWorkerTest(unittest.TestCase, QueueTest):
             expected_output='',
             delete_when_done=False,
             test_output=False
-        )
+        ) as db:
 
-        experiment = db.get_experiment(experiment_name)
-        saved_model = experiment.get_model(db)
+            experiment = db.get_experiment(experiment_name)
+            saved_model = experiment.get_model(db)
 
-        v = np.random.rand(1, 2)
-        prediction = saved_model.predict(v)
-        expected = v * 2
+            v = np.random.rand(1, 2)
+            prediction = saved_model.predict(v)
+            expected = v * 2
 
-        self.assertTrue(np.isclose(prediction, expected).all())
+            self.assertTrue(np.isclose(prediction, expected).all())
 
-        db.delete_experiment(experiment)
+            db.delete_experiment(experiment)
 
     @timeout(120)
     def test_stop_experiment(self):
@@ -157,38 +162,38 @@ class LocalWorkerTest(unittest.TestCase, QueueTest):
         config_name = os.path.join(my_path, 'test_config.yaml')
         key = 'test_stop_experiment' + str(uuid.uuid4())
 
-        db = model.get_db_provider(model.get_config(config_name))
-        try:
-            db.delete_experiment(key)
-        except Exception:
-            pass
-
-        p = subprocess.Popen(['studio', 'run',
-                              '--config=' + config_name,
-                              '--experiment=' + key,
-                              '--force-git',
-                              '--verbose=debug',
-                              'stop_experiment.py'],
-                             stdout=subprocess.PIPE,
-                             stderr=subprocess.STDOUT,
-                             cwd=my_path)
-
-        # wait till experiment spins up
-        experiment = None
-        while experiment is None or experiment.status == 'waiting':
-            time.sleep(1)
+        with model.get_db_provider(model.get_config(config_name)) as db:
             try:
-                experiment = db.get_experiment(key)
-            except BaseException:
+                db.delete_experiment(key)
+            except Exception:
                 pass
 
-        logger.info('Stopping experiment')
-        db.stop_experiment(key)
-        pout, _ = p.communicate()
-        if pout:
-            logger.debug("studio run output: \n" + str(pout))
+            p = subprocess.Popen(['studio', 'run',
+                                  '--config=' + config_name,
+                                  '--experiment=' + key,
+                                  '--force-git',
+                                  '--verbose=debug',
+                                  'stop_experiment.py'],
+                                 stdout=subprocess.PIPE,
+                                 stderr=subprocess.STDOUT,
+                                 cwd=my_path)
 
-        db.delete_experiment(key)
+            # wait till experiment spins up
+            experiment = None
+            while experiment is None or experiment.status == 'waiting':
+                time.sleep(1)
+                try:
+                    experiment = db.get_experiment(key)
+                except BaseException:
+                    pass
+
+            logger.info('Stopping experiment')
+            db.stop_experiment(key)
+            pout, _ = p.communicate()
+            if pout:
+                logger.debug("studio run output: \n" + pout)
+
+            db.delete_experiment(key)
 
 
 def stubtest_worker(
@@ -233,22 +238,22 @@ def stubtest_worker(
         logger.debug("studio run output: \n" + str(pout))
 
     experiments = [e for e in db.get_user_experiments()
-                   if e.key.startswith(experiment_name)]
+                   if e.startswith(experiment_name)]
 
     assert len(experiments) == 1, "actually {} number of experiments".format(
         len(experiments))
 
-    experiment_name = experiments[0].key
+    experiment_name = experiments[0]
 
     try:
         # test saved arguments
         keybase = "/experiments/" + experiment_name
-        saved_args = db[keybase + '/args']
+        saved_args = db._get(keybase + '/args')
         if saved_args is not None:
             testclass.assertTrue(len(saved_args) == len(script_args))
             for i in range(len(saved_args)):
                 testclass.assertTrue(saved_args[i] == script_args[i])
-            testclass.assertTrue(db[keybase + '/filename'] == test_script)
+            testclass.assertTrue(db._get(keybase + '/filename') == test_script)
         else:
             testclass.assertTrue(script_args is None or len(script_args) == 0)
 

@@ -23,13 +23,7 @@ class LocalExecutor(object):
     """
 
     def __init__(self, args):
-        self.config = model.get_config()
-        if args.config:
-            if isinstance(args.config, six.string_types):
-                with open(args.config) as f:
-                    self.config.update(yaml.load(f))
-            else:
-                self.config.update(args.config)
+        self.config = args.config
 
         if args.guest:
             self.config['database']['guest'] = True
@@ -78,9 +72,10 @@ class LocalExecutor(object):
                                  stderr=subprocess.STDOUT,
                                  env=env,
                                  cwd=experiment
-                                 .artifacts['workspace']['local'])
+                                 .artifacts['workspace']['local'],
+                                 close_fds=True)
             # simple hack to show what's in the log file
-            ptail = subprocess.Popen(["tail", "-f", log_path])
+            ptail = subprocess.Popen(["tail", "-f", log_path], close_fds=True)
 
             sched.add_job(
                 lambda: self.db.checkpoint_experiment(experiment),
@@ -228,10 +223,10 @@ def worker_loop(queue, parsed_args,
                         if tag == 'workspace':
                             # art['local'] = executor.db.store.get_artifact(
                             #    art, '.', only_newer=False)
-                            art['local'] = executor.db.store.get_artifact(
+                            art['local'] = executor.db.get_artifact(
                                 art, only_newer=False)
                         else:
-                            art['local'] = executor.db.store.get_artifact(art)
+                            art['local'] = executor.db.get_artifact(art)
                 executor.run(experiment)
             finally:
                 sched.shutdown()

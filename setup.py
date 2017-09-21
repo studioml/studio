@@ -73,7 +73,7 @@ setup(
     keywords='TensorFlow studioml StudioML Studio Keras scikit-learn',
     author='Illia Polosukhin',
     author_email='illia.polosukhin@gmail.com',
-    #        data_files=[('bin', ['studio/scripts/*'])],
+    data_files=[('test_requirements.txt')],
     scripts=[
             'studio/scripts/studio',
             'studio/scripts/studio-ui',

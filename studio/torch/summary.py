@@ -1,7 +1,11 @@
 """Tools to simplify PyTorch reporting and integrate with TensorBoard."""
 
 import collections
+<<<<<<< HEAD
 import six
+=======
+import time
+>>>>>>> peterz_db_providers
 
 try:
     from tensorflow import summary as tb_summary
@@ -41,6 +45,8 @@ class Reporter(object):
         if logdir:
             self._writer = TensorBoardWriter(logdir)
         self._last_step = 0
+        self._last_reported_step = None
+        self._last_reported_time = None
         self._log_interval = log_interval
         self._smooth_interval = smooth_interval
         self._metrics = collections.defaultdict(collections.deque)
@@ -64,4 +70,15 @@ class Reporter(object):
                 return (sum(values) / len(values)) if values else 0.0
             metrics = ','.join(["%s = %.5f" % (k, smooth(v))
                                 for k, v in six.iteritems(self._metrics)])
+            if self._last_reported_time:
+                elapsed_secs = time.time() - self._last_reported_time
+                metrics += " (%.3f sec)" % elapsed_secs
+                if self._writer:
+                    elapsed_steps = float(
+                        self._last_step - self._last_reported_step)
+                    self._writer.add(
+                        self._last_step, 'step/sec',
+                        elapsed_steps / elapsed_secs)
             print("Step %d: %s" % (self._last_step, metrics))
+            self._last_reported_time = time.time()
+            self._last_reported_step = self._last_step
