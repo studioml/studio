@@ -62,7 +62,7 @@ if [[ "{use_gpus}" -eq 1 ]]; then
 
     sudo pip install tensorflow tensorflow-gpu --upgrade
 fi
-sudo apt-get install default-jre
+sudo apt-get install -y default-jre
 sudo pip install -e . --upgrade
 
 mkdir ~/workspace && cd ~/workspace
