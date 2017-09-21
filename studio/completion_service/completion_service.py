@@ -144,10 +144,10 @@ class CompletionService:
                     timeout=self.cloud_timeout)
             else:
                 for i in range(self.num_workers):
-                    worker_manager.start_worker(
+                    self.wm.start_worker(
                         self.queue_name,
                         self.resources_needed,
-                        ssh_keypair=seld.ssh_keypair,
+                        ssh_keypair=self.ssh_keypair,
                         timeout=self.cloud_timeout)
 
             self.p = None
