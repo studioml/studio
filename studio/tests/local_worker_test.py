@@ -223,8 +223,8 @@ def stubtest_worker(
                           '--force-git',
                           '--experiment=' + experiment_name,
                           test_script] + script_args,
-                         #stdout=subprocess.PIPE,
-                         #stderr=subprocess.STDOUT,
+                         # stdout=subprocess.PIPE,
+                         # stderr=subprocess.STDOUT,
                          cwd=my_path)
 
     pout, _ = p.communicate()
@@ -235,7 +235,8 @@ def stubtest_worker(
     experiments = [e for e in db.get_user_experiments()
                    if e.key.startswith(experiment_name)]
 
-    assert len(experiments) == 1, "actually {} number of experiments".format(len(experiments))
+    assert len(experiments) == 1, "actually {} number of experiments".format(
+        len(experiments))
 
     experiment_name = experiments[0].key
 

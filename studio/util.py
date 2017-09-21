@@ -10,6 +10,7 @@ import numpy as np
 
 from tensorflow.core.util import event_pb2
 
+
 def remove_backspaces(line):
     splitline = re.split('(\x08+)', line)
     buf = StringIO()
@@ -29,9 +30,11 @@ def sha256_checksum(filename, block_size=65536):
             sha256.update(block)
     return sha256.hexdigest()
 
+
 def rand_string(length):
-    return "".join([random.choice(string.ascii_letters + string.digits) \
-        for n in range(length)])
+    return "".join([random.choice(string.ascii_letters + string.digits)
+                    for n in range(length)])
+
 
 def event_reader(fileobj):
 
@@ -59,6 +62,7 @@ def event_reader(fileobj):
             break
 
     fileobj.close()
+
 
 class Progbar(object):
     """Displays a progress bar.
@@ -141,7 +145,8 @@ class Progbar(object):
             for k in self.unique_values:
                 info += ' - %s:' % k
                 if isinstance(self.sum_values[k], list):
-                    avg = np.mean(self.sum_values[k][0] / max(1, self.sum_values[k][1]))
+                    avg = np.mean(
+                        self.sum_values[k][0] / max(1, self.sum_values[k][1]))
                     if abs(avg) > 1e-3:
                         info += ' %.4f' % avg
                     else:
@@ -164,7 +169,8 @@ class Progbar(object):
                 info = '%ds' % (now - self.start)
                 for k in self.unique_values:
                     info += ' - %s:' % k
-                    avg = np.mean(self.sum_values[k][0] / max(1, self.sum_values[k][1]))
+                    avg = np.mean(
+                        self.sum_values[k][0] / max(1, self.sum_values[k][1]))
                     if avg > 1e-3:
                         info += ' %.4f' % avg
                     else:

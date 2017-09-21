@@ -51,7 +51,7 @@ def get_artifact(tag):
         with open(_get_artifact_mapping_path(), 'r') as f:
             a_mapping = json.load(f)
         return a_mapping[tag]
-    except:
+    except BaseException:
         return None
 
 

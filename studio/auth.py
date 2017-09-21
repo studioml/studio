@@ -15,6 +15,7 @@ TOKEN_DIR = os.path.expanduser('~/.studioml/keys')
 HOUR = 3600
 SLEEP_TIME = 0.05
 
+
 class FirebaseAuth(object):
     def __init__(
             self,
@@ -101,8 +102,8 @@ class FirebaseAuth(object):
         self.user['email'] = email
         self.expired = False
 
-        # Rename to ensure atomic writes to json file (technically more safe, but
-        # slower)
+        # Rename to ensure atomic writes to json file
+        # (technically more safe, but slower)
         tmp_api_key = '/tmp/api_key_%s' % rand_string(32)
         with open(tmp_api_key, 'wb') as f:
             json.dump(self.user, f)

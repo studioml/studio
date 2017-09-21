@@ -9,7 +9,7 @@ import shutil
 import importlib
 import time
 import multiprocessing
-import six 
+import six
 
 import numpy as np
 
@@ -183,7 +183,8 @@ def main(args=sys.argv):
 
     parser.add_argument(
         '--user-startup-script',
-        help='Path of script to run immediately before running the remote worker',
+        help='Path of script to run immediately ' +
+             'before running the remote worker',
         default=None)
 
     parser.add_argument(
@@ -266,8 +267,12 @@ def main(args=sys.argv):
 
             h = HyperparameterParser(runner_args, logger)
             hyperparams = h.parse()
-            optimizer = getattr(opt_module, "Optimizer")(hyperparams,
-                config['optimizer'], logger)
+            optimizer = getattr(
+                opt_module,
+                "Optimizer")(
+                hyperparams,
+                config['optimizer'],
+                logger)
 
             queue_name = None
             while not optimizer.stop():
@@ -314,10 +319,10 @@ def main(args=sys.argv):
             resources_needed=resources_needed,
             metric=runner_args.metric)]
         submit_experiments(experiments,
-            resources_needed,
-            config,
-            runner_args,
-            logger)
+                           resources_needed,
+                           config,
+                           runner_args,
+                           logger)
 
     db = None
     return
@@ -332,13 +337,13 @@ def add_experiment(args):
 
 
 def submit_experiments(
-    experiments,
-    resources_needed,
-    config,
-    runner_args,
-    logger,
-    queue_name=None,
-    launch_workers=True):
+        experiments,
+        resources_needed,
+        config,
+        runner_args,
+        logger,
+        queue_name=None,
+        launch_workers=True):
 
     num_experiments = len(experiments)
     db = model.get_db_provider(config)
@@ -347,23 +352,24 @@ def submit_experiments(
     if runner_args.cloud is None:
         queue_name = 'local'
         if 'queue' in config.keys():
-    	    queue_name = config['queue']
+            queue_name = config['queue']
         if runner_args.queue:
-    	    queue_name = runner_args.queue
+            queue_name = runner_args.queue
 
     start_time = time.time()
     n_workers = min(multiprocessing.cpu_count() * 2, num_experiments)
     p = multiprocessing.Pool(n_workers)
     experiments = p.map(add_experiment,
-        zip([config] * num_experiments,
-        [runner_args.python_pkg] * num_experiments,
-        experiments),
-        chunksize=1)
-    p.close(); p.join()
+                        zip([config] * num_experiments,
+                            [runner_args.python_pkg] * num_experiments,
+                            experiments),
+                        chunksize=1)
+    p.close()
+    p.join()
     # for e in experiments:
     #     logger.info("Added experiment " + e.key)
-    logger.info("Added %s experiments in %s seconds" % (num_experiments,
-        int(time.time() - start_time)))
+    logger.info("Added %s experiments in %s seconds" %
+                (num_experiments, int(time.time() - start_time)))
 
     if runner_args.cloud is not None:
         assert runner_args.cloud in ['gcloud', 'gcspot', 'ec2', 'ec2spot']
@@ -380,7 +386,7 @@ def submit_experiments(
             if queue_name is None:
                 queue_name = 'pubsub_' + str(uuid.uuid4())
                 worker_manager = GCloudWorkerManager(
-                        runner_args=runner_args,
+                    runner_args=runner_args,
                     auth_cookie=auth_cookie,
                     zone=config['cloud']['zone']
                 )
@@ -391,7 +397,7 @@ def submit_experiments(
             if queue_name is None:
                 queue_name = 'sqs_' + str(uuid.uuid4())
                 worker_manager = EC2WorkerManager(
-                        runner_args=runner_args,
+                    runner_args=runner_args,
                     auth_cookie=auth_cookie
                 )
 
@@ -490,7 +496,8 @@ def get_experiment_fitnesses(experiments, optimizer, config, logger):
             # try:
             #     experiment_output = returned_experiment.info['logtail']
             # except:
-            #     logger.warn('Cannot access "logtail" field in experiment.info')
+            #     logger.warn(
+            #       'Cannot access "logtail" field in experiment.info')
             output = db_provider._get_experiment_logtail(returned_experiment)
             if output is None:
                 continue
@@ -498,9 +505,9 @@ def get_experiment_fitnesses(experiments, optimizer, config, logger):
             for j, line in enumerate(output):
 
                 if line.startswith("Traceback (most recent call last):") and \
-                    j not in bad_line_dicts[i]:
-                    logger.warn("Experiment %s: error discovered in output" % \
-                        returned_experiment.key)
+                        j not in bad_line_dicts[i]:
+                    logger.warn("Experiment %s: error discovered in output" %
+                                returned_experiment.key)
                     logger.warn("".join(output[j:]))
                     bad_line_dicts[i][j] = True
 
@@ -510,15 +517,17 @@ def get_experiment_fitnesses(experiments, optimizer, config, logger):
                         # assert fitness >= 0.0
                     except BaseException:
                         if j not in bad_line_dicts[i]:
-                            logger.warn('Experiment %s: error parsing or invalid' \
-                                ' fitness' % returned_experiment.key)
+                            logger.warn(
+                                'Experiment %s: error parsing or invalid'
+                                ' fitness' %
+                                returned_experiment.key)
                             logger.warn(line)
                             bad_line_dicts[i][j] = True
                     else:
                         if fitness < 0.0:
-                            logger.warn('Experiment %s: returned fitness is' \
-                                ' less than zero, setting it to zero' % \
-                                returned_experiment.key)
+                            logger.warn('Experiment %s: returned fitness is'
+                                        ' less than zero, setting it to zero' %
+                                        returned_experiment.key)
                             fitness = 0.0
 
                         fitnesses[i] = fitness

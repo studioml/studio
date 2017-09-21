@@ -672,7 +672,8 @@ def get_config(config_file=None):
 
             def replace_with_env(config):
                 for key, value in six.iteritems(config):
-                    if isinstance(value, six.string_types) and value.startswith('$'):
+                    if isinstance(value,
+                                  six.string_types) and value.startswith('$'):
                         config[key] = os.environ.get(value[1:])
 
                     elif isinstance(value, dict):

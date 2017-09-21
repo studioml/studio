@@ -6,7 +6,7 @@ import yaml
 import logging
 import time
 import json
-import six 
+import six
 
 from apscheduler.schedulers.background import BackgroundScheduler
 

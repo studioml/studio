@@ -9,7 +9,7 @@ import json
 import socket
 import subprocess
 import traceback
-import six 
+import six
 
 import google.oauth2.id_token
 import google.auth.transport.requests
