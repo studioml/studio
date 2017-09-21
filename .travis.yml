@@ -12,7 +12,7 @@ install:
   - pip install pep8
 
 script:
-  - nosetests
+  - nosetests -v
   - pep8 --show-source .
   - python setup.py sdist
   - export PYTHONPATH=$PYTHONPATH:/home/travis/virtualenv/python3.6.2/lib/python3.6/site-packages
