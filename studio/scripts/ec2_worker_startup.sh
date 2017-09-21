@@ -71,6 +71,10 @@ studio remote worker --queue=$queue_name  --verbose=debug --timeout={timeout}
 # shutdown the instance
 echo "Work done"
 
+
+exit 0
+
+
 if [ -n $autoscaling_group ]; then
 
     echo "Getting info for auto-scaling group $autoscaling_group"
