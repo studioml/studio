@@ -61,7 +61,7 @@ if [ ! -d "studio" ]; then
 
         sudo pip install tensorflow tensorflow-gpu --upgrade
     else
-        sudo apt-get install default-jre
+        sudo apt install -y default-jre
     fi
 fi
 
