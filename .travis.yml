@@ -25,4 +25,4 @@ deploy:
   # skip_cleanup: true
   on:
     # tags: true
-    barnch: peterz_pypi_autopush
+    branch: peterz_pypi_autopush
