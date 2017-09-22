@@ -2,10 +2,10 @@ import requests
 import json
 import six
 
-from . import model
 from . import pyrebase
 from .auth import FirebaseAuth
 from .http_artifact_store import HTTPArtifactStore
+from .experiment import experiment_from_dict
 
 import logging
 logging.basicConfig()
@@ -80,7 +80,7 @@ class HTTPProvider(object):
                                 )
 
         self._raise_detailed_error(request)
-        return model.experiment_from_dict(request.json()['experiment'])
+        return experiment_from_dict(request.json()['experiment'])
 
     def start_experiment(self, experiment):
         self.checkpoint_experiment(experiment)

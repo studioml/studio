@@ -12,6 +12,7 @@ from studio import model
 from studio.firebase_provider import FirebaseProvider
 from studio.postgres_provider import PostgresProvider
 from studio.auth import remove_all_keys
+from studio.experiment import create_experiment
 
 
 def get_methods(cls):
@@ -207,7 +208,7 @@ def get_test_experiment():
     filename = 'test.py'
     args = ['a', 'b', 'c']
     experiment_name = 'test_experiment_' + str(uuid.uuid4())
-    experiment = model.create_experiment(filename, args, experiment_name)
+    experiment = create_experiment(filename, args, experiment_name)
     return experiment, experiment_name, filename, args
 
 
@@ -215,7 +216,7 @@ class ModelTest(unittest.TestCase):
     def test_create_experiment(self):
         _, experiment_name, filename, args = get_test_experiment()
         experiment_project = 'create_experiment_project'
-        experiment = model.create_experiment(
+        experiment = create_experiment(
             filename, args, experiment_name, experiment_project)
         packages = [
             p._key +

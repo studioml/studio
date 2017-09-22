@@ -3,7 +3,7 @@ import glob
 import uuid
 import pip
 
-import fs_tracker
+from . import fs_tracker
 
 
 class Experiment(object):

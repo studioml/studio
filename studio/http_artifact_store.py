@@ -1,7 +1,7 @@
 import logging
 import requests
 
-from tartifact_store import TartifactStore
+from .tartifact_store import TartifactStore
 logging.basicConfig()
 
 

@@ -1,16 +1,12 @@
-import pyrebase
 import logging
 import time
 import os
 from threading import Thread
 
-
-from firebase_artifact_store import FirebaseArtifactStore
-from auth import FirebaseAuth
-import util
-import git_util
-
-from experiment import experiment_from_dict
+from . import util, git_util, pyrebase
+from .firebase_artifact_store import FirebaseArtifactStore
+from . auth import FirebaseAuth
+from .experiment import experiment_from_dict
 
 logging.basicConfig()
 
@@ -71,7 +67,7 @@ class NoSQLProvider(object):
             experiment.git = git_util.get_git_info(
                 experiment.artifacts['workspace']['local'])
 
-        for tag, art in experiment.artifacts.iteritems():
+        for tag, art in six.iteritems(experiment.artifacts):
             if art['mutable']:
                 art['key'] = self._get_experiments_keybase() + \
                     experiment.key + '/' + tag + '.tgz'
