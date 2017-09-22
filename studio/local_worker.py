@@ -49,7 +49,7 @@ class LocalExecutor(object):
             """
             env = dict(os.environ)
             if 'env' in self.config.keys():
-                for k, v in self.config['env'].iteritems():
+                for k, v in six.iteritems(self.config['env']):
                     if v is not None:
                         env[str(k)] = str(v)
 
@@ -221,7 +221,7 @@ def worker_loop(queue, parsed_args,
                             pipout, _ = pipp.communicate()
                             logger.info("pip output: \n" + pipout)
 
-                    for tag, art in experiment.artifacts.iteritems():
+                    for tag, art in six.iteritems(experiment.artifacts):
                         if fetch_artifacts or 'local' not in art.keys():
                             logger.info('Fetching artifact ' + tag)
                             if tag == 'workspace':
