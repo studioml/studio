@@ -9,7 +9,11 @@ from threading import Thread
 import subprocess
 
 import tarfile
-import urllib
+try:
+    from urllib.request import urlopen
+except ImportError:
+    from urllib import urlopen
+
 import hashlib
 
 from . import fs_tracker
@@ -315,7 +319,7 @@ class TartifactStore(object):
         if url is None:
             return None
 
-        fileobj = urllib.urlopen(url)
+        fileobj = urlopen(url)
         if fileobj:
             try:
                 retval = tarfile.open(fileobj=fileobj, mode='r|*')

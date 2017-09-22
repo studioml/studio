@@ -28,6 +28,8 @@ class HTTPProviderTest(unittest.TestCase):
                 os.path.realpath(__file__)),
             'test_config_http_server.yaml')
 
+        print(self.server_config_file)
+
         self.client_config_file = os.path.join(
             os.path.dirname(
                 os.path.realpath(__file__)),
@@ -47,7 +49,7 @@ class HTTPProviderTest(unittest.TestCase):
         if not has_aws_credentials():
             return
 
-        print "Shutting down the API server"
+        print("Shutting down the API server")
         self.serverp.kill()
 
     def get_db_provider(self):

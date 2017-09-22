@@ -287,7 +287,7 @@ class NoSQLProvider(object):
             experiment_keys = {}
 
         keys = sorted(experiment_keys.keys(),
-                      key=lambda k: experiment_keys[k],
+                      key=lambda k: str(experiment_keys[k]),
                       reverse=True)
 
         return keys

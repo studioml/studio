@@ -19,6 +19,11 @@ import boto3
 
 def remove_backspaces(line):
     splitline = re.split('(\x08+)', line)
+    try:
+        splitline = [unicode(s) for s in splitline]
+    except NameError:
+        splitline = [str(s) for s in splitline]
+
     buf = StringIO()
     for i in range(0, len(splitline) - 1, 2):
         buf.write(splitline[i][:-len(splitline[i + 1])])

@@ -14,6 +14,8 @@ import six
 import google.oauth2.id_token
 import google.auth.transport.requests
 
+from .experiment import experiment_from_dict
+
 logging.basicConfig()
 
 app = Flask(__name__)
@@ -23,6 +25,8 @@ DB_PROVIDER_EXPIRATION = 1800
 
 _db_provider_timestamp = None
 _db_provider = None
+_config = None
+
 _tensorboard_dirs = {}
 _grequest = google.auth.transport.requests.Request()
 _save_auth_cookie = False
@@ -363,7 +367,7 @@ def add_experiment():
 
     artifacts = {}
     try:
-        experiment = model.experiment_from_dict(request.json['experiment'])
+        experiment = experiment_from_dict(request.json['experiment'])
         if get_db().can_write_experiment(experiment.key, userid):
             for tag, art in six.iteritems(experiment.artifacts):
                 art.pop('local', None)
@@ -414,7 +418,7 @@ def checkpoint_experiment():
 
 def _process_artifacts(experiment):
     artifacts = {}
-    for tag, art in six.iteritems(experiment.artifact):
+    for tag, art in six.iteritems(experiment.artifacts):
         if 'key' in art.keys():
             put_url, timestamp = get_db().store.get_artifact_url(
                 art, method='PUT', get_timestamp=True)
@@ -452,13 +456,14 @@ def get_and_verify_user(request):
 
 
 def get_db():
+    global _config
     global _db_provider
     global _db_provider_timestamp
 
     if not _db_provider or \
        not _db_provider_timestamp or \
             time.time() - _db_provider_timestamp > DB_PROVIDER_EXPIRATION:
-        _db_provider = model.get_db_provider(blocking_auth=False)
+        _db_provider = model.get_db_provider(_config, blocking_auth=False)
         _db_provider_timestamp = time.time()
 
     return _db_provider
@@ -532,9 +537,10 @@ def main(args=sys.argv[1:]):
 
 #    if args.guest:
 #        config['database']['guest'] = True
-
+    global _config
     global _db_provider
-    _db_provider = model.get_db_provider(config, blocking_auth=False)
+    _config = config
+    _db_provider = model.get_db_provider(_config, blocking_auth=False)
 
     getlogger().setLevel(model.parse_verbosity(config.get('verbose')))
 
