@@ -111,7 +111,7 @@ class TartifactStore(object):
                 debug_str += ", exclude = {}".format(ignore_filepath)
             self.logger.debug(debug_str)
 
-            tarcmd = 'tar {} -czf {} -C {} {}'.format(
+            tarcmd = 'tar {} -cjf {} -C {} {}'.format(
                 ignore_arg,
                 tar_filename,
                 local_basepath,
@@ -198,7 +198,7 @@ class TartifactStore(object):
                 # first, figure out if the tar file has a base path of .
                 # or not
                 self.logger.info("Untarring {}".format(tar_filename))
-                listtar, _ = subprocess.Popen(['tar', '-tzf', tar_filename],
+                listtar, _ = subprocess.Popen(['tar', '-tf', tar_filename],
                                               stdout=subprocess.PIPE,
                                               stderr=subprocess.PIPE,
                                               close_fds=True).communicate()
@@ -212,7 +212,7 @@ class TartifactStore(object):
                     basepath = local_basepath
 
                 tarcmd = ('mkdir -p {} && ' +
-                          'tar -xzf {} -C {} --keep-newer-files') \
+                          'tar -xf {} -C {} --keep-newer-files') \
                     .format(basepath, tar_filename, basepath)
                 tarp = subprocess.Popen(
                     ['/bin/bash', '-c', tarcmd],
@@ -273,7 +273,7 @@ class TartifactStore(object):
         fileobj = urllib.urlopen(url)
         if fileobj:
             try:
-                retval = tarfile.open(fileobj=fileobj, mode='r|gz')
+                retval = tarfile.open(fileobj=fileobj, mode='r|*')
                 return retval
             except BaseException as e:
                 self.logger.info('Streaming artifact error:\n' + e.message)

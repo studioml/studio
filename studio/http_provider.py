@@ -119,8 +119,10 @@ class HTTPProvider(object):
                                 )
         self._raise_detailed_error(request)
 
-    def get_user_experiments(self, user, blocking=True):
+    def get_user_experiments(self, user=None, blocking=True):
         headers = self._get_headers()
+        user = user if user else self._get_userid()
+
         response = requests.post(
             self.url + '/api/get_user_experiments',
             headers=headers,
@@ -129,8 +131,7 @@ class HTTPProvider(object):
         self._raise_detailed_error(response)
         data = response.json()['experiments']
 
-        experiments = [model.experiment_from_dict(edict)
-                       for edict in data]
+        experiments = data
 
         return experiments
 
@@ -205,6 +206,13 @@ class HTTPProvider(object):
         if self.auth:
             headers["Authorization"] = "Firebase " + self.auth.get_token()
         return headers
+
+    def _get_userid(self):
+        userid = None
+        if self.auth:
+            userid = self.auth.get_user_id()
+        userid = userid if userid else 'guest'
+        return userid
 
     def _raise_detailed_error(self, request):
         if request.status_code != 200:

@@ -1,5 +1,5 @@
-Setting up a database
-=====================
+Setting up a database and API server
+====================================
 
 This page describes the process of setting up your own database /
 storage for the models. This puts you in full control of who has access
@@ -8,8 +8,8 @@ to the experiment data. For the moment, Studio only supports Firebase
 firebase / google cloud storage (GCS) / Amazon S3 as storage
 backends.
 
-Setting up API server (recommended way)
----------------------------------------
+Introduction
+------------
 Firebase and Firebase Storage provide fairly simple rules to control use access 
 to experiments. Additionally, GCS and S3 don't work directly with Firebase 
 authentication tokens, so one cannot create access rules for the storage. 
@@ -41,29 +41,30 @@ for heroku or just running API server on a dedicated instance)
 
 Prerequisites
 ~~~~~~~~~~~~~
-If deploying onto google app engine, you'll need to have gcloud cli installed
-(link)
+If deploying onto google app engine, you'll need to have Google Cloud SDK
+installed (https://cloud.google.com/sdk/downloads)
+
 In what follows, deployment machine means either the local machine 
 (when deploying on GAE) or the instance on which you are 
 planning to run the API server
 
-Creating a Firebase project and deploying the API server 
+Deploying the API server 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 1. Create a new Firebase project: go to https://firebase.google.com,
    sign in, click add project, specify project name
-2. Go to project settings (little cogwheel next to "Overview" on the
+2. Enable authentication using google accounts (in the left-hand pane 
+   select Authentication, then tab "Sign-in method", click on 
+   "Google", select "Enabled")
+3. Go to project settings (little cogwheel next to "Overview" on the
    left-hand pane), tab "General"
-3. Copy the Web API key and paste it in apiKey of the database section of
+4. Copy the Web API key and paste it in apiKey of the database section of
    studio/apiserver\_config.yaml 
-4. Copy the project ID and paste it in projectId of the database section of
+5. Copy the project ID and paste it in projectId of the database section of
    config yaml file. 
-5. Go to Service Accounts tab and generate new key for firebase
+6. Go to Service Accounts tab and generate new key for firebase
    service account. This key is json file that will give API server admin 
    access to the database. Save it to the deployment machine. 
-6. On the deployment machine, set the environment variable 
-   ``FIREBASE_ADMIN_CREENTIALS`` to the path to the key json file
-   generated in previous step
 7. Modify other entries of the apiserver_config.yaml file to your specs 
    (e.g. storage type and bucket)
 8. On the deployment machine in the folder studio/studio, run
@@ -79,16 +80,9 @@ Creating a Firebase project and deploying the API server
       ./deploy_apiserver.sh local <port>
       
    when running on a dedicated instance (where port is the port on which 
-   the server will be listening)
+   the server will be listening). When prompted, input path to 
+   the firebase admin credentials json file generated in step 6.
 
-
-Configuring authentication
-~~~~~~~~~~~~~~~~~~~~~~~~~~
-1. Go the Firebase console, select Authentication in the left-hand pane
-2. Select Sign-in method tab
-3. Enable authentication using google account
-4. In the Authorized domains section, add the url of your server (if 
-   not there already)
    
        
 Configuring studio to work with API server
@@ -106,80 +100,3 @@ need to modify their config.yaml files as follows:
    port.
        
 
-
-Setting up studio do access Firbase directly (deprecated)
----------------------------------------------------------
-
-To configure Studio to work with a new Firebase project, 
-do the following:
-
-Creating a Firebase project and configuring Studio
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-1. Create a copy of studio/default\_config.yaml file. Let's call it
-   new\_config.yaml
-2. Create a new Firebase project: go to https://firebase.google.com,
-   sign in, click add project, specify project name
-3. Go to project settings (little cogwheel next to "Overview" on the
-   left-hand pane), tab "General"
-4. Copy the Web API key and paste it in apiKey of the database section of
-   new\_config.yaml
-5. Copy the project ID and paste it in projectId of the database section of
-   new\_config.yaml
-6. Go to "Cloud messaging tab", copy the Sender ID and paste it in
-   messagingSenderId of the database section of new\_config.yaml
-
-Configuring users
-~~~~~~~~~~~~~~~~~
-
-To enable email/password authentication within the Firebase client
-uncomment the use\_email\_auth tag in your new\_config.yaml. Add
-users. By default, Firebase (both database and storage) grants read and
-write access to all authenticated users. Go to Authentication in the Firebase
-console (on left-hand pane), tab sign-in methods, and enable methods
-that you would like to use. 
-
-For now, Studio supports Google account
-authentication and email/password authentication. If you have choosen
-to use the email/password method for authentication, use the Users tab
-of the Authentication panel to manually add yourself with a password.
-This password is not shared by other Google services. If this is what
-you want then Google account based authentication is needed, therefore
-you should always use a unique password. Further, you can customize the
-database / storage access rules (good resources are
-https://firebase.google.com/docs/database/security/ and
-https://firebase.google.com/docs/storage/security/start). The default
-rules allow read and write access to all authenticated users, to both
-storage and database. This might not be the behaviour you 
-want because then users can freely delete / modify each other's experiments. 
-
-To make experiments readable by everyone, but writeable only
-by the creator, slightly more sophisticated rules are needed. Examples of such
-rules (that are used at the default Studio Firebase app) are given in
-``auth/firebase_db.rules`` and ``auth/firebase_storage.rules`` for
-database and storage.
-
-Test run
---------
-
-Go to the ``studio/examples/keras/`` folder, and run
-
-::
-
-        studio run --config /path/to/new_config.yaml train_mnist_keras.py 10
-        
-
-where 10 is the number of training epochs. You should be prompted
-for your user email and password (if you have uncommented
-use\_email\_auth in new\_config.yaml), or block to wait for Studio to
-authenticate. When entering email/password combinations you may be
-prompted several times to enter your details. Then (or in another
-terminal) run
-
-::
-
-        studio ui --config /path/to/new_config.yaml
-        
-
-and go to http://localhost:5000 in the browser to see the results of the
-experiment.
