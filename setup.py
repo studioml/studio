@@ -5,7 +5,6 @@ from subprocess import call
 from setuptools.command.install import install
 from setuptools.command.develop import develop
 
-
 def read(fname):
     try:
         with open(os.path.join(os.path.dirname(__file__), fname)) as f:
@@ -15,26 +14,6 @@ def read(fname):
         return None
 
 
-def write(fname, data):
-    try:
-        with open(os.path.join(os.path.dirname(__file__), fname), 'w') as f:
-            f.write(data)
-    except BaseException:
-        pass
-
-
-TRAVIS_BUILD_NUMBER = os.environ.get("TRAVIS_BUILD_NUMBER", "0")
-TRAVIS_TAG = os.environ.get("TRAVIS_TAG", None)
-
-VERSION = read('studio/.version')
-if not VERSION:
-    if TRAVIS_TAG:
-        VERSION = TRAVIS_TAG + ".post" + TRAVIS_BUILD_NUMBER
-    else:
-        VERSION = "0.0.2.post" + TRAVIS_BUILD_NUMBER
-
-    write('studio/.version', VERSION)
-
 
 # This file contains metadata related to the studioml client and python base
 # server software
@@ -42,7 +21,7 @@ if not VERSION:
 
 class MyDevelop(develop):
     def run(self):
-        print " >>> MyDevelop with verison {} <<< ".format(VERSION)
+        # print " >>> MyDevelop with verison {} <<< ".format(VERSION)
         call(["pip install -r requirements.txt --no-clean"], shell=True)
         copyconfig()
         develop.run(self)
@@ -51,7 +30,7 @@ class MyDevelop(develop):
 class MyInstall(install):
 
     def run(self):
-        print " >>> MyInstall with verison {} <<< ".format(VERSION)
+        # print " >>> MyInstall with verison {} <<< ".format(VERSION)
         call(["pip install -r requirements.txt --no-clean"], shell=True)
         copyconfig()
         install.run(self)
@@ -83,7 +62,7 @@ with open('test_requirements.txt') as f:
 
 setup(
     name='studioml',
-    version=VERSION,
+    #version=VERSION,
     description='TensorFlow model and data management tool',
     packages=['studio'],
     long_description=read('README.rst'),
@@ -106,6 +85,8 @@ setup(
             'studio/scripts/ec2_worker_startup.sh'],
     tests_suite='nose.collector',
     tests_require=test_required,
+    use_scm_version=True,
+    setup_requires=['setuptools_scm', 'setuptools_scm_git_archive'],
     cmdclass={'develop': MyDevelop, 'install': MyInstall},
     classifiers=[
         "Development Status :: 3 - Alpha",

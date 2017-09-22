@@ -1,17 +1,6 @@
 import fs_tracker
 import torch
 import os
+from setuptools_scm import get_version
 
-
-def _read_version():
-    mypath = os.path.dirname(os.path.realpath(__file__))
-    try:
-        with open(os.path.join(mypath, '.version')) as f:
-            ver = f.read()
-    except BaseException:
-        ver = 'unknown'
-
-    return ver
-
-
-__version__ = _read_version()
+__version__ = get_version(root='..', relative_to=__file__)
