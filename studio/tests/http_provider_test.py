@@ -5,24 +5,20 @@ from random import randint
 import os
 
 from studio import model
+from studio.util import has_aws_credentials
 from model_test import get_test_experiment
 
-try:
-    import boto3
-except ImportError:
-    boto3 = None
 
-
-@unittest.skipIf(boto3 is None,
-                 "boto3 module is missing, needed for " +
+@unittest.skipIf(not has_aws_credentials(),
+                 "AWS credentials is missing, needed for " +
                  "server to communicate with storage")
 class HTTPProviderTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(self):
-        if boto3 is None:
+        if not has_aws_credentials():
             return
-        print "Starting up the API server"
+        print("Starting up the API server")
         self.port = randint(5000, 9000)
 
         # self.app.run(port=self.port, debug=True)
@@ -48,7 +44,7 @@ class HTTPProviderTest(unittest.TestCase):
 
     @classmethod
     def tearDownClass(self):
-        if boto3 is None:
+        if not has_aws_credentials():
             return
 
         print "Shutting down the API server"

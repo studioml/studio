@@ -87,7 +87,7 @@ def _list(args, cli_args):
 
         if cli_args.short:
             for e in experiments:
-                print e
+                print(e)
             return
 
         experiments = [db.get_experiment(e) for e in experiments]

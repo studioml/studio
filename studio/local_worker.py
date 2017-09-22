@@ -169,7 +169,7 @@ def main(args=sys.argv):
     queue = LocalQueue()
     # queue = glob.glob(fs_tracker.get_queue_directory() + "/*")
     wait_for_messages(queue, parsed_args.timeout)
-    worker_loop(queue, parsed_args)
+    worker_loop(queue, parsed_args, timeout=parsed_args.timeout)
 
 
 def worker_loop(queue, parsed_args,
@@ -212,13 +212,14 @@ def worker_loop(queue, parsed_args,
                     if setup_pyenv:
                         logger.info(
                             'Setting up python packages for experiment')
-                        pipp = subprocess.Popen(
-                            ['pip', 'install'] + experiment.pythonenv,
-                            stdout=subprocess.PIPE,
-                            stderr=subprocess.STDOUT)
+                        for pkg in experiment.pythonenv:
+                            pipp = subprocess.Popen(
+                                ['pip', 'install', pkg],
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.STDOUT)
 
-                        pipout, _ = pipp.communicate()
-                        logger.info("pip output: \n" + pipout)
+                            pipout, _ = pipp.communicate()
+                            logger.info("pip output: \n" + pipout)
 
                     for tag, art in experiment.artifacts.iteritems():
                         if fetch_artifacts or 'local' not in art.keys():

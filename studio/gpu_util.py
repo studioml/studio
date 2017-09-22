@@ -7,7 +7,7 @@ import xml.etree.ElementTree as ET
 def get_available_gpus():
     gpus = _get_gpu_info()
 
-    def check_gpu(gpuinfo):
+    def check_gpu(gpu):
         return memstr2int(gpu.find('fb_memory_usage').find('used').text) < \
             0.1 * memstr2int(gpu.find('fb_memory_usage').find('total').text)
 

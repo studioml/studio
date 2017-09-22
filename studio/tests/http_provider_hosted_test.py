@@ -5,7 +5,6 @@ from studio import model
 from model_test import get_test_experiment
 
 
-@unittest.skip('api server credentials expiration issue')
 class HTTPProviderHostedTest(unittest.TestCase):
 
     def get_db_provider(self, config_name):

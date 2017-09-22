@@ -5,6 +5,7 @@ import logging
 import time
 import pickle
 import tempfile
+import signal
 import re
 
 from studio import runner, model, fs_tracker
@@ -51,23 +52,46 @@ class CompletionServiceManager:
             cs.__exit__()
 '''
 
+DEFAULT_RESOURCES_NEEDED = {
+    'cpus': 2,
+    'ram': '3g',
+    'hdd': '10g',
+    'gpus': 0
+}
+
 
 class CompletionService:
 
     def __init__(
-            self,
-            experimentId,
-            config=None,
-            num_workers=1,
-            resources_needed=None,
-            cloud=None,
-            cloud_timeout=100,
-            bid='100%',
-            ssh_keypair='peterz-k1',
-            resumable=False,):
+        self,
+        # Name of experiment
+        experimentId,
+        # Config yaml file
+        config=None,
+        # Number of remote workers to spin up
+        num_workers=1,
+        # Compute requirements, amount of RAM, GPU, etc
+        resources_needed={},
+        # What computer resource to use, either AWS, Google, or local
+        cloud=None,
+        # Timeout for cloud instances
+        cloud_timeout=100,
+        # Bid price for EC2 spot instances
+        bid='100%',
+        # Keypair to use for EC2 workers
+        ssh_keypair='peterz-k1',
+        # If true, get results that are submitted by other instances of CS
+        resumable=False,
+        # Whether to clean the submission queue on initialization
+        clean_queue=True,
+        # Whether to enable autoscaling for EC2 instances
+        queue_upscaling=True,
+        # Whether to delete the queue on shutdown
+        shutdown_del_queue=False,
+    ):
 
         self.config = model.get_config(config)
-        self.cloud = None
+        self.cloud = cloud
         self.experimentId = experimentId
         self.project_name = "completion_service_" + experimentId
 
@@ -77,15 +101,23 @@ class CompletionService:
         elif cloud in ['ec2', 'ec2spot']:
             self.queue_name = 'sqs_' + experimentId
 
-        self.resources_needed = resources_needed
-        self.wm = runner.get_worker_manager(self.config, cloud)
+        self.resources_needed = DEFAULT_RESOURCES_NEEDED
+        for key in self.resources_needed:
+            if key in resources_needed:
+                self.resources_needed[key] = resources_needed[key]
+
+        self.wm = runner.get_worker_manager(
+            self.config, self.cloud)
+
         self.logger = logging.getLogger(self.__class__.__name__)
         self.verbose_level = model.parse_verbosity(self.config['verbose'])
         self.logger.setLevel(self.verbose_level)
 
         self.queue = runner.get_queue(self.queue_name, self.cloud,
                                       self.verbose_level)
-        self.queue.clean()
+        self.clean_queue = clean_queue
+        if self.clean_queue:
+            self.queue.clean()
 
         self.cloud_timeout = cloud_timeout
         self.bid = bid
@@ -94,18 +126,30 @@ class CompletionService:
         self.submitted = set([])
         self.num_workers = num_workers
         self.resumable = resumable
+        self.queue_upscaling = queue_upscaling
+        self.shutdown_del_queue = shutdown_del_queue
+        self.use_spot = cloud in ['ec2spot', 'gcspot']
 
     def __enter__(self):
         if self.wm:
             self.logger.debug('Spinning up cloud workers')
-            self.wm.start_spot_workers(
-                self.queue_name,
-                self.bid,
-                self.resources_needed,
-                start_workers=self.num_workers,
-                queue_upscaling=True,
-                ssh_keypair=self.ssh_keypair,
-                timeout=self.cloud_timeout)
+            if self.use_spot:
+                self.wm.start_spot_workers(
+                    self.queue_name,
+                    self.bid,
+                    self.resources_needed,
+                    start_workers=self.num_workers,
+                    queue_upscaling=self.queue_upscaling,
+                    ssh_keypair=self.ssh_keypair,
+                    timeout=self.cloud_timeout)
+            else:
+                for i in range(self.num_workers):
+                    self.wm.start_worker(
+                        self.queue_name,
+                        self.resources_needed,
+                        ssh_keypair=self.ssh_keypair,
+                        timeout=self.cloud_timeout)
+
             self.p = None
         else:
             self.logger.debug('Starting local worker')
@@ -118,11 +162,17 @@ class CompletionService:
         return self
 
     def __exit__(self, *args):
-        if self.queue_name != 'local':
+        self.close()
+
+    def close(self, delete_queue=True):
+        self.logger.info("Studioml completion service shutting down")
+        # if self.queue_name != 'local' and delete_queue:
+        if self.shutdown_del_queue:
             self.queue.delete()
 
         if self.p:
-            self.p.wait()
+            os.kill(self.p.pid, signal.SIGKILL)
+            # self.p.terminate()
 
     def submitTaskWithFiles(self, clientCodeFile, args, files={}):
         old_cwd = os.getcwd()
@@ -166,9 +216,15 @@ class CompletionService:
         }
 
         for tag, name in files.iteritems():
+            artifacts[tag] = {}
             url_schema = re.compile('^https{0,1}://')
+            s3_schema = re.compile('^s3://')
+            gcs_schema = re.compile('^gs://')
+
             if url_schema.match(name):
                 artifacts[tag]['url'] = name
+            elif s3_schema.match(name) or gcs_schema.match(name):
+                artifacts[tag]['qualified'] = name
             else:
                 artifacts[tag]['local'] = os.path.abspath(
                     os.path.expanduser(name))
@@ -201,7 +257,6 @@ class CompletionService:
         return self.submitTaskWithFiles(clientCodeFile, args, {})
 
     def getResultsWithTimeout(self, timeout=0):
-
         total_sleep_time = 0
         sleep_time = 1
 
@@ -213,20 +268,20 @@ class CompletionService:
                     experiments = [db.get_experiment(key)
                                    for key in self.submitted]
 
-            for e in experiments:
-                if e.status == 'finished':
-                    self.logger.debug('Experiment {} finished, getting results'
-                                      .format(e.key))
-                    with open(db.get_artifact(e.artifacts['retval'])) as f:
-                        data = pickle.load(f)
+                for e in experiments:
+                    if e.status == 'finished':
+                        self.logger.debug(
+                            'Experiment {} finished, getting results' .format(
+                                e.key))
+                        with open(db.get_artifact(e.artifacts['retval'])) as f:
+                            data = pickle.load(f)
 
-                    if not self.resumable:
-                        self.submitted.remove(e.key)
-                    else:
-                        with model.get_db_provider(self.config) as db:
+                        if not self.resumable:
+                            self.submitted.remove(e.key)
+                        else:
                             db.delete_experiment(e.key)
 
-                    return (e.key, data)
+                        return (e.key, data)
 
             if timeout == 0 or \
                (timeout > 0 and total_sleep_time > timeout):

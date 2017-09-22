@@ -411,7 +411,7 @@ def get_worker_manager(config, cloud=None, verbose=10):
     if cloud in ['ec2', 'ec2spot']:
         worker_manager = EC2WorkerManager(
             auth_cookie=auth_cookie,
-            branch=config['cloud'].get('branch'),
+            branch=branch,
             user_startup_script=config['cloud'].get('user_startup_script')
         )
     return worker_manager
@@ -541,10 +541,10 @@ def get_experiment_fitnesses(experiments, optimizer, config, logger):
         logger.info("Waiting for fitnesses from %s experiments" %
                     len(experiments))
 
-        bad_line_dicts = [dict() for x in xrange(len(experiments))]
-        has_result = [False for i in xrange(len(experiments))]
-        fitnesses = [0.0 for i in xrange(len(experiments))]
-        behaviors = [None for i in xrange(len(experiments))]
+        bad_line_dicts = [dict() for x in range(len(experiments))]
+        has_result = [False for i in range(len(experiments))]
+        fitnesses = [0.0 for i in range(len(experiments))]
+        behaviors = [None for i in range(len(experiments))]
         term_criterion = config['optimizer']['termination_criterion']
         skip_gen_thres = term_criterion['skip_gen_thres']
         skip_gen_timeout = term_criterion['skip_gen_timeout']
@@ -642,14 +642,24 @@ def get_experiment_fitnesses(experiments, optimizer, config, logger):
 def parse_artifacts(art_list, mutable):
     retval = {}
     url_schema = re.compile('^https{0,1}://')
+    s3_schema = re.compile('^s3://')
+    gcs_schema = re.compile('^gs://')
     for entry in art_list:
         path = re.sub(':[^:]*\Z', '', entry)
         tag = re.sub('.*:(?=[^:]*\Z)', '', entry)
+
         if url_schema.match(entry):
             assert not mutable, \
                 'artifacts specfied by url can only be immutable'
             retval[tag] = {
                 'url': path,
+                'mutable': False
+            }
+        elif s3_schema.match(entry) or gcs_schema.match(entry):
+            assert not mutable, \
+                'artifacts specfied by url can only be immutable'
+            retval[tag] = {
+                'qualified': path,
                 'mutable': False
             }
         else:

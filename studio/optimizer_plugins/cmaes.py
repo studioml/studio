@@ -159,12 +159,12 @@ class Optimizer(object):
         self.__save_checkpoint()
 
     def disp(self):
-        print "***************************************************************"
-        print "CMAES wall time: %s gen: %s pop size: %s best fitness: " \
-            "%s mean fitness: %s" % (int(time.time() - self.start_time),
-                                     self.gen, self.es.popsize,
-                                     self.best_fitness, self.mean_fitness)
-        print "***************************************************************"
+        print("**************************************************************")
+        print("CMAES wall time: %s gen: %s pop size: %s best fitness: "
+              "%s mean fitness: %s" % (int(time.time() - self.start_time),
+                                       self.gen, self.es.popsize,
+                                       self.best_fitness, self.mean_fitness))
+        print("**************************************************************")
 
     def __load_checkpoint(self):
         if self.config['load_checkpoint_file'] is None:

@@ -55,7 +55,7 @@ class HTTPProvider(object):
                 .put_artifact(art)
 
     def delete_experiment(self, experiment):
-        if isinstance(experiment, basestring):
+        if isinstance(experiment, six.string_types):
             key = experiment
         else:
             key = experiment.key
@@ -68,7 +68,7 @@ class HTTPProvider(object):
         self._raise_detailed_error(request)
 
     def get_experiment(self, experiment, getinfo='True'):
-        if isinstance(experiment, basestring):
+        if isinstance(experiment, six.string_types):
             key = experiment
         else:
             key = experiment.key
@@ -84,7 +84,7 @@ class HTTPProvider(object):
 
     def start_experiment(self, experiment):
         self.checkpoint_experiment(experiment)
-        if isinstance(experiment, basestring):
+        if isinstance(experiment, six.string_types):
             key = experiment
         else:
             key = experiment.key
@@ -108,7 +108,7 @@ class HTTPProvider(object):
 
     def finish_experiment(self, experiment):
         self.checkpoint_experiment(experiment)
-        if isinstance(experiment, basestring):
+        if isinstance(experiment, six.string_types):
             key = experiment
         else:
             key = experiment.key
@@ -181,7 +181,7 @@ class HTTPProvider(object):
         return users
 
     def checkpoint_experiment(self, experiment):
-        if isinstance(experiment, basestring):
+        if isinstance(experiment, six.string_types):
             key = experiment
             experiment = self.get_experiment(key)
         else:
