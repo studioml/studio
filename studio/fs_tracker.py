@@ -55,6 +55,14 @@ def get_artifact(tag):
         return None
 
 
+def get_artifacts():
+    try:
+        with open(_get_artifact_mapping_path(), 'r') as f:
+            return json.load(f)
+    except BaseException:
+        return {}
+
+
 def get_model_directory(experiment_name=None):
     return get_artifact_cache('modeldir', experiment_name)
 

@@ -157,7 +157,7 @@ class HTTPProvider(object):
         self._raise_detailed_error(response)
         data = response.json()['experiments']
 
-        experiments = [model.experiment_from_dict(edict)
+        experiments = [experiment_from_dict(edict)
                        for edict in data]
 
         return experiments

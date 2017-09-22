@@ -9,7 +9,7 @@ logging.basicConfig()
 
 
 class GCloudArtifactStore(TartifactStore):
-    def __init__(self, config, verbose=10, measure_timestamp_diff=True):
+    def __init__(self, config, verbose=10, measure_timestamp_diff=False):
         self.logger = logging.getLogger('GCloudArtifactStore')
         self.logger.setLevel(verbose)
 

@@ -2,6 +2,7 @@ import logging
 import requests
 
 from .tartifact_store import TartifactStore
+from .util import download_file
 logging.basicConfig()
 
 
@@ -40,18 +41,7 @@ class HTTPArtifactStore(TartifactStore):
             self.logger.error(str(resp.reason))
 
     def _download_file(self, key, local_path):
-
-        response = requests.get(
-            self.url,
-            stream=True)
-
-        if response.status_code == 200:
-            with open(local_path, 'wb') as f:
-                for chunk in response:
-                    f.write(chunk)
-        else:
-            self.logger.info("Response error with code {}"
-                             .format(response.status_code))
+        download_file(self.url, local_path, self.logger)
 
     def _delete_file(self, key):
         raise NotImplementedError

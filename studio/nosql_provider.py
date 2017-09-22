@@ -384,3 +384,5 @@ class NoSQLProvider(object):
     def __exit__(self, *args):
         if self.app:
             self.app.requests.close()
+        if self.store:
+            self.store.__exit__()

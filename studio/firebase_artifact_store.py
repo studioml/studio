@@ -13,7 +13,7 @@ logging.basicConfig()
 
 class FirebaseArtifactStore(TartifactStore):
 
-    def __init__(self, db_config, measure_timestamp_diff=True,
+    def __init__(self, db_config, measure_timestamp_diff=False,
                  blocking_auth=True, verbose=10):
 
         guest = db_config.get('guest')
@@ -181,3 +181,9 @@ class FirebaseArtifactStore(TartifactStore):
 
     def get_bucket(self):
         return self.app.storage_bucket
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args):
+        self.app.requests.close()

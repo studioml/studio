@@ -11,6 +11,9 @@ INDENT = 4
 
 def insert_user_startup_script(user_startup_script, startup_script_str,
                                logger):
+    if user_startup_script is None:
+        return startup_script_str
+
     try:
         with open(os.path.abspath(os.path.expanduser(
                 user_startup_script))) as f:

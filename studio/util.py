@@ -10,6 +10,7 @@ import shutil
 import subprocess
 import os
 import numpy as np
+import requests
 
 from tensorflow.core.util import event_pb2
 
@@ -206,3 +207,19 @@ class Progbar(object):
 
     def add(self, n, values=None):
         self.update(self.seen_so_far + n, values)
+
+
+def download_file(url, local_path, logger=None):
+    response = requests.get(
+        url,
+        stream=True)
+
+    if response.status_code == 200:
+        with open(local_path, 'wb') as f:
+            for chunk in response:
+                f.write(chunk)
+    else:
+        logger.info("Response error with code {}"
+                    .format(response.status_code))
+
+    return response
