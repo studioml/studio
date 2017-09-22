@@ -758,7 +758,7 @@ def add_hyperparam_experiments(
                                                      'mutable': False}
                 else:
                     with open(os.path.join(workspace_new, exec_filename),
-                              'rb') as f:
+                              'r') as f:
                         script_text = f.read()
 
                     script_text = re.sub(
@@ -769,7 +769,7 @@ def add_hyperparam_experiments(
                         script_text)
 
                     with open(os.path.join(workspace_new, exec_filename),
-                              'wb') as f:
+                              'w') as f:
                         f.write(script_text)
 
             experiments.append(create_experiment(
