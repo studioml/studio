@@ -6,6 +6,8 @@ Frequently Asked Questions
 
 - `What is the complete list of tools Studio.ML is compatible with?`_
 
+- `Is Studio.ML compatible with Python 3?`_
+
 - `Do I need to change my code to use Studio.ML?`_
 
 - `How can I track the training of my models?`_
@@ -19,6 +21,11 @@ _`What is the complete list of tools Studio.ML is compatible with?`
 -------------
 
 Keras, TensorFlow, PyTorch, scikit-learn
+
+_`Is Studio.ML compatible with Python 3?`
+--------------------------------
+
+Yes! Studio.ML is now compatible to use with Python 3. 
 
 _`Do I need to change my code to use Studio.ML?`
 ---------------------------------------------
