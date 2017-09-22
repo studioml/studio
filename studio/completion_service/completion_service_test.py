@@ -1,7 +1,7 @@
 import uuid
 import unittest
 import os
-from completion_service import CompletionService
+from .completion_service import CompletionService
 
 
 class CompletionServiceTest(unittest.TestCase):
