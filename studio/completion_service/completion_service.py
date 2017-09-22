@@ -10,6 +10,7 @@ import re
 
 from studio import runner, model, fs_tracker
 from studio.util import rsync_cp
+from studio.experiment import create_experiment
 
 logging.basicConfig()
 
@@ -233,7 +234,7 @@ class CompletionService:
         with open(args_file, 'w') as f:
             f.write(pickle.dumps(args))
 
-        experiment = model.create_experiment(
+        experiment = create_experiment(
             'completion_service_client.py',
             [self.config['verbose']],
             experiment_name=experiment_name,
