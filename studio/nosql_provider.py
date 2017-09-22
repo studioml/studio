@@ -130,7 +130,7 @@ class NoSQLProvider(object):
 
     def finish_experiment(self, experiment):
         time_finished = time.time()
-        if isinstance(experiment, basestring):
+        if isinstance(experiment, six.string_types):
             key = experiment
         else:
             key = experiment.key
@@ -147,7 +147,7 @@ class NoSQLProvider(object):
                          time_finished)
 
     def delete_experiment(self, experiment):
-        if isinstance(experiment, basestring):
+        if isinstance(experiment, six.string_types):
             experiment_key = experiment
             try:
                 experiment = self.get_experiment(experiment)
@@ -160,7 +160,7 @@ class NoSQLProvider(object):
         self._delete(self._get_user_keybase() + 'experiments/' +
                      experiment_key)
         if experiment is not None:
-            for tag, art in experiment.artifacts.iteritems():
+            for tag, art in six.iteritems(experiment.artifacts):
                 if art.get('key') is not None:
                     self.logger.debug(
                         ('Deleting artifact {} from the store, ' +
@@ -177,7 +177,7 @@ class NoSQLProvider(object):
         self._delete(self._get_experiments_keybase() + experiment_key)
 
     def checkpoint_experiment(self, experiment, blocking=False):
-        if isinstance(experiment, basestring):
+        if isinstance(experiment, six.string_types):
             key = experiment
             experiment = self.get_experiment(key, getinfo=False)
         else:
@@ -187,7 +187,7 @@ class NoSQLProvider(object):
             Thread(
                 target=self.store.put_artifact,
                 args=(art,))
-            for _, art in experiment.artifacts.iteritems()
+            for _, art in six.iteritems(experiment.artifacts)
             if art['mutable'] and art.get('local')]
 
         for t in checkpoint_threads:
@@ -304,7 +304,7 @@ class NoSQLProvider(object):
         experiment = self.get_experiment(key, getinfo=False)
         retval = {}
         if experiment.artifacts is not None:
-            for tag, art in experiment.artifacts.iteritems():
+            for tag, art in six.iteritems(experiment.artifacts):
                 url = self.store.get_artifact_url(art)
                 if url is not None:
                     retval[tag] = url
