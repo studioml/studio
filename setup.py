@@ -5,6 +5,7 @@ from subprocess import call
 from setuptools.command.install import install
 from setuptools.command.develop import develop
 
+
 def read(fname):
     try:
         with open(os.path.join(os.path.dirname(__file__), fname)) as f:
@@ -12,7 +13,6 @@ def read(fname):
             return data
     except BaseException:
         return None
-
 
 
 # This file contains metadata related to the studioml client and python base
@@ -62,7 +62,7 @@ with open('test_requirements.txt') as f:
 
 setup(
     name='studioml',
-    #version=VERSION,
+    # version=VERSION,
     description='TensorFlow model and data management tool',
     packages=['studio'],
     long_description=read('README.rst'),
