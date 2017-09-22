@@ -1,6 +1,7 @@
 import logging
 import time
 import os
+import six
 from threading import Thread
 
 from . import util, git_util, pyrebase
