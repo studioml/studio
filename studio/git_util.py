@@ -79,4 +79,4 @@ def get_branch(path='.'):
     stdout, _ = p.communicate()
     assert p.returncode == 0, "git returned non-zero return code"
 
-    return stdout.strip()
+    return stdout.strip().decode('utf8')

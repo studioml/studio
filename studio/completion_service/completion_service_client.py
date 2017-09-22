@@ -32,7 +32,7 @@ def main():
 
     client_module = importlib.import_module(module_name)
     logger.debug('loading args')
-    with open(fs_tracker.get_artifact('args')) as f:
+    with open(fs_tracker.get_artifact('args'), 'rb') as f:
         args = pickle.loads(f.read())
 
     logger.debug('getting file mappings')
@@ -42,7 +42,7 @@ def main():
     retval = client_module.clientFunction(args, artifacts)
 
     logger.debug('saving the return value')
-    with open(fs_tracker.get_artifact('retval'), 'w') as f:
+    with open(fs_tracker.get_artifact('retval'), 'wb') as f:
         f.write(pickle.dumps(retval))
 
 

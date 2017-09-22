@@ -179,7 +179,7 @@ class TartifactStore(object):
             if remote_path is None:
                 remote_path = artifact.get('qualified')
 
-            key = hashlib.sha256(remote_path).hexdigest()
+            key = hashlib.sha256(str.encode(remote_path)).hexdigest()
             local_path = fs_tracker.get_blob_cache(key)
             if os.path.exists(local_path):
                 self.logger.info((

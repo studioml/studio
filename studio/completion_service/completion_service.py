@@ -7,6 +7,7 @@ import pickle
 import tempfile
 import signal
 import re
+import six
 
 from studio import runner, model, fs_tracker
 from studio.util import rsync_cp
@@ -216,7 +217,7 @@ class CompletionService:
             }
         }
 
-        for tag, name in files.iteritems():
+        for tag, name in six.iteritems(files):
             artifacts[tag] = {}
             url_schema = re.compile('^https{0,1}://')
             s3_schema = re.compile('^s3://')
@@ -231,7 +232,7 @@ class CompletionService:
                     os.path.expanduser(name))
             artifacts[tag]['mutable'] = False
 
-        with open(args_file, 'w') as f:
+        with open(args_file, 'wb') as f:
             f.write(pickle.dumps(args))
 
         experiment = create_experiment(
@@ -274,7 +275,8 @@ class CompletionService:
                         self.logger.debug(
                             'Experiment {} finished, getting results' .format(
                                 e.key))
-                        with open(db.get_artifact(e.artifacts['retval'])) as f:
+                        with open(db.get_artifact(e.artifacts['retval']),
+                                  'rb') as f:
                             data = pickle.load(f)
 
                         if not self.resumable:

@@ -226,7 +226,7 @@ class LocalWorkerTest(unittest.TestCase, QueueTest):
             db.stop_experiment(key)
             pout, _ = p.communicate()
             if pout:
-                logger.debug("studio run output: \n" + pout)
+                logger.debug("studio run output: \n" + pout.decode())
 
             db.delete_experiment(key)
 
