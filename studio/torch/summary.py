@@ -76,6 +76,7 @@ class Reporter(object):
                     self._writer.add(
                         self._last_step, 'step/sec',
                         elapsed_steps / elapsed_secs)
-            print("Step %d: %s" % (self._last_step, metrics))
+
+            print("Step {}: {}".format(self._last_step, metrics))
             self._last_reported_time = time.time()
             self._last_reported_step = self._last_step

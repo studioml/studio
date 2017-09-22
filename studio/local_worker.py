@@ -13,6 +13,7 @@ from . import fs_tracker
 from . import model
 from .local_queue import LocalQueue
 from .gpu_util import get_available_gpus, get_gpu_mapping
+from .experiment import Experiment
 
 logging.basicConfig()
 
@@ -36,7 +37,7 @@ class LocalExecutor(object):
     def run(self, experiment):
         if isinstance(experiment, six.string_types):
             experiment = self.db.get_experiment(experiment)
-        elif not isinstance(experiment, model.Experiment):
+        elif not isinstance(experiment, Experiment):
             raise ValueError("Unknown type of experiment: " +
                              str(type(experiment)))
 

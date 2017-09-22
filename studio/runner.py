@@ -20,6 +20,7 @@ from .gcloud_worker import GCloudWorkerManager
 from .ec2cloud_worker import EC2WorkerManager
 from .hyperparameter import HyperparameterParser
 from .util import rand_string, Progbar, rsync_cp
+from .experiment import create_experiment
 
 from . import model
 from . import auth
@@ -311,7 +312,7 @@ def main(args=sys.argv):
                 except BaseException:
                     logger.warn('Optimizer has no disp() method')
     else:
-        experiments = [model.create_experiment(
+        experiments = [create_experiment(
             filename=exec_filename,
             args=other_args,
             experiment_name=runner_args.experiment,
@@ -665,7 +666,7 @@ def add_hyperparam_experiments(
                               'wb') as f:
                         f.write(script_text)
 
-            experiments.append(model.create_experiment(
+            experiments.append(create_experiment(
                 filename=exec_filename,
                 args=other_args,
                 experiment_name=experiment_name,
