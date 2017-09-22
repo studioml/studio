@@ -8,13 +8,13 @@ import re
 from threading import Thread
 import subprocess
 
-from . import fs_tracker
-from . import util
 import tarfile
 import urllib
 import hashlib
 
-from util import download_file, download_file_from_qualified
+from . import fs_tracker
+from . import util
+from .util import download_file, download_file_from_qualified
 
 logging.basicConfig()
 

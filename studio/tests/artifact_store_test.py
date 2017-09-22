@@ -9,7 +9,10 @@ import requests
 import subprocess
 import boto3
 
-from urlparse import urlparse
+try:
+    from urlparse import urlparse
+except ImportError:
+    from urllib.parse import urlparse
 
 from studio import model
 from studio.auth import remove_all_keys
