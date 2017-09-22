@@ -17,8 +17,8 @@ def read(fname):
 
 
 def version_scheme(version):
-    from setuptools_scm.version import get_local_dirty_tag
-    return get_local_dirty_tag(version)
+    from setuptools_scm import get_version
+    return get_version()
 
 
 def myversion():
