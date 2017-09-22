@@ -17,6 +17,7 @@ except BaseException:
 
 from studio import model
 from studio.local_queue import LocalQueue
+from studio.util import has_aws_credentials
 
 from queue_test import QueueTest
 
@@ -125,6 +126,40 @@ class LocalWorkerTest(unittest.TestCase, QueueTest):
         ):
             pass
 
+    def test_local_worker_co_url(self):
+        expected_str = 'Zabil zaryad ya v pushku tugo'
+        url = 'https://storage.googleapis.com/studio-ed756.appspot.com/' + \
+              'tests/url_artifact.txt'
+
+        with stubtest_worker(
+            self,
+            experiment_name='test_local_worker_co_url' + str(uuid.uuid4()),
+            runner_args=['--capture-once=' + url + ':f'],
+            config_name='test_config.yaml',
+            test_script='art_hello_world.py',
+            script_args=[],
+            expected_output=expected_str
+        ):
+            pass
+
+    @unittest.skipIf(
+        not has_aws_credentials(),
+        'AWS credentials not found, cannot download s3://-like links')
+    def test_local_worker_co_s3(self):
+        expected_str = 'No4 ulica fonar apteka, bessmyslennyj i tusklyj svet'
+        s3loc = 's3://studioml-artifacts/tests/download_test/download_test.txt'
+
+        with stubtest_worker(
+            self,
+            experiment_name='test_local_worker_co_s3' + str(uuid.uuid4()),
+            runner_args=['--capture-once=' + s3loc + ':f'],
+            config_name='test_config.yaml',
+            test_script='art_hello_world.py',
+            script_args=[],
+            expected_output=expected_str
+        ):
+            pass
+
     @unittest.skipIf(keras is None,
                      'keras is required for this test')
     def test_save_get_model(self):
@@ -216,11 +251,11 @@ def stubtest_worker(
 
     queue.clean()
 
-    db = model.get_db_provider(model.get_config(config_name))
-    try:
-        db.delete_experiment(experiment_name)
-    except Exception:
-        pass
+    with model.get_db_provider(model.get_config(config_name)) as db:
+        try:
+            db.delete_experiment(experiment_name)
+        except Exception:
+            pass
 
     p = subprocess.Popen(['studio', 'run'] + runner_args +
                          ['--config=' + config_name,
@@ -230,6 +265,7 @@ def stubtest_worker(
                           test_script] + script_args,
                          stdout=subprocess.PIPE,
                          stderr=subprocess.STDOUT,
+                         close_fds=True,
                          cwd=my_path)
 
     pout, _ = p.communicate()
@@ -237,6 +273,7 @@ def stubtest_worker(
     if pout:
         logger.debug("studio run output: \n" + pout)
 
+    db = model.get_db_provider(model.get_config(config_name))
     experiments = [e for e in db.get_user_experiments()
                    if e.startswith(experiment_name)]
 

@@ -15,15 +15,15 @@ logging.basicConfig()
 
 
 class GCloudWorkerManager(object):
-    def __init__(self, runner_args=None, zone='us-central1-f',
-                 auth_cookie=None, verbose=10):
+    def __init__(self, zone='us-east1-c',
+                 auth_cookie=None, verbose=10, branch=None,
+                 user_startup_script=None):
         assert 'GOOGLE_APPLICATION_CREDENTIALS' in os.environ.keys()
         with open(os.environ['GOOGLE_APPLICATION_CREDENTIALS'], 'r') as f:
             credentials_dict = json.loads(f.read())
 
         self.compute = googleapiclient.discovery.build('compute', 'v1')
 
-        self.runner_args = runner_args
         self.startup_script_file = os.path.join(
             os.path.dirname(__file__),
             'scripts/gcloud_worker_startup.sh')
@@ -33,6 +33,11 @@ class GCloudWorkerManager(object):
         self.logger = logging.getLogger("GCloudWorkerManager")
         self.logger.setLevel(verbose)
         self.auth_cookie = auth_cookie
+        self.user_startup_script = user_startup_script
+        self.branch = branch if branch else 'master'
+
+        if user_startup_script:
+            self.logger.warn('User startup script argument is deprecated')
 
     def start_worker(
             self,
@@ -131,7 +136,12 @@ class GCloudWorkerManager(object):
 
     def _get_instance_config(self, resources_needed, queue_name, timeout=300):
         image_response = self.compute.images().getFromFamily(
-            project='debian-cloud', family='debian-9').execute()
+            project='studio-ed756', family='studioml').execute()
+
+        if image_response is None:
+            image_response = self.compute.images().getFromFamily(
+                project='debian-cloud', family='debian-9').execute()
+
         source_disk_image = image_response['selfLink']
 
         # Configure the machine
@@ -140,15 +150,12 @@ class GCloudWorkerManager(object):
 
         with open(self.startup_script_file, 'r') as f:
             startup_script = f.read()
-        if self.runner_args is not None:
-            startup_script = startup_script.replace(
-                "{studioml_branch}", self.runner_args.branch)
-            startup_script = insert_user_startup_script(
-                self.runner_args.user_startup_script,
-                startup_script, self.logger)
-        else:
-            startup_script = startup_script.replace(
-                "{studioml_branch}", "master")
+
+        startup_script = startup_script.replace(
+            "{studioml_branch}", self.branch)
+        startup_script = insert_user_startup_script(
+            self.user_startup_script,
+            startup_script, self.logger)
 
         self.logger.info('Startup script:')
         self.logger.info(startup_script)
@@ -226,6 +233,20 @@ class GCloudWorkerManager(object):
         if 'hdd' in resources_needed.keys():
             config['disks'][0]['initializeParams']['diskSizeGb'] = \
                 memstr2int(resources_needed['hdd']) / memstr2int('1Gb')
+
+        if resources_needed['gpus'] > 0:
+            gpu_type = "nvidia-tesla-k80"
+            config['guestAccelerators'] = [
+                {
+                    "acceleratorType":
+                        "projects/{}/zones/{}/acceleratorTypes/{}"
+                        .format(self.projectid, self.zone, gpu_type),
+                    "acceleratorCount": resources_needed['gpus']
+                }
+            ]
+
+            config["scheduling"]['onHostMaintenance'] = "TERMINATE"
+            config["automaticRestart"] = True
 
         return config
 

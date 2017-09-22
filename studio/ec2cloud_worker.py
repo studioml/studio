@@ -63,8 +63,8 @@ _instance_specs = {
 
 class EC2WorkerManager(object):
 
-    def __init__(self, runner_args=None, auth_cookie=None, verbose=10):
-        self.runner_args = runner_args
+    def __init__(self, auth_cookie=None, verbose=10, branch=None,
+                 user_startup_script=None):
         self.startup_script_file = os.path.join(
             os.path.dirname(__file__),
             'scripts/ec2_worker_startup.sh')
@@ -80,10 +80,15 @@ class EC2WorkerManager(object):
 
         self.prices = self._get_ondemand_prices(_instance_specs.keys())
 
+        self.branch = branch if branch else 'master'
+        self.user_startup_script = user_startup_script
+
+        if user_startup_script:
+            self.logger.warn('User startup script argument is deprecated')
+
     def _get_image_id(self):
-        # vanilla ubuntu 16.04 image
-        # return 'ami-d15a75c7'
-        return 'ami-cd0f5cb6'
+        # return 'ami-cd0f5cb6' # vanilla ubuntu 16.04 image
+        return 'ami-eb7d9491'  # studio.ml gpu image
 
     def _get_block_device_mappings(self, resources_needed):
         return [{
@@ -194,8 +199,6 @@ class EC2WorkerManager(object):
 
             startup_script = f.read()
 
-        branch = self.runner_args.branch if self.runner_args is not None \
-            else "master"
         startup_script = startup_script.format(
             auth_key=auth_key if auth_key else "",
             queue_name=queue_name,
@@ -207,13 +210,12 @@ class EC2WorkerManager(object):
             region=self.region,
             use_gpus=0 if resources_needed['gpus'] == 0 else 1,
             timeout=timeout,
-            studioml_branch=branch
+            studioml_branch=self.branch
         )
 
-        if self.runner_args is not None:
-            startup_script = insert_user_startup_script(
-                self.runner_args.user_startup_script,
-                startup_script, self.logger)
+        startup_script = insert_user_startup_script(
+            self.user_startup_script,
+            startup_script, self.logger)
 
         self.logger.info('Startup script:')
         self.logger.info(startup_script)

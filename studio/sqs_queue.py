@@ -110,3 +110,6 @@ class SQSQueue(object):
             QueueUrl=self._queue_url,
             ReceiptHandle=ack_id,
             VisibilityTimeout=int(minutes * 60))
+
+    def delete(self):
+        self._client.delete_queue(QueueUrl=self._queue_url)

@@ -31,9 +31,11 @@ saveWorkspaceFrequencyMinutes: 1
 verbose: error
 
 cloud:
-    type: google
-    zone: us-central1-f
+    gcloud:
+        zone: us-central1-f
 
+
+resources_needed:
     cpus: 2
     ram:  3g
     hdd:  10g
