@@ -62,7 +62,8 @@ def main(args=sys.argv):
                 setup_pyenv=True,
                 single_experiment=parsed_args.single_run,
                 fetch_artifacts=True,
-                timeout=timeout_after)
+                timeout=timeout_after,
+                verbose=verbose)
 
 
 if __name__ == "__main__":

@@ -57,7 +57,7 @@ class SQSQueue(object):
                 continue
             else:
                 break
-        
+
         msgs = response.get('Messages', [])
 
         for m in msgs:
