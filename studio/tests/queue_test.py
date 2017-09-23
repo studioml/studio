@@ -131,7 +131,7 @@ class DistributedQueueTest(QueueTest):
         self.assertTrue(q.dequeue() is None)
         q.hold(ack_id, 0.5)
         time.sleep(35)
-        msg = q.dequeue()
+        msg = q.dequeue(timeout=120)
 
         self.assertEquals(data, msg)
 
