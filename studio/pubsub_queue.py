@@ -53,11 +53,20 @@ class PubsubQueue(object):
         return self.subclient.match_topic_from_topic_name(self.topic_name)
 
     def has_next(self):
-        response = self.subclient.api.pull(
-            self.sub_name,
-            return_immediately=True, max_messages=1)
-        messages = response.received_messages
-        retval = any(messages)
+        no_retries = 5
+        for i in range(no_retries):
+            response = self.subclient.api.pull(
+                self.sub_name,
+                return_immediately=True, max_messages=1)
+            messages = response.received_messages
+         
+            retval = any(messages)
+            if retval:
+                break
+            else:
+                self.logger.debug('has_next has not found any messages, ' + 
+                                  'retrying (attempt {})'.format(i))
+                time.sleep(5)
 
         for m in messages:
             self.hold(m.ack_id, 0)
