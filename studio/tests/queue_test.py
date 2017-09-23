@@ -26,7 +26,7 @@ class QueueTest(object):
         recv_data = q.dequeue()
 
         self.assertEquals(data, recv_data)
-        self.assertFalse(q.has_next())
+        self.assertTrue(q.dequeue() is None)
 
     def test_clean(self):
         q = self.get_queue()
@@ -36,7 +36,7 @@ class QueueTest(object):
         q.enqueue(data)
         q.clean()
 
-        self.assertFalse(q.has_next())
+        self.assertTrue(q.dequeue() is None)
 
     # @skip
     def test_enq_deq_order(self):
@@ -60,7 +60,7 @@ class QueueTest(object):
         self.assertEquals(data1, recv_data1)
         self.assertEquals(data2, recv_data2)
 
-        self.assertFalse(q.has_next())
+        self.assertTrue(q.dequeue() is None)
 
 
 class DistributedQueueTest(QueueTest):
@@ -83,7 +83,7 @@ class DistributedQueueTest(QueueTest):
         self.assertTrue(data1 == recv2 or data2 == recv2)
         self.assertFalse(recv1 == recv2)
 
-        self.assertFalse(q.has_next())
+        self.assertTrue(q.dequeue() is None)
 
     def test_two_receivers(self):
         logger = logging.getLogger('test_two_receivers')
@@ -116,8 +116,8 @@ class DistributedQueueTest(QueueTest):
         self.assertTrue(data1 == recv2 or data2 == recv2)
         self.assertFalse(recv1 == recv2)
 
-        self.assertFalse(q1.has_next())
-        self.assertFalse(q2.has_next())
+        self.assertTrue(q1.dequeue() is None)
+        self.assertTrue(q2.dequeue() is None)
 
     def test_hold(self):
         q = self.get_queue()
@@ -128,7 +128,7 @@ class DistributedQueueTest(QueueTest):
 
         msg, ack_id = q.dequeue(acknowledge=False)
 
-        self.assertFalse(q.has_next())
+        self.assertTrue(q.dequeue() is None)
         q.hold(ack_id, 0.5)
         time.sleep(35)
         msg = q.dequeue()

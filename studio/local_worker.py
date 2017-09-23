@@ -167,7 +167,7 @@ def main(args=sys.argv):
 
     queue = LocalQueue()
     # queue = glob.glob(fs_tracker.get_queue_directory() + "/*")
-    wait_for_messages(queue, parsed_args.timeout)
+    # wait_for_messages(queue, parsed_args.timeout)
     worker_loop(queue, parsed_args, timeout=parsed_args.timeout)
 
 
@@ -181,9 +181,13 @@ def worker_loop(queue, parsed_args,
     logger = logging.getLogger('worker_loop')
 
     hold_period = 4
-    while queue.has_next():
+    while True:
+        msg = queue.dequeue(acknowledge=False, timeout=timeout)
+        if not msg:
+            break
 
-        first_exp, ack_key = queue.dequeue(acknowledge=False)
+        # first_exp, ack_key = queue.dequeue(acknowledge=False)
+        first_exp, ack_key = msg
 
         experiment_key = json.loads(first_exp)['experiment']['key']
         config = json.loads(first_exp)['config']
@@ -242,7 +246,7 @@ def worker_loop(queue, parsed_args,
                             ' due lack of resources. Will retry')
                 time.sleep(config['sleep_time'])
 
-        wait_for_messages(queue, timeout, logger)
+        # wait_for_messages(queue, timeout, logger)
 
         # queue = glob.glob(fs_tracker.get_queue_directory() + "/*")
 

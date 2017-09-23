@@ -22,7 +22,7 @@ class LocalQueue:
     def delete(self):
         self.clean()
 
-    def dequeue(self, acknowledge=True):
+    def dequeue(self, acknowledge=True, timeout=0):
         files = glob.glob(self.path + '/*')
         if not any(files):
             return None

@@ -47,13 +47,20 @@ class PubsubQueue(object):
         self.logger.info('subscription {} created'.format(sub_name))
 
     def clean(self):
-        while self.has_next():
-            self.dequeue()
+        while True:
+            msg = self.dequeue()
+            if not msg:
+                break
 
     def get_name(self):
         return self.subclient.match_topic_from_topic_name(self.topic_name)
 
     def has_next(self):
+        raise NotImplementedError(
+            'Using has_next with distributed queue ' +
+            'such as pubsub will bite you in the ass! ' +
+            'Use dequeue with timeout instead')
+
         no_retries = 5
         for i in range(no_retries):
             response = self.subclient.api.pull(
@@ -79,15 +86,22 @@ class PubsubQueue(object):
         msg_id = self.pubclient.publish(self.topic_name, data)
         self.logger.debug('Message with id {} published'.format(msg_id))
 
-    def dequeue(self, acknowledge=True):
-
-        response = self.subclient.api.pull(
-            self.sub_name,
-            return_immediately=True, max_messages=1)
-        msgs = response.received_messages
-
-        if not any(msgs):
-            return None
+    def dequeue(self, acknowledge=True, timeout=0):
+        wait_step = 1
+        for waited in range(0, timeout + wait_step, wait_step):
+            response = self.subclient.api.pull(
+                self.sub_name,
+                return_immediately=True, max_messages=1)
+            msgs = response.received_messages
+            if any(msgs):
+                break
+            elif waited == timeout:
+                return None
+            else:
+                self.logger.info(
+                    ('No messages found, sleeping for {} ' +
+                     ' (total sleep time {})'.format(wait_step, waited)))
+                time.sleep(wait_step)
 
         retval = msgs[0]
 

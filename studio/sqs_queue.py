@@ -36,8 +36,10 @@ class SQSQueue(object):
         return self._name
 
     def clean(self):
-        while self.has_next():
-            self.dequeue()
+        while True:
+            msg = self.dequeue()
+            if not msg:
+                break
 
     def enqueue(self, msg):
         self.logger.debug("Sending message {} to queue with url {} "
@@ -47,6 +49,11 @@ class SQSQueue(object):
             MessageBody=msg)
 
     def has_next(self):
+        raise NotImplementedError(
+            'Using has_next with distributed queue ' +
+            'such as pubsub will bite you in the ass! ' +
+            'Use dequeue with timeout instead')
+
         no_tries = 3
         for _ in range(no_tries):
             response = self._client.receive_message(
@@ -66,25 +73,21 @@ class SQSQueue(object):
 
         return any(msgs)
 
-    def dequeue(self, acknowledge=True):
-        counter = 0
-        response = self._client.receive_message(
-            QueueUrl=self._queue_url)
-        while 'Messages' not in response.keys() \
-                and counter < self._receive_timeout:
-            self.logger.debug(
-                ('No messages received, sleeping and retrying ' +
-                 '({} attempts left)...') .format(
-                    (self._receive_timeout -
-                     counter) //
-                    self._retry_time))
-            time.sleep(self._retry_time)
+    def dequeue(self, acknowledge=True, timeout=0):
+        wait_step = 1
+        for waited in range(0, timeout + wait_step, wait_step):
             response = self._client.receive_message(
                 QueueUrl=self._queue_url)
-            counter += self._retry_time
-
-        if 'Messages' not in response.keys():
-            return None
+            msgs = response.get('Messages', [])
+            if any(msgs):
+                break
+            elif waited == timeout:
+                return None
+            else:
+                self.logger.info(
+                    ('No messages found, sleeping for {} ' +
+                     ' (total sleep time {})'.format(wait_step, waited)))
+                time.sleep(wait_step)
 
         msgs = response['Messages']
 
