@@ -100,7 +100,7 @@ class PubsubQueue(object):
             else:
                 self.logger.info(
                     ('No messages found, sleeping for {} ' +
-                     ' (total sleep time {})'.format(wait_step, waited)))
+                     ' (total sleep time {})').format(wait_step, waited))
                 time.sleep(wait_step)
 
         retval = msgs[0]

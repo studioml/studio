@@ -73,8 +73,9 @@ class SQSQueue(object):
 
         return any(msgs)
 
-    def dequeue(self, acknowledge=True, timeout=0):
+    def dequeue(self, acknowledge=True, timeout=None):
         wait_step = 1
+        timeout = timeout if timeout else self._receive_timeout
         for waited in range(0, timeout + wait_step, wait_step):
             response = self._client.receive_message(
                 QueueUrl=self._queue_url)
@@ -86,7 +87,7 @@ class SQSQueue(object):
             else:
                 self.logger.info(
                     ('No messages found, sleeping for {} ' +
-                     ' (total sleep time {})'.format(wait_step, waited)))
+                     ' (total sleep time {})').format(wait_step, waited))
                 time.sleep(wait_step)
 
         msgs = response['Messages']
