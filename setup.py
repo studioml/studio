@@ -20,10 +20,9 @@ def local_scheme(version):
     import re
     from setuptools_scm import get_version
     full_version = get_version()
-    split_version = 
     split_version = re.split(r'dev..', full_version)
-    if len(split_version) > 1
-        local_suffix =  str(re.split(r'dev..', full_version)[-1])
+    if len(split_version) > 1:
+        local_suffix = str(re.split(r'dev..', full_version)[-1])
         return '.post' + local_suffix
     else:
         return ''
