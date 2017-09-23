@@ -2,6 +2,7 @@ from google.cloud import pubsub
 import logging
 import os
 import json
+import time
 
 from model import parse_verbosity
 
@@ -59,12 +60,12 @@ class PubsubQueue(object):
                 self.sub_name,
                 return_immediately=True, max_messages=1)
             messages = response.received_messages
-         
+
             retval = any(messages)
             if retval:
                 break
             else:
-                self.logger.debug('has_next has not found any messages, ' + 
+                self.logger.debug('has_next has not found any messages, ' +
                                   'retrying (attempt {})'.format(i))
                 time.sleep(5)
 
