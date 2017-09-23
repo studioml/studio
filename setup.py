@@ -16,17 +16,18 @@ def read(fname):
         return None
 
 
-def version_scheme(version):
+def local_scheme(version):
+    import re
     from setuptools_scm import get_version
-    return get_version()
+    full_version = get_version()
+    split_version = 
+    split_version = re.split(r'dev..', full_version)
+    if len(split_version) > 1
+        local_suffix =  str(re.split(r'dev..', full_version)[-1])
+        return '.post' + local_suffix
+    else:
+        return ''
 
-
-def myversion():
-    from setuptools_scm.version import dirty_tag
-    def clean_scheme(version):
-        return dirty_tag(version) if version.dirty else '+clean'
-
-    return {'local_scheme': clean_scheme}
 
 # This file contains metadata related to the studioml client and python base
 # server software
@@ -98,7 +99,7 @@ setup(
             'studio/scripts/ec2_worker_startup.sh'],
     tests_suite='nose.collector',
     tests_require=test_required,
-    use_scm_version={"version_scheme": version_scheme},
+    use_scm_version={"local_scheme": local_scheme},
     setup_requires=['setuptools_scm', 'setuptools_scm_git_archive'],
     cmdclass={'develop': MyDevelop, 'install': MyInstall},
     classifiers=[
