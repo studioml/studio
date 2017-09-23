@@ -47,13 +47,18 @@ class SQSQueue(object):
             MessageBody=msg)
 
     def has_next(self):
-        response = self._client.receive_message(
-            QueueUrl=self._queue_url)
+        no_tries = 3
+        for _ in range(no_tries):
+            response = self._client.receive_message(
+                QueueUrl=self._queue_url)
 
-        if 'Messages' not in response.keys():
-            return False
-
-        msgs = response['Messages']
+            if 'Messages' not in response.keys():
+                time.sleep(5)
+                continue
+            else:
+                break
+        
+        msgs = response.get('Messages', [])
 
         for m in msgs:
             self.logger.debug('Received message {} '.format(m['MessageId']))
