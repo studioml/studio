@@ -6,10 +6,7 @@ from studio.gcloud_worker import GCloudWorkerManager
 from studio.ec2cloud_worker import EC2WorkerManager
 from local_worker_test import stubtest_worker
 
-try:
-    import boto3
-except BaseException:
-    boto3 = None
+from studio.util import has_aws_credentials
 
 
 @unittest.skipIf(
@@ -53,7 +50,7 @@ class GCloudWorkerTest(unittest.TestCase):
 
 
 @unittest.skipIf(
-    not boto3,
+    not has_aws_credentials(),
     'boto3 not present, won\'t be able to use AWS API')
 class EC2WorkerTest(unittest.TestCase):
     _multiprocess_can_split_ = True
@@ -67,7 +64,7 @@ class EC2WorkerTest(unittest.TestCase):
             self,
             experiment_name=experiment_name,
             runner_args=['--cloud=ec2', '--force-git', '--gpus=1',
-                         '--cloud-timeout=-1'],
+                         '--cloud-timeout=-1', '--ssh-keypair=peterz-k1'],
             config_name='test_config.yaml',
             test_script='tf_hello_world.py',
             script_args=['arg0'],

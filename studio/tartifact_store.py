@@ -12,13 +12,16 @@ import fs_tracker
 import util
 import tarfile
 import urllib
+import hashlib
+
+from util import download_file, download_file_from_qualified
 
 logging.basicConfig()
 
 
 class TartifactStore(object):
 
-    def __init__(self, measure_timestamp_diff=True):
+    def __init__(self, measure_timestamp_diff=False):
 
         if measure_timestamp_diff:
             try:
@@ -111,7 +114,7 @@ class TartifactStore(object):
                 debug_str += ", exclude = {}".format(ignore_filepath)
             self.logger.debug(debug_str)
 
-            tarcmd = 'tar {} -czf {} -C {} {}'.format(
+            tarcmd = 'tar {} -cjf {} -C {} {}'.format(
                 ignore_arg,
                 tar_filename,
                 local_basepath,
@@ -133,7 +136,13 @@ class TartifactStore(object):
                       + '.tgz'
 
             def finish_upload():
-                self._upload_file(key, tar_filename)
+                # if file is going to blobstore
+                # and there is already a file there with
+                # the same name, skip upload
+                if not key.startswith('blobstore/') or \
+                        self._get_file_timestamp(key) is None:
+                    self._upload_file(key, tar_filename)
+
                 os.remove(tar_filename)
 
             t = Thread(target=finish_upload)
@@ -155,7 +164,30 @@ class TartifactStore(object):
             only_newer=True,
             background=False):
 
-        key = artifact['key']
+        key = artifact.get('key')
+
+        if key is None:
+            assert not artifact['mutable']
+            assert artifact.get('url') is not None or \
+                artifact.get('qualified') is not None
+
+            remote_path = artifact.get('url')
+            if remote_path is None:
+                remote_path = artifact.get('qualified')
+
+            key = hashlib.sha256(remote_path).hexdigest()
+            local_path = fs_tracker.get_blob_cache(key)
+            if os.path.exists(local_path):
+                self.logger.info((
+                    'Immutable artifact exists at local_path {},' +
+                    ' skipping the download').format(local_path))
+                return local_path
+
+            if artifact.get('url') is not None:
+                download_file(remote_path, local_path, self.logger)
+            else:
+                download_file_from_qualified(
+                    remote_path, local_path, self.logger)
 
         if local_path is None:
             if 'local' in artifact.keys() and \
@@ -166,6 +198,11 @@ class TartifactStore(object):
                     local_path = fs_tracker.get_artifact_cache(key)
                 else:
                     local_path = fs_tracker.get_blob_cache(key)
+                    if os.path.exists(local_path):
+                        self.logger.info((
+                            'Immutable artifact exists at local_path {},' +
+                            ' skipping the download').format(local_path))
+                        return local_path
 
         local_path = re.sub('\/\Z', '', local_path)
         local_basepath = os.path.dirname(local_path)
@@ -198,7 +235,7 @@ class TartifactStore(object):
                 # first, figure out if the tar file has a base path of .
                 # or not
                 self.logger.info("Untarring {}".format(tar_filename))
-                listtar, _ = subprocess.Popen(['tar', '-tzf', tar_filename],
+                listtar, _ = subprocess.Popen(['tar', '-tf', tar_filename],
                                               stdout=subprocess.PIPE,
                                               stderr=subprocess.PIPE,
                                               close_fds=True).communicate()
@@ -212,7 +249,7 @@ class TartifactStore(object):
                     basepath = local_basepath
 
                 tarcmd = ('mkdir -p {} && ' +
-                          'tar -xzf {} -C {} --keep-newer-files') \
+                          'tar -xf {} -C {} --keep-newer-files') \
                     .format(basepath, tar_filename, basepath)
                 tarp = subprocess.Popen(
                     ['/bin/bash', '-c', tarcmd],
@@ -237,17 +274,22 @@ class TartifactStore(object):
                 self.logger.warn(
                     'file {} download failed'.format(tar_filename))
 
-        t = Thread(target=finish_download)
-        t.start()
         if background:
+            t = Thread(target=finish_download)
+            t.start()
             return (local_path, t)
         else:
-            t.join()
+            finish_download()
             return local_path
 
     def get_artifact_url(self, artifact, method='GET', get_timestamp=False):
         if 'key' in artifact.keys():
             url = self._get_file_url(artifact['key'], method=method)
+        elif 'url' in artifact.keys():
+            url = artifact['url']
+        else:
+            url = None
+
         if get_timestamp:
             timestamp = self._get_file_timestamp(artifact['key'])
             return (url, timestamp)
@@ -273,8 +315,9 @@ class TartifactStore(object):
         fileobj = urllib.urlopen(url)
         if fileobj:
             try:
-                retval = tarfile.open(fileobj=fileobj, mode='r|gz')
+                retval = tarfile.open(fileobj=fileobj, mode='r|*')
                 return retval
             except BaseException as e:
+                fileobj.close()
                 self.logger.info('Streaming artifact error:\n' + e.message)
         return None

@@ -13,7 +13,7 @@ logging.basicConfig()
 
 class FirebaseArtifactStore(TartifactStore):
 
-    def __init__(self, db_config, measure_timestamp_diff=True,
+    def __init__(self, db_config, measure_timestamp_diff=False,
                  blocking_auth=True, verbose=10):
 
         guest = db_config.get('guest')
@@ -163,8 +163,8 @@ class FirebaseArtifactStore(TartifactStore):
             response = self.app.requests.get(
                 url, headers=headers, verify=certifi.old_where())
             if response.status_code != 200:
-                self.logger.info("Response error with code {}"
-                                 .format(response.status_code))
+                self.logger.debug("Response error with code {}"
+                                  .format(response.status_code))
                 return (None, None)
 
             return (json.loads(response.content), url)
@@ -181,3 +181,9 @@ class FirebaseArtifactStore(TartifactStore):
 
     def get_bucket(self):
         return self.app.storage_bucket
+
+    def __exit__(self, *args):
+        self.app.requests.close()
+
+    def __enter__(self):
+        return self

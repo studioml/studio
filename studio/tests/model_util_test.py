@@ -1,6 +1,7 @@
 import unittest
 import numpy as np
 import urllib
+import unittest
 
 from PIL import Image
 from io import BytesIO

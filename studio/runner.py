@@ -5,7 +5,6 @@ import json
 import re
 import os
 import uuid
-import shutil
 import importlib
 import time
 import multiprocessing
@@ -190,8 +189,8 @@ def main(args=sys.argv):
     parser.add_argument(
         '--branch',
         help='Branch of studioml to use when running remote worker, useful ' +
-             'for debugging pull requests',
-        default='master')
+             'for debugging pull requests. Default is current',
+        default=None)
 
     # detect which argument is the script filename
     # and attribute all arguments past that index as related to the script
@@ -226,7 +225,7 @@ def main(args=sys.argv):
                 'Specify --force-git to run experiment from dirty git repo')
             sys.exit(1)
 
-    resources_needed = parse_hardware(runner_args, config['cloud'])
+    resources_needed = parse_hardware(runner_args, config['resources_needed'])
     logger.debug('resources requested: ')
     logger.debug(str(resources_needed))
 
@@ -235,6 +234,13 @@ def main(args=sys.argv):
     artifacts.update(parse_artifacts(runner_args.capture_once, mutable=False))
     with model.get_db_provider(config) as db:
         artifacts.update(parse_external_artifacts(runner_args.reuse, db))
+
+    if runner_args.branch:
+        config['cloud']['branch'] = runner_args.branch
+
+    if runner_args.user_startup_script:
+        config['cloud']['user_startup_script'] = \
+            runner_args.user_startup_script
 
     if any(runner_args.hyperparam):
         if runner_args.optimizer is "grid":
@@ -245,13 +251,19 @@ def main(args=sys.argv):
                 artifacts,
                 resources_needed,
                 logger)
-            submit_experiments(
+
+            queue_name = submit_experiments(
                 experiments,
-                resources_needed,
-                config,
+                config=config,
+                logger=logger,
+                cloud=runner_args.cloud)
+
+            spin_up_workers(
                 runner_args,
-                logger,
-                resources_needed)
+                config,
+                resources_needed,
+                queue_name=queue_name,
+                verbose=verbose)
         else:
             opt_modulepath = os.path.join(
                 os.path.dirname(os.path.abspath(__file__)),
@@ -276,6 +288,7 @@ def main(args=sys.argv):
                 config['optimizer'],
                 logger)
 
+            workers_started = False
             queue_name = None
             while not optimizer.stop():
                 hyperparam_pop = optimizer.ask()
@@ -290,23 +303,35 @@ def main(args=sys.argv):
                     logger,
                     optimizer=optimizer,
                     hyperparam_tuples=hyperparam_tuples)
+
                 queue_name = submit_experiments(
                     experiments,
-                    resources_needed,
-                    config,
-                    runner_args,
-                    logger,
-                    queue_name,
-                    queue_name is None)
+                    config=config,
+                    logger=logger,
+                    cloud=runner_args.cloud,
+                    queue_name=queue_name)
 
-                fitnesses = get_experiment_fitnesses(experiments,
-                                                     optimizer, config, logger)
+                if not workers_started:
+                    spin_up_workers(
+                        runner_args,
+                        config,
+                        resources_needed,
+                        queue_name=queue_name,
+                        verbose=verbose)
+                    workers_started = True
+
+                fitnesses, behaviors = get_experiment_fitnesses(
+                    experiments, optimizer, config, logger)
 
                 # for i, hh in enumerate(hyperparam_pop):
                 #     print fitnesses[i]
                 #     for hhh in hh:
                 #         print hhh
-                optimizer.tell(hyperparam_pop, fitnesses)
+                try:
+                    optimizer.tell(hyperparam_pop, fitnesses, behaviors)
+                except BaseException:
+                    optimizer.tell(hyperparam_pop, fitnesses)
+
                 try:
                     optimizer.disp()
                 except BaseException:
@@ -320,11 +345,19 @@ def main(args=sys.argv):
             artifacts=artifacts,
             resources_needed=resources_needed,
             metric=runner_args.metric)]
-        submit_experiments(experiments,
-                           resources_needed,
-                           config,
-                           runner_args,
-                           logger)
+
+        queue_name = submit_experiments(
+            experiments,
+            config=config,
+            logger=logger,
+            cloud=runner_args.cloud)
+
+        spin_up_workers(
+            runner_args,
+            config,
+            resources_needed,
+            queue_name=queue_name,
+            verbose=verbose)
 
     return
 
@@ -341,31 +374,146 @@ def add_experiment(args):
     return e
 
 
+def get_worker_manager(config, cloud=None, verbose=10):
+    if cloud is None:
+        return None
+
+    assert cloud in ['gcloud', 'gcspot', 'ec2', 'ec2spot']
+    logger = logging.getLogger('runner.get_worker_manager')
+    logger.setLevel(verbose)
+
+    auth_cookie = None if config['database'].get('guest') \
+        else os.path.join(
+        auth.TOKEN_DIR,
+        config['database']['apiKey']
+    )
+
+    branch = config['cloud'].get('branch')
+    if branch is None:
+        branch = git_util.get_branch(
+            os.path.dirname(
+                os.path.realpath(__file__)))
+
+    logger.info('using branch {}'.format(branch))
+
+    if cloud in ['gcloud', 'gcspot']:
+
+        cloudconfig = config['cloud']['gcloud']
+        worker_manager = GCloudWorkerManager(
+            auth_cookie=auth_cookie,
+            zone=cloudconfig['zone'],
+            branch=branch,
+            user_startup_script=config['cloud'].get('user_startup_script')
+        )
+
+    if cloud in ['ec2', 'ec2spot']:
+        worker_manager = EC2WorkerManager(
+            auth_cookie=auth_cookie,
+            branch=branch,
+            user_startup_script=config['cloud'].get('user_startup_script')
+        )
+    return worker_manager
+
+
+def get_queue(queue_name=None, cloud=None, verbose=10):
+    if cloud in ['gcloud', 'gcspot']:
+        if queue_name is None:
+            queue_name = 'pubsub_' + str(uuid.uuid4())
+        return PubsubQueue(queue_name, verbose=verbose)
+
+    elif cloud in ['ec2', 'ec2spot']:
+        if queue_name is None:
+            queue_name = 'sqs_' + str(uuid.uuid4())
+        return SQSQueue(queue_name, verbose=verbose)
+    else:
+        if queue_name is None or queue_name == 'local':
+            queue = LocalQueue()
+            # not cleaning is important to be able to re-use
+            # the queue from several processes
+            # queue.clean()
+            return queue
+        else:
+            return PubsubQueue(queue_name, verbose=verbose)
+
+
+def spin_up_workers(
+        runner_args,
+        config,
+        resources_needed,
+        queue_name,
+        verbose=10):
+    cloud = runner_args.cloud
+    if cloud:
+
+        assert cloud in ['gcloud', 'gcspot', 'ec2', 'ec2spot']
+        worker_manager = get_worker_manager(config, cloud, verbose=verbose)
+
+        if cloud == 'gcloud' or \
+           cloud == 'ec2':
+
+            if runner_args.num_workers:
+                num_workers = int(runner_args.num_workers)
+            else:
+                num_workers = 1
+
+            for i in range(num_workers):
+                worker_manager.start_worker(
+                    queue_name, resources_needed,
+                    ssh_keypair=runner_args.ssh_keypair,
+                    timeout=runner_args.cloud_timeout)
+        else:
+            assert runner_args.bid is not None
+            if runner_args.num_workers:
+                start_workers = runner_args.num_workers
+                queue_upscaling = False
+            else:
+                start_workers = 1
+                queue_upscaling = True
+
+            worker_manager.start_spot_workers(
+                queue_name,
+                runner_args.bid,
+                resources_needed,
+                start_workers=start_workers,
+                queue_upscaling=queue_upscaling,
+                ssh_keypair=runner_args.ssh_keypair,
+                timeout=runner_args.cloud_timeout)
+
+    elif queue_name == 'local':
+        worker_args = ['studio-local-worker']
+
+        if runner_args.config:
+            worker_args += ['--config=' + runner_args.config]
+
+        if runner_args.guest:
+            worker_args += ['--guest']
+
+        # logger.info('worker args: {}'.format(worker_args))
+        if not runner_args.num_workers or int(runner_args.num_workers) == 1:
+            if 'STUDIOML_DUMMY_MODE' not in os.environ:
+                local_worker.main(worker_args)
+        else:
+            raise NotImplementedError("Multiple local workers are not " +
+                                      "implemented yet")
+
+
 def submit_experiments(
         experiments,
-        resources_needed,
         config,
-        runner_args,
         logger,
+        cloud=None,
         queue_name=None,
-        launch_workers=True):
+        python_pkg=[]):
 
     num_experiments = len(experiments)
     verbose = model.parse_verbosity(config['verbose'])
-
-    if runner_args.cloud is None:
-        queue_name = 'local'
-        if 'queue' in config.keys():
-            queue_name = config['queue']
-        if runner_args.queue:
-            queue_name = runner_args.queue
 
     start_time = time.time()
     n_workers = min(multiprocessing.cpu_count() * 2, num_experiments)
     with closing(multiprocessing.Pool(n_workers, maxtasksperchild=20)) as p:
         experiments = p.imap_unordered(add_experiment,
                                        zip([config] * num_experiments,
-                                           [runner_args.python_pkg] *
+                                           [python_pkg] *
                                            num_experiments,
                                            experiments),
                                        chunksize=1)
@@ -376,99 +524,13 @@ def submit_experiments(
     logger.info("Added %s experiments in %s seconds" %
                 (num_experiments, int(time.time() - start_time)))
 
-    if runner_args.cloud is not None:
-        assert runner_args.cloud in ['gcloud', 'gcspot', 'ec2', 'ec2spot']
-
-        assert runner_args.queue is None, \
-            '--queue argument cannot be provided with --cloud argument'
-        auth_cookie = None if config['database'].get('guest') \
-            else os.path.join(
-            auth.TOKEN_DIR,
-            config['database']['apiKey']
-        )
-
-        if runner_args.cloud in ['gcloud', 'gcspot']:
-            if queue_name is None:
-                queue_name = 'pubsub_' + str(uuid.uuid4())
-                worker_manager = GCloudWorkerManager(
-                    runner_args=runner_args,
-                    auth_cookie=auth_cookie,
-                    zone=config['cloud']['zone']
-                )
-
-            queue = PubsubQueue(queue_name, verbose=verbose)
-
-        if runner_args.cloud in ['ec2', 'ec2spot']:
-            if queue_name is None:
-                queue_name = 'sqs_' + str(uuid.uuid4())
-                worker_manager = EC2WorkerManager(
-                    runner_args=runner_args,
-                    auth_cookie=auth_cookie
-                )
-
-            queue = SQSQueue(queue_name, verbose=verbose)
-
-        if launch_workers:
-            if runner_args.cloud == 'gcloud' or \
-               runner_args.cloud == 'ec2':
-
-                num_workers = int(
-                    runner_args.num_workers) if runner_args.num_workers else 1
-                for i in range(num_workers):
-                    worker_manager.start_worker(
-                        queue_name, resources_needed,
-                        ssh_keypair=runner_args.ssh_keypair,
-                        timeout=runner_args.cloud_timeout)
-            else:
-                assert runner_args.bid is not None
-                if runner_args.num_workers:
-                    start_workers = runner_args.num_workers
-                    queue_upscaling = False
-                else:
-                    start_workers = 1
-                    queue_upscaling = True
-
-                worker_manager.start_spot_workers(
-                    queue_name,
-                    runner_args.bid,
-                    resources_needed,
-                    start_workers=start_workers,
-                    queue_upscaling=queue_upscaling,
-                    ssh_keypair=runner_args.ssh_keypair,
-                    timeout=runner_args.cloud_timeout)
-    else:
-        if queue_name == 'local':
-            queue = LocalQueue()
-            queue.clean()
-        elif queue_name.startswith('sqs_'):
-            queue = SQSQueue(queue_name, verbose=verbose)
-        else:
-            queue = PubsubQueue(
-                queue_name,
-                config['database']['projectId'],
-                verbose=verbose)
-
+    queue = get_queue(queue_name, cloud, verbose)
     for e in experiments:
         queue.enqueue(json.dumps({
             'experiment': e.__dict__,
             'config': config}))
 
-    if queue_name == 'local':
-        worker_args = ['studio-local-worker']
-
-        if runner_args.config:
-            worker_args += ['--config=' + runner_args.config]
-        if runner_args.guest:
-            worker_args += ['--guest']
-
-        logger.info('worker args: {}'.format(worker_args))
-        if not runner_args.num_workers or int(runner_args.num_workers) == 1:
-            if 'STUDIOML_DUMMY_MODE' not in os.environ:
-                local_worker.main(worker_args)
-        else:
-            raise NotImplementedError("Multiple local workers are not " +
-                                      "implemented yet")
-    return queue_name
+    return queue.get_name()
 
 
 def get_experiment_fitnesses(experiments, optimizer, config, logger):
@@ -478,8 +540,9 @@ def get_experiment_fitnesses(experiments, optimizer, config, logger):
                     len(experiments))
 
         bad_line_dicts = [dict() for x in xrange(len(experiments))]
-        has_result = [False] * len(experiments)
-        fitnesses = [0.0] * len(experiments)
+        has_result = [False for i in xrange(len(experiments))]
+        fitnesses = [0.0 for i in xrange(len(experiments))]
+        behaviors = [None for i in xrange(len(experiments))]
         term_criterion = config['optimizer']['termination_criterion']
         skip_gen_thres = term_criterion['skip_gen_thres']
         skip_gen_timeout = term_criterion['skip_gen_timeout']
@@ -502,7 +565,7 @@ def get_experiment_fitnesses(experiments, optimizer, config, logger):
                                                         getinfo=True)
                 # try:
                 #     experiment_output = returned_experiment.info['logtail']
-                # except:
+                # except BaseException:
                 #     logger.warn('Cannot access "logtail" in experiment.info')
                 output = db._get_experiment_logtail(
                     returned_experiment)
@@ -519,6 +582,28 @@ def get_experiment_fitnesses(experiments, optimizer, config, logger):
                                     returned_experiment.key)
                         logger.warn("".join(output[j:]))
                         bad_line_dicts[i][j] = True
+
+                    if line.startswith("Behavior") or \
+                            line.startswith("behavior"):
+                        try:
+                            behavior = eval(line.rstrip().split(':')[1])
+                            if isinstance(behavior, np.ndarray):
+                                pass
+                            elif isinstance(behavior, list):
+                                behavior = np.array(behavior)
+                            else:
+                                raise
+
+                        except BaseException:
+                            if j not in bad_line_dicts[i]:
+                                logger.warn(
+                                    'Experiment %s: error parsing or invalid'
+                                    ' behavior' %
+                                    returned_experiment.key)
+                                logger.warn(line)
+                                bad_line_dicts[i][j] = True
+                        else:
+                            behaviors[i] = behavior
 
                     if line.startswith("Fitness") or \
                             line.startswith("fitness"):
@@ -549,18 +634,37 @@ def get_experiment_fitnesses(experiments, optimizer, config, logger):
 
             time.sleep(config['sleep_time'])
         print
-        return fitnesses
+        return fitnesses, behaviors
 
 
 def parse_artifacts(art_list, mutable):
     retval = {}
+    url_schema = re.compile('^https{0,1}://')
+    s3_schema = re.compile('^s3://')
+    gcs_schema = re.compile('^gs://')
     for entry in art_list:
-        path = re.sub(':.*', '', entry)
-        tag = re.sub('.*:', '', entry)
-        retval[tag] = {
-            'local': os.path.expanduser(path),
-            'mutable': mutable
-        }
+        path = re.sub(':[^:]*\Z', '', entry)
+        tag = re.sub('.*:(?=[^:]*\Z)', '', entry)
+
+        if url_schema.match(entry):
+            assert not mutable, \
+                'artifacts specfied by url can only be immutable'
+            retval[tag] = {
+                'url': path,
+                'mutable': False
+            }
+        elif s3_schema.match(entry) or gcs_schema.match(entry):
+            assert not mutable, \
+                'artifacts specfied by url can only be immutable'
+            retval[tag] = {
+                'qualified': path,
+                'mutable': False
+            }
+        else:
+            retval[tag] = {
+                'local': os.path.expanduser(path),
+                'mutable': mutable
+            }
     return retval
 
 

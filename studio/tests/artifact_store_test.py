@@ -7,17 +7,16 @@ import tempfile
 import shutil
 import requests
 import subprocess
+import boto3
+
+from urlparse import urlparse
 
 from studio import model
 from studio.auth import remove_all_keys
 
-try:
-    import boto3
-except BaseException:
-    boto3 = None
-
 from studio.gcloud_artifact_store import GCloudArtifactStore
 from studio.s3_artifact_store import S3ArtifactStore
+from studio.util import has_aws_credentials
 
 
 class ArtifactStoreTest(object):
@@ -114,7 +113,7 @@ class ArtifactStoreTest(object):
         with open(tar_filename, 'wb') as f:
             f.write(response.content)
 
-        ptar = subprocess.Popen(['tar', '-xzf', tar_filename],
+        ptar = subprocess.Popen(['tar', '-xf', tar_filename],
                                 cwd=tempfile.gettempdir())
 
         tarout, _ = ptar.communicate()
@@ -320,8 +319,8 @@ class GCloudArtifactStoreTest(ArtifactStoreTest, unittest.TestCase):
 
 
 @unittest.skipIf(
-    boto3 is None,
-    'boto3 module not found, '
+    not has_aws_credentials(),
+    'AWS credentials not found, '
     'won'' be able to use S3')
 class S3ArtifactStoreTest(ArtifactStoreTest, unittest.TestCase):
 
@@ -333,8 +332,8 @@ class S3ArtifactStoreTest(ArtifactStoreTest, unittest.TestCase):
 
     def get_qualified_location_prefix(self):
         store = self.get_store()
-        endpoint = boto3.client('s3')._endpoint.host
-        return "s3://" + endpoint + "/" + store.bucket + "/"
+        endpoint = urlparse(boto3.client('s3')._endpoint.host)
+        return "s3://" + endpoint.netloc + "/" + store.bucket + "/"
 
 
 if __name__ == "__main__":

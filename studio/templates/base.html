@@ -133,7 +133,8 @@
             response_data = JSON.parse(data)
             if (response_data.status == 'ok') {
                 
-                addExperimentsToTable(response_data.experiments, clearTable)                
+                addExperimentsToTable(response_data.experiments, clearTable)
+                updateExperiments()
                 
                 if (response_data.experiments.length > 0) {
                     $('#buttonContainer').show()
@@ -148,20 +149,65 @@
                 table.clear()
             }
             console.log(experiments)
-            for (var i=0; i < experiments.length; i++) {
+            for (var i = 0; i < experiments.length; i++) {
                 experiment = experiments[i]
                 new_row = [
-                    experiment.key,
-                    experiment.filename,
-                    experiment.time_added,
-                    experiment.metric,
-                    experiment.info.metric_value,
-                    experiment.project,
-                    experiment.status,
+                    experiment,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
                 ]
                 table.row.add(new_row)
             }
             table.draw()
+        }
+
+        function updateExperiments() {
+            table = $('#experimentTable').DataTable()
+            rowsData = table.rows().data()
+            
+            experimentKeys = []
+            for (var i = 0; i < rowsData.length; i++) {
+                experimentKeys.push(rowsData[i][0])
+            }            
+
+            var keyIndex = 0
+            
+            function updateExperiment() {
+                if (keyIndex >= experimentKeys.length) {
+                    return;
+                }
+                key = experimentKeys[keyIndex]
+                console.log("experiment key = " + key);
+                data_ajax('get_experiment', data={"key":key}).then((data) => {
+                    updateRow(data);
+                    keyIndex++;
+                    updateExperiment();
+                });
+            }
+
+            function updateRow(data) {
+                parsedData = JSON.parse(data);
+                if (parsedData.status == "ok") {
+                    experiment = parsedData.experiment;
+                    newRow = [
+                        experiment.key,
+                        experiment.filename,
+                        experiment.time_added,
+                        experiment.metric,
+                        experiment.info ? experiment.info.metric_value : "None",
+                        experiment.project,
+                        experiment.status,
+                   ];
+                   console.log("newRow = " + newRow);
+                   table.row(keyIndex).data(newRow).draw();
+                } 
+            }
+            
+            updateExperiment();
         }
 
         function deleteExperiments() {
