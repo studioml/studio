@@ -62,8 +62,8 @@ Deploying the API server
    studio/apiserver\_config.yaml 
 5. Copy the project ID and paste it in projectId of the database section of
    config yaml file. 
-6. Go to Service Accounts tab and generate new key for firebase
-   service account. This key is json file that will give API server admin 
+6. Go to Service Accounts tab and generate a new key for the firebase
+   service account. This key is a json file that will give API server admin 
    access to the database. Save it to the deployment machine. 
 7. Modify other entries of the apiserver_config.yaml file to your specs 
    (e.g. storage type and bucket)
@@ -85,7 +85,7 @@ Deploying the API server
 
    
        
-Configuring studio to work with API server
+Configuring studio to work with the API server
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 For clients to work with the API server, you'll
