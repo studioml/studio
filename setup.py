@@ -17,38 +17,14 @@ def read(fname):
 
 
 def local_scheme(version):
-    # this is so hacky...
-    # basically, pypi has pretty strict rules about how versions
-    # should be called. Specifically, the only letters that
-    # are allowed in the version are either v in the beginning
-    # or .dev / .post suffix (possibly followed by more numbers)
-    #
-    # And that is not at all compatible
-    # with setuptools_scm local versions, which base suffix on
-    # the commit id.
-    #
-    # So, because we want auto-push to pypi from travis,
-    # here's what we'll do. We'll get the commit id from the suffix,
-    # convert it into decimal number (as it is 7-digit hexadecimal,
-    # it will always fit into int), and make that the suffix.
-    #
-    # On top of that, split on regular experissions seems to be
-    # misbehaving when used within setup.py, and does not split
-    # string on dashes ('-'). That's the second uberhacky part.
-
-    import re
-    from setuptools_scm import get_version
-    full_version = get_version()
-    split_version = re.split(r'dev..', full_version)
-    try:
-        if len(split_version) > 1:
-            local_suffix = str(re.split(r'dev..', full_version)[-1])
-            local_suffix = local_suffix.split('.')[0][1:]
-            return str(int(local_suffix, 16))
-        else:
-            return ''
-    except BaseException:
+    if version.distance == 0:
         return ''
+    else:
+        return '.post' + str(version.distance)
+
+
+def version_scheme(version):
+    return str(version.tag)
 
 
 # This file contains metadata related to the studioml client and python base
@@ -121,7 +97,9 @@ setup(
             'studio/scripts/ec2_worker_startup.sh'],
     tests_suite='nose.collector',
     tests_require=test_required,
-    use_scm_version={"local_scheme": local_scheme},
+    use_scm_version={
+        "version_scheme": version_scheme,
+        "local_scheme": local_scheme},
     setup_requires=['setuptools_scm', 'setuptools_scm_git_archive'],
     cmdclass={'develop': MyDevelop, 'install': MyInstall},
     classifiers=[
