@@ -4,6 +4,7 @@ from setuptools import setup
 from subprocess import call
 from setuptools.command.install import install
 from setuptools.command.develop import develop
+import pickle
 
 
 def read(fname):
@@ -13,6 +14,17 @@ def read(fname):
             return data
     except BaseException:
         return None
+
+
+def local_scheme(version):
+    if version.distance == 0:
+        return ''
+    else:
+        return '.post' + str(version.distance)
+
+
+def version_scheme(version):
+    return str(version.tag)
 
 
 # This file contains metadata related to the studioml client and python base
@@ -85,7 +97,9 @@ setup(
             'studio/scripts/ec2_worker_startup.sh'],
     tests_suite='nose.collector',
     tests_require=test_required,
-    use_scm_version=True,
+    use_scm_version={
+        "version_scheme": version_scheme,
+        "local_scheme": local_scheme},
     setup_requires=['setuptools_scm', 'setuptools_scm_git_archive'],
     cmdclass={'develop': MyDevelop, 'install': MyInstall},
     classifiers=[
