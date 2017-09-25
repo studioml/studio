@@ -101,7 +101,8 @@ def parse_verbosity(verbosity=None):
         'crit': 50
     }
 
-    if isinstance(verbosity, six.string_types):
+    if isinstance(verbosity, six.string_types) and \
+       verbosity in logger_levels.keys():
         return logger_levels[verbosity]
     else:
         return int(verbosity)
