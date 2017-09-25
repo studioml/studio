@@ -1,8 +1,8 @@
 import logging
 import requests
 
-from tartifact_store import TartifactStore
-from util import download_file
+from .tartifact_store import TartifactStore
+from .util import download_file
 logging.basicConfig()
 
 

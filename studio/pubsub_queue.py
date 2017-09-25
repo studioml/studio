@@ -4,7 +4,7 @@ import os
 import json
 import time
 
-from model import parse_verbosity
+from .model import parse_verbosity
 
 logging.basicConfig()
 

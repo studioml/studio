@@ -1,5 +1,5 @@
 import hashlib
-import StringIO
+from io import StringIO
 import re
 import random
 import string
@@ -15,12 +15,16 @@ import requests
 from tensorflow.core.util import event_pb2
 
 import boto3
-from google.cloud import storage as gstorage
 
 
 def remove_backspaces(line):
     splitline = re.split('(\x08+)', line)
-    buf = StringIO.StringIO()
+    try:
+        splitline = [unicode(s) for s in splitline]
+    except NameError:
+        splitline = [str(s) for s in splitline]
+
+    buf = StringIO()
     for i in range(0, len(splitline) - 1, 2):
         buf.write(splitline[i][:-len(splitline[i + 1])])
 
@@ -40,7 +44,7 @@ def sha256_checksum(filename, block_size=65536):
 
 def rand_string(length):
     return "".join([random.choice(string.ascii_letters + string.digits)
-                    for n in xrange(length)])
+                    for n in range(length)])
 
 
 def event_reader(fileobj):
