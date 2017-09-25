@@ -8,13 +8,17 @@ import re
 from threading import Thread
 import subprocess
 
-import fs_tracker
-import util
 import tarfile
-import urllib
+try:
+    from urllib.request import urlopen
+except ImportError:
+    from urllib import urlopen
+
 import hashlib
 
-from util import download_file, download_file_from_qualified
+from . import fs_tracker
+from . import util
+from .util import download_file, download_file_from_qualified
 
 logging.basicConfig()
 
@@ -114,7 +118,7 @@ class TartifactStore(object):
                 debug_str += ", exclude = {}".format(ignore_filepath)
             self.logger.debug(debug_str)
 
-            tarcmd = 'tar {} -cf {} -C {} {}'.format(
+            tarcmd = 'tar {} -cjf {} -C {} {}'.format(
                 ignore_arg,
                 tar_filename,
                 local_basepath,
@@ -175,7 +179,7 @@ class TartifactStore(object):
             if remote_path is None:
                 remote_path = artifact.get('qualified')
 
-            key = hashlib.sha256(remote_path).hexdigest()
+            key = hashlib.sha256(remote_path.encode()).hexdigest()
             local_path = fs_tracker.get_blob_cache(key)
             if os.path.exists(local_path):
                 self.logger.info((
@@ -238,8 +242,11 @@ class TartifactStore(object):
                 listtar, _ = subprocess.Popen(['tar', '-tf', tar_filename],
                                               stdout=subprocess.PIPE,
                                               stderr=subprocess.PIPE,
-                                              close_fds=True).communicate()
-                listtar = listtar.strip().split('\n')
+                                              close_fds=True
+                                              ).communicate()
+                listtar = listtar.strip().split(b'\n')
+                listtar = [s.decode('utf-8') for s in listtar]
+
                 self.logger.info('List of files in the tar: ' + str(listtar))
                 if listtar[0].startswith('./'):
                     # Files are archived into tar from .; adjust path
@@ -261,7 +268,7 @@ class TartifactStore(object):
                 if tarp.returncode != 0:
                     self.logger.info('tar had a non-zero return code!')
                     self.logger.info('tar cmd = ' + tarcmd)
-                    self.logger.info('tar output: \n ' + tarout)
+                    self.logger.info('tar output: \n ' + str(tarout))
 
                 if len(listtar) == 1:
                     actual_path = os.path.join(basepath, listtar[0])
@@ -274,17 +281,22 @@ class TartifactStore(object):
                 self.logger.warn(
                     'file {} download failed'.format(tar_filename))
 
-        t = Thread(target=finish_download)
-        t.start()
         if background:
+            t = Thread(target=finish_download)
+            t.start()
             return (local_path, t)
         else:
-            t.join()
+            finish_download()
             return local_path
 
     def get_artifact_url(self, artifact, method='GET', get_timestamp=False):
         if 'key' in artifact.keys():
             url = self._get_file_url(artifact['key'], method=method)
+        elif 'url' in artifact.keys():
+            url = artifact['url']
+        else:
+            url = None
+
         if get_timestamp:
             timestamp = self._get_file_timestamp(artifact['key'])
             return (url, timestamp)
@@ -307,11 +319,18 @@ class TartifactStore(object):
         if url is None:
             return None
 
-        fileobj = urllib.urlopen(url)
+        fileobj = urlopen(url)
         if fileobj:
             try:
-                retval = tarfile.open(fileobj=fileobj, mode='r|')
+                retval = tarfile.open(fileobj=fileobj, mode='r|*')
                 return retval
             except BaseException as e:
+                fileobj.close()
                 self.logger.info('Streaming artifact error:\n' + e.message)
         return None
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args):
+        pass

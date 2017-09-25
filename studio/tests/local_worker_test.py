@@ -226,7 +226,7 @@ class LocalWorkerTest(unittest.TestCase, QueueTest):
             db.stop_experiment(key)
             pout, _ = p.communicate()
             if pout:
-                logger.debug("studio run output: \n" + pout)
+                logger.debug("studio run output: \n" + pout.decode())
 
             db.delete_experiment(key)
 
@@ -271,25 +271,26 @@ def stubtest_worker(
     pout, _ = p.communicate()
 
     if pout:
-        logger.debug("studio run output: \n" + pout)
+        logger.debug("studio run output: \n" + str(pout))
 
     db = model.get_db_provider(model.get_config(config_name))
     experiments = [e for e in db.get_user_experiments()
-                   if e.key.startswith(experiment_name)]
+                   if e.startswith(experiment_name)]
 
-    assert len(experiments) == 1
+    assert len(experiments) == 1, "actually {} number of experiments".format(
+        len(experiments))
 
-    experiment_name = experiments[0].key
+    experiment_name = experiments[0]
 
     try:
         # test saved arguments
         keybase = "/experiments/" + experiment_name
-        saved_args = db[keybase + '/args']
+        saved_args = db._get(keybase + '/args')
         if saved_args is not None:
             testclass.assertTrue(len(saved_args) == len(script_args))
             for i in range(len(saved_args)):
                 testclass.assertTrue(saved_args[i] == script_args[i])
-            testclass.assertTrue(db[keybase + '/filename'] == test_script)
+            testclass.assertTrue(db._get(keybase + '/filename') == test_script)
         else:
             testclass.assertTrue(script_args is None or len(script_args) == 0)
 
@@ -332,6 +333,9 @@ def check_workspace(testclass, db, key):
     for _, _, files in os.walk(artifact['local'], topdown=False):
         for filename in files:
             downloaded_filename = os.path.join(tmpdir, filename)
+            if downloaded_filename.endswith('.pyc'):
+                continue
+
             with open(downloaded_filename, 'rb') as f1:
                 data1 = f1.read()
             with open(os.path.join(artifact['local'], filename), 'rb') as f2:

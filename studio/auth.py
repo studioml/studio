@@ -10,10 +10,11 @@ try:
 except BaseException:
     BackgroundScheduler = None
 
-from util import rand_string
+from .util import rand_string
 
 TOKEN_DIR = os.path.expanduser('~/.studioml/keys')
 HOUR = 3600
+HALF_HOUR = 1800
 API_KEY_COOLDOWN = 900
 SLEEP_TIME = 0.5
 MAX_NUM_RETRIES = 100
@@ -38,7 +39,7 @@ class FirebaseAuth(object):
                 self.email = email
                 self.password = password
             else:
-                self.email = raw_input(
+                self.email = input(
                     'Firebase token is not found or expired! ' +
                     'You need to re-login. (Or re-run with ' +
                     'studio/studio-runner ' +
@@ -61,7 +62,7 @@ class FirebaseAuth(object):
 
         self.sched = BackgroundScheduler()
         self.sched.start()
-        self.sched.add_job(self._update_user, 'interval', minutes=59)
+        self.sched.add_job(self._update_user, 'interval', minutes=31)
         atexit.register(self.sched.shutdown)
 
     def _update_user(self):
@@ -121,7 +122,7 @@ class FirebaseAuth(object):
         self.expired = False
 
         if not os.path.exists(api_key) or \
-           time.time() - os.path.getmtime(api_key) > HOUR:
+           time.time() - os.path.getmtime(api_key) > HALF_HOUR:
             # Rename to ensure atomic writes to json file
             # (technically more safe, but slower)
             tmp_api_key = os.path.join(tempfile.gettempdir(),

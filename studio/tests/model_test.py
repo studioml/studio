@@ -6,9 +6,13 @@ import os
 import time
 import pip
 import shutil
+import six
 
 from studio import model
+from studio.firebase_provider import FirebaseProvider
+from studio.postgres_provider import PostgresProvider
 from studio.auth import remove_all_keys
+from studio.experiment import create_experiment
 
 
 def get_methods(cls):
@@ -20,8 +24,8 @@ class ProvidersTest(unittest.TestCase):
 
     def test_providers_compatible(self):
         # Check that all available providers are compatible.
-        firebase_methods = get_methods(model.FirebaseProvider)
-        postgres_methods = get_methods(model.PostgresProvider)
+        firebase_methods = get_methods(FirebaseProvider)
+        postgres_methods = get_methods(PostgresProvider)
         self.assertEqual(firebase_methods, postgres_methods)
 
 
@@ -40,47 +44,47 @@ class FirebaseProviderTest(unittest.TestCase):
 
     def test_get_set_firebase(self):
         with self.get_firebase_provider() as fb:
-            response = fb.__getitem__("test/hello")
+            response = fb._get("test/hello")
             self.assertEquals(response, "world")
 
             random_str = str(uuid.uuid4())
             key_path = 'test/randomKey'
             fb.__setitem__(key_path, random_str)
 
-            self.assertTrue(fb.__getitem__(key_path) == random_str)
+            self.assertTrue(fb._get(key_path) == random_str)
             fb._delete(key_path)
 
     def test_get_set_auth_firebase(self):
         remove_all_keys()
         with self.get_firebase_provider('test_config_auth.yaml') as fb:
-            response = fb.__getitem__("authtest/hello")
+            response = fb._get("authtest/hello")
             self.assertEquals(response, "world")
 
             random_str = str(uuid.uuid4())
             key_path = 'authtest/randomKey'
             fb.__setitem__(key_path, random_str)
 
-            self.assertTrue(fb.__getitem__(key_path) == random_str)
+            self.assertTrue(fb._get(key_path) == random_str)
             fb._delete(key_path)
             remove_all_keys()
 
     def test_get_set_noauth_firebase(self):
         remove_all_keys()
         with self.get_firebase_provider('test_config.yaml') as fb:
-            response = fb.__getitem__("authtest/hello")
+            response = fb._get("authtest/hello")
             self.assertTrue(response is None)
 
             random_str = str(uuid.uuid4())
             key_path = 'authtest/randomKey'
             fb.__setitem__(key_path, random_str)
-            self.assertTrue(fb.__getitem__(key_path) is None)
+            self.assertTrue(fb._get(key_path) is None)
             remove_all_keys()
 
     def test_get_set_firebase_bad(self):
         # smoke test to make sure access to a database at wrong
         # url is reported, but does not crash the system
         with self.get_firebase_provider('test_bad_config.yaml') as fb:
-            response = fb.__getitem__("test/hello")
+            response = fb._get("test/hello")
             self.assertTrue(response is None)
 
             fb.__setitem__("test/hello", "bla")
@@ -109,9 +113,9 @@ class FirebaseProviderTest(unittest.TestCase):
 
             self.assertTrue(experiment.status == 'waiting')
             self.assertTrue(experiment.time_added <= time.time())
-            actual_experiment_dict = fb.__getitem__(
+            actual_experiment_dict = fb._get(
                 fb._get_experiments_keybase() + '/' + experiment_name)
-            for key, value in experiment.__dict__.iteritems():
+            for key, value in six.iteritems(experiment.__dict__):
                 if value:
                     self.assertTrue(actual_experiment_dict[key] == value)
 
@@ -130,9 +134,9 @@ class FirebaseProviderTest(unittest.TestCase):
             self.assertTrue(experiment.time_added <= time.time())
             self.assertTrue(experiment.time_started <= time.time())
 
-            actual_experiment_dict = fb.__getitem__(
+            actual_experiment_dict = fb._get(
                 fb._get_experiments_keybase() + '/' + experiment_name)
-            for key, value in experiment.__dict__.iteritems():
+            for key, value in six.iteritems(experiment.__dict__):
                 if value:
                     self.assertTrue(actual_experiment_dict[key] == value)
 
@@ -153,9 +157,9 @@ class FirebaseProviderTest(unittest.TestCase):
             self.assertTrue(experiment.time_started <= time.time())
             self.assertTrue(experiment.time_finished <= time.time())
 
-            actual_experiment_dict = fb.__getitem__(
+            actual_experiment_dict = fb._get(
                 fb._get_experiments_keybase() + '/' + experiment_name)
-            for key, value in experiment.__dict__.iteritems():
+            for key, value in six.iteritems(experiment.__dict__):
                 if value:
                     self.assertTrue(actual_experiment_dict[key] == value)
 
@@ -205,7 +209,7 @@ def get_test_experiment():
     filename = 'test.py'
     args = ['a', 'b', 'c']
     experiment_name = 'test_experiment_' + str(uuid.uuid4())
-    experiment = model.create_experiment(filename, args, experiment_name)
+    experiment = create_experiment(filename, args, experiment_name)
     return experiment, experiment_name, filename, args
 
 
@@ -213,7 +217,7 @@ class ModelTest(unittest.TestCase):
     def test_create_experiment(self):
         _, experiment_name, filename, args = get_test_experiment()
         experiment_project = 'create_experiment_project'
-        experiment = model.create_experiment(
+        experiment = create_experiment(
             filename, args, experiment_name, experiment_project)
         packages = [
             p._key +

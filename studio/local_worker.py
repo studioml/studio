@@ -2,19 +2,20 @@ import os
 import sys
 import subprocess
 import argparse
-import yaml
 import logging
 import time
 import json
 import psutil
 import time
+import six
 
 from apscheduler.schedulers.background import BackgroundScheduler
 
-import fs_tracker
-import model
-from local_queue import LocalQueue
-from gpu_util import get_available_gpus, get_gpu_mapping
+from . import fs_tracker
+from . import model
+from .local_queue import LocalQueue
+from .gpu_util import get_available_gpus, get_gpu_mapping
+from .experiment import Experiment
 
 logging.basicConfig()
 
@@ -35,9 +36,9 @@ class LocalExecutor(object):
         self.logger.debug(self.config)
 
     def run(self, experiment):
-        if isinstance(experiment, basestring):
+        if isinstance(experiment, six.string_types):
             experiment = self.db.get_experiment(experiment)
-        elif not isinstance(experiment, model.Experiment):
+        elif not isinstance(experiment, Experiment):
             raise ValueError("Unknown type of experiment: " +
                              str(type(experiment)))
 
@@ -50,7 +51,7 @@ class LocalExecutor(object):
             """
             env = dict(os.environ)
             if 'env' in self.config.keys():
-                for k, v in self.config['env'].iteritems():
+                for k, v in six.iteritems(self.config['env']):
                     if v is not None:
                         env[str(k)] = str(v)
 
@@ -205,6 +206,7 @@ def worker_loop(queue, parsed_args,
                      format(experiment_key, config))
 
         executor = LocalExecutor(parsed_args)
+
         with model.get_db_provider(config) as db:
             experiment = db.get_experiment(experiment_key)
 
@@ -221,15 +223,16 @@ def worker_loop(queue, parsed_args,
                     if setup_pyenv:
                         logger.info(
                             'Setting up python packages for experiment')
-                        pipp = subprocess.Popen(
-                            ['pip', 'install'] + experiment.pythonenv,
-                            stdout=subprocess.PIPE,
-                            stderr=subprocess.STDOUT)
+                        for pkg in experiment.pythonenv:
+                            pipp = subprocess.Popen(
+                                ['pip', 'install', pkg],
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.STDOUT)
 
-                        pipout, _ = pipp.communicate()
-                        logger.info("pip output: \n" + pipout)
+                            pipout, _ = pipp.communicate()
+                            logger.info("pip output: \n" + pipout)
 
-                    for tag, art in experiment.artifacts.iteritems():
+                    for tag, art in six.iteritems(experiment.artifacts):
                         if fetch_artifacts or 'local' not in art.keys():
                             logger.info('Fetching artifact ' + tag)
                             if tag == 'workspace':

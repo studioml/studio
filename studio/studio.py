@@ -1,7 +1,7 @@
 import time
 import sys
 from flask import Flask, render_template, request, redirect
-import model
+from . import model
 import argparse
 import yaml
 import logging
@@ -9,10 +9,12 @@ import json
 import socket
 import subprocess
 import traceback
-from urlparse import urlparse
+import six
 
 import google.oauth2.id_token
 import google.auth.transport.requests
+
+from .experiment import experiment_from_dict
 
 logging.basicConfig()
 
@@ -23,6 +25,8 @@ DB_PROVIDER_EXPIRATION = 1800
 
 _db_provider_timestamp = None
 _db_provider = None
+_config = None
+
 _tensorboard_dirs = {}
 _grequest = google.auth.transport.requests.Request()
 _save_auth_cookie = False
@@ -111,7 +115,7 @@ def tensorboard(logdir):
         _tensorboard_dirs[logdir] = port
 
     redirect_url = 'http://{}:{}'.format(
-        urlparse(request.url).hostname,
+        six.moves.urllib.parse(request.url).hostname,
         port)
 
     logger.debug('Redirecting to ' + redirect_url)
@@ -126,7 +130,7 @@ def get_experiment():
     try:
         experiment = get_db().get_experiment(key).__dict__
         artifacts = get_db().get_artifacts(key)
-        for art, url in artifacts.iteritems():
+        for art, url in six.iteritems(artifacts):
             experiment['artifacts'][art]['url'] = url
 
         status = 'ok'
@@ -161,7 +165,7 @@ def get_user_experiments():
     status = "ok"
     retval = json.dumps({
         "status": status,
-        "experiments": [e.__dict__ for e in experiments]
+        "experiments": experiments
     })
     toc = time.time()
     getlogger().info('Processed get_user_experiments request in {} s'
@@ -186,7 +190,7 @@ def get_all_experiments():
     status = "ok"
     retval = json.dumps({
         "status": status,
-        "experiments": [e.__dict__ for e in experiments]
+        "experiments": experiments
     })
     toc = time.time()
     getlogger().info('Processed get_user_experiments request in {} s'
@@ -255,7 +259,7 @@ def get_project_experiments():
     status = "ok"
     retval = json.dumps({
         "status": status,
-        "experiments": [e.__dict__ for e in experiments]
+        "experiments": experiments
     })
     toc = time.time()
     getlogger().info('Processed get_project_experiments request in {} s'
@@ -276,7 +280,7 @@ def delete_experiment():
         else:
             raise ValueError('Unauthorized')
 
-    except BaseException as e:
+    except BaseException:
         status = traceback.format_exc()
 
     toc = time.time()
@@ -363,9 +367,9 @@ def add_experiment():
 
     artifacts = {}
     try:
-        experiment = model.experiment_from_dict(request.json['experiment'])
+        experiment = experiment_from_dict(request.json['experiment'])
         if get_db().can_write_experiment(experiment.key, userid):
-            for tag, art in experiment.artifacts.iteritems():
+            for tag, art in six.iteritems(experiment.artifacts):
                 art.pop('local', None)
 
             get_db().add_experiment(experiment, userid)
@@ -393,11 +397,14 @@ def checkpoint_experiment():
     artifacts = {}
     try:
         key = request.json['key']
-        experiment = get_db().get_experiment(key)
-        get_db().checkpoint_experiment(experiment)
+        if get_db().can_write_experiment(key, userid):
+            experiment = get_db().get_experiment(key)
+            get_db().checkpoint_experiment(experiment)
 
-        artifacts = _process_artifacts(experiment)
-        status = 'ok'
+            artifacts = _process_artifacts(experiment)
+            status = 'ok'
+        else:
+            raise ValueError('Unauthorized')
 
     except BaseException:
         status = traceback.format_exc()
@@ -411,7 +418,7 @@ def checkpoint_experiment():
 
 def _process_artifacts(experiment):
     artifacts = {}
-    for tag, art in experiment.artifacts.iteritems():
+    for tag, art in six.iteritems(experiment.artifacts):
         if 'key' in art.keys():
             put_url, timestamp = get_db().store.get_artifact_url(
                 art, method='PUT', get_timestamp=True)
@@ -449,13 +456,14 @@ def get_and_verify_user(request):
 
 
 def get_db():
+    global _config
     global _db_provider
     global _db_provider_timestamp
 
     if not _db_provider or \
        not _db_provider_timestamp or \
             time.time() - _db_provider_timestamp > DB_PROVIDER_EXPIRATION:
-        _db_provider = model.get_db_provider(blocking_auth=False)
+        _db_provider = model.get_db_provider(_config, blocking_auth=False)
         _db_provider_timestamp = time.time()
 
     return _db_provider
@@ -529,9 +537,10 @@ def main(args=sys.argv[1:]):
 
 #    if args.guest:
 #        config['database']['guest'] = True
-
+    global _config
     global _db_provider
-    _db_provider = model.get_db_provider(config, blocking_auth=False)
+    _config = config
+    _db_provider = model.get_db_provider(_config, blocking_auth=False)
 
     getlogger().setLevel(model.parse_verbosity(config.get('verbose')))
 

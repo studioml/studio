@@ -322,10 +322,13 @@ class Database:
             self.path = new_path
         return self
 
-    def build_request_url(self, token):
+    def build_request_url(self, token, shallow=False):
         parameters = {}
         if token:
             parameters['auth'] = token
+        if shallow:
+            parameters['shallow'] = 'true'
+
         for param in list(self.build_query):
             if isinstance(self.build_query[param], str):
                 parameters[param] = quote('"' + self.build_query[param] + '"')
@@ -348,10 +351,10 @@ class Database:
             headers['Authorization'] = 'Bearer ' + access_token
         return headers
 
-    def get(self, token=None, json_kwargs={}):
+    def get(self, token=None, json_kwargs={}, shallow=False):
         build_query = self.build_query
         query_key = self.path.split("/")[-1]
-        request_ref = self.build_request_url(token)
+        request_ref = self.build_request_url(token, shallow=shallow)
         # headers
         headers = self.build_headers(token)
         # do request
@@ -533,10 +536,10 @@ class Storage:
             return request_object.json()
         elif self.credentials:
             blob = self.bucket.blob(path)
-            if isinstance(file, str):
-                return blob.upload_from_filename(filename=file)
+            if isinstance(file_object, str):
+                return blob.upload_from_filename(filename=file_object)
             else:
-                return blob.upload_from_file(file_obj=file)
+                return blob.upload_from_file(file_obj=file_object)
         else:
             request_object = self.requests.post(request_ref, data=file_object)
             raise_detailed_error(request_object)

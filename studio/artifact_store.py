@@ -1,6 +1,6 @@
-from firebase_artifact_store import FirebaseArtifactStore
-from gcloud_artifact_store import GCloudArtifactStore
-from s3_artifact_store import S3ArtifactStore
+from .firebase_artifact_store import FirebaseArtifactStore
+from .gcloud_artifact_store import GCloudArtifactStore
+from .s3_artifact_store import S3ArtifactStore
 
 
 def get_artifact_store(config, blocking_auth=True, verbose=10):
