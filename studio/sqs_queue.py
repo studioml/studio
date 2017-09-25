@@ -6,7 +6,7 @@ try:
 except BaseException:
     boto3 = None
 
-from model import parse_verbosity
+from .model import parse_verbosity
 
 logging.basicConfig()
 

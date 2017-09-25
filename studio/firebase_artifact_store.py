@@ -4,9 +4,9 @@ import calendar
 import certifi
 import json
 
-import pyrebase
-from auth import FirebaseAuth
-from tartifact_store import TartifactStore
+from . import pyrebase
+from .auth import FirebaseAuth
+from .tartifact_store import TartifactStore
 
 logging.basicConfig()
 
@@ -111,7 +111,7 @@ class FirebaseArtifactStore(TartifactStore):
 
             self.logger.debug("Done")
         except Exception as err:
-            self.logger.warn(
+            self.logger.warning(
                 ("Deleting file {} from storage " +
                  "raised an exception: {}") .format(key, err))
 
@@ -167,7 +167,7 @@ class FirebaseArtifactStore(TartifactStore):
                                   .format(response.status_code))
                 return (None, None)
 
-            return (json.loads(response.content), url)
+            return (json.loads(response.content.decode()), url)
 
         except Exception as err:
             self.logger.warn(
@@ -182,8 +182,8 @@ class FirebaseArtifactStore(TartifactStore):
     def get_bucket(self):
         return self.app.storage_bucket
 
-    def __exit__(self, *args):
-        self.app.requests.close()
-
     def __enter__(self):
         return self
+
+    def __exit__(self, *args):
+        self.app.requests.close()

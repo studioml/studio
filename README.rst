@@ -24,6 +24,8 @@ some extra features are available for Keras and TensorFlow.
 * Perform hyperparameter search
 * Create customizable Python environments for remote workers.
 
+NOTE: ``studio`` package is compatible with Python 2 and 3!
+
 Example usage
 -------------
 

@@ -1,7 +1,5 @@
 import unittest
 import numpy as np
-import uuid
-from timeout_decorator import timeout
 import logging
 
 from studio.hyperparameter import HyperparameterParser, Hyperparameter
@@ -43,8 +41,9 @@ class HyperparamTest(unittest.TestCase):
             {'a': 1, 'b': 4}, {'a': 2, 'b': 4}, {'a': 3, 'b': 4},
             {'a': 1, 'b': 5}, {'a': 2, 'b': 5}, {'a': 3, 'b': 5}]
 
-        self.assertTrue(sorted(h.convert_to_tuples(hyperparams)) ==
-                        sorted(expected_tuples))
+        self.assertEquals(
+            sorted(h.convert_to_tuples(hyperparams), key=lambda x: str(x)),
+            sorted(expected_tuples, key=lambda x: str(x)))
 
 
 if __name__ == '__main__':

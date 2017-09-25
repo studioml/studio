@@ -10,7 +10,7 @@ try:
 except BaseException:
     BackgroundScheduler = None
 
-from util import rand_string
+from .util import rand_string
 
 TOKEN_DIR = os.path.expanduser('~/.studioml/keys')
 HOUR = 3600
@@ -39,7 +39,7 @@ class FirebaseAuth(object):
                 self.email = email
                 self.password = password
             else:
-                self.email = raw_input(
+                self.email = input(
                     'Firebase token is not found or expired! ' +
                     'You need to re-login. (Or re-run with ' +
                     'studio/studio-runner ' +
