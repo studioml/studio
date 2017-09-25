@@ -1,7 +1,4 @@
 import unittest
-import subprocess
-import time
-from random import randint
 import os
 
 from studio import model

@@ -536,10 +536,10 @@ class Storage:
             return request_object.json()
         elif self.credentials:
             blob = self.bucket.blob(path)
-            if isinstance(file, str):
-                return blob.upload_from_filename(filename=file)
+            if isinstance(file_object, str):
+                return blob.upload_from_filename(filename=file_object)
             else:
-                return blob.upload_from_file(file_obj=file)
+                return blob.upload_from_file(file_obj=file_object)
         else:
             request_object = self.requests.post(request_ref, data=file_object)
             raise_detailed_error(request_object)

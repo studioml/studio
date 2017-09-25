@@ -9,9 +9,10 @@ import os
 import base64
 import requests
 import json
+import six
 
-from gpu_util import memstr2int
-from cloud_worker_util import insert_user_startup_script
+from .gpu_util import memstr2int
+from .cloud_worker_util import insert_user_startup_script
 
 logging.basicConfig()
 
@@ -373,7 +374,7 @@ class EC2WorkerManager(object):
 
         for instance_type in instances:
             product_sku = [
-                k for k, v in offer_dict['products'].iteritems()
+                k for k, v in six.iteritems(offer_dict['products'])
                 if v['attributes'].get('instanceType') == instance_type and
                 v['attributes']['tenancy'] == 'Shared' and
                 v['attributes']['operatingSystem'] == 'Linux' and
@@ -385,8 +386,10 @@ class EC2WorkerManager(object):
                 .format(instance_type)
 
             prices[instance_type] = float(
-                offer_dict['terms']['OnDemand'][product_sku[0]]
-                .iteritems().next()[1]['priceDimensions']
-                .iteritems().next()[1]['pricePerUnit']['USD'])
+                six.iteritems(
+                    six.iteritems(
+                        offer_dict['terms']['OnDemand'][product_sku[0]]
+                    ).next()[1]['priceDimensions']
+                ).next()[1]['pricePerUnit']['USD'])
 
         return prices

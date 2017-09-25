@@ -1,7 +1,6 @@
 import unittest
 import numpy as np
-import urllib
-import unittest
+import six
 
 from PIL import Image
 from io import BytesIO
@@ -17,8 +16,11 @@ except BaseException:
     keras = None
 
 from timeout_decorator import timeout
-from Queue import Queue, Empty
 
+try:
+    from Queue import Queue, Empty
+except ImportError:
+    from queue import Queue, Empty
 from studio import model_util
 
 
@@ -26,7 +28,7 @@ class ModelUtilTest(unittest.TestCase):
     _multiprocess_can_split = True
 
     def test_q2q_batch(self):
-        data = range(10)
+        data = six.moves.range(10)
         q_in = Queue()
         q_out = Queue()
 
@@ -51,7 +53,7 @@ class ModelUtilTest(unittest.TestCase):
         self.assertEquals(expected_out, actual_out)
 
     def test_q2q_batch_filter(self):
-        data = range(10)
+        data = six.moves.range(10)
         q_in = Queue()
         q_out = Queue()
 
@@ -82,7 +84,7 @@ class ModelUtilTest(unittest.TestCase):
 
         model_util._gen2q(data, q)
 
-        expected_out = range(10)
+        expected_out = list(range(10))
         actual_out = []
         while True:
             try:
@@ -134,7 +136,7 @@ class ModelPipeTest(unittest.TestCase):
         input_dict = {x: x for x in range(10)}
         output_dict = p(input_dict)
 
-        expected_dict = {k: v * v for k, v in input_dict.iteritems()}
+        expected_dict = {k: v * v for k, v in six.iteritems(input_dict)}
 
         self.assertEquals(expected_dict, output_dict)
 
@@ -147,7 +149,7 @@ class ModelPipeTest(unittest.TestCase):
         input_dict = {x: x for x in range(10000)}
         output_dict = p(input_dict)
 
-        expected_dict = {k: v * v for k, v in input_dict.iteritems()}
+        expected_dict = {k: v * v for k, v in six.iteritems(input_dict)}
 
         self.assertEquals(expected_dict, output_dict)
 
@@ -156,7 +158,7 @@ class ModelPipeTest(unittest.TestCase):
         p = model_util.ModelPipe()
         p.add(lambda x: x * x, num_workers=32)
 
-        input_list = range(10)
+        input_list = list(range(10))
         output_list = p.apply_ordered(input_list)
 
         expected_list = [x * x for x in input_list]
@@ -168,7 +170,7 @@ class ModelPipeTest(unittest.TestCase):
         p = model_util.ModelPipe()
         p.add(lambda b: [x * x for x in b], batch_size=4)
 
-        input_list = range(10)
+        input_list = list(range(10))
         output_list = p.apply_ordered(input_list)
 
         expected_list = [x * x for x in input_list]
@@ -180,7 +182,7 @@ class ModelPipeTest(unittest.TestCase):
         p = model_util.ModelPipe()
         p.add(lambda x: 1.0 / x, num_workers=4)
 
-        input_list = range(-10, 10)
+        input_list = list(range(-10, 10))
         output_list = p.apply_ordered(input_list)
 
         expected_list = [1.0 / x if x != 0 else None for x in input_list]
@@ -249,7 +251,7 @@ class ModelPipeTest(unittest.TestCase):
         pipe = model_util.ModelPipe()
 
         pipe.add(
-            lambda url: urllib.urlopen(url).read(),
+            lambda url: six.moves.urllib.request.urlopen(url).read(),
             num_workers=2,
             timeout=10)
         pipe.add(lambda img: Image.open(BytesIO(img)))
@@ -264,7 +266,7 @@ class ModelPipeTest(unittest.TestCase):
 
         expected_output = {url5: 5, url2: 2}
         output = pipe({url5: url5, url2: url2, urlb: urlb})
-        output = {k: v for k, v in output.iteritems() if v}
+        output = {k: v for k, v in six.iteritems(output) if v}
 
         self.assertEquals(output, expected_output)
 

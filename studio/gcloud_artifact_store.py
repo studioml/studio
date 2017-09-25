@@ -3,11 +3,7 @@ import time
 import calendar
 
 from google.cloud import storage
-from tartifact_store import TartifactStore
-
-from auth import FirebaseAuth
-import pyrebase
-import json
+from .tartifact_store import TartifactStore
 
 logging.basicConfig()
 
@@ -30,7 +26,7 @@ class GCloudArtifactStore(TartifactStore):
     def getclient(self):
         if 'credentials' in self.config.keys():
             return storage.Client \
-                .from_service_account_json(config['serviceAccount'])
+                .from_service_account_json(self.config['serviceAccount'])
         else:
             return storage.Client()
 
@@ -46,8 +42,7 @@ class GCloudArtifactStore(TartifactStore):
             blob.delete()
 
     def _get_file_url(self, key, method='GET'):
-
-        expiration = long(time.time() + 100000)
+        expiration = int(time.time() + 100000)
         return self.bucket.blob(key).generate_signed_url(
             expiration,
             method=method)

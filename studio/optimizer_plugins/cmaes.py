@@ -6,12 +6,11 @@ import pickle
 import os
 import pprint
 import time
-import traceback
-import sys
+import six
 
 import numpy as np
 
-from opt_util import scale_var, unscale_var, EPSILON
+from opt_util import EPSILON
 
 
 class Optimizer(object):
@@ -22,7 +21,7 @@ class Optimizer(object):
         self.logger = logger
 
         self.opts = cma.CMAOptions()
-        for param, value in self.config['cmaes_config'].iteritems():
+        for param, value in six.iteritems(self.config['cmaes_config']):
             if param in self.opts and value is not None:
                 self.opts[param] = value
         self.dim = 0
@@ -68,7 +67,8 @@ class Optimizer(object):
                         h.max_range - h.min_range
 
         # If min range and max range are exactly the same,
-        # use a sigma calculated from mean of init
+        # use a sigma calculated
+        # from mean of init
         # if max([h.max_range for h in hyperparameters]) - \
         #     min([h.min_range for h in hyperparameters]) < EPSILON:
         #     self.logger.warn("min range == max range, overwriting sigma0")
@@ -150,7 +150,7 @@ class Optimizer(object):
         self.mean_fitnesses.append(float(np.mean(fitnesses)))
         self.best = (hyperparameter_pop[np.argmax(fitnesses)],
                      self.__pack_solution(
-                     hyperparameter_pop[np.argmax(fitnesses)]))
+            hyperparameter_pop[np.argmax(fitnesses)]))
 
         solutions = [self.__pack_solution(hyperparameters) for hyperparameters
                      in hyperparameter_pop]
@@ -159,12 +159,12 @@ class Optimizer(object):
         self.__save_checkpoint()
 
     def disp(self):
-        print "***************************************************************"
-        print "CMAES wall time: %s gen: %s pop size: %s best fitness: " \
-            "%s mean fitness: %s" % (int(time.time() - self.start_time),
-                                     self.gen, self.es.popsize,
-                                     self.best_fitness, self.mean_fitness)
-        print "***************************************************************"
+        print("**************************************************************")
+        print("CMAES wall time: %s gen: %s pop size: %s best fitness: "
+              "%s mean fitness: %s" % (int(time.time() - self.start_time),
+                                       self.gen, self.es.popsize,
+                                       self.best_fitness, self.mean_fitness))
+        print("**************************************************************")
 
     def __load_checkpoint(self):
         if self.config['load_checkpoint_file'] is None:
