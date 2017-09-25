@@ -14,5 +14,6 @@ storage:
     bucket: "studio-ed756.appspot.com"
 
 saveWorkspaceFrequencyMinutes: 1 #how often is workspace being saved (minutes)
+saveMetricsIntervalMinutes: 1
 
 
