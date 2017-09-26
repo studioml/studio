@@ -1,6 +1,6 @@
 import os
 import shutil
-from setuptools import setup
+from setuptools import setup, find_packages
 from subprocess import call
 from setuptools.command.install import install
 from setuptools.command.develop import develop
@@ -67,7 +67,7 @@ setup(
     name='studioml',
     version=VERSION,
     description='TensorFlow model and data management tool',
-    packages=['studio'],
+    packages=find_packages(),
     long_description=read('README.rst'),
     url='https://github.com/studioml/studio',
     license='Apache License, Version 2.0',
