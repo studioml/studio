@@ -116,7 +116,8 @@ def allocate_resources(experiment, config=None, verbose=10):
         # matching tensorflow version
 
         tensorflow_pkg = [pkg for pkg in experiment.pythonenv
-                          if pkg.startswith('tensorflow==')][0]
+                          if pkg.startswith('tensorflow==') or
+                          pkg.startswith('tensorflow-gpu==')][0]
 
         experiment.pythonenv = pythonenv_nogpu + \
             [tensorflow_pkg.replace('tensorflow==', 'tensorflow-gpu==')]
