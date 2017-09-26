@@ -5,6 +5,7 @@ import glob
 import time
 import logging
 
+
 class LocalQueue:
     def __init__(self, path=None, verbose=10):
         if path is None:
