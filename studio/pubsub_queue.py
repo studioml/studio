@@ -41,7 +41,8 @@ class PubsubQueue(object):
             self.subclient.get_subscription(self.sub_name)
         except BaseException as e:
             self.logger.warn(e)
-            self.subclient.create_subscription(self.sub_name, self.topic_name,ack_deadline_seconds=20)
+            self.subclient.create_subscription(self.sub_name, self.topic_name,
+                                               ack_deadline_seconds=20)
 
         self.logger.info('subscription {} created'.format(sub_name))
 
