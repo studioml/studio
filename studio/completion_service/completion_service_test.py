@@ -18,7 +18,7 @@ class CompletionServiceTest(unittest.TestCase):
         n_experiments = 2
         results = {}
         expected_results = {}
-        with CompletionService(experimentId, config=config_path) as cs:
+        with CompletionService(experimentId, config=config_path, cloud_timeout=10) as cs:
             for i in range(0, n_experiments):
                 key = cs.submitTask(
                     os.path.join(
