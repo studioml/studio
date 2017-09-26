@@ -9,6 +9,7 @@ env:
   fast_finish: true
 
 install:
+  - pip install -r requirements.txt
   - pip install -e .
   - pip install pep8
 
