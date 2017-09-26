@@ -5,28 +5,7 @@ from subprocess import call
 from setuptools.command.install import install
 from setuptools.command.develop import develop
 import setuptools_scm_git_archive
-import pickle
 import sys
-
-
-def read(fname):
-    try:
-        with open(os.path.join(os.path.dirname(__file__), fname)) as f:
-            data = f.read()
-            return data
-    except BaseException:
-        return None
-
-
-def local_scheme(version):
-    if version.distance == 0:
-        return ''
-    else:
-        return '.post' + str(version.distance)
-
-
-def version_scheme(version):
-    return str(version.tag)
 
 VERSION = ""
 
@@ -109,9 +88,6 @@ setup(
             'studio/scripts/ec2_worker_startup.sh'],
     test_suite='nose.collector',
     tests_require=test_required,
-    use_scm_version={
-        "version_scheme": version_scheme,
-        "local_scheme": local_scheme},
     setup_requires=['setuptools_scm', 'setuptools_scm_git_archive'],
     cmdclass={'develop': MyDevelop, 'install': MyInstall},
     classifiers=[
