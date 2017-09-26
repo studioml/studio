@@ -18,6 +18,7 @@ from .firebase_provider import FirebaseProvider
 
 logging.basicConfig()
 
+
 def get_config(config_file=None):
 
     config_paths = []

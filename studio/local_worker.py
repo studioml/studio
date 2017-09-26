@@ -57,7 +57,7 @@ class LocalExecutor(object):
 
             fs_tracker.setup_experiment(env, experiment, clean=True)
             log_path = fs_tracker.get_artifact_cache('output', experiment.key)
-            
+
             # log_path = os.path.join(model_dir, self.config['log']['name'])
 
             self.logger.debug('Child process environment:')
@@ -83,7 +83,8 @@ class LocalExecutor(object):
                     'interval',
                     minutes=self.config['saveWorkspaceFrequencyMinutes'])
 
-                metrics_path = fs_tracker.get_artifact_cache('_metrics', experiment.key)
+                metrics_path = fs_tracker.get_artifact_cache(
+                    '_metrics', experiment.key)
 
                 sched.add_job(
                     lambda: save_metrics(metrics_path),
@@ -288,12 +289,8 @@ def save_metrics(path):
     timestamp = time.time()
     with open(path, 'a') as f:
         f.write('time: {} CPU: {} mem: {}'
-            .format(timestamp, cpu_load, cpu_mem))
+                .format(timestamp, cpu_load, cpu_mem))
 
-    
-    
-    
-    
 
 if __name__ == "__main__":
     main()
