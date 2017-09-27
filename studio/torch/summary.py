@@ -1,6 +1,7 @@
 """Tools to simplify PyTorch reporting and integrate with TensorBoard."""
 
 import collections
+import six
 import time
 
 try:
@@ -48,7 +49,7 @@ class Reporter(object):
         self._metrics = collections.defaultdict(collections.deque)
 
     def record(self, step, **kwargs):
-        for key, value in kwargs.iteritems():
+        for key, value in six.iteritems(kwargs):
             self.add(step, key, value)
 
     def add(self, step, key, value):
@@ -65,7 +66,7 @@ class Reporter(object):
             def smooth(values):
                 return (sum(values) / len(values)) if values else 0.0
             metrics = ','.join(["%s = %.5f" % (k, smooth(v))
-                                for k, v in self._metrics.iteritems()])
+                                for k, v in six.iteritems(self._metrics)])
             if self._last_reported_time:
                 elapsed_secs = time.time() - self._last_reported_time
                 metrics += " (%.3f sec)" % elapsed_secs
@@ -75,6 +76,7 @@ class Reporter(object):
                     self._writer.add(
                         self._last_step, 'step/sec',
                         elapsed_steps / elapsed_secs)
-            print("Step %d: %s" % (self._last_step, metrics))
+
+            print("Step {}: {}".format(self._last_step, metrics))
             self._last_reported_time = time.time()
             self._last_reported_step = self._last_step

@@ -6,9 +6,13 @@ import os
 import time
 import pip
 import shutil
+import six
 
 from studio import model
+from studio.firebase_provider import FirebaseProvider
+from studio.postgres_provider import PostgresProvider
 from studio.auth import remove_all_keys
+from studio.experiment import create_experiment
 
 
 def get_methods(cls):
@@ -20,8 +24,8 @@ class ProvidersTest(unittest.TestCase):
 
     def test_providers_compatible(self):
         # Check that all available providers are compatible.
-        firebase_methods = get_methods(model.FirebaseProvider)
-        postgres_methods = get_methods(model.PostgresProvider)
+        firebase_methods = get_methods(FirebaseProvider)
+        postgres_methods = get_methods(PostgresProvider)
         self.assertEqual(firebase_methods, postgres_methods)
 
 
@@ -111,7 +115,7 @@ class FirebaseProviderTest(unittest.TestCase):
             self.assertTrue(experiment.time_added <= time.time())
             actual_experiment_dict = fb._get(
                 fb._get_experiments_keybase() + '/' + experiment_name)
-            for key, value in experiment.__dict__.iteritems():
+            for key, value in six.iteritems(experiment.__dict__):
                 if value:
                     self.assertTrue(actual_experiment_dict[key] == value)
 
@@ -132,7 +136,7 @@ class FirebaseProviderTest(unittest.TestCase):
 
             actual_experiment_dict = fb._get(
                 fb._get_experiments_keybase() + '/' + experiment_name)
-            for key, value in experiment.__dict__.iteritems():
+            for key, value in six.iteritems(experiment.__dict__):
                 if value:
                     self.assertTrue(actual_experiment_dict[key] == value)
 
@@ -155,7 +159,7 @@ class FirebaseProviderTest(unittest.TestCase):
 
             actual_experiment_dict = fb._get(
                 fb._get_experiments_keybase() + '/' + experiment_name)
-            for key, value in experiment.__dict__.iteritems():
+            for key, value in six.iteritems(experiment.__dict__):
                 if value:
                     self.assertTrue(actual_experiment_dict[key] == value)
 
@@ -205,7 +209,7 @@ def get_test_experiment():
     filename = 'test.py'
     args = ['a', 'b', 'c']
     experiment_name = 'test_experiment_' + str(uuid.uuid4())
-    experiment = model.create_experiment(filename, args, experiment_name)
+    experiment = create_experiment(filename, args, experiment_name)
     return experiment, experiment_name, filename, args
 
 
@@ -213,7 +217,7 @@ class ModelTest(unittest.TestCase):
     def test_create_experiment(self):
         _, experiment_name, filename, args = get_test_experiment()
         experiment_project = 'create_experiment_project'
-        experiment = model.create_experiment(
+        experiment = create_experiment(
             filename, args, experiment_name, experiment_project)
         packages = [
             p._key +

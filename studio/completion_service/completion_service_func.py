@@ -1,10 +1,7 @@
-import importlib
-from studio import fs_tracker
-
 
 def clientFunction(args, files):
-    print 'client function call with args ' + \
-        str(args) + ' and files ' + str(files)
+    print('client function call with args ' +
+          str(args) + ' and files ' + str(files))
     return args
 
 

@@ -8,24 +8,25 @@ import uuid
 import importlib
 import time
 import multiprocessing
+import six
 import traceback
 from contextlib import closing
-
 import numpy as np
 
-from local_queue import LocalQueue
-from pubsub_queue import PubsubQueue
-from sqs_queue import SQSQueue
-from gcloud_worker import GCloudWorkerManager
-from ec2cloud_worker import EC2WorkerManager
-from hyperparameter import HyperparameterParser
-from util import rand_string, Progbar, rsync_cp
+from .local_queue import LocalQueue
+from .pubsub_queue import PubsubQueue
+from .sqs_queue import SQSQueue
+from .gcloud_worker import GCloudWorkerManager
+from .ec2cloud_worker import EC2WorkerManager
+from .hyperparameter import HyperparameterParser
+from .util import rand_string, Progbar, rsync_cp
+from .experiment import create_experiment
 
-import model
-import auth
-import git_util
-import local_worker
-import fs_tracker
+from . import model
+from . import auth
+from . import git_util
+from . import local_worker
+from . import fs_tracker
 
 
 logging.basicConfig()
@@ -183,7 +184,8 @@ def main(args=sys.argv):
 
     parser.add_argument(
         '--user-startup-script',
-        help='Path of script to run before running the remote worker',
+        help='Path of script to run immediately ' +
+             'before running the remote worker',
         default=None)
 
     parser.add_argument(
@@ -337,7 +339,7 @@ def main(args=sys.argv):
                 except BaseException:
                     logger.warn('Optimizer has no disp() method')
     else:
-        experiments = [model.create_experiment(
+        experiments = [create_experiment(
             filename=exec_filename,
             args=other_args,
             experiment_name=runner_args.experiment,
@@ -539,10 +541,10 @@ def get_experiment_fitnesses(experiments, optimizer, config, logger):
         logger.info("Waiting for fitnesses from %s experiments" %
                     len(experiments))
 
-        bad_line_dicts = [dict() for x in xrange(len(experiments))]
-        has_result = [False for i in xrange(len(experiments))]
-        fitnesses = [0.0 for i in xrange(len(experiments))]
-        behaviors = [None for i in xrange(len(experiments))]
+        bad_line_dicts = [dict() for x in range(len(experiments))]
+        has_result = [False for i in range(len(experiments))]
+        fitnesses = [0.0 for i in range(len(experiments))]
+        behaviors = [None for i in range(len(experiments))]
         term_criterion = config['optimizer']['termination_criterion']
         skip_gen_thres = term_criterion['skip_gen_thres']
         skip_gen_timeout = term_criterion['skip_gen_timeout']
@@ -747,7 +749,7 @@ def add_hyperparam_experiments(
             rsync_cp(workspace_orig, workspace_new, ignore_arg, logger)
             # shutil.copytree(workspace_orig, workspace_new)
 
-            for param_name, param_value in hyperparam_tuple.iteritems():
+            for param_name, param_value in six.iteritems(hyperparam_tuple):
                 if isinstance(param_value, np.ndarray):
                     array_filepath = '/tmp/%s.npy' % rand_string(32)
                     np.save(array_filepath, param_value)
@@ -756,7 +758,7 @@ def add_hyperparam_experiments(
                                                      'mutable': False}
                 else:
                     with open(os.path.join(workspace_new, exec_filename),
-                              'rb') as f:
+                              'r') as f:
                         script_text = f.read()
 
                     script_text = re.sub(
@@ -767,10 +769,10 @@ def add_hyperparam_experiments(
                         script_text)
 
                     with open(os.path.join(workspace_new, exec_filename),
-                              'wb') as f:
+                              'w') as f:
                         f.write(script_text)
 
-            experiments.append(model.create_experiment(
+            experiments.append(create_experiment(
                 filename=exec_filename,
                 args=other_args,
                 experiment_name=experiment_name,
@@ -792,7 +794,7 @@ def add_hyperparam_experiments(
 
 def add_packages(list1, list2):
     pkg_dict = {re.sub('==.+', '', pkg): pkg for pkg in list1 + list2}
-    return [pkg for _, pkg in pkg_dict.iteritems()]
+    return [pkg for _, pkg in six.iteritems(pkg_dict)]
 
 
 if __name__ == "__main__":

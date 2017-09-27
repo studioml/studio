@@ -1,10 +1,11 @@
 import requests
 import json
+import six
 
-import model
-import pyrebase
-from auth import FirebaseAuth
-from http_artifact_store import HTTPArtifactStore
+from . import pyrebase
+from .auth import FirebaseAuth
+from .http_artifact_store import HTTPArtifactStore
+from .experiment import experiment_from_dict
 
 import logging
 logging.basicConfig()
@@ -43,7 +44,7 @@ class HTTPProvider(object):
         self._update_artifacts(experiment, artifacts)
 
     def _update_artifacts(self, experiment, artifacts):
-        for tag, art in experiment.artifacts.iteritems():
+        for tag, art in six.iteritems(experiment.artifacts):
             art['key'] = artifacts[tag]['key']
             art['qualified'] = artifacts[tag]['qualified']
             art['bucket'] = artifacts[tag]['bucket']
@@ -54,7 +55,7 @@ class HTTPProvider(object):
                 .put_artifact(art)
 
     def delete_experiment(self, experiment):
-        if isinstance(experiment, basestring):
+        if isinstance(experiment, six.string_types):
             key = experiment
         else:
             key = experiment.key
@@ -67,7 +68,7 @@ class HTTPProvider(object):
         self._raise_detailed_error(request)
 
     def get_experiment(self, experiment, getinfo='True'):
-        if isinstance(experiment, basestring):
+        if isinstance(experiment, six.string_types):
             key = experiment
         else:
             key = experiment.key
@@ -79,11 +80,11 @@ class HTTPProvider(object):
                                 )
 
         self._raise_detailed_error(request)
-        return model.experiment_from_dict(request.json()['experiment'])
+        return experiment_from_dict(request.json()['experiment'])
 
     def start_experiment(self, experiment):
         self.checkpoint_experiment(experiment)
-        if isinstance(experiment, basestring):
+        if isinstance(experiment, six.string_types):
             key = experiment
         else:
             key = experiment.key
@@ -107,7 +108,7 @@ class HTTPProvider(object):
 
     def finish_experiment(self, experiment):
         self.checkpoint_experiment(experiment)
-        if isinstance(experiment, basestring):
+        if isinstance(experiment, six.string_types):
             key = experiment
         else:
             key = experiment.key
@@ -156,7 +157,7 @@ class HTTPProvider(object):
         self._raise_detailed_error(response)
         data = response.json()['experiments']
 
-        experiments = [model.experiment_from_dict(edict)
+        experiments = [experiment_from_dict(edict)
                        for edict in data]
 
         return experiments
@@ -180,7 +181,7 @@ class HTTPProvider(object):
         return users
 
     def checkpoint_experiment(self, experiment):
-        if isinstance(experiment, basestring):
+        if isinstance(experiment, six.string_types):
             key = experiment
             experiment = self.get_experiment(key)
         else:

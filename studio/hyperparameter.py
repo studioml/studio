@@ -1,6 +1,3 @@
-import os
-import sys
-import traceback
 import itertools
 import math
 
@@ -121,7 +118,7 @@ class HyperparameterParser(object):
             proper_field_length = 4 if "a" in flags else 3
             if len(raw_fields) != proper_field_length:
                 correct_format = False
-        elif length(raw_fields) < 2:
+        elif len(raw_fields) < 2:
             correct_format = False
 
         if not correct_format:

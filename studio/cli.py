@@ -65,7 +65,7 @@ def _list(args, cli_args):
             assert len(args) == 1
             users = db.get_users()
             for u in users.keys():
-                print users[u].get('email')
+                print(users[u].get('email'))
             return
         elif args[0] == 'user':
             assert len(args) == 2
@@ -87,7 +87,7 @@ def _list(args, cli_args):
 
         if cli_args.short:
             for e in experiments:
-                print e
+                print(e)
             return
 
         experiments = [db.get_experiment(e) for e in experiments]
@@ -102,7 +102,7 @@ def _list(args, cli_args):
             e.project,
             e.status])
 
-    print AsciiTable(table).table
+    print(AsciiTable(table).table)
 
 
 def _stop(args, cli_args):

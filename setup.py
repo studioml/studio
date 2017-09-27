@@ -1,11 +1,10 @@
 import os
 import shutil
+import sys
 from setuptools import setup
 from subprocess import call
 from setuptools.command.install import install
 from setuptools.command.develop import develop
-import pickle
-
 
 def read(fname):
     try:
@@ -27,6 +26,7 @@ def version_scheme(version):
     return str(version.tag)
 
 
+sys.path.append('studio/')
 # This file contains metadata related to the studioml client and python base
 # server software
 

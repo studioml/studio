@@ -1,13 +1,17 @@
 import logging
 import calendar
-from urlparse import urlparse
+
+try:
+    from urlparse import urlparse
+except ImportError:
+    from urllib.parse import urlparse
 
 try:
     import boto3
-except BaseException:
+except ImportError:
     boto3 = None
 
-from tartifact_store import TartifactStore
+from .tartifact_store import TartifactStore
 logging.basicConfig()
 
 
@@ -65,7 +69,7 @@ class S3ArtifactStore(TartifactStore):
 
         try:
             time_updated = obj.last_modified
-        except BaseException as e:
+        except BaseException:
             return None
 
         if time_updated:
