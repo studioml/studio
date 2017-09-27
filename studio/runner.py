@@ -691,7 +691,7 @@ def parse_external_artifacts(art_list, db):
 
 def parse_hardware(runner_args, config={}):
     resources_needed = {}
-    parse_list = ['gpus', 'cpus', 'ram', 'hdd']
+    parse_list = ['gpus', 'cpus', 'ram', 'hdd', 'gpuMem']
     for key in parse_list:
         from_args = runner_args.__dict__.get(key)
         from_config = config.get(key)
