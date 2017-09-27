@@ -220,6 +220,9 @@ def download_file(url, local_path, logger=None):
     response = requests.get(
         url,
         stream=True)
+    if logger:
+        logger.info(("Trying to download file at url {} to " + 
+                     "local path {}").format(url, local_path))
 
     if response.status_code == 200:
         with open(local_path, 'wb') as f:
