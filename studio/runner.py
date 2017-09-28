@@ -258,6 +258,7 @@ def main(args=sys.argv):
                 experiments,
                 config=config,
                 logger=logger,
+                queue_name=runner_args.queue,
                 cloud=runner_args.cloud)
 
             spin_up_workers(
@@ -291,7 +292,7 @@ def main(args=sys.argv):
                 logger)
 
             workers_started = False
-            queue_name = None
+            queue_name = runner_args.queue
             while not optimizer.stop():
                 hyperparam_pop = optimizer.ask()
                 hyperparam_tuples = h.convert_to_tuples(hyperparam_pop)
@@ -352,7 +353,8 @@ def main(args=sys.argv):
             experiments,
             config=config,
             logger=logger,
-            cloud=runner_args.cloud)
+            cloud=runner_args.cloud,
+            queue_name=runner_args.queue)
 
         spin_up_workers(
             runner_args,
@@ -689,7 +691,7 @@ def parse_external_artifacts(art_list, db):
 
 def parse_hardware(runner_args, config={}):
     resources_needed = {}
-    parse_list = ['gpus', 'cpus', 'ram', 'hdd']
+    parse_list = ['gpus', 'cpus', 'ram', 'hdd', 'gpuMem']
     for key in parse_list:
         from_args = runner_args.__dict__.get(key)
         from_config = config.get(key)
