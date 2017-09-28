@@ -1,9 +1,10 @@
 import os
 import shutil
-from setuptools import setup
+from setuptools import setup, find_packages
 from subprocess import call
 from setuptools.command.install import install
 from setuptools.command.develop import develop
+import setuptools_scm_git_archive
 import sys
 
 VERSION = ""
@@ -66,7 +67,7 @@ setup(
     name='studioml',
     version=VERSION,
     description='TensorFlow model and data management tool',
-    packages=['studio'],
+    packages=find_packages(),
     long_description=read('README.rst'),
     url='https://github.com/studioml/studio',
     license='Apache License, Version 2.0',
@@ -85,8 +86,9 @@ setup(
             'studio/scripts/studio-add-credentials',
             'studio/scripts/gcloud_worker_startup.sh',
             'studio/scripts/ec2_worker_startup.sh'],
-    tests_suite='nose.collector',
+    test_suite='nose.collector',
     tests_require=test_required,
+    setup_requires=['setuptools_scm', 'setuptools_scm_git_archive'],
     cmdclass={'develop': MyDevelop, 'install': MyInstall},
     classifiers=[
         "Development Status :: 3 - Alpha",
