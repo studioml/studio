@@ -85,7 +85,8 @@ def tensorboard_exp(key):
 @app.route('/tensorboard_proj/<key>')
 def tensorboard_proj(key):
     if get_allow_tensorboard():
-        experiments = get_db().get_project_experiments(key)
+        experiments = [get_db().get_experiment(e) for e in 
+                       get_db().get_project_experiments(key)]
 
         logdir = ','.join(
             [e.key + ":" + get_db().store.get_artifact(e.artifacts['tb'])
@@ -115,7 +116,7 @@ def tensorboard(logdir):
         _tensorboard_dirs[logdir] = port
 
     redirect_url = 'http://{}:{}'.format(
-        six.moves.urllib.parse(request.url).hostname,
+        six.moves.urllib.parse.urlparse(request.url).hostname,
         port)
 
     logger.debug('Redirecting to ' + redirect_url)
