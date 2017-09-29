@@ -298,7 +298,7 @@ class NoSQLProvider(object):
         if not experiment_keys:
             experiment_keys = {}
 
-        return experiment_keys
+        return experiment_keys.keys()
 
     def get_artifacts(self, key):
         experiment = self.get_experiment(key, getinfo=False)
