@@ -93,17 +93,18 @@ class FirebaseAuth(object):
                 return
 
             self.user = user
-            self.expired = False
             if time.time() - os.path.getmtime(api_key) > API_KEY_COOLDOWN:
                 counter = 0
                 while counter < MAX_NUM_RETRIES:
                     try:
                         self.refresh_token(user['email'], user['refreshToken'])
+                        break
                     except BaseException:
                         time.sleep(SLEEP_TIME)
                         counter += 1
-                    else:
-                        return
+            else:
+                self.expired = False
+
 
     def sign_in_with_email(self):
         self.user = \

@@ -75,6 +75,9 @@ studio remote worker --queue=$queue_name  --verbose=debug --timeout={timeout}
 # shutdown the instance
 echo "Work done"
 
+hostname=$(hostname)
+aws s3 cp /var/log/cloud-init-output.log "s3://studioml-logs/$queue_name/$hostname.txt"
+
 if [[ -n $(who) ]]; then
     echo "Users are logged in, not shutting down"
     echo "Do not forget to shut the instance down manually"

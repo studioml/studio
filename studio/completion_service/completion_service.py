@@ -133,6 +133,9 @@ class CompletionService:
         self.use_spot = cloud in ['ec2spot', 'gcspot']
 
     def __enter__(self):
+        with model.get_db_provider(self.config):
+            pass
+
         if self.wm:
             self.logger.debug('Spinning up cloud workers')
             if self.use_spot:
