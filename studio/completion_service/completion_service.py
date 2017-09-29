@@ -176,8 +176,8 @@ class CompletionService:
             self.queue.delete()
 
         if self.p:
-            os.kill(self.p.pid, signal.SIGKILL)
-            # self.p.terminate()
+            self.p.kill()
+            # os.kill(self.p.pid, signal.SIGKILL)
 
     def submitTaskWithFiles(self, clientCodeFile, args, files={}):
         old_cwd = os.getcwd()
