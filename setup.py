@@ -4,7 +4,6 @@ from setuptools import setup, find_packages
 from subprocess import call
 from setuptools.command.install import install
 from setuptools.command.develop import develop
-import setuptools_scm_git_archive
 import sys
 
 VERSION = ""
