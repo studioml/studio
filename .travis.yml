@@ -12,7 +12,6 @@ install:
   # The plugin for the setup tools with git and git archives has to be installed manually
   # in order that as the pip install runs it can do the git discovery for tags etc
   #
-  - pip install setuptools_scm setuptools_scm_git_archive
   - pip install -e .
   - pip install pep8
 

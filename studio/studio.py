@@ -85,7 +85,7 @@ def tensorboard_exp(key):
 @app.route('/tensorboard_proj/<key>')
 def tensorboard_proj(key):
     if get_allow_tensorboard():
-        experiments = [get_db().get_experiment(e) for e in 
+        experiments = [get_db().get_experiment(e) for e in
                        get_db().get_project_experiments(key)]
 
         logdir = ','.join(

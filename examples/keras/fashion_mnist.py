@@ -99,6 +99,6 @@ url_pants = 'https://asda.scene7.com/is/image/Asda/5054622127954_A'
 url_boot = 'https://images-na.ssl-images-amazon.com/' + \
            'images/I/714sb6gwMpL._UL1500_.jpg'
 
-#url_broken = 'https://asda.scene7.com/is/image/Asda/5054622127954_B'
-#output = pipe({'pants': url_pants, 'boot': url_boot, 'broken': url_broken})
+url_broken = 'https://asda.scene7.com/is/image/Asda/5054622127954_B'
+output = pipe({'pants': url_pants, 'boot': url_boot, 'broken': url_broken})
 print output
