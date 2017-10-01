@@ -280,7 +280,7 @@ def pip_install_packages(packages, logger=None):
     pipout, _ = pipp.communicate()
     if logger:
         logger.info("pip output: \n" + pipout)
-    return pipp.exitcode()
+    return pipp.returncode
 
 
 def wait_for_messages(queue, timeout, logger=None):
