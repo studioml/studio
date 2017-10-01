@@ -2,7 +2,6 @@ import os
 import subprocess
 import uuid
 import logging
-import time
 import pickle
 import tempfile
 import signal

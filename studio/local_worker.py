@@ -3,7 +3,6 @@ import sys
 import subprocess
 import argparse
 import logging
-import time
 import json
 import psutil
 import time
@@ -235,7 +234,7 @@ def worker_loop(queue, parsed_args,
                         logger.info(
                             'Setting up python packages for experiment')
                         if pip_install_packages(
-                                experment.pythonenv, logger) != 0:
+                                experiment.pythonenv, logger) != 0:
                             logger.info(
                                 "Installation of all packages together " +
                                 " failed, "
