@@ -28,6 +28,7 @@ database:
 queue: local
 
 saveWorkspaceFrequencyMinutes: 1
+saveMetricsIntervalMinutes: 1
 verbose: error
 
 cloud:

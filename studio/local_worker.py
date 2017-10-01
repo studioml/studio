@@ -5,6 +5,8 @@ import argparse
 import logging
 import time
 import json
+import psutil
+import time
 import six
 
 from apscheduler.schedulers.background import BackgroundScheduler
@@ -81,6 +83,15 @@ class LocalExecutor(object):
                     'interval',
                     minutes=self.config['saveWorkspaceFrequencyMinutes'])
 
+                metrics_path = fs_tracker.get_artifact_cache(
+                    '_metrics', experiment.key)
+
+                sched.add_job(
+                    lambda: save_metrics(metrics_path),
+                    'interval',
+                    minutes=self.config['saveMetricsIntervalMinutes']
+                )
+
                 def kill_if_stopped():
                     if db.get_experiment(
                             experiment.key,
@@ -92,6 +103,7 @@ class LocalExecutor(object):
                 try:
                     p.wait()
                 finally:
+                    save_metrics(metrics_path)
                     ptail.kill()
                     db.finish_experiment(experiment)
                     sched.shutdown()
@@ -279,6 +291,15 @@ def wait_for_messages(queue, timeout, logger=None):
                 logger.info('No jobs found in the queue during {} s'.
                             format(timeout))
             return
+
+
+def save_metrics(path):
+    cpu_load = psutil.cpu_percent()
+    cpu_mem = psutil.virtual_memory().used
+    timestamp = time.time()
+    with open(path, 'a') as f:
+        f.write('time: {} CPU: {} mem: {}'
+                .format(timestamp, cpu_load, cpu_mem))
 
 
 if __name__ == "__main__":
