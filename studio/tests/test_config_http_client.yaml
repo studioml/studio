@@ -9,5 +9,5 @@ log:
     name: output.log
 
 saveWorkspaceFrequencyMinutes: 1 #how often is workspace being saved (minutes)
-
+saveMetricsIntervalMinutes: 1
 
