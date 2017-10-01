@@ -26,6 +26,7 @@ repo_url="https://github.com/studioml/studio"
 branch="{studioml_branch}"
 
 autoscaling_group="{autoscaling_group}"
+instance_id=$(wget -q -O - http://169.254.169.254/latest/meta-data/instance-id)
 
 echo "Environment varibles:"
 env
@@ -65,6 +66,8 @@ if [ ! -d "studio" ]; then
     fi
 fi
 
+sudo apt install -y jq
+
 cd studio
 git pull
 git checkout $branch
@@ -98,9 +101,11 @@ if [ -n $autoscaling_group ]; then
     echo "Current autoscaling group size (desired): $desired_size"
 
     if [[ $desired_size -gt 1 ]]; then
-        new_desired_size=$((desired_size - 1))
-        echo "Decreasing ASG size to $new_desired_size"
-        aws autoscaling update-auto-scaling-group --auto-scaling-group-name $autoscaling_group --desired-capacity $new_desired_size
+        echo "Detaching myself ($instance_id) from the ASG $autoscaling_group"
+        aws autoscaling detach-instances --instance-ids $instance_id --auto-scaling-group-name $autoscaling_group --should-decrement-desired-capacity
+        #new_desired_size=$((desired_size - 1))
+        #echo "Decreasing ASG size to $new_desired_size"
+        #aws autoscaling update-auto-scaling-group --auto-scaling-group-name $autoscaling_group --desired-capacity $new_desired_size
     else
         echo "Deleting launch configuration and auto-scaling group"
         aws autoscaling delete-auto-scaling-group --auto-scaling-group-name $autoscaling_group --force-delete
@@ -111,5 +116,6 @@ if [ -n $autoscaling_group ]; then
     #
 
 fi
+aws s3 cp /var/log/cloud-init-output.log "s3://studioml-logs/$queue_name/$hostname.txt"
 echo "Shutting the instance down!"
 sudo shutdown now

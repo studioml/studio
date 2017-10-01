@@ -221,7 +221,7 @@ def download_file(url, local_path, logger=None):
         url,
         stream=True)
     if logger:
-        logger.info(("Trying to download file at url {} to " + 
+        logger.info(("Trying to download file at url {} to " +
                      "local path {}").format(url, local_path))
 
     if response.status_code == 200:

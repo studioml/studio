@@ -222,14 +222,15 @@ def worker_loop(queue, parsed_args,
                     if setup_pyenv:
                         logger.info(
                             'Setting up python packages for experiment')
-                        for pkg in experiment.pythonenv:
-                            pipp = subprocess.Popen(
-                                ['pip', 'install', pkg],
-                                stdout=subprocess.PIPE,
-                                stderr=subprocess.STDOUT)
+                        if pip_install_packages(
+                                experment.pythonenv, logger) != 0:
+                            logger.info(
+                                "Installation of all packages together " +
+                                " failed, "
+                                "trying one package at a time")
 
-                            pipout, _ = pipp.communicate()
-                            logger.info("pip output: \n" + pipout)
+                        for pkg in experiment.pythonenv:
+                            pip_install_packages([pkg], logger)
 
                     for tag, art in six.iteritems(experiment.artifacts):
                         if fetch_artifacts or 'local' not in art.keys():
@@ -258,6 +259,17 @@ def worker_loop(queue, parsed_args,
 
     logger.info("Queue in {} is empty, quitting"
                 .format(fs_tracker.get_queue_directory()))
+
+
+def pip_install_packages(packages, logger=None):
+    pipp = subprocess.Popen(
+        ['pip', 'install'] + packages,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT)
+    pipout, _ = pipp.communicate()
+    if logger:
+        logger.info("pip output: \n" + pipout)
+    return pipp.exitcode()
 
 
 def wait_for_messages(queue, timeout, logger=None):

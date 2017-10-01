@@ -105,7 +105,6 @@ class FirebaseAuth(object):
             else:
                 self.expired = False
 
-
     def sign_in_with_email(self):
         self.user = \
             self.firebase.auth().sign_in_with_email_and_password(
