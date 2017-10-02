@@ -309,8 +309,10 @@ def save_metrics(path):
     cpu_mem = psutil.virtual_memory().used
     timestamp = time.time()
     with open(path, 'a') as f:
-        f.write('time: {} CPU: {} mem: {}'
-                .format(timestamp, cpu_load, cpu_mem))
+        entry = 'time: {} CPU: {} mem: {}' \
+                .format(timestamp, cpu_load, cpu_mem)
+
+        f.write(entry)
 
 
 if __name__ == "__main__":
