@@ -36,7 +36,7 @@ def get_gpus_summary():
         util = gpuinfo.find('utilization').find('gpu_util').text
         mem = gpuinfo.find('fb_memory_usage').find('used').text
 
-        return "util: {}, mem {}".format(util, memstring2int(mem))
+        return "util: {}, mem {}".format(util, memstr2int(mem))
 
     return " ".join([
         "gpu {} {}".format(
