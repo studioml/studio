@@ -13,7 +13,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from . import fs_tracker
 from . import model
 from .local_queue import LocalQueue
-from .gpu_util import get_available_gpus, get_gpu_mapping
+from .gpu_util import get_available_gpus, get_gpu_mapping, get_gpus_summary
 from .experiment import Experiment
 
 logging.basicConfig()
@@ -309,8 +309,12 @@ def save_metrics(path):
     cpu_mem = psutil.virtual_memory().used
     timestamp = time.time()
     with open(path, 'a') as f:
-        entry = 'time: {} CPU: {} mem: {}' \
-                .format(timestamp, cpu_load, cpu_mem)
+        entry = 'time: {} CPU: {} mem: {} {} \n' \
+                .format(
+                    timestamp,
+                    cpu_load,
+                    cpu_mem,
+                    get_gpus_summary())
 
         f.write(entry)
 
