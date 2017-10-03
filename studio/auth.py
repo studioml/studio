@@ -93,7 +93,7 @@ class FirebaseAuth(object):
                 return
 
             self.user = user
-            if time.time() - os.path.getmtime(api_key) > API_KEY_COOLDOWN:
+            if time.time() > self.user.get('expiration', 0):
                 counter = 0
                 while counter < MAX_NUM_RETRIES:
                     try:
@@ -119,6 +119,7 @@ class FirebaseAuth(object):
         api_key = os.path.join(TOKEN_DIR, self.firebase.api_key)
         self.user = self.firebase.auth().refresh(refresh_token)
         self.user['email'] = email
+        self.user['expiration'] = time.time() + API_KEY_COOLDOWN
         self.expired = False
 
         if not os.path.exists(api_key) or \
