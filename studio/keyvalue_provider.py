@@ -12,7 +12,7 @@ from .experiment import experiment_from_dict
 logging.basicConfig()
 
 
-class NoSQLProvider(object):
+class KeyValueProvider(object):
     """Data provider for Firebase."""
 
     def __init__(self, db_config, blocking_auth=True, verbose=10, store=None):
@@ -34,7 +34,7 @@ class NoSQLProvider(object):
             db_config, verbose=verbose, blocking_auth=blocking_auth)
 
         if self.auth and not self.auth.expired:
-            self.__setitem__(self._get_user_keybase() + "email",
+            self._set(self._get_user_keybase() + "email",
                              self.auth.get_user_email())
 
         self.max_keys = db_config.get('max_keys', 100)
@@ -88,15 +88,15 @@ class NoSQLProvider(object):
         experiment_dict = experiment.__dict__.copy()
         experiment_dict['owner'] = userid
 
-        self.__setitem__(self._get_experiments_keybase() + experiment.key,
+        self._set(self._get_experiments_keybase() + experiment.key,
                          experiment_dict)
 
-        self.__setitem__(self._get_user_keybase(userid) + "experiments/" +
+        self._set(self._get_user_keybase(userid) + "experiments/" +
                          experiment.key,
                          experiment.time_added)
 
         if experiment.project and self.auth:
-            self.__setitem__(self._get_projects_keybase() +
+            self._set(self._get_projects_keybase() +
                              experiment.project + "/" +
                              experiment.key + "/owner",
                              userid)
@@ -107,13 +107,10 @@ class NoSQLProvider(object):
     def start_experiment(self, experiment):
         experiment.time_started = time.time()
         experiment.status = 'running'
-        self.__setitem__(self._get_experiments_keybase() +
-                         experiment.key + "/status",
-                         "running")
 
-        self.__setitem__(self._get_experiments_keybase() +
-                         experiment.key + "/time_started",
-                         experiment.time_started)
+        self._set(self._get_experiments_keybase() +
+                         experiment.key, 
+                         experiment.__dict__)
 
         self.checkpoint_experiment(experiment)
 
@@ -124,27 +121,32 @@ class NoSQLProvider(object):
         if not isinstance(key, str):
             key = key.key
 
-        self.__setitem__(self._get_experiments_keybase() +
-                         key + "/status",
-                         "stopped")
+        experiment_data = self._get(self._get_experiments_keybase() + 
+                                    key)
+
+        experiment_data['status'] = stopped
+
+        self._set(self._get_experiments_keybase() +
+                         key, experiment_data)
 
     def finish_experiment(self, experiment):
         time_finished = time.time()
         if isinstance(experiment, six.string_types):
             key = experiment
+            experiment_dict = self._get(
+                self._get_experiments_keybase() + key)
+
+            experiment_dict['status'] = 'finished'
+            experiment_dict['time_finished'] = time_finished
         else:
             key = experiment.key
             self.checkpoint_experiment(experiment, blocking=True)
             experiment.status = 'finished'
             experiment.time_finished = time_finished
+            experiment_dict = experiment.__dict__
 
-        self.__setitem__(self._get_experiments_keybase() +
-                         key + "/status",
-                         "finished")
-
-        self.__setitem__(self._get_experiments_keybase() +
-                         key + "/time_finished",
-                         time_finished)
+        self._set(self._get_experiments_keybase() +
+                         key, experiment_dict)
 
     def delete_experiment(self, experiment):
         if isinstance(experiment, six.string_types):
@@ -193,9 +195,10 @@ class NoSQLProvider(object):
         for t in checkpoint_threads:
             t.start()
 
-        self.__setitem__(self._get_experiments_keybase() +
-                         key + "/time_last_checkpoint",
-                         time.time())
+        experiment.time_last_checkpoint = time.time()
+
+        self._set(self._get_experiments_keybase() +
+                         key, experiment.__dict__)
         if blocking:
             for t in checkpoint_threads:
                 t.join()

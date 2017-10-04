@@ -15,6 +15,7 @@ import six
 from .artifact_store import get_artifact_store
 from .http_provider import HTTPProvider
 from .firebase_provider import FirebaseProvider
+from .s3_provider import S3Provider
 
 logging.basicConfig()
 
@@ -82,6 +83,11 @@ def get_db_provider(config=None, blocking_auth=True):
             store=artifact_store)
     elif db_config['type'].lower() == 'http':
         return HTTPProvider(db_config, blocking_auth=blocking_auth)
+    elif db_config['type'].lower() == 's3':
+        return S3Provider(db_config, 
+                          verbose=verbose, 
+                          store=artifact_store, 
+                          blocking_auth=blocking_auth)
     else:
         raise ValueError('Unknown type of the database ' + db_config['type'])
 
