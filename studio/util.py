@@ -255,3 +255,18 @@ def download_file_from_qualified(qualified, local_path, logger=None):
 
 def has_aws_credentials():
     return boto3.client('s3')._request_signer._credentials is not None
+
+
+def retry(f,
+          no_retries=5, sleeptime=1,
+          exception_class=BaseException, logger=None):
+    for i in range(no_retries):
+        try:
+            return f()
+        except exception_class as e:
+            if logger:
+                logger.info(
+                    ('Exception {} is caught, ' +
+                     'sleeping {}s and retrying (attempt {} of {})')
+                    .format(e, sleeptime, i, no_retries))
+            time.sleep(sleeptime)
