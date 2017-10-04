@@ -4,17 +4,15 @@ import yaml
 import uuid
 import os
 import time
-import pip
-import shutil
 import six
+import shutil
 
 from studio import model
 from studio.firebase_provider import FirebaseProvider
 from studio.postgres_provider import PostgresProvider
 from studio.s3_provider import S3Provider
 from studio.auth import remove_all_keys
-from studio.experiment import create_experiment
-from studio.util import has_aws_credentials()
+from studio.util import has_aws_credentials
 
 from model_test import get_test_experiment
 

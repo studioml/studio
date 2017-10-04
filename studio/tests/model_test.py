@@ -1,11 +1,9 @@
 import unittest
 import uuid
 import pip
-import six
 import os
 
 from studio import model
-from studio.auth import remove_all_keys
 from studio.experiment import create_experiment
 
 
