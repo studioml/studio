@@ -84,9 +84,9 @@ def get_db_provider(config=None, blocking_auth=True):
     elif db_config['type'].lower() == 'http':
         return HTTPProvider(db_config, blocking_auth=blocking_auth)
     elif db_config['type'].lower() == 's3':
-        return S3Provider(db_config, 
-                          verbose=verbose, 
-                          store=artifact_store, 
+        return S3Provider(db_config,
+                          verbose=verbose,
+                          store=artifact_store,
                           blocking_auth=blocking_auth)
     else:
         raise ValueError('Unknown type of the database ' + db_config['type'])

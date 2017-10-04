@@ -9,14 +9,12 @@ from studio.auth import remove_all_keys
 from studio.experiment import create_experiment
 
 
-
 def get_test_experiment():
     filename = 'test.py'
     args = ['a', 'b', 'c']
     experiment_name = 'test_experiment_' + str(uuid.uuid4())
     experiment = create_experiment(filename, args, experiment_name)
     return experiment, experiment_name, filename, args
-
 
 
 class ModelTest(unittest.TestCase):

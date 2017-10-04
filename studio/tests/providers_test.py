@@ -30,9 +30,10 @@ class ProvidersTest(unittest.TestCase):
         firebase_methods = get_methods(FirebaseProvider)
         postgres_methods = get_methods(PostgresProvider)
         s3_methods = get_methods(S3Provider)
-            
+
         self.assertEqual(firebase_methods, postgres_methods)
         self.assertEqual(firebase_methods, s3_methods)
+
 
 class KeyValueProviderTest(object):
     def get_default_config_name(self):
@@ -40,7 +41,7 @@ class KeyValueProviderTest(object):
 
     def get_provider(self, config_name=None):
         config_name = config_name if config_name else \
-                      self.get_default_config_name()
+            self.get_default_config_name()
 
         config_file = os.path.join(
             os.path.dirname(
@@ -50,7 +51,6 @@ class KeyValueProviderTest(object):
             config = yaml.load(f)
 
         return model.get_db_provider(config)
-
 
     def test_get_set(self):
         with self.get_provider() as fb:
@@ -64,7 +64,6 @@ class KeyValueProviderTest(object):
 
             self.assertTrue(fb._get(key_path) == random_str)
             fb._delete(key_path)
-
 
     def test_get_user_keybase(self):
         with self.get_provider() as fb:
@@ -211,7 +210,6 @@ class FirebaseProviderTest(unittest.TestCase, KeyValueProviderTest):
             self.assertTrue(fb._get(key_path) is None)
             remove_all_keys()
 
-
     def test_get_set_firebase_bad(self):
         # smoke test to make sure access to a database at wrong
         # url is reported, but does not crash the system
@@ -224,12 +222,10 @@ class FirebaseProviderTest(unittest.TestCase, KeyValueProviderTest):
 
 class S3ProviderTest(unittest.TestCase, KeyValueProviderTest):
     _multiprocess_can_split = True
+
     def get_default_config_name(self):
         return 'test_config_s3.yaml'
-        
 
-    
 
 if __name__ == "__main__":
     unittest.main()
-

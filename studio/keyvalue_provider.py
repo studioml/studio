@@ -35,7 +35,7 @@ class KeyValueProvider(object):
 
         if self.auth and not self.auth.expired:
             self._set(self._get_user_keybase() + "email",
-                             self.auth.get_user_email())
+                      self.auth.get_user_email())
 
         self.max_keys = db_config.get('max_keys', 100)
 
@@ -89,17 +89,17 @@ class KeyValueProvider(object):
         experiment_dict['owner'] = userid
 
         self._set(self._get_experiments_keybase() + experiment.key,
-                         experiment_dict)
+                  experiment_dict)
 
         self._set(self._get_user_keybase(userid) + "experiments/" +
-                         experiment.key,
-                         experiment.time_added)
+                  experiment.key,
+                  experiment.time_added)
 
         if experiment.project and self.auth:
             self._set(self._get_projects_keybase() +
-                             experiment.project + "/" +
-                             experiment.key + "/owner",
-                             userid)
+                      experiment.project + "/" +
+                      experiment.key + "/owner",
+                      userid)
 
         self.checkpoint_experiment(experiment, blocking=True)
         self.logger.info("Added experiment " + experiment.key)
@@ -109,8 +109,8 @@ class KeyValueProvider(object):
         experiment.status = 'running'
 
         self._set(self._get_experiments_keybase() +
-                         experiment.key, 
-                         experiment.__dict__)
+                  experiment.key,
+                  experiment.__dict__)
 
         self.checkpoint_experiment(experiment)
 
@@ -121,13 +121,13 @@ class KeyValueProvider(object):
         if not isinstance(key, str):
             key = key.key
 
-        experiment_data = self._get(self._get_experiments_keybase() + 
+        experiment_data = self._get(self._get_experiments_keybase() +
                                     key)
 
         experiment_data['status'] = stopped
 
         self._set(self._get_experiments_keybase() +
-                         key, experiment_data)
+                  key, experiment_data)
 
     def finish_experiment(self, experiment):
         time_finished = time.time()
@@ -146,7 +146,7 @@ class KeyValueProvider(object):
             experiment_dict = experiment.__dict__
 
         self._set(self._get_experiments_keybase() +
-                         key, experiment_dict)
+                  key, experiment_dict)
 
     def delete_experiment(self, experiment):
         if isinstance(experiment, six.string_types):
@@ -198,7 +198,7 @@ class KeyValueProvider(object):
         experiment.time_last_checkpoint = time.time()
 
         self._set(self._get_experiments_keybase() +
-                         key, experiment.__dict__)
+                  key, experiment.__dict__)
         if blocking:
             for t in checkpoint_threads:
                 t.join()
