@@ -220,8 +220,9 @@ class FirebaseProviderTest(unittest.TestCase, KeyValueProviderTest):
 
             fb._set("test/hello", "bla")
 
+
 @unittest.skipIf(
-    not has_aws_credentials(), 
+    not has_aws_credentials(),
     'AWS credentials not found, cannot run test')
 class S3ProviderTest(unittest.TestCase, KeyValueProviderTest):
     _multiprocess_can_split = True
