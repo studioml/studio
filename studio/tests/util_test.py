@@ -1,5 +1,6 @@
 import unittest
 from studio import util
+from random import randint
 
 
 class UtilTest(unittest.TestCase):
@@ -19,6 +20,36 @@ class UtilTest(unittest.TestCase):
         testline = 'abcd\n\ndef'
         removed = util.remove_backspaces(testline)
         self.assertTrue(removed == testline)
+
+    def test_retry(self):
+        attempts = [0]
+        value = randint(0, 1000)
+
+        def failing_func():
+            attempts[0] += 1
+            if attempts[0] != 2:
+                raise ValueError('Attempt {} failed'
+                                 .format(attempts[0]))
+            return value
+
+        retval = util.retry(failing_func,
+                            no_retries=2,
+                            sleeptime=1,
+                            exception_class=ValueError)
+
+        self.assertEquals(retval, value)
+        self.assertEquals(attempts, [2])
+
+        # test out for catching different exception class
+        try:
+            retval = util.retry(failing_func,
+                                no_retries=2,
+                                sleeptime=1,
+                                exception_class=OSError)
+        except ValueError:
+            pass
+        else:
+            self.assertTrue(False)
 
 
 if __name__ == "__main__":
