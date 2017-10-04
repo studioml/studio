@@ -124,7 +124,7 @@ class KeyValueProvider(object):
         experiment_data = self._get(self._get_experiments_keybase() +
                                     key)
 
-        experiment_data['status'] = stopped
+        experiment_data['status'] = 'stopped'
 
         self._set(self._get_experiments_keybase() +
                   key, experiment_data)
