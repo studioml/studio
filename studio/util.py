@@ -20,7 +20,7 @@ import boto3
 def remove_backspaces(line):
     splitline = re.split('(\x08+)', line)
     try:
-        splitline = [unicode(s) for s in splitline]
+        splitline = [unicode(s, 'utf-8') for s in splitline]
     except NameError:
         splitline = [str(s) for s in splitline]
 

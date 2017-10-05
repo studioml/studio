@@ -33,6 +33,12 @@ class HTTPProvider(object):
 
     def add_experiment(self, experiment):
         headers = self._get_headers()
+
+        for tag, art in six.iteritems(experiment.artifacts):
+            if not art['mutable']:
+                art['hash'] = HTTPArtifactStore(None, None, self.verbose) \
+                    .get_artifact_hash(art)
+
         request = requests.post(
             self.url + '/api/add_experiment',
             headers=headers,
@@ -44,6 +50,9 @@ class HTTPProvider(object):
         self._update_artifacts(experiment, artifacts)
 
     def _update_artifacts(self, experiment, artifacts):
+        self.logger.debug(str(experiment.artifacts.keys()))
+        self.logger.debug(str(artifacts.keys()))
+
         for tag, art in six.iteritems(experiment.artifacts):
             art['key'] = artifacts[tag]['key']
             art['qualified'] = artifacts[tag]['qualified']

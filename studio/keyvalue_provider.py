@@ -8,6 +8,7 @@ from . import util, git_util, pyrebase
 from .firebase_artifact_store import FirebaseArtifactStore
 from . auth import FirebaseAuth
 from .experiment import experiment_from_dict
+from .tartifact_store import get_immutable_artifact_key
 
 logging.basicConfig()
 
@@ -71,11 +72,13 @@ class KeyValueProvider(object):
         for tag, art in six.iteritems(experiment.artifacts):
             if art['mutable']:
                 art['key'] = self._get_experiments_keybase() + \
-                    experiment.key + '/' + tag + '.tgz'
+                    experiment.key + '/' + tag + '.tar.bz2'
             else:
                 if 'local' in art.keys():
                     # upload immutable artifacts
                     art['key'] = self.store.put_artifact(art)
+                elif 'hash' in art.keys():
+                    art['key'] = get_immutable_artifact_key(art['hash'])
 
             if 'key' in art.keys():
                 art['qualified'] = self.store.get_qualified_location(
@@ -246,8 +249,11 @@ class KeyValueProvider(object):
             tarf = self.store.stream_artifact(experiment.artifacts['output'])
             if not tarf:
                 return None
+            tarf_member = tarf.members[0]
+            while tarf_member is not None and tarf_member.name == '':
+                tarf_member = tarf.next()
 
-            logdata = tarf.extractfile(tarf.members[0]).read()
+            logdata = tarf.extractfile(tarf_member).read()
             logdata = util.remove_backspaces(logdata).split('\n')
             return logdata
         except BaseException as e:

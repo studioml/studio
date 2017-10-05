@@ -62,12 +62,12 @@ class TartifactStore(object):
 
             return -now_remote_diff if now_remote_diff < 0 else 0
 
-    def put_artifact(
+    def get_artifact_hash(
             self,
             artifact,
             local_path=None,
-            cache=True,
-            background=False):
+            cache=True):
+
         if local_path is None:
             local_path = artifact['local']
 
@@ -135,9 +135,87 @@ class TartifactStore(object):
                 self.logger.info('tar had a non-zero return code!')
                 self.logger.info('tar output: \n ' + tarout)
 
+            retval = util.sha256_checksum(tar_filename)
+            os.remove(tar_filename)
+            return retval
+
+    def put_artifact(
+            self,
+            artifact,
+            local_path=None,
+            cache=True,
+            background=False):
+        if local_path is None:
+            local_path = artifact.get('local')
+
+        key = artifact.get('key')
+
+        if os.path.exists(local_path):
+            tar_filename = os.path.join(tempfile.gettempdir(),
+                                        str(uuid.uuid4()))
+
+            if os.path.isdir(local_path):
+                local_basepath = local_path
+                local_nameonly = '.'
+
+            else:
+                local_nameonly = os.path.basename(local_path)
+                local_basepath = os.path.dirname(local_path)
+
+            ignore_arg = ''
+            ignore_filepath = os.path.join(local_basepath, ".studioml_ignore")
+            if os.path.exists(ignore_filepath) and \
+                    not os.path.isdir(ignore_filepath):
+                ignore_arg = "--exclude-from=%s" % ignore_filepath
+                # self.logger.debug('.studioml_ignore found: %s,'
+                #                   ' files listed inside will'
+                #                   ' not be tarred or uploaded'
+                #                   % ignore_filepath)
+
+            if cache and key:
+                cache_dir = fs_tracker.get_artifact_cache(key)
+                if cache_dir != local_path:
+                    debug_str = "Copying local path {} to cache {}" \
+                        .format(local_path, cache_dir)
+                    if ignore_arg != '':
+                        debug_str += ", excluding files in {}" \
+                            .format(ignore_filepath)
+                    self.logger.debug(debug_str)
+
+                    util.rsync_cp(local_path, cache_dir, ignore_arg,
+                                  self.logger)
+
+            debug_str = ("Tarring and uploading directrory. " +
+                         "tar_filename = {}, " +
+                         "local_path = {}, " +
+                         "key = {}").format(
+                tar_filename,
+                local_path,
+                key)
+            if ignore_arg != '':
+                debug_str += ", exclude = {}".format(ignore_filepath)
+            self.logger.debug(debug_str)
+
+            tarcmd = 'tar {} -cjf {} -C {} {}'.format(
+                ignore_arg,
+                tar_filename,
+                local_basepath,
+                local_nameonly)
+            self.logger.debug("Tar cmd = {}".format(tarcmd))
+
+            tarp = subprocess.Popen(['/bin/bash', '-c', tarcmd],
+                                    stdout=subprocess.PIPE,
+                                    stderr=subprocess.STDOUT,
+                                    close_fds=True)
+
+            tarout, _ = tarp.communicate()
+            if tarp.returncode != 0:
+                self.logger.info('tar had a non-zero return code!')
+                self.logger.info('tar output: \n ' + tarout)
+
             if key is None:
                 key = 'blobstore/' + util.sha256_checksum(tar_filename) \
-                      + '.tgz'
+                      + '.tar.bz2'
 
             def finish_upload():
                 # if file is going to blobstore
@@ -334,3 +412,7 @@ class TartifactStore(object):
 
     def __exit__(self, *args):
         pass
+
+
+def get_immutable_artifact_key(arthash, compression='bz2'):
+    return "blobstore/" + arthash + ".tar." + compression
