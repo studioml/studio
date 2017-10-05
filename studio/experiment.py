@@ -1,7 +1,10 @@
 import os
 import glob
 import uuid
-import pip
+try:
+    import pip
+except ImportError:
+    pip = None
 
 from . import fs_tracker
 

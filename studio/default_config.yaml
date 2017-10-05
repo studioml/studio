@@ -1,9 +1,7 @@
 database:
     type: FireBase
-    #type: http
-    #serverUrl: https://studio-ed756.appspot.com
-    apiKey: AIzaSyCLQbp5X2B4SWzBw-sz9rUnGHNSdMl0Yx8
 
+    apiKey: AIzaSyCLQbp5X2B4SWzBw-sz9rUnGHNSdMl0Yx8
     projectId: studio-ed756
     messagingSenderId: 81790704397
 
@@ -11,32 +9,29 @@ database:
     databaseURL: "https://{}.firebaseio.com"
     storageBucket: "{}.appspot.com"
 
-    # serviceAccount: $GOOGLE_APPLICATION_CREDENTIALS
+    serviceAccount: ./firebase_admin_creds.json
     # guest: true
-    #use_email_auth: false
+    use_email_auth: false
 
 
 
-#storage:
+storage:
     #type: s3
     #bucket: "studioml-artifacts"
-    #type: gcloud
-    #bucket: studio-ed756.appspot.com
+    type: gcloud
+    bucket: studio-ed756.appspot.com
 
-
+   
 
 queue: local
 
 saveWorkspaceFrequencyMinutes: 1
-saveMetricsIntervalMinutes: 1
 verbose: error
 
 cloud:
-    gcloud:
-        zone: us-central1-f
+    type: google
+    zone: us-central1-f
 
-
-resources_needed:
     cpus: 2
     ram:  3g
     hdd:  10g

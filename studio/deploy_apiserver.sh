@@ -22,11 +22,12 @@ if [ "$1" = "gae" ]; then
 
     rm -rf lib
     pip install -t lib -r ../requirements.txt
+    pip install -t lib ../
     rm lib/tensorflow/python/_pywrap_tensorflow_internal.so
     echo "" >  lib/tensorflow/__init__.py
 
-    # dev_appserver.py app.yaml --dev_appserver_log_level debug
-    yes Y | gcloud app deploy
+    dev_appserver.py app.yaml --dev_appserver_log_level debug
+    # yes Y | gcloud app deploy
 
     mv default_config.yaml.orig default_config.yaml
 else if [ "$1" = "local" ]; then
