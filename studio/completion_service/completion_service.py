@@ -2,12 +2,12 @@ import os
 import subprocess
 import uuid
 import logging
-import time
 import pickle
 import tempfile
 import signal
 import re
 import six
+import time
 
 from studio import runner, model, fs_tracker
 from studio.util import rsync_cp
@@ -133,6 +133,9 @@ class CompletionService:
         self.use_spot = cloud in ['ec2spot', 'gcspot']
 
     def __enter__(self):
+        with model.get_db_provider(self.config):
+            pass
+
         if self.wm:
             self.logger.debug('Spinning up cloud workers')
             if self.use_spot:
@@ -173,8 +176,8 @@ class CompletionService:
             self.queue.delete()
 
         if self.p:
-            os.kill(self.p.pid, signal.SIGKILL)
-            # self.p.terminate()
+            self.p.kill()
+            # os.kill(self.p.pid, signal.SIGKILL)
 
     def submitTaskWithFiles(self, clientCodeFile, args, files={}):
         old_cwd = os.getcwd()
@@ -243,6 +246,7 @@ class CompletionService:
             artifacts=artifacts,
             resources_needed=self.resources_needed)
 
+        tic = time.time()
         runner.submit_experiments(
             [experiment],
             config=self.config,
@@ -252,6 +256,9 @@ class CompletionService:
 
         self.submitted.add(experiment.key)
         os.chdir(old_cwd)
+        toc = time.time()
+        self.logger.info('Submitted experiment ' + experiment.key +
+                         ' in ' + str(toc - tic) + ' s')
 
         return experiment_name
 

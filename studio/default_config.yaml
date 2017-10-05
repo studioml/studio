@@ -1,15 +1,15 @@
 database:
-    #type: FireBase
-    type: http
-    serverUrl: https://studio-ed756.appspot.com
+    type: FireBase
+    #type: http
+    #serverUrl: https://studio-ed756.appspot.com
     apiKey: AIzaSyCLQbp5X2B4SWzBw-sz9rUnGHNSdMl0Yx8
 
-    #projectId: studio-ed756
-    #messagingSenderId: 81790704397
+    projectId: studio-ed756
+    messagingSenderId: 81790704397
 
-    #authDomain: "{}.firebaseapp.com"
-    #databaseURL: "https://{}.firebaseio.com"
-    #storageBucket: "{}.appspot.com"
+    authDomain: "{}.firebaseapp.com"
+    databaseURL: "https://{}.firebaseio.com"
+    storageBucket: "{}.appspot.com"
 
     # serviceAccount: $GOOGLE_APPLICATION_CREDENTIALS
     # guest: true
@@ -23,11 +23,12 @@ database:
     #type: gcloud
     #bucket: studio-ed756.appspot.com
 
-   
+
 
 queue: local
 
 saveWorkspaceFrequencyMinutes: 1
+saveMetricsIntervalMinutes: 1
 verbose: error
 
 cloud:

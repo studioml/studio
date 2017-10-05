@@ -55,14 +55,15 @@ def main(args=sys.argv):
 
     timeout_before = parsed_args.timeout
     timeout_after = timeout_before if timeout_before > 0 else 0
-    wait_for_messages(queue, timeout_before, logger)
+    # wait_for_messages(queue, timeout_before, logger)
 
     logger.info('Starting working')
     worker_loop(queue, parsed_args,
                 setup_pyenv=True,
                 single_experiment=parsed_args.single_run,
                 fetch_artifacts=True,
-                timeout=timeout_after)
+                timeout=timeout_after,
+                verbose=verbose)
 
 
 if __name__ == "__main__":

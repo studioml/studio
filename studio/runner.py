@@ -431,7 +431,7 @@ def get_queue(queue_name=None, cloud=None, verbose=10):
         return SQSQueue(queue_name, verbose=verbose)
     else:
         if queue_name is None or queue_name == 'local':
-            queue = LocalQueue()
+            queue = LocalQueue(verbose=verbose)
             # not cleaning is important to be able to re-use
             # the queue from several processes
             # queue.clean()

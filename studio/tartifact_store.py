@@ -18,7 +18,7 @@ import hashlib
 
 from . import fs_tracker
 from . import util
-from .util import download_file, download_file_from_qualified
+from .util import download_file, download_file_from_qualified, retry
 
 logging.basicConfig()
 
@@ -353,7 +353,12 @@ class TartifactStore(object):
                     self.logger.info(
                         'Renaming {} into {}'.format(
                             actual_path, local_path))
-                    os.rename(actual_path, local_path)
+                    retry(lambda: os.rename(actual_path, local_path),
+                          no_retries=5,
+                          sleeptime=1,
+                          exception_class=OSError,
+                          logger=self.logger)
+
                 os.remove(tar_filename)
             else:
                 self.logger.warn(

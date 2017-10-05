@@ -23,10 +23,10 @@ class QueueTest(object):
         data = str(uuid.uuid4())
 
         q.enqueue(data)
-        recv_data = q.dequeue()
+        recv_data = q.dequeue(timeout=120)
 
         self.assertEquals(data, recv_data)
-        self.assertFalse(q.has_next())
+        self.assertTrue(q.dequeue() is None)
 
     def test_clean(self):
         q = self.get_queue()
@@ -36,7 +36,7 @@ class QueueTest(object):
         q.enqueue(data)
         q.clean()
 
-        self.assertFalse(q.has_next())
+        self.assertTrue(q.dequeue() is None)
 
     # @skip
     def test_enq_deq_order(self):
@@ -60,7 +60,7 @@ class QueueTest(object):
         self.assertEquals(data1, recv_data1)
         self.assertEquals(data2, recv_data2)
 
-        self.assertFalse(q.has_next())
+        self.assertTrue(q.dequeue() is None)
 
 
 class DistributedQueueTest(QueueTest):
@@ -75,15 +75,15 @@ class DistributedQueueTest(QueueTest):
         q.enqueue(data1)
         q.enqueue(data2)
 
-        recv1 = q.dequeue()
+        recv1 = q.dequeue(timeout=120)
         time.sleep(15)
-        recv2 = q.dequeue()
+        recv2 = q.dequeue(timeout=120)
 
         self.assertTrue(data1 == recv1 or data2 == recv1)
         self.assertTrue(data1 == recv2 or data2 == recv2)
         self.assertFalse(recv1 == recv2)
 
-        self.assertFalse(q.has_next())
+        self.assertTrue(q.dequeue() is None)
 
     def test_two_receivers(self):
         logger = logging.getLogger('test_two_receivers')
@@ -106,8 +106,8 @@ class DistributedQueueTest(QueueTest):
         q1.enqueue(data1)
         q1.enqueue(data2)
 
-        recv1 = q1.dequeue()
-        recv2 = q2.dequeue()
+        recv1 = q1.dequeue(timeout=120)
+        recv2 = q2.dequeue(timeout=120)
 
         logger.debug('recv1 = ' + recv1)
         logger.debug('recv2 = ' + recv2)
@@ -116,8 +116,8 @@ class DistributedQueueTest(QueueTest):
         self.assertTrue(data1 == recv2 or data2 == recv2)
         self.assertFalse(recv1 == recv2)
 
-        self.assertFalse(q1.has_next())
-        self.assertFalse(q2.has_next())
+        self.assertTrue(q1.dequeue() is None)
+        self.assertTrue(q2.dequeue() is None)
 
     def test_hold(self):
         q = self.get_queue()
@@ -126,12 +126,12 @@ class DistributedQueueTest(QueueTest):
         data = str(uuid.uuid4())
         q.enqueue(data)
 
-        msg, ack_id = q.dequeue(acknowledge=False)
+        msg, ack_id = q.dequeue(acknowledge=False, timeout=120)
 
-        self.assertFalse(q.has_next())
+        self.assertTrue(q.dequeue() is None)
         q.hold(ack_id, 0.5)
         time.sleep(35)
-        msg = q.dequeue()
+        msg = q.dequeue(timeout=120)
 
         self.assertEquals(data, msg)
 

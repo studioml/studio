@@ -1,7 +1,7 @@
+import logging
 import boto3
 
 from .nosql_provider import NoSQLProvider
-
 
 class DynamoDBProvider(NoSQLProvider):
 
@@ -130,4 +130,5 @@ class DynamoDBProvider(NoSQLProvider):
             Key='/'.join(split_key[1:])
         )
 
-        return dbrespons
+        return dbresponse
+
