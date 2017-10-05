@@ -1,3 +1,6 @@
+setuptools_scm
+setuptools_scm_git_archive
+
 configparser
 
 numpy
@@ -29,4 +32,3 @@ google-auth-httplib2
 
 oauth2client==3.0.0
 boto3
-
