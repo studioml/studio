@@ -20,6 +20,28 @@ SLEEP_TIME = 0.5
 MAX_NUM_RETRIES = 100
 
 
+_auth_singleton = None
+
+
+def get_auth(
+        firebase,
+        use_email_auth=False,
+        email=None,
+        password=None,
+        blocking=True):
+
+    global _auth_singleton
+    if _auth_singleton is None:
+        _auth_singleton = FirebaseAuth(
+            firebase,
+            use_email_auth,
+            email,
+            password,
+            blocking)
+
+    return _auth_singleton
+
+
 class FirebaseAuth(object):
     def __init__(
             self,
