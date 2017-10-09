@@ -312,7 +312,11 @@ class TartifactStore(object):
         self.logger.debug("tar_filename = {} ".format(tar_filename))
 
         def finish_download():
-            self._download_file(key, tar_filename)
+            try:
+                self._download_file(key, tar_filename)
+            except BaseException:
+                pass
+
             if os.path.exists(tar_filename):
                 # first, figure out if the tar file has a base path of .
                 # or not
