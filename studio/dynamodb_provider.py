@@ -3,6 +3,7 @@ import boto3
 
 from .nosql_provider import NoSQLProvider
 
+
 class DynamoDBProvider(NoSQLProvider):
 
     def __init__(self, config):
@@ -131,4 +132,3 @@ class DynamoDBProvider(NoSQLProvider):
         )
 
         return dbresponse
-

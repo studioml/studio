@@ -162,8 +162,11 @@ class KeyValueProvider(object):
         else:
             experiment_key = experiment.key
 
-        self._delete(self._get_user_keybase() + 'experiments/' +
-                     experiment_key)
+        experiment_owner = self._get(self._get_experiments_keybase() +
+                                     experiment_key + '/owner')
+
+        self._delete(self._get_user_keybase(experiment_owner) +
+                     'experiments/' + experiment_key)
         if experiment is not None:
             for tag, art in six.iteritems(experiment.artifacts):
                 if art.get('key') is not None:

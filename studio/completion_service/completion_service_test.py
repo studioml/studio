@@ -44,7 +44,7 @@ class CompletionServiceTest(unittest.TestCase):
             'test_config.yaml')
 
         self.test_two_experiments_with_cs_args(
-            config=config_path, 
+            config=config_path,
             cloud_timeout=10)
 
     def test_two_experiments_apiserver(self):
