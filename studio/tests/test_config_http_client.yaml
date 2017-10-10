@@ -12,4 +12,13 @@ saveWorkspaceFrequencyMinutes: 1 #how often is workspace being saved (minutes)
 saveMetricsIntervalMinutes: 1
 
 verbose: debug
+cloud:
+    gcloud:
+        zone: us-central1-f
+
+resources_needed:
+    cpus: 2
+    ram:  3g
+    hdd:  10g
+    gpus: 0
 

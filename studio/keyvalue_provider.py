@@ -121,7 +121,7 @@ class KeyValueProvider(object):
         # can be called remotely (the assumption is
         # that remote worker checks experiments status periodically,
         # and if it is 'stopped', kills the experiment.
-        if not isinstance(key, str):
+        if not isinstance(key, six.string_types):
             key = key.key
 
         experiment_data = self._get(self._get_experiments_keybase() +
@@ -323,8 +323,10 @@ class KeyValueProvider(object):
 
         return retval
 
-    def get_artifact(self, artifact, only_newer=True):
-        return self.store.get_artifact(artifact, only_newer=only_newer)
+    def get_artifact(self, artifact, local_path=None, only_newer=True):
+        return self.store.get_artifact(artifact,
+                                       local_path=local_path,
+                                       only_newer=only_newer)
 
     def _get_valid_experiments(self, experiment_keys,
                                getinfo=False, blocking=True):
