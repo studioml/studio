@@ -25,6 +25,7 @@ storage:
 
 queue: local
 
+saveMetricsIntervalMinutes: 1
 saveWorkspaceFrequencyMinutes: 1
 verbose: error
 
