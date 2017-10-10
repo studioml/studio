@@ -7,6 +7,8 @@ import json
 import psutil
 import time
 import six
+import pip
+
 
 from apscheduler.schedulers.background import BackgroundScheduler
 
@@ -185,9 +187,9 @@ def main(args=sys.argv):
 
 
 def worker_loop(queue, parsed_args,
-                setup_pyenv=False,
+                setup_pyenv=True,
                 single_experiment=False,
-                fetch_artifacts=False,
+                fetch_artifacts=True,
                 timeout=0,
                 verbose=None):
 
@@ -230,17 +232,17 @@ def worker_loop(queue, parsed_args,
                 sched.start()
 
                 try:
-                    if setup_pyenv:
+                    pip_diff = pip_needed_packages(experiment.pythonenv)
+                    if any(pip_diff):
                         logger.info(
                             'Setting up python packages for experiment')
-                        if pip_install_packages(
-                                experiment.pythonenv, logger) != 0:
+                        if pip_install_packages(pip_diff, logger) != 0:
                             logger.info(
                                 "Installation of all packages together " +
                                 " failed, "
                                 "trying one package at a time")
 
-                        for pkg in experiment.pythonenv:
+                        for pkg in pip_diff:
                             pip_install_packages([pkg], logger)
 
                     for tag, art in six.iteritems(experiment.artifacts):
@@ -274,7 +276,7 @@ def worker_loop(queue, parsed_args,
 
 def pip_install_packages(packages, logger=None):
     pipp = subprocess.Popen(
-        ['pip', 'install'] + packages,
+        ['pip', 'install'] + [p for p in packages],
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT)
     pipout, _ = pipp.communicate()
@@ -317,6 +319,14 @@ def save_metrics(path):
                     get_gpus_summary())
 
         f.write(entry)
+
+
+def pip_needed_packages(packages):
+
+    current_packages = {p._key + '==' + p._version for p in
+                        pip.pip.get_installed_distributions(local_only=True)}
+
+    return {p for p in packages} - current_packages
 
 
 if __name__ == "__main__":

@@ -197,16 +197,18 @@ def main(args=sys.argv):
     # detect which argument is the script filename
     # and attribute all arguments past that index as related to the script
     py_suffix_args = [i for i, arg in enumerate(args) if arg.endswith('.py')]
+    rerun = False
     if len(py_suffix_args) < 1:
-        print('At least one argument should be a python script ' +
-              '(end with *.py)')
-        parser.print_help()
-        exit()
+        print('None of the arugments end with .py, ' +
+              'treating last argument as experiment name to rerun')
+        rerun = True
+        runner_args = parser.parse_args(args[1:-1])
+        experiment_key = args[-1]
+    else:
+        script_index = py_suffix_args[0]
+        exec_filename, other_args = args[script_index], args[script_index + 1:]
+        runner_args = parser.parse_args(args[1:script_index])
 
-    script_index = py_suffix_args[0]
-    runner_args = parser.parse_args(args[1:script_index])
-
-    exec_filename, other_args = args[script_index], args[script_index + 1:]
     # TODO: Queue the job based on arguments and only then execute.
 
     config = model.get_config(runner_args.config)
@@ -340,14 +342,19 @@ def main(args=sys.argv):
                 except BaseException:
                     logger.warn('Optimizer has no disp() method')
     else:
-        experiments = [create_experiment(
-            filename=exec_filename,
-            args=other_args,
-            experiment_name=runner_args.experiment,
-            project=runner_args.project,
-            artifacts=artifacts,
-            resources_needed=resources_needed,
-            metric=runner_args.metric)]
+        if rerun:
+            with model.get_db_provider(config) as db:
+                experiments = [db.get_experiment(experiment_key)]
+
+        else:
+            experiments = [create_experiment(
+                filename=exec_filename,
+                args=other_args,
+                experiment_name=runner_args.experiment,
+                project=runner_args.project,
+                artifacts=artifacts,
+                resources_needed=resources_needed,
+                metric=runner_args.metric)]
 
         queue_name = submit_experiments(
             experiments,
