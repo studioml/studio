@@ -4,7 +4,6 @@ import uuid
 import logging
 import pickle
 import tempfile
-import signal
 import re
 import six
 import time
