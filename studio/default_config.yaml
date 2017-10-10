@@ -26,6 +26,7 @@ storage:
 queue: local
 
 saveWorkspaceFrequencyMinutes: 1
+saveMectricsIntervalMinutes: 1
 verbose: error
 
 cloud:
