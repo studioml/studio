@@ -1,7 +1,7 @@
-from .nosql_provider import NoSQLProvider
+from .keyvalue_provider import KeyValueProvider
 
 
-class FirebaseProvider(NoSQLProvider):
+class FirebaseProvider(KeyValueProvider):
 
     def __init__(self, db_config, blocking_auth=True, verbose=10, store=None):
         super(
@@ -25,7 +25,7 @@ class FirebaseProvider(NoSQLProvider):
                               "raised an exception: {}").format(key, err))
             return None
 
-    def __setitem__(self, key, value):
+    def _set(self, key, value):
         try:
             splitKey = key.split('/')
             key_path = '/'.join(splitKey[:-1])

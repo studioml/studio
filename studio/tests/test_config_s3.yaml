@@ -1,0 +1,30 @@
+database:
+    type: s3
+
+    apiKey: AIzaSyCLQbp5X2B4SWzBw-sz9rUnGHNSdMl0Yx8
+    authDomain: "{}.firebaseapp.com"
+    databaseURL: "https://{}.firebaseio.com"
+    projectId: studio-ed756
+    storageBucket: "{}.appspot.com"
+    messagingSenderId: 81790704397
+
+    bucket: studioml-meta
+    guest: true
+    max_keys: -1
+
+log:
+    name: output.log
+
+saveWorkspaceFrequencyMinutes: 1 #how often is workspace being saved (minutes)
+verbose: error
+
+cloud:
+    gcloud:
+        zone: us-central1-f
+
+resources_needed:
+    cpus: 2
+    ram:  3g
+    hdd:  10g
+    gpus: 0
+
