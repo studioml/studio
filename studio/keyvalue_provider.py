@@ -6,7 +6,7 @@ from threading import Thread
 
 from . import util, git_util, pyrebase
 from .firebase_artifact_store import FirebaseArtifactStore
-from . auth import FirebaseAuth
+from .auth import get_auth
 from .experiment import experiment_from_dict
 from .tartifact_store import get_immutable_artifact_key
 
@@ -25,11 +25,11 @@ class KeyValueProvider(object):
 
         self.auth = None
         if not guest and 'serviceAccount' not in db_config.keys():
-            self.auth = FirebaseAuth(self.app,
-                                     db_config.get("use_email_auth"),
-                                     db_config.get("email"),
-                                     db_config.get("password"),
-                                     blocking_auth)
+            self.auth = get_auth(self.app,
+                                 db_config.get("use_email_auth"),
+                                 db_config.get("email"),
+                                 db_config.get("password"),
+                                 blocking_auth)
 
         self.store = store if store else FirebaseArtifactStore(
             db_config, verbose=verbose, blocking_auth=blocking_auth)

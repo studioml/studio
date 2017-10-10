@@ -3,7 +3,7 @@ import json
 import six
 
 from . import pyrebase
-from .auth import FirebaseAuth
+from .auth import get_auth
 from .http_artifact_store import HTTPArtifactStore
 from .experiment import experiment_from_dict
 
@@ -25,11 +25,11 @@ class HTTPProvider(object):
         self.app = pyrebase.initialize_app(config)
         guest = config.get('guest')
         if not guest and 'serviceAccount' not in config.keys():
-            self.auth = FirebaseAuth(self.app,
-                                     config.get("use_email_auth"),
-                                     config.get("email"),
-                                     config.get("password"),
-                                     blocking_auth)
+            self.auth = get_auth(self.app,
+                                 config.get("use_email_auth"),
+                                 config.get("email"),
+                                 config.get("password"),
+                                 blocking_auth)
 
     def add_experiment(self, experiment):
         headers = self._get_headers()
