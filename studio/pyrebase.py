@@ -19,14 +19,14 @@ from google.cloud import storage
 from requests.packages.urllib3.contrib.appengine import is_appengine_sandbox
 from requests_toolbelt.adapters import appengine
 import certifi
-from util import retry
-
 import python_jwt as jwt
+
 try:
     from Crypto.PublicKey import RSA
 except BaseException:
     RSA = None
 import datetime
+from .util import retry
 
 NUM_RETRIES = 3
 POOL_SIZE = 100
