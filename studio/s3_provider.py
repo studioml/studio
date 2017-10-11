@@ -17,7 +17,6 @@ class S3Provider(KeyValueProvider):
 
         self.config = config
         self.bucket = config.get('bucket', 'studioml-meta')
-        self.client = boto3.client('s3')
 
         self.meta_store = S3ArtifactStore(config, verbose)
 

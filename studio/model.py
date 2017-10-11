@@ -16,6 +16,7 @@ from .artifact_store import get_artifact_store
 from .http_provider import HTTPProvider
 from .firebase_provider import FirebaseProvider
 from .s3_provider import S3Provider
+from .gs_provider import GSProvider
 
 logging.basicConfig()
 
@@ -88,6 +89,13 @@ def get_db_provider(config=None, blocking_auth=True):
                           verbose=verbose,
                           store=artifact_store,
                           blocking_auth=blocking_auth)
+
+    elif db_config['type'].lower() == 'gs':
+        return GSProvider(db_config,
+                          verbose=verbose,
+                          store=artifact_store,
+                          blocking_auth=blocking_auth)
+
     else:
         raise ValueError('Unknown type of the database ' + db_config['type'])
 
