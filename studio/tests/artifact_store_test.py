@@ -320,7 +320,7 @@ class GCloudArtifactStoreTest(ArtifactStoreTest, unittest.TestCase):
 
     def get_qualified_location_prefix(self):
         store = self.get_store()
-        return "gs://" + store.get_bucket().name + "/"
+        return "gs://" + store.get_bucket() + "/"
 
 
 @unittest.skipIf(

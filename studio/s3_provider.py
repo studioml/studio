@@ -20,7 +20,11 @@ class S3Provider(KeyValueProvider):
 
         self.meta_store = S3ArtifactStore(config, verbose)
 
-        super(S3Provider, self).__init__(config, verbose)
+        super(S3Provider, self).__init__(
+            config,
+            blocking_auth,
+            verbose,
+            store)
 
     def _get(self, key):
         response = self.meta_store.client.get_object(

@@ -386,12 +386,17 @@ class KeyValueProvider(object):
         assert key is not None
         user = user if user else self._get_userid()
 
-        owner = self._get(
-            self._get_experiments_keybase() + key + "/owner")
-        if owner is None or owner == 'guest':
-            return True
+        experiment = self._get(
+            self._get_experiments_keybase() + key)
+                    
+        if experiment: 
+            owner = experiment.get('owner')
+            if owner is None or owner == 'guest':
+                return True
+            else:
+                return (owner == user)
         else:
-            return (owner == user)
+            return True
 
     def __enter__(self):
         return self

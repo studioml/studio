@@ -19,16 +19,24 @@ class GSProvider(KeyValueProvider):
         self.bucket = config.get('bucket', 'studioml-meta')
 
         self.meta_store = GCloudArtifactStore(config, verbose)
+        super(GSProvider, self).__init__(
+            config,
+            blocking_auth,
+            verbose,
+            store)
 
-        super(GSProvider, self).__init__(config, verbose)
 
     def _get(self, key):
-        return json.loads(
-            self.meta_store.get_bucket().blob(key).download_as_string())
+        try:
+            return json.loads(
+                self.meta_store._get_bucket_obj() \
+                    .blob(key).download_as_string())
+        except:
+            return None
 
     def _delete(self, key):
         self.meta_store._delete_file(key)
 
     def _set(self, key, value):
-        self.meta_store.get_bucket().blob(key) \
+        self.meta_store._get_bucket_obj().blob(key) \
             .upload_from_string(json.dumps(value))
