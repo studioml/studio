@@ -47,7 +47,7 @@ class CompletionServiceTest(unittest.TestCase):
 
         self.test_two_experiments_with_cs_args(
             config=config_path,
-            cloud_timeout=10)
+            cloud_timeout=60)
 
     @unittest.skipIf(not has_aws_credentials(),
                      'AWS credentials needed for this test')
@@ -61,7 +61,7 @@ class CompletionServiceTest(unittest.TestCase):
 
         self.test_two_experiments_with_cs_args(
             config=config_path,
-            cloud_timeout=10,
+            cloud_timeout=100,
             cloud='ec2')
 
     @unittest.skip('TODO peterz fix cs with apiserver')
