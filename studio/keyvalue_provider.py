@@ -163,7 +163,7 @@ class KeyValueProvider(object):
             experiment_key = experiment.key
 
         experiment_owner = self._get(self._get_experiments_keybase() +
-                                     experiment_key + '/owner')
+                                     experiment_key).get('owner')
 
         self._delete(self._get_user_keybase(experiment_owner) +
                      'experiments/' + experiment_key)
@@ -266,8 +266,9 @@ class KeyValueProvider(object):
 
     def get_experiment(self, key, getinfo=True):
         data = self._get(self._get_experiments_keybase() + key)
-        assert data, "data at path %s not found! " % (
-            self._get_experiments_keybase() + key)
+        if data is None:
+            return None
+
         data['key'] = key
 
         experiment_stub = experiment_from_dict(data)
