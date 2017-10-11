@@ -16,8 +16,8 @@ install:
   - pip install pep8
 
 script:
-  echo $PYPI_USER | base64
-  echo $PYPI_PASSWORD | base64
+  - echo $PYPI_USER | base64
+  - echo $PYPI_PASSWORD | base64
   #- nosetests -v 
   #- pep8 --show-source .
   #- python setup.py sdist
