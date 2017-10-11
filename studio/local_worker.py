@@ -187,11 +187,11 @@ def main(args=sys.argv):
 
 
 def worker_loop(queue, parsed_args,
-                setup_pyenv=True,
                 single_experiment=False,
-                fetch_artifacts=True,
                 timeout=0,
                 verbose=None):
+
+    fetch_artifacts = True
 
     logger = logging.getLogger('worker_loop')
 

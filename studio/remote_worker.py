@@ -59,9 +59,7 @@ def main(args=sys.argv):
 
     logger.info('Starting working')
     worker_loop(queue, parsed_args,
-                setup_pyenv=True,
                 single_experiment=parsed_args.single_run,
-                fetch_artifacts=True,
                 timeout=timeout_after,
                 verbose=verbose)
 
