@@ -47,7 +47,22 @@ class CompletionServiceTest(unittest.TestCase):
 
         self.test_two_experiments_with_cs_args(
             config=config_path,
-            cloud_timeout=10)
+            cloud_timeout=60)
+
+    @unittest.skipIf(not has_aws_credentials(),
+                     'AWS credentials needed for this test')
+    def test_two_experiments_ec2(self):
+        mypath = os.path.dirname(os.path.realpath(__file__))
+        config_path = os.path.join(
+            mypath,
+            '..',
+            'tests',
+            'test_config.yaml')
+
+        self.test_two_experiments_with_cs_args(
+            config=config_path,
+            cloud_timeout=100,
+            cloud='ec2')
 
     # @unittest.skip('TODO peterz fix cs with apiserver')
     def test_two_experiments_apiserver(self):
@@ -65,7 +80,6 @@ class CompletionServiceTest(unittest.TestCase):
         'Need GOOGLE_APPLICATION_CREDENTIALS env variable to' +
         'use google cloud')
     def test_two_experiments_gcloud(self):
-        experimentId = str(uuid.uuid4())
         mypath = os.path.dirname(os.path.realpath(__file__))
         config_path = os.path.join(
             mypath,
@@ -77,9 +91,7 @@ class CompletionServiceTest(unittest.TestCase):
             config=config_path,
             cloud='gcloud')
 
-    @unittest.skipIf(
-        not has_aws_credentials(),
-        'Need to have aws credentials to use EC2')
+    @unittest.skip('TODO peterz scale down or fix')
     def test_1k_experiments_ec2(self):
         experimentId = str(uuid.uuid4())
         mypath = os.path.dirname(os.path.realpath(__file__))

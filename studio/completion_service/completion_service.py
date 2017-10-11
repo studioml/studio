@@ -4,7 +4,6 @@ import uuid
 import logging
 import pickle
 import tempfile
-import signal
 import re
 import six
 import time
@@ -278,7 +277,7 @@ class CompletionService:
                                    for key in self.submitted]
 
                 for e in experiments:
-                    if e.status == 'finished':
+                    if e is not None and e.status == 'finished':
                         self.logger.debug(
                             'Experiment {} finished, getting results' .format(
                                 e.key))

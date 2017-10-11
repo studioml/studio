@@ -9,22 +9,23 @@ database:
     databaseURL: "https://{}.firebaseio.com"
     storageBucket: "{}.appspot.com"
 
-    serviceAccount: ./firebase_admin_creds.json
+    # serviceAccount: ./firebase_admin_creds.json
     # guest: true
     use_email_auth: false
 
 
 
-storage:
-    #type: s3
-    #bucket: "studioml-artifacts"
-    type: gcloud
-    bucket: studio-ed756.appspot.com
+# storage:
+#     #type: s3
+#     #bucket: "studioml-artifacts"
+#     type: gcloud
+#     bucket: studio-ed756.appspot.com
 
-   
+
 
 queue: local
 
+saveMetricsIntervalMinutes: 1
 saveWorkspaceFrequencyMinutes: 1
 verbose: error
 
