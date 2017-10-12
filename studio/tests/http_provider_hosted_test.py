@@ -17,29 +17,10 @@ class HTTPProviderHostedTest(unittest.TestCase):
         return model.get_db_provider(model.get_config(config_file))
 
     def test_add_get_delete_experiment(self):
-        with self.get_db_provider('test_config.yaml') as fp, \
-                self.get_db_provider('test_config_http_client.yaml') as hp:
+        with self.get_db_provider('test_config_http_client.yaml') as hp:
 
             experiment_tuple = get_test_experiment()
             hp.add_experiment(experiment_tuple[0])
-            experiment = fp.get_experiment(experiment_tuple[0].key)
-            self.assertEquals(experiment.key, experiment_tuple[0].key)
-            self.assertEquals(
-                experiment.filename,
-                experiment_tuple[0].filename)
-            self.assertEquals(experiment.args, experiment_tuple[0].args)
-
-            fp.delete_experiment(experiment_tuple[1])
-
-            try:
-                thrown = False
-                hp.get_experiment(experiment_tuple[1])
-            except BaseException:
-                thrown = True
-            self.assertTrue(thrown)
-
-            experiment_tuple = get_test_experiment()
-            fp.add_experiment(experiment_tuple[0])
             experiment = hp.get_experiment(experiment_tuple[0].key)
             self.assertEquals(experiment.key, experiment_tuple[0].key)
             self.assertEquals(
@@ -49,7 +30,13 @@ class HTTPProviderHostedTest(unittest.TestCase):
 
             hp.delete_experiment(experiment_tuple[1])
 
-            self.assertTrue(fp.get_experiment(experiment_tuple[1]) is None)
+            try:
+                thrown = False
+                hp.get_experiment(experiment_tuple[1])
+            except BaseException:
+                thrown = True
+            self.assertTrue(thrown)
+
 
     def test_start_experiment(self):
         with self.get_db_provider('test_config_http_client.yaml') as hp:
