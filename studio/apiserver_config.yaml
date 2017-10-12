@@ -4,7 +4,7 @@ database:
     authDomain: "studio-ed756.firebaseapp.com"
     bucket: "studioml-meta"
 
-    # guest: true
+    guest: true
     use_email_auth: false
 
 

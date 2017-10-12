@@ -1,19 +1,19 @@
-if [[ -z "$FIREBASE_ADMIN_CREDENTIALS" ]]; then
-    echo "*** Firbase admin credentials file reqiured! ***"
-    echo "Input path to firebase admin credentials json"
-    echo "(you can also set FIREBASE_ADMIN_CREDENTIALS env variable manually):"
-    read -p ">>" firebase_creds
-else
-    firebase_creds=$FIREBASE_ADMIN_CREDENTIALS
-fi
+#if [[ -z "$FIREBASE_ADMIN_CREDENTIALS" ]]; then
+#    echo "*** Firbase admin credentials file reqiured! ***"
+#    echo "Input path to firebase admin credentials json"
+#    echo "(you can also set FIREBASE_ADMIN_CREDENTIALS env variable manually):"
+#    read -p ">>" firebase_creds
+#else
+#    firebase_creds=$FIREBASE_ADMIN_CREDENTIALS
+#fi
 
-if [ ! -f $firebase_creds ]; then
-   echo " *** File $firebase_creds does not exist! ***"
-   exit 1
-fi
+#if [ ! -f $firebase_creds ]; then
+#   echo " *** File $firebase_creds does not exist! ***"
+#   exit 1
+#fi
 
-creds="./firebase_admin_creds.json"
-cp $firebase_creds $creds
+#creds="./firebase_admin_creds.json"
+#cp $firebase_creds $creds
 
 if [ "$1" = "gae" ]; then
 
@@ -40,4 +40,4 @@ else if [ "$1" = "local" ]; then
 fi
 
 # rm -f $creds
-# rm -rf lib
+rm -rf lib
