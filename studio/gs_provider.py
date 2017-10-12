@@ -51,7 +51,10 @@ class GSProvider(KeyValueProvider):
                             current_dict[subdir] = {}
                         curret_dict = current_dict[subdir]
 
-                current_dict[path[-1]] = json.loads(blob.download_as_string())
+                try:
+                    current_dict[path[-1]] = json.loads(blob.download_as_string())
+                except:
+                    pass
 
         if not any(retval):
             return None
