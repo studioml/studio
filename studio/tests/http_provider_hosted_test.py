@@ -37,7 +37,6 @@ class HTTPProviderHostedTest(unittest.TestCase):
                 thrown = True
             self.assertTrue(thrown)
 
-
     def test_start_experiment(self):
         with self.get_db_provider('test_config_http_client.yaml') as hp:
             experiment_tuple = get_test_experiment()
