@@ -222,7 +222,7 @@ def main(args=sys.argv):
     verbose = model.parse_verbosity(config['verbose'])
     logger.setLevel(verbose)
 
-    if git_util.is_git() and not git_util.is_clean():
+    if git_util.is_git() and not git_util.is_clean() and not rerun:
         logger.warn('Running from dirty git repo')
         if not runner_args.force_git:
             logger.error(
