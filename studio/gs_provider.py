@@ -1,5 +1,6 @@
 import boto3
 import json
+import re
 from .keyvalue_provider import KeyValueProvider
 from .gcloud_artifact_store import GCloudArtifactStore
 
@@ -7,14 +8,6 @@ from .gcloud_artifact_store import GCloudArtifactStore
 class GSProvider(KeyValueProvider):
 
     def __init__(self, config, blocking_auth=True, verbose=10, store=None):
-        super(
-            GSProvider,
-            self).__init__(
-            config,
-            blocking_auth,
-            verbose,
-            store)
-
         self.config = config
         self.bucket = config.get('bucket', 'studioml-meta')
 
@@ -25,14 +18,45 @@ class GSProvider(KeyValueProvider):
             verbose,
             store)
 
+    def _get(self, key, shallow=False):
+        bucket = self.meta_store._get_bucket_obj()
+        retval = {}
+        if shallow:
+            blob_iterator = bucket.list_blobs(
+                prefix=key, delimiter='/')
+            list(blob_iterator)
+            prefixes = blob_iterator.prefixes
+            suffixes = [re.sub('^' + key, '', p) for p in prefixes]
 
-    def _get(self, key):
-        try:
-            return json.loads(
-                self.meta_store._get_bucket_obj() \
-                    .blob(key).download_as_string())
-        except:
+            for s in suffixes:
+                if s.endswith('/'):
+                    retval[s[:-1]] = True
+                else:
+                    blob = bucket.blob(key + suffix)
+                    retval[s] = json.loads(blob.download_as_string())
+
+        else:
+            blob_iterator = bucket.list_blobs(prefix=key)
+            for blob in blob_iterator:
+                suffix = re.sub('^' + key, '', blob.name)
+                if suffix == '':
+                    return json.loads(blob.download_as_string())
+
+                path = suffix.split('/')
+                path = [p for p in path if p != '']
+                current_dict = retval
+                for subdir in path[:-1]:
+                    if subdir != '':
+                        if subdir not in current_dict.keys():
+                            current_dict[subdir] = {}
+                        curret_dict = current_dict[subdir]
+
+                current_dict[path[-1]] = json.loads(blob.download_as_string())
+
+        if not any(retval):
             return None
+        else:
+            return retval
 
     def _delete(self, key):
         self.meta_store._delete_file(key)

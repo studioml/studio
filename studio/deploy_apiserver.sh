@@ -21,13 +21,13 @@ if [ "$1" = "gae" ]; then
     cp apiserver_config.yaml default_config.yaml
 
     rm -rf lib
-    pip install -t lib -r ../requirements.txt
+    # pip install -t lib -r ../requirements.txt
     pip install -t lib ../
     rm lib/tensorflow/python/_pywrap_tensorflow_internal.so
     echo "" >  lib/tensorflow/__init__.py
 
     # dev_appserver.py app.yaml --dev_appserver_log_level debug
-    yes Y | gcloud app deploy
+    yes Y | gcloud app deploy --no-promote
 
     mv default_config.yaml.orig default_config.yaml
 else if [ "$1" = "local" ]; then
@@ -39,5 +39,5 @@ else if [ "$1" = "local" ]; then
     fi
 fi
 
-rm -f $creds
-rm -rf lib
+# rm -f $creds
+# rm -rf lib

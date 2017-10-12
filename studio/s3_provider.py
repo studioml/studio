@@ -26,7 +26,7 @@ class S3Provider(KeyValueProvider):
             verbose,
             store)
 
-    def _get(self, key):
+    def _get(self, key, shallow=False):
         response = self.meta_store.client.get_object(
             Bucket=self.bucket,
             Key=key)

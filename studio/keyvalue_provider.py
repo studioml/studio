@@ -295,7 +295,7 @@ class KeyValueProvider(object):
                 userid = user_ids[0]
 
         experiment_keys = self._get(
-            self._get_user_keybase(userid) + "/experiments")
+            self._get_user_keybase(userid) + "experiments")
         if not experiment_keys:
             experiment_keys = {}
 
@@ -366,10 +366,11 @@ class KeyValueProvider(object):
     def get_users(self):
         user_ids = self._get('users/', shallow=True)
         retval = {}
-        for user_id in user_ids.keys():
-            retval[user_id] = {
-                'email': self._get('users/' + user_id + '/email')
-            }
+        if user_ids:
+            for user_id in user_ids.keys():
+                retval[user_id] = {
+                    'email': self._get('users/' + user_id + '/email')
+                }
         return retval
 
     def refresh_auth_token(self, email, refresh_token):
@@ -388,8 +389,8 @@ class KeyValueProvider(object):
 
         experiment = self._get(
             self._get_experiments_keybase() + key)
-                    
-        if experiment: 
+
+        if experiment:
             owner = experiment.get('owner')
             if owner is None or owner == 'guest':
                 return True
