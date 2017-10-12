@@ -232,7 +232,7 @@ class HTTPProvider(object):
 
     def _raise_detailed_error(self, request):
         if request.status_code != 200:
-            raise ValueError(request.message)
+            raise ValueError(str(request.__dict__))
 
         data = request.json()
         if data['status'] == 'ok':
