@@ -69,7 +69,7 @@ class Experiment(object):
         self.metric = metric
 
     def get_model(self, db):
-        modeldir = db.store.get_artifact(self.artifacts['modeldir'])
+        modeldir = db.get_artifact(self.artifacts['modeldir'])
         hdf5_files = [
             (p, os.path.getmtime(p))
             for p in

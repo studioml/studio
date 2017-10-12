@@ -1,16 +1,10 @@
 database:
-    type: FireBase
-
+    type: gs
     apiKey: AIzaSyCLQbp5X2B4SWzBw-sz9rUnGHNSdMl0Yx8
-    projectId: studio-ed756
-    messagingSenderId: 81790704397
+    authDomain: "studio-ed756.firebaseapp.com"
+    bucket: "studioml-meta"
 
-    authDomain: "{}.firebaseapp.com"
-    databaseURL: "https://{}.firebaseio.com"
-    storageBucket: "{}.appspot.com"
-
-    serviceAccount: ./firebase_admin_creds.json
-    # guest: true
+    guest: true
     use_email_auth: false
 
 

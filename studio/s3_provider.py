@@ -17,13 +17,16 @@ class S3Provider(KeyValueProvider):
 
         self.config = config
         self.bucket = config.get('bucket', 'studioml-meta')
-        self.client = boto3.client('s3')
 
         self.meta_store = S3ArtifactStore(config, verbose)
 
-        super(S3Provider, self).__init__(config, verbose)
+        super(S3Provider, self).__init__(
+            config,
+            blocking_auth,
+            verbose,
+            store)
 
-    def _get(self, key):
+    def _get(self, key, shallow=False):
         response = self.meta_store.client.get_object(
             Bucket=self.bucket,
             Key=key)

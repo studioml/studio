@@ -64,7 +64,7 @@ class CompletionServiceTest(unittest.TestCase):
             cloud_timeout=100,
             cloud='ec2')
 
-    @unittest.skip('TODO peterz fix cs with apiserver')
+    # @unittest.skip('TODO peterz fix cs with apiserver')
     def test_two_experiments_apiserver(self):
         mypath = os.path.dirname(os.path.realpath(__file__))
         config_path = os.path.join(

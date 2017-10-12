@@ -34,7 +34,7 @@ class LocalWorkerTest(unittest.TestCase, QueueTest):
             self,
             experiment_name='test_runner_local_' + str(uuid.uuid4()),
             runner_args=['--verbose=debug'],
-            config_name='test_config.yaml',
+            config_name='test_config_http_client.yaml',
             test_script='tf_hello_world.py',
             script_args=['arg0'],
             expected_output='[ 2.  6.]'
@@ -46,7 +46,7 @@ class LocalWorkerTest(unittest.TestCase, QueueTest):
             self,
             experiment_name='test_local_hyperparam' + str(uuid.uuid4()),
             runner_args=['--verbose=debug'],
-            config_name='test_config.yaml',
+            config_name='test_config_http_client.yaml',
             test_script='hyperparam_hello_world.py',
             expected_output='0.3'
         ):
@@ -56,7 +56,7 @@ class LocalWorkerTest(unittest.TestCase, QueueTest):
             self,
             experiment_name='test_local_hyperparam' + str(uuid.uuid4()),
             runner_args=['--verbose=debug', '--hyperparam=learning_rate=0.4'],
-            config_name='test_config.yaml',
+            config_name='test_config_http_client.yaml',
             test_script='hyperparam_hello_world.py',
             expected_output='0.4'
         ):
@@ -78,7 +78,7 @@ class LocalWorkerTest(unittest.TestCase, QueueTest):
             experiment_name=experiment_name,
             runner_args=['--capture=' + tmpfile + ':f',
                          '--verbose=debug'],
-            config_name='test_config.yaml',
+            config_name='test_config_http_client.yaml',
             test_script='art_hello_world.py',
             script_args=[random_str2],
             expected_output=random_str1,
@@ -87,7 +87,7 @@ class LocalWorkerTest(unittest.TestCase, QueueTest):
 
             tmppath = os.path.join(tempfile.gettempdir(), str(uuid.uuid4()))
 
-            db.store.get_artifact(
+            db.get_artifact(
                 db.get_experiment(experiment_name).artifacts['f'],
                 tmppath)
 
@@ -99,7 +99,7 @@ class LocalWorkerTest(unittest.TestCase, QueueTest):
             self,
             experiment_name='test_local_worker_e' + str(uuid.uuid4()),
             runner_args=['--reuse={}/f:f'.format(experiment_name)],
-            config_name='test_config.yaml',
+            config_name='test_config_http_client.yaml',
             test_script='art_hello_world.py',
             script_args=[],
             expected_output=random_str2
@@ -119,7 +119,7 @@ class LocalWorkerTest(unittest.TestCase, QueueTest):
             self,
             experiment_name='test_local_worker_co' + str(uuid.uuid4()),
             runner_args=['--capture-once=' + tmpfile + ':f'],
-            config_name='test_config.yaml',
+            config_name='test_config_http_client.yaml',
             test_script='art_hello_world.py',
             script_args=[],
             expected_output=random_str
@@ -135,7 +135,7 @@ class LocalWorkerTest(unittest.TestCase, QueueTest):
             self,
             experiment_name='test_local_worker_co_url' + str(uuid.uuid4()),
             runner_args=['--capture-once=' + url + ':f'],
-            config_name='test_config.yaml',
+            config_name='test_config_http_client.yaml',
             test_script='art_hello_world.py',
             script_args=[],
             expected_output=expected_str
@@ -153,7 +153,7 @@ class LocalWorkerTest(unittest.TestCase, QueueTest):
             self,
             experiment_name='test_local_worker_co_s3' + str(uuid.uuid4()),
             runner_args=['--capture-once=' + s3loc + ':f'],
-            config_name='test_config.yaml',
+            config_name='test_config_http_client.yaml',
             test_script='art_hello_world.py',
             script_args=[],
             expected_output=expected_str
@@ -168,7 +168,7 @@ class LocalWorkerTest(unittest.TestCase, QueueTest):
             self,
             experiment_name=experiment_name,
             runner_args=[],
-            config_name='test_config.yaml',
+            config_name='test_config_http_client.yaml',
             test_script='save_model.py',
             script_args=[],
             expected_output='',
@@ -194,7 +194,7 @@ class LocalWorkerTest(unittest.TestCase, QueueTest):
         logger = logging.getLogger('test_stop_experiment')
         logger.setLevel(10)
 
-        config_name = os.path.join(my_path, 'test_config.yaml')
+        config_name = os.path.join(my_path, 'test_config_http_client.yaml')
         key = 'test_stop_experiment' + str(uuid.uuid4())
 
         with model.get_db_provider(model.get_config(config_name)) as db:
@@ -285,14 +285,6 @@ def stubtest_worker(
     try:
         # test saved arguments
         keybase = "/experiments/" + experiment_name
-        saved_args = db._get(keybase + '/args')
-        if saved_args is not None:
-            testclass.assertTrue(len(saved_args) == len(script_args))
-            for i in range(len(saved_args)):
-                testclass.assertTrue(saved_args[i] == script_args[i])
-            testclass.assertTrue(db._get(keybase + '/filename') == test_script)
-        else:
-            testclass.assertTrue(script_args is None or len(script_args) == 0)
 
         experiment = db.get_experiment(experiment_name)
         if wait_for_experiment:
@@ -301,7 +293,7 @@ def stubtest_worker(
                 experiment = db.get_experiment(experiment_name)
 
         if test_output:
-            with open(db.store.get_artifact(experiment.artifacts['output']),
+            with open(db.get_artifact(experiment.artifacts['output']),
                       'r') as f:
                 data = f.read()
                 split_data = data.strip().split('\n')
@@ -327,10 +319,10 @@ def check_workspace(testclass, db, key):
     tmpdir = os.path.join(tempfile.gettempdir(), str(uuid.uuid4()))
     os.mkdir(tmpdir)
     artifact = db.get_experiment(key).artifacts['workspace']
-    db.store.get_artifact(artifact,
-                          tmpdir, only_newer=False)
+    localpath = db.get_artifact(artifact,
+                                tmpdir, only_newer=False)
 
-    for _, _, files in os.walk(artifact['local'], topdown=False):
+    for _, _, files in os.walk(localpath, topdown=False):
         for filename in files:
             downloaded_filename = os.path.join(tmpdir, filename)
             if downloaded_filename.endswith('.pyc'):
