@@ -18,11 +18,20 @@ class GCloudArtifactStore(TartifactStore):
         super(GCloudArtifactStore, self).__init__(measure_timestamp_diff)
 
     def _get_bucket_obj(self):
-        try:
-            bucket = self.get_client().get_bucket(self.config['bucket'])
-        except BaseException as e:
-            self.logger.exception(e)
-            bucket = self.get_client().create_bucket(self.config['bucket'])
+
+        while True:
+            try:
+                bucket = self.get_client().get_bucket(self.config['bucket'])
+                break
+            except BaseException as e:
+                self.logger.exception(e)
+                try:
+                    bucket = self.get_client().create_bucket(
+                        self.config['bucket'])
+                    break
+                except BaseException as e:
+                    self.logger.exception(e)
+            time.sleep(5)
 
         return bucket
 
