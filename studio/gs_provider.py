@@ -52,8 +52,9 @@ class GSProvider(KeyValueProvider):
                         curret_dict = current_dict[subdir]
 
                 try:
-                    current_dict[path[-1]] = json.loads(blob.download_as_string())
-                except:
+                    current_dict[path[-1]] = json.loads(
+                        blob.download_as_string())
+                except BaseException:
                     pass
 
         if not any(retval):
