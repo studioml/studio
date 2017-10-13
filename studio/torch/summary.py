@@ -81,7 +81,7 @@ class Reporter(object):
             if stdout:
                 stdout.write(unicode(line))
             else:
-                print line
+                print(line)
 
             self._last_reported_time = time.time()
             self._last_reported_step = self._last_step
