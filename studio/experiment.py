@@ -90,13 +90,13 @@ def create_experiment(
         metric=None):
     key = str(uuid.uuid4()) if not experiment_name else experiment_name
     packages = []
-    for i, pkg in enumerate(pip.pip.get_installed_distributions(local_only=True)):
+    for i, pkg in enumerate(
+            pip.pip.get_installed_distributions(local_only=True)):
         if pkg.key == 'tensorflow':
-            if resources_needed != None:
+            if resources_needed is not None:
                 if int(resources_needed.get('gpus')) > 0:
                     pkg._key = 'tensorflow-gpu'
         packages.append(pkg._key + '==' + pkg._version)
-
 
     return Experiment(
         key=key,
