@@ -283,9 +283,6 @@ def stubtest_worker(
     experiment_name = experiments[0]
 
     try:
-        # test saved arguments
-        keybase = "/experiments/" + experiment_name
-
         experiment = db.get_experiment(experiment_name)
         if wait_for_experiment:
             while not experiment.status == 'finished':

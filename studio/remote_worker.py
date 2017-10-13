@@ -1,4 +1,4 @@
-from local_worker import worker_loop, wait_for_messages
+from local_worker import worker_loop
 import sys
 import logging
 import model

@@ -2,7 +2,6 @@ import uuid
 import unittest
 import os
 import logging
-from multiprocessing.pool import ThreadPool
 
 from .completion_service import CompletionService
 
@@ -132,7 +131,6 @@ class CompletionServiceTest(unittest.TestCase):
         with CompletionService(experimentId,
                                config=config_path, cloud='ec2spot',
                                num_workers=num_workers) as cs:
-            pool = ThreadPool(16)
 
             def submit_task(i):
                 key = cs.submitTaskWithFiles(

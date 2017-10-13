@@ -1,4 +1,3 @@
-import boto3
 import json
 import re
 from .keyvalue_provider import KeyValueProvider
@@ -32,7 +31,7 @@ class GSProvider(KeyValueProvider):
                 if s.endswith('/'):
                     retval[s[:-1]] = True
                 else:
-                    blob = bucket.blob(key + suffix)
+                    blob = bucket.blob(key + s)
                     retval[s] = json.loads(blob.download_as_string())
 
         else:
@@ -49,7 +48,7 @@ class GSProvider(KeyValueProvider):
                     if subdir != '':
                         if subdir not in current_dict.keys():
                             current_dict[subdir] = {}
-                        curret_dict = current_dict[subdir]
+                        current_dict = current_dict[subdir]
 
                 try:
                     current_dict[path[-1]] = json.loads(

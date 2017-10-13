@@ -3,8 +3,7 @@
 # doesn't instantiate it yet.
 # from __future__ import print_function
 import pickle
-from IPython.core.magic import (Magics, magics_class, line_magic,
-                                cell_magic, line_cell_magic)
+from IPython.core.magic import (Magics, magics_class, line_cell_magic)
 
 from types import ModuleType
 import six
@@ -12,21 +11,17 @@ import subprocess
 import uuid
 import os
 import time
+from apscheduler.schedulers.background import BackgroundScheduler
 
 from .util import rsync_cp
 from . import fs_tracker
 from . import model
 
-# The class MUST call this class decorator at creation time
+import logging
 
 
 @magics_class
 class StudioMagics(Magics):
-
-    @cell_magic
-    def cmagic(self, line, cell):
-        "my cell magic"
-        return line, cell
 
     @line_cell_magic
     def studio_run(self, line, cell=None):
@@ -50,12 +45,18 @@ class StudioMagics(Magics):
 
         script_text.append(cell)
         script_text = '\n'.join(script_text)
-        with open('run_magic.py.stub') as f:
+        stub_path = os.path.join(
+            os.path.dirname(os.path.realpath(__file__)),
+            'run_magic.py.stub')
+
+        with open(stub_path) as f:
             script_stub = f.read()
 
         script = script_stub.format(script=script_text)
 
         experiment_key = str(uuid.uuid4())
+
+        print('Running studio with experiment key ' + experiment_key)
         workspace_new = fs_tracker.get_artifact_cache(
             'workspace', experiment_key)
 
@@ -80,12 +81,30 @@ class StudioMagics(Magics):
                              cwd=workspace_new,
                              close_fds=True)
 
+        sched = BackgroundScheduler()
+        sched.start()
+        logging.getLogger('apscheduler.scheduler').setLevel(60)
+
+        def studiotail_func():
+            data = p.stdout.read()
+            if data and data != '':
+                print(data)
+
+        sched.add_job(studiotail_func, 'interval', seconds=1, max_instances=1)
+
         with model.get_db_provider() as db:
             while True:
                 experiment = db.get_experiment(experiment_key)
-                if experiment is not None and \
-                        experiment.status == 'finished':
-                    break
+                no_lines_read = 0
+                if experiment:
+                    logtail = experiment.info.get('logtail')
+                    if logtail:
+                        for l in logtail[no_lines_read:]:
+                            print(l)
+                            no_lines_read += 1
+
+                    if experiment.status == 'finished':
+                        break
 
                 time.sleep(10)
 
@@ -95,8 +114,12 @@ class StudioMagics(Magics):
             new_ns = pickle.loads(f.read())
 
         self.shell.user_ns.update(new_ns)
+
         studiorun_out, _ = p.communicate()
-        print studiorun_out
+        if p.returncode != 0:
+            print('studio-run returned code ' + str(p.returncode))
+
+        sched.shutdown()
 
 
 ip = get_ipython()

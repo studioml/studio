@@ -1,7 +1,4 @@
-import sys
-
 import unittest
-from contextlib import contextmanager
 from io import StringIO
 
 from studio.torch import summary
