@@ -181,7 +181,7 @@ class HTTPProvider(object):
 
     def get_artifact(self, artifact,
                      local_path=None, only_newer='True'):
-        return HTTPArtifactStore(artifact.get('url'), self.verbose) \
+        return HTTPArtifactStore(artifact.get('url'), verbose=self.verbose) \
             .get_artifact(artifact, local_path=local_path)
 
     def get_users(self):
