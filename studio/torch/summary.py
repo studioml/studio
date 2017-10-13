@@ -77,9 +77,9 @@ class Reporter(object):
                         self._last_step, 'step/sec',
                         elapsed_steps / elapsed_secs)
 
-            line = "Step {}: {}".format(self._last_step, metrics)
+            line = u"Step {}: {}".format(self._last_step, metrics)
             if stdout:
-                stdout.write(unicode(line))
+                stdout.write(line)
             else:
                 print(line)
 
