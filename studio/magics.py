@@ -9,9 +9,17 @@ from IPython.core.magic import (Magics, magics_class, line_magic,
 from types import ModuleType
 import six
 import subprocess
-import base64
+import uuid
+import os
+import time
+
+from .util import rsync_cp
+from . import fs_tracker
+from . import model
 
 # The class MUST call this class decorator at creation time
+
+
 @magics_class
 class StudioMagics(Magics):
 
@@ -22,47 +30,73 @@ class StudioMagics(Magics):
 
     @line_cell_magic
     def studio_run(self, line, cell=None):
-        print("Full access to the main IPython object:", self.shell)
-        print("Variables in the user namespace:", self.shell.user_ns)
-
-        #print('pickle.dumps of namespace is' + pickle.dumps(self.shell.user_ns))
-
-        script_text = ['import pickle', 'import base64']
+        script_text = []
+        pickleable_ns = {}
 
         for varname, var in six.iteritems(self.shell.user_ns):
             if not varname.startswith('__'):
                 if isinstance(var, ModuleType) and \
                    var.__name__ != 'studio.magics':
-                        script_text.append(
-                            'import {} as {}'.format(var.__name__, varname)
-                        )
+                    script_text.append(
+                        'import {} as {}'.format(var.__name__, varname)
+                    )
 
                 else:
                     try:
-                        data = base64.b64encode(pickle.dumps(var))
-                        script_text.append(
-                            '{} = pickle.loads(base64.b64decode("{}"))'
-                            .format(varname, data))
-
+                        pickle.dumps(var)
+                        pickleable_ns[varname] = var
                     except BaseException:
                         pass
 
         script_text.append(cell)
+        script_text = '\n'.join(script_text)
+        with open('run_magic.py.stub') as f:
+            script_stub = f.read()
 
-        print '\n'.join(script_text)
-        p = subprocess.Popen([
-            'python','-c', '\n'.join(script_text)],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT)
+        script = script_stub.format(script=script_text)
 
-        print p.communicate()
+        experiment_key = str(uuid.uuid4())
+        workspace_new = fs_tracker.get_artifact_cache(
+            'workspace', experiment_key)
 
-        if cell is None:
-            print("Called as line magic")
-            return line
-        else:
-            print("Called as cell magic")
-            return line, cell
+        rsync_cp('.', workspace_new)
+        with open(os.path.join(workspace_new, '_script.py'), 'w') as f:
+            f.write(script)
+
+        ns_path = fs_tracker.get_artifact_cache('_ns', experiment_key)
+
+        with open(ns_path, 'w') as f:
+            f.write(pickle.dumps(pickleable_ns))
+
+        runner_args = line.split(' ')
+        runner_args.append('--capture={}:_ns'.format(ns_path))
+        runner_args.append('--force-git')
+        runner_args.append('--experiment=' + experiment_key)
+        p = subprocess.Popen(['studio', 'run'] +
+                             runner_args +
+                             ['_script.py'],
+                             stdout=subprocess.PIPE,
+                             stderr=subprocess.STDOUT,
+                             cwd=workspace_new,
+                             close_fds=True)
+
+        with model.get_db_provider() as db:
+            while True:
+                experiment = db.get_experiment(experiment_key)
+                if experiment is not None and \
+                        experiment.status == 'finished':
+                    break
+
+                time.sleep(10)
+
+            new_ns_path = db.get_artifact(experiment.artifacts['_ns'])
+
+        with open(new_ns_path) as f:
+            new_ns = pickle.loads(f.read())
+
+        self.shell.user_ns.update(new_ns)
+        studiorun_out, _ = p.communicate()
+        print studiorun_out
 
 
 ip = get_ipython()

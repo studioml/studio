@@ -94,7 +94,7 @@ class HTTPProvider(object):
             self._raise_detailed_error(request)
             return experiment_from_dict(request.json()['experiment'])
         except BaseException as e:
-            logger.info(e)
+            self.logger.info(e)
             return None
 
     def start_experiment(self, experiment):
