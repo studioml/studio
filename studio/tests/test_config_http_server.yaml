@@ -1,17 +1,15 @@
 database: 
-    type: FireBase
-
+    type: gs
     apiKey: AIzaSyCLQbp5X2B4SWzBw-sz9rUnGHNSdMl0Yx8
-    authDomain: "{}.firebaseapp.com"
-    databaseURL: "https://{}.firebaseio.com"
-    projectId: studio-ed756
-    storageBucket: "{}.appspot.com"
-    messagingSenderId: 81790704397
-    guest: true
+    authDomain: "studio-ed756.firebaseapp.com"
+    bucket: "studioml-meta"
 
 storage:
-    type: s3
+    type: gcloud
     bucket: "studioml-artifacts"
+
+
+
 
 saveMetricsIntervalMinutes: 1
 saveWorkspaceFrequencyMinutes: 1 #how often is workspace being saved (minutes)

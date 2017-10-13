@@ -35,7 +35,7 @@ class HTTPProvider(object):
         headers = self._get_headers()
 
         for tag, art in six.iteritems(experiment.artifacts):
-            if not art['mutable']:
+            if not art['mutable'] and art.get('local') is not None:
                 art['hash'] = HTTPArtifactStore(None, None, self.verbose) \
                     .get_artifact_hash(art)
 
@@ -54,14 +54,16 @@ class HTTPProvider(object):
         self.logger.debug(str(artifacts.keys()))
 
         for tag, art in six.iteritems(experiment.artifacts):
-            art['key'] = artifacts[tag]['key']
-            art['qualified'] = artifacts[tag]['qualified']
-            art['bucket'] = artifacts[tag]['bucket']
+            target_art = artifacts.get(tag)
+            if 'local' in art.keys() and target_art is not None:
+                art['key'] = target_art['key']
+                art['qualified'] = target_art['qualified']
+                art['bucket'] = target_art['bucket']
 
-            HTTPArtifactStore(artifacts[tag]['url'],
-                              artifacts[tag]['timestamp'],
-                              self.verbose) \
-                .put_artifact(art)
+                HTTPArtifactStore(target_art['url'],
+                                  target_art['timestamp'],
+                                  self.verbose) \
+                    .put_artifact(art)
 
     def delete_experiment(self, experiment):
         if isinstance(experiment, six.string_types):
@@ -106,7 +108,10 @@ class HTTPProvider(object):
         self._raise_detailed_error(request)
 
     def stop_experiment(self, experiment):
-        key = experiment.key
+        if isinstance(experiment, six.string_types):
+            key = experiment
+        else:
+            key = experiment.key
 
         headers = self._get_headers()
         request = requests.post(self.url + '/api/stop_experiment',
@@ -174,9 +179,10 @@ class HTTPProvider(object):
     def get_artifacts(self):
         raise NotImplementedError()
 
-    def get_artifact(self, artifact, only_newer='True'):
-        return HTTPArtifactStore(artifact['url'], self.verbose) \
-            .get_artifact(artifact)
+    def get_artifact(self, artifact,
+                     local_path=None, only_newer='True'):
+        return HTTPArtifactStore(artifact.get('url'), self.verbose) \
+            .get_artifact(artifact, local_path=local_path)
 
     def get_users(self):
         headers = self._get_headers()
@@ -226,7 +232,7 @@ class HTTPProvider(object):
 
     def _raise_detailed_error(self, request):
         if request.status_code != 200:
-            raise ValueError(request.message)
+            raise ValueError(str(request.__dict__))
 
         data = request.json()
         if data['status'] == 'ok':

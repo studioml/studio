@@ -99,7 +99,6 @@ class HTTPProviderTest(unittest.TestCase):
         self.assertEquals(experiment.key, e_experiment.key)
         self.assertEquals(experiment.filename, e_experiment.filename)
         self.assertEquals(experiment.args, e_experiment.args)
-
         db.delete_experiment(e_experiment.key)
         os.remove(a1_filename)
 
