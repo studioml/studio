@@ -30,12 +30,7 @@ class HTTPProviderHostedTest(unittest.TestCase):
 
             hp.delete_experiment(experiment_tuple[1])
 
-            try:
-                thrown = False
-                hp.get_experiment(experiment_tuple[1])
-            except BaseException:
-                thrown = True
-            self.assertTrue(thrown)
+            self.assertTrue(hp.get_experiment(experiment_tuple[1]) is None)
 
     def test_start_experiment(self):
         with self.get_db_provider('test_config_http_client.yaml') as hp:

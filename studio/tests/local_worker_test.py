@@ -330,7 +330,8 @@ def check_workspace(testclass, db, key):
 
             with open(downloaded_filename, 'rb') as f1:
                 data1 = f1.read()
-            with open(os.path.join(artifact['local'], filename), 'rb') as f2:
+            with open(os.path.join(db.get_artifact(artifact), filename),
+                      'rb') as f2:
                 data2 = f2.read()
 
             testclass.assertTrue(
