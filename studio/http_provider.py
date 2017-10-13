@@ -90,8 +90,12 @@ class HTTPProvider(object):
                                 data=json.dumps({"key": key})
                                 )
 
-        self._raise_detailed_error(request)
-        return experiment_from_dict(request.json()['experiment'])
+        try:
+            self._raise_detailed_error(request)
+            return experiment_from_dict(request.json()['experiment'])
+        except BaseException as e:
+            logger.info(e)
+            return None
 
     def start_experiment(self, experiment):
         self.checkpoint_experiment(experiment)

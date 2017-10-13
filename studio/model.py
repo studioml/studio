@@ -83,7 +83,7 @@ def get_db_provider(config=None, blocking_auth=True):
             verbose=verbose,
             store=artifact_store)
     elif db_config['type'].lower() == 'http':
-        return HTTPProvider(db_config, 
+        return HTTPProvider(db_config,
                             verbose=verbose,
                             blocking_auth=blocking_auth)
     elif db_config['type'].lower() == 's3':
