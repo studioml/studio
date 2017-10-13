@@ -83,7 +83,7 @@ setup(
     name='studioml',
     version=VERSION,
     description='TensorFlow model and data management tool',
-    packages=find_packages(),
+    packages=find_packages(exclude=['tensorflow']),
     long_description=read('README.rst'),
     url='https://github.com/studioml/studio',
     license='Apache License, Version 2.0',
