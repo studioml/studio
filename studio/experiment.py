@@ -32,7 +32,11 @@ class Experiment(object):
         self.project = project
 
         workspace_path = os.path.abspath('.')
-        model_dir = fs_tracker.get_model_directory(key)
+        try:
+            model_dir = fs_tracker.get_model_directory(key)
+        except BaseException:
+            model_dir = None
+
         self.artifacts = {
             'workspace': {
                 'local': workspace_path,

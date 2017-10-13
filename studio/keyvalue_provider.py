@@ -163,7 +163,7 @@ class KeyValueProvider(object):
             experiment_key = experiment.key
 
         experiment_owner = self._get(self._get_experiments_keybase() +
-                                     experiment_key + '/owner')
+                                     experiment_key).get('owner')
 
         self._delete(self._get_user_keybase(experiment_owner) +
                      'experiments/' + experiment_key)
@@ -266,8 +266,9 @@ class KeyValueProvider(object):
 
     def get_experiment(self, key, getinfo=True):
         data = self._get(self._get_experiments_keybase() + key)
-        assert data, "data at path %s not found! " % (
-            self._get_experiments_keybase() + key)
+        if data is None:
+            return None
+
         data['key'] = key
 
         experiment_stub = experiment_from_dict(data)
@@ -294,7 +295,7 @@ class KeyValueProvider(object):
                 userid = user_ids[0]
 
         experiment_keys = self._get(
-            self._get_user_keybase(userid) + "/experiments")
+            self._get_user_keybase(userid) + "experiments")
         if not experiment_keys:
             experiment_keys = {}
 
@@ -365,10 +366,11 @@ class KeyValueProvider(object):
     def get_users(self):
         user_ids = self._get('users/', shallow=True)
         retval = {}
-        for user_id in user_ids.keys():
-            retval[user_id] = {
-                'email': self._get('users/' + user_id + '/email')
-            }
+        if user_ids:
+            for user_id in user_ids.keys():
+                retval[user_id] = {
+                    'email': self._get('users/' + user_id + '/email')
+                }
         return retval
 
     def refresh_auth_token(self, email, refresh_token):
@@ -385,12 +387,17 @@ class KeyValueProvider(object):
         assert key is not None
         user = user if user else self._get_userid()
 
-        owner = self._get(
-            self._get_experiments_keybase() + key + "/owner")
-        if owner is None or owner == 'guest':
-            return True
+        experiment = self._get(
+            self._get_experiments_keybase() + key)
+
+        if experiment:
+            owner = experiment.get('owner')
+            if owner is None or owner == 'guest':
+                return True
+            else:
+                return (owner == user)
         else:
-            return (owner == user)
+            return True
 
     def __enter__(self):
         return self

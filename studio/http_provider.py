@@ -90,8 +90,12 @@ class HTTPProvider(object):
                                 data=json.dumps({"key": key})
                                 )
 
-        self._raise_detailed_error(request)
-        return experiment_from_dict(request.json()['experiment'])
+        try:
+            self._raise_detailed_error(request)
+            return experiment_from_dict(request.json()['experiment'])
+        except BaseException as e:
+            logger.info(e)
+            return None
 
     def start_experiment(self, experiment):
         self.checkpoint_experiment(experiment)
@@ -181,7 +185,7 @@ class HTTPProvider(object):
 
     def get_artifact(self, artifact,
                      local_path=None, only_newer='True'):
-        return HTTPArtifactStore(artifact.get('url'), self.verbose) \
+        return HTTPArtifactStore(artifact.get('url'), verbose=self.verbose) \
             .get_artifact(artifact, local_path=local_path)
 
     def get_users(self):
@@ -232,7 +236,7 @@ class HTTPProvider(object):
 
     def _raise_detailed_error(self, request):
         if request.status_code != 200:
-            raise ValueError(request.message)
+            raise ValueError(str(request.__dict__))
 
         data = request.json()
         if data['status'] == 'ok':
