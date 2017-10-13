@@ -344,7 +344,14 @@ def main(args=sys.argv):
     else:
         if rerun:
             with model.get_db_provider(config) as db:
-                experiments = [db.get_experiment(experiment_key)]
+                experiment = db.get_experiment(experiment_key)
+                new_key = runner_args.experiment if runner_args.experiment \
+                    else experiment_key + '_rerun' + str(uuid.uuid4())
+                experiment.key = new_key
+                for _, art in six.iteritems(experiment.artifacts):
+                    art['mutable'] = False
+
+                experiments = [experiment]
 
         else:
             experiments = [create_experiment(
