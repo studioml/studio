@@ -57,6 +57,13 @@ class StudioMagics(Magics):
         experiment_key = str(uuid.uuid4())
 
         print('Running studio with experiment key ' + experiment_key)
+        config = model.get_config()
+        if config['database']['type'] == 'http':
+            print("Experiment progress can be viewed/shared at:")
+            print("{}/experiment/{}".format(
+                config['database']['serverUrl'],
+                experiment_key))
+
         workspace_new = fs_tracker.get_artifact_cache(
             'workspace', experiment_key)
 
@@ -95,16 +102,8 @@ class StudioMagics(Magics):
         with model.get_db_provider() as db:
             while True:
                 experiment = db.get_experiment(experiment_key)
-                no_lines_read = 0
-                if experiment:
-                    logtail = experiment.info.get('logtail')
-                    if logtail:
-                        for l in logtail[no_lines_read:]:
-                            print(l)
-                            no_lines_read += 1
-
-                    if experiment.status == 'finished':
-                        break
+                if experiment and experiment.status == 'finished':
+                    break
 
                 time.sleep(10)
 
