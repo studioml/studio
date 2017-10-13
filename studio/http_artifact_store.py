@@ -12,7 +12,7 @@ class HTTPArtifactStore(TartifactStore):
         self.logger.setLevel(verbose)
 
         self.url = url
-        self.timestamp = None
+        self.timestamp = timestamp
 
         super(HTTPArtifactStore, self).__init__(False)
     '''

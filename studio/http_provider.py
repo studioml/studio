@@ -1,6 +1,7 @@
 import requests
 import json
 import six
+import time
 
 from . import pyrebase
 from .auth import get_auth
@@ -94,7 +95,7 @@ class HTTPProvider(object):
             self._raise_detailed_error(request)
             return experiment_from_dict(request.json()['experiment'])
         except BaseException as e:
-            logger.info(e)
+            self.logger.info(e)
             return None
 
     def start_experiment(self, experiment):
@@ -185,7 +186,10 @@ class HTTPProvider(object):
 
     def get_artifact(self, artifact,
                      local_path=None, only_newer='True'):
-        return HTTPArtifactStore(artifact.get('url'), verbose=self.verbose) \
+        return HTTPArtifactStore(
+            artifact.get('url'),
+            timestamp=time.time(),
+            verbose=self.verbose) \
             .get_artifact(artifact, local_path=local_path)
 
     def get_users(self):

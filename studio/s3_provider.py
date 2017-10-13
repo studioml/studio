@@ -1,4 +1,3 @@
-import boto3
 import json
 from .keyvalue_provider import KeyValueProvider
 from .s3_artifact_store import S3ArtifactStore

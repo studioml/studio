@@ -2,7 +2,6 @@ import uuid
 import unittest
 import os
 import logging
-from multiprocessing.pool import ThreadPool
 
 from .completion_service import CompletionService
 
@@ -64,7 +63,21 @@ class CompletionServiceTest(unittest.TestCase):
             cloud_timeout=100,
             cloud='ec2')
 
-    # @unittest.skip('TODO peterz fix cs with apiserver')
+    @unittest.skipIf(not has_aws_credentials(),
+                     'AWS credentials needed for this test')
+    def test_two_experiments_ec2spot(self):
+        mypath = os.path.dirname(os.path.realpath(__file__))
+        config_path = os.path.join(
+            mypath,
+            '..',
+            'tests',
+            'test_config.yaml')
+
+        self.test_two_experiments_with_cs_args(
+            config=config_path,
+            cloud_timeout=100,
+            cloud='ec2spot')
+
     def test_two_experiments_apiserver(self):
         mypath = os.path.dirname(os.path.realpath(__file__))
         config_path = os.path.join(
@@ -91,8 +104,10 @@ class CompletionServiceTest(unittest.TestCase):
             config=config_path,
             cloud='gcloud')
 
-    @unittest.skip('TODO peterz scale down or fix')
-    def test_1k_experiments_ec2(self):
+    # @unittest.skip('TODO peterz scale down or fix')
+    @unittest.skipIf(not has_aws_credentials(),
+                     'AWS credentials needed for this test')
+    def test_many_experiments_ec2(self):
         experimentId = str(uuid.uuid4())
         mypath = os.path.dirname(os.path.realpath(__file__))
         config_path = os.path.join(
@@ -101,8 +116,12 @@ class CompletionServiceTest(unittest.TestCase):
             'tests',
             'test_config.yaml')
 
-        n_experiments = 1000
-        num_workers = 60
+        n_experiments = 100
+        num_workers = 30
+
+        print("Executing {} tasks with {} workers"
+              .format(n_experiments, num_workers))
+
         results = {}
         expected_results = {}
 
@@ -112,7 +131,6 @@ class CompletionServiceTest(unittest.TestCase):
         with CompletionService(experimentId,
                                config=config_path, cloud='ec2spot',
                                num_workers=num_workers) as cs:
-            pool = ThreadPool(16)
 
             def submit_task(i):
                 key = cs.submitTaskWithFiles(
@@ -127,9 +145,17 @@ class CompletionServiceTest(unittest.TestCase):
                 logger.info('Submitted task ' + str(i))
                 expected_results[key] = [i]
 
+            '''
             pool.map(submit_task, range(n_experiments))
+            print("Submitted")
+            pool.close()
+            pool.join()
+            '''
+            for i in range(n_experiments):
+                submit_task(i)
 
             for i in range(0, n_experiments):
+                print("Trying to get a result " + str(i))
                 result = cs.getResults(blocking=True)
                 logger.info('Received result ' + str(result))
                 results[result[0]] = result[1]

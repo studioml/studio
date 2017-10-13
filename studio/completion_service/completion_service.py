@@ -271,12 +271,13 @@ class CompletionService:
         while True:
             with model.get_db_provider(self.config) as db:
                 if self.resumable:
-                    experiments = db.get_project_experiments(self.project_name)
+                    experiment_keys = db.get_project_experiments(
+                        self.project_name).keys()
                 else:
-                    experiments = [db.get_experiment(key)
-                                   for key in self.submitted]
+                    experiment_keys = self.submitted
 
-                for e in experiments:
+                for key in experiment_keys:
+                    e = db.get_experiment(key)
                     if e is not None and e.status == 'finished':
                         self.logger.debug(
                             'Experiment {} finished, getting results' .format(

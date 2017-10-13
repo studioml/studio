@@ -300,7 +300,7 @@ class TartifactStore(object):
             if storage_time is None:
                 self.logger.info(
                     "Unable to get storage timestamp, storage is either " +
-                    "corrupted and has not finished uploading")
+                    "corrupted or has not finished uploading")
                 return local_path
 
             if local_time > storage_time - self.timestamp_shift:

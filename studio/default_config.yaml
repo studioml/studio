@@ -9,10 +9,11 @@ queue: local
 
 saveMetricsIntervalMinutes: 1
 saveWorkspaceFrequencyMinutes: 1
+saveMectricsIntervalMinutes: 1
 verbose: error
 
 cloud:
-    type: google
+    type: gcloud
         zone: us-central1-f
 
 resources_needed:

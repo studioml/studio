@@ -283,9 +283,6 @@ def stubtest_worker(
     experiment_name = experiments[0]
 
     try:
-        # test saved arguments
-        keybase = "/experiments/" + experiment_name
-
         experiment = db.get_experiment(experiment_name)
         if wait_for_experiment:
             while not experiment.status == 'finished':
@@ -330,7 +327,8 @@ def check_workspace(testclass, db, key):
 
             with open(downloaded_filename, 'rb') as f1:
                 data1 = f1.read()
-            with open(os.path.join(artifact['local'], filename), 'rb') as f2:
+            with open(os.path.join(db.get_artifact(artifact), filename),
+                      'rb') as f2:
                 data2 = f2.read()
 
             testclass.assertTrue(
