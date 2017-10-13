@@ -60,12 +60,12 @@ with open('requirements.txt') as f:
     required = f.read().splitlines()
     # Add the tensorflow python package as a dependency for the studioml
     # python modules but be selective about whether the GPU version is used
-    # or the default CPU version.  Not doing this will result in the CPU 
+    # or the default CPU version.  Not doing this will result in the CPU
     # version taking precedence in many cases.
     try:
         if platform.system() == "Microsoft":
             _libcudart = ctypes.windll.LoadLibrary('cudart.dll')
-        elif platform.system()=="Darwin":
+        elif platform.system() == "Darwin":
             _libcudart = ctypes.cdll.LoadLibrary('libcudart.dylib')
         else:
             _libcudart = ctypes.cdll.LoadLibrary('libcudart.so')
