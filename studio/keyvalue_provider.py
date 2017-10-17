@@ -108,11 +108,13 @@ class KeyValueProvider(object):
         self.logger.info("Added experiment " + experiment.key)
 
     def start_experiment(self, experiment):
-        experiment.time_started = time.time()
+        time_started = time.time()
+        experiment.time_started = time_started
         experiment.status = 'running'
 
         experiment_dict = self._get(self._get_experiments_keybase() +
                                     experiment.key)
+        experiment_dict['time_started'] = time_started
         experiment_dict['status'] = 'running'
 
         self._set(self._get_experiments_keybase() +
@@ -140,14 +142,16 @@ class KeyValueProvider(object):
         time_finished = time.time()
         if not isinstance(experiment, six.string_types):
             key = experiment.key
+            experiment.status = 'finished'
+            experiment.time_finished = time_finished
         else:
             key = experiment
 
-            experiment_dict = self._get(
-                self._get_experiments_keybase() + key)
+        experiment_dict = self._get(
+            self._get_experiments_keybase() + key)
 
-            experiment_dict['status'] = 'finished'
-            experiment_dict['time_finished'] = time_finished
+        experiment_dict['status'] = 'finished'
+        experiment_dict['time_finished'] = time_finished
 
         self._set(self._get_experiments_keybase() +
                   key, experiment_dict)
@@ -203,8 +207,9 @@ class KeyValueProvider(object):
         for t in checkpoint_threads:
             t.start()
 
-        experiment.time_last_checkpoint = time.time()
-        experiment_dict['time_last_checkpoint'] = time.time()
+        checkpoint_time = time.time()
+        experiment.time_last_checkpoint = checkpoint_time
+        experiment_dict['time_last_checkpoint'] = checkpoint_time
 
         self._set(self._get_experiments_keybase() +
                   key, experiment_dict)
