@@ -16,7 +16,10 @@ logging.basicConfig()
 
 
 class S3ArtifactStore(TartifactStore):
-    def __init__(self, config, verbose=10, measure_timestamp_diff=False):
+    def __init__(self, config,
+                 verbose=10,
+                 measure_timestamp_diff=False,
+                 compression='xz'):
         self.logger = logging.getLogger('S3ArtifactStore')
         self.logger.setLevel(verbose)
 
@@ -35,7 +38,9 @@ class S3ArtifactStore(TartifactStore):
         if self.bucket not in [b['Name'] for b in buckets['Buckets']]:
             self.client.create_bucket(Bucket=self.bucket)
 
-        super(S3ArtifactStore, self).__init__(measure_timestamp_diff)
+        super(S3ArtifactStore, self).__init__(
+            measure_timestamp_diff,
+            compression=compression)
 
     def _upload_file(self, key, local_path):
         self.client.upload_file(local_path, self.bucket, key)

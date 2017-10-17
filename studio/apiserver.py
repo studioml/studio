@@ -137,7 +137,7 @@ def get_experiment():
         status = 'ok'
     except BaseException as e:
         experiment = {}
-        status = e.message
+        status = traceback.format_exc()
 
     retval = json.dumps({'status': status, 'experiment': experiment})
 

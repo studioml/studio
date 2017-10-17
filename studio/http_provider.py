@@ -181,8 +181,9 @@ class HTTPProvider(object):
 
         return experiments
 
-    def get_artifacts(self):
-        raise NotImplementedError()
+    def get_artifacts(self, key):
+        return {t: a['url'] for t, a in
+                six.iteritems(self.get_experiment(key).artifacts)}
 
     def get_artifact(self, artifact,
                      local_path=None, only_newer='True'):

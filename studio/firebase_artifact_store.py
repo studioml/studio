@@ -13,8 +13,11 @@ logging.basicConfig()
 
 class FirebaseArtifactStore(TartifactStore):
 
-    def __init__(self, db_config, measure_timestamp_diff=False,
-                 blocking_auth=True, verbose=10):
+    def __init__(self, db_config,
+                 measure_timestamp_diff=False,
+                 blocking_auth=True,
+                 compression='xz',
+                 verbose=10):
 
         guest = db_config.get('guest')
 
@@ -30,7 +33,9 @@ class FirebaseArtifactStore(TartifactStore):
 
         self.logger = logging.getLogger('FirebaseArtifactStore')
         self.logger.setLevel(verbose)
-        super(FirebaseArtifactStore, self).__init__(measure_timestamp_diff)
+        super(FirebaseArtifactStore, self).__init__(
+            measure_timestamp_diff,
+            compression=compression)
 
     def _upload_file(self, key, local_file_path):
         try:

@@ -93,9 +93,12 @@ class StudioMagics(Magics):
         logging.getLogger('apscheduler.scheduler').setLevel(60)
 
         def studiotail_func():
-            data = p.stdout.read()
-            if data and data != '':
-                print(data)
+            try:
+                data = p.stdout.read()
+                if data and data != '':
+                    print(data)
+            except BaseException:
+                pass
 
         sched.add_job(studiotail_func, 'interval', seconds=1, max_instances=1)
 

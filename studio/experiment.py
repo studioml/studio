@@ -128,7 +128,7 @@ def experiment_from_dict(data, info={}):
         time_started=data.get('time_started'),
         time_last_checkpoint=data.get('time_last_checkpoint'),
         time_finished=data.get('time_finished'),
-        info=info,
+        info=info if any(info) else data.get('info'),
         git=data.get('git'),
         metric=data.get('metric')
     )

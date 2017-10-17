@@ -25,7 +25,7 @@ logging.basicConfig()
 
 class TartifactStore(object):
 
-    def __init__(self, measure_timestamp_diff=False):
+    def __init__(self, measure_timestamp_diff=False, compression='xz'):
 
         if measure_timestamp_diff:
             try:
@@ -118,8 +118,9 @@ class TartifactStore(object):
                 debug_str += ", exclude = {}".format(ignore_filepath)
             self.logger.debug(debug_str)
 
-            tarcmd = 'tar {} -cjf {} -C {} {}'.format(
+            tarcmd = 'tar {} --{} -cf {} -C {} {}'.format(
                 ignore_arg,
+                self.compression,
                 tar_filename,
                 local_basepath,
                 local_nameonly)
@@ -196,8 +197,9 @@ class TartifactStore(object):
                 debug_str += ", exclude = {}".format(ignore_filepath)
             self.logger.debug(debug_str)
 
-            tarcmd = 'tar {} -cjf {} -C {} {}'.format(
+            tarcmd = 'tar {} --{} -cf {} -C {} {}'.format(
                 ignore_arg,
+                self.compression,
                 tar_filename,
                 local_basepath,
                 local_nameonly)
@@ -215,7 +217,9 @@ class TartifactStore(object):
 
             if key is None:
                 key = 'blobstore/' + util.sha256_checksum(tar_filename) \
-                      + '.tar.bz2'
+                      + '.tar'
+                if self.compression:
+                    key = key + '.' + self.compression
 
             def finish_upload():
                 # if file is going to blobstore

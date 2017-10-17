@@ -16,7 +16,13 @@ logging.basicConfig()
 class KeyValueProvider(object):
     """Data provider for Firebase."""
 
-    def __init__(self, db_config, blocking_auth=True, verbose=10, store=None):
+    def __init__(
+            self,
+            db_config,
+            blocking_auth=True,
+            verbose=10,
+            store=None,
+            compression='xz'):
         guest = db_config.get('guest')
 
         self.app = pyrebase.initialize_app(db_config)
@@ -32,13 +38,18 @@ class KeyValueProvider(object):
                                  blocking_auth)
 
         self.store = store if store else FirebaseArtifactStore(
-            db_config, verbose=verbose, blocking_auth=blocking_auth)
+            db_config,
+            verbose=verbose,
+            blocking_auth=blocking_auth,
+            compression=compression
+        )
 
         if self.auth and not self.auth.expired:
             self._set(self._get_user_keybase() + "email",
                       self.auth.get_user_email())
 
         self.max_keys = db_config.get('max_keys', 100)
+        self.compression = compression
 
     def _get_userid(self):
         userid = None
@@ -72,7 +83,10 @@ class KeyValueProvider(object):
         for tag, art in six.iteritems(experiment.artifacts):
             if art['mutable']:
                 art['key'] = self._get_experiments_keybase() + \
-                    experiment.key + '/' + tag + '.tar.bz2'
+                    experiment.key + '/' + tag + '.tar'
+                if self.compression:
+                    art['key'] = art['key'] + '.' + self.compresison
+
             else:
                 if 'local' in art.keys():
                     # upload immutable artifacts

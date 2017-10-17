@@ -9,13 +9,19 @@ logging.basicConfig()
 
 
 class GCloudArtifactStore(TartifactStore):
-    def __init__(self, config, verbose=10, measure_timestamp_diff=False):
+    def __init__(self, config,
+                 measure_timestamp_diff=False,
+                 compression='xz',
+                 verbose=10):
+
         self.logger = logging.getLogger('GCloudArtifactStore')
         self.logger.setLevel(verbose)
 
         self.config = config
 
-        super(GCloudArtifactStore, self).__init__(measure_timestamp_diff)
+        super(GCloudArtifactStore, self).__init__(
+            measure_timestamp_diff,
+            compression=compression)
 
     def _get_bucket_obj(self):
 
