@@ -25,7 +25,7 @@ logging.basicConfig()
 
 class TartifactStore(object):
 
-    def __init__(self, measure_timestamp_diff=False, compression='xz'):
+    def __init__(self, measure_timestamp_diff=False, compression='bzip2'):
 
         if measure_timestamp_diff:
             try:
@@ -429,5 +429,7 @@ class TartifactStore(object):
         pass
 
 
-def get_immutable_artifact_key(arthash, compression='bz2'):
-    return "blobstore/" + arthash + ".tar." + compression
+def get_immutable_artifact_key(arthash, compression='bzip2'):
+    retval = "blobstore/" + arthash + ".tar"
+    if compression and any(compression):
+        retval = retval + '.' + compression

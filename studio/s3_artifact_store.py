@@ -19,7 +19,7 @@ class S3ArtifactStore(TartifactStore):
     def __init__(self, config,
                  verbose=10,
                  measure_timestamp_diff=False,
-                 compression='xz'):
+                 compression='bzip2'):
         self.logger = logging.getLogger('S3ArtifactStore')
         self.logger.setLevel(verbose)
 

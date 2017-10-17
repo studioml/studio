@@ -11,7 +11,7 @@ logging.basicConfig()
 class GCloudArtifactStore(TartifactStore):
     def __init__(self, config,
                  measure_timestamp_diff=False,
-                 compression='xz',
+                 compression='bzip2',
                  verbose=10):
 
         self.logger = logging.getLogger('GCloudArtifactStore')

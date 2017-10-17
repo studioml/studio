@@ -16,7 +16,7 @@ class FirebaseArtifactStore(TartifactStore):
     def __init__(self, db_config,
                  measure_timestamp_diff=False,
                  blocking_auth=True,
-                 compression='xz',
+                 compression='bzip2',
                  verbose=10):
 
         guest = db_config.get('guest')

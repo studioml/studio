@@ -22,7 +22,7 @@ class KeyValueProvider(object):
             blocking_auth=True,
             verbose=10,
             store=None,
-            compression='xz'):
+            compression='bzip2'):
         guest = db_config.get('guest')
 
         self.app = pyrebase.initialize_app(db_config)
