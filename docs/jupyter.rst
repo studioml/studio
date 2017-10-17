@@ -13,6 +13,7 @@ is keeping track of all runs of the cell), or in the cloud / remotely.
 To use Studio in your notebook, add 
 
 ::
+
     from studio import magics 
 
 to the import section of your notebook.
@@ -20,6 +21,7 @@ to the import section of your notebook.
 Then annotate the cell that you'd like to run via studio with
 
 ::
+
     %%studio_run <optional_arguments>
 
 This will execute the statements in the cell using studio,
@@ -28,6 +30,7 @@ For example, let's imagine that a variable ``x`` is declared in
 your notebook. Then 
 
 ::
+
     %%studio_run --cloud=gcloud
     x += 1
 
