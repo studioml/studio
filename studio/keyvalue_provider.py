@@ -85,7 +85,7 @@ class KeyValueProvider(object):
                 art['key'] = self._get_experiments_keybase() + \
                     experiment.key + '/' + tag + '.tar'
                 if self.compression:
-                    art['key'] = art['key'] + '.' + self.compresison
+                    art['key'] = art['key'] + '.' + self.compression
 
             else:
                 if 'local' in art.keys():

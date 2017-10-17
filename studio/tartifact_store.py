@@ -35,6 +35,8 @@ class TartifactStore(object):
         else:
             self.timestamp_shift = 0
 
+        self.compression = compression
+
     def _measure_timestamp_diff(self):
 
         max_diff = 60
