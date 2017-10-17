@@ -19,6 +19,7 @@ from .gpu_util import get_available_gpus, get_gpu_mapping, get_gpus_summary
 from .experiment import Experiment
 
 logging.basicConfig()
+logging.getLogger('apscheduler.scheduler').setLevel(logging.ERROR)
 
 
 class LocalExecutor(object):

@@ -243,10 +243,13 @@ class HTTPProvider(object):
             raise ValueError(str(request.__dict__))
 
         data = request.json()
-        if data['status'] == 'ok':
-            return
+        if 'status' in data.keys():
+            if data['status'] == 'ok':
+                return
 
-        raise ValueError(data['status'])
+            raise ValueError(data['status'])
+        else:
+            raise ValueError(json.dumps(data))
 
     def __enter__(self):
         return self

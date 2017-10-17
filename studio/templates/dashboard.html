@@ -6,10 +6,6 @@
 
     {{ experimenttable() }}
 
-    {% if experiments|length > 0 %}
-        <button onclick='deleteAllExperiments()' type="button" class="btn btn-danger" id=deleteButton>Delete ALL</button>
-    {% endif %}
-
     <script>
         $(authWidget(function() {
             reload(() => data_ajax('get_user_experiments'), fillExperimentTable)

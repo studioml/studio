@@ -1,4 +1,5 @@
 import json
+import time
 import re
 from .keyvalue_provider import KeyValueProvider
 from .gcloud_artifact_store import GCloudArtifactStore
@@ -65,5 +66,15 @@ class GSProvider(KeyValueProvider):
         self.meta_store._delete_file(key)
 
     def _set(self, key, value):
-        self.meta_store._get_bucket_obj().blob(key) \
-            .upload_from_string(json.dumps(value))
+        no_retries = 10
+        sleep_time = 1
+        for i in range(no_retries):
+            try:
+                self.meta_store._get_bucket_obj().blob(key) \
+                    .upload_from_string(json.dumps(value))
+                break
+            except BaseException as e:
+                self.logger.error('uploading data raised an exception:')
+                self.logger.exception(e)
+
+            time.sleep(sleep_time)

@@ -20,7 +20,7 @@ class KeyValueProvider(object):
         guest = db_config.get('guest')
 
         self.app = pyrebase.initialize_app(db_config)
-        self.logger = logging.getLogger('FirebaseProvider')
+        self.logger = logging.getLogger(self.__class__.__name__)
         self.logger.setLevel(verbose)
 
         self.auth = None
@@ -87,9 +87,9 @@ class KeyValueProvider(object):
             art['bucket'] = self.store.get_bucket()
 
         userid = userid if userid else self._get_userid()
+        experiment.owner = userid
 
         experiment_dict = experiment.__dict__.copy()
-        experiment_dict['owner'] = userid
 
         self._set(self._get_experiments_keybase() + experiment.key,
                   experiment_dict)
@@ -111,16 +111,20 @@ class KeyValueProvider(object):
         experiment.time_started = time.time()
         experiment.status = 'running'
 
+        experiment_dict = self._get(self._get_experiments_keybase() +
+                                    experiment.key)
+        experiment_dict['status'] = 'running'
+
         self._set(self._get_experiments_keybase() +
                   experiment.key,
-                  experiment.__dict__)
+                  experiment_dict)
 
         self.checkpoint_experiment(experiment)
 
     def stop_experiment(self, key):
         # can be called remotely (the assumption is
         # that remote worker checks experiments status periodically,
-        # and if it is 'stopped', kills the experiment.
+        # and if it is 'stopped', kills the experiment)
         if not isinstance(key, six.string_types):
             key = key.key
 
@@ -134,19 +138,16 @@ class KeyValueProvider(object):
 
     def finish_experiment(self, experiment):
         time_finished = time.time()
-        if isinstance(experiment, six.string_types):
+        if not isinstance(experiment, six.string_types):
+            key = experiment.key
+        else:
             key = experiment
+
             experiment_dict = self._get(
                 self._get_experiments_keybase() + key)
 
             experiment_dict['status'] = 'finished'
             experiment_dict['time_finished'] = time_finished
-        else:
-            key = experiment.key
-            self.checkpoint_experiment(experiment, blocking=True)
-            experiment.status = 'finished'
-            experiment.time_finished = time_finished
-            experiment_dict = experiment.__dict__
 
         self._set(self._get_experiments_keybase() +
                   key, experiment_dict)
@@ -185,11 +186,12 @@ class KeyValueProvider(object):
         self._delete(self._get_experiments_keybase() + experiment_key)
 
     def checkpoint_experiment(self, experiment, blocking=False):
-        if isinstance(experiment, six.string_types):
-            key = experiment
-            experiment = self.get_experiment(key, getinfo=False)
-        else:
+        if not isinstance(experiment, six.string_types):
             key = experiment.key
+        else:
+            key = experiment
+
+        experiment_dict = self._get(self._get_experiments_keybase() + key)
 
         checkpoint_threads = [
             Thread(
@@ -202,9 +204,11 @@ class KeyValueProvider(object):
             t.start()
 
         experiment.time_last_checkpoint = time.time()
+        experiment_dict['time_last_checkpoint'] = time.time()
 
         self._set(self._get_experiments_keybase() +
-                  key, experiment.__dict__)
+                  key, experiment_dict)
+
         if blocking:
             for t in checkpoint_threads:
                 t.join()
