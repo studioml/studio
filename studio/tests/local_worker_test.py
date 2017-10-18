@@ -285,7 +285,7 @@ def stubtest_worker(
     try:
         experiment = db.get_experiment(experiment_name)
         if wait_for_experiment:
-            while not experiment.status == 'finished':
+            while not experiment or not experiment.status == 'finished':
                 time.sleep(1)
                 experiment = db.get_experiment(experiment_name)
 

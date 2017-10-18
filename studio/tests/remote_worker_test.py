@@ -79,7 +79,7 @@ class RemoteWorkerTest(unittest.TestCase):
             ['studio-start-remote-worker',
              '--queue=' + queue_name,
              '--single-run',
-             '--image=peterzhokhoff/studioml_test'],
+             '--image=peterzhokhoff/studioml'],
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT)
 
@@ -106,7 +106,7 @@ class RemoteWorkerTest(unittest.TestCase):
         if os.path.exists(tmppath):
             os.remove(tmppath)
 
-        db.store.get_artifact(
+        db.get_artifact(
             db.get_experiment(experiment_name).artifacts['f'],
             tmppath,
             only_newer=False
@@ -141,7 +141,7 @@ class RemoteWorkerTest(unittest.TestCase):
             ['studio-start-remote-worker',
              '--queue=' + queue_name,
              '--single-run',
-             '--image=peterzhokhoff/studioml_test'],
+             '--image=peterzhokhoff/studioml'],
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT)
 
@@ -176,7 +176,7 @@ class RemoteWorkerTest(unittest.TestCase):
         and run a remote worker tests with it
         '''
         logger = logging.getLogger('test_baked_image')
-        logger.setLevel(10)
+        logger.setLevel(logging.DEBUG)
 
         # check if docker is installed
         dockertestp = subprocess.Popen(['docker'],
@@ -197,7 +197,7 @@ class RemoteWorkerTest(unittest.TestCase):
             [
                 'studio-add-credentials',
                 '--tag=' + image,
-                '--base-image=peterzhokhoff/studioml_test'],
+                '--base-image=peterzhokhoff/studioml'],
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT)
 
@@ -217,6 +217,7 @@ class RemoteWorkerTest(unittest.TestCase):
             ['studio-start-remote-worker',
              '--queue=' + queue_name,
              '--single-run',
+             '--timeout=30',
              '--image=' + image],
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT)
