@@ -433,3 +433,4 @@ def get_immutable_artifact_key(arthash, compression='bzip2'):
     retval = "blobstore/" + arthash + ".tar"
     if compression and any(compression):
         retval = retval + '.' + compression
+    return retval

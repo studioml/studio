@@ -94,9 +94,9 @@ class KeyValueProvider(object):
                 elif 'hash' in art.keys():
                     art['key'] = get_immutable_artifact_key(art['hash'])
 
-            if 'key' in art.keys():
-                art['qualified'] = self.store.get_qualified_location(
-                    art['key'])
+            key = art.get('key')
+            if key is not None:
+                art['qualified'] = self.store.get_qualified_location(key)
 
             art['bucket'] = self.store.get_bucket()
 
