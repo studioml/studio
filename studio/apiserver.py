@@ -135,7 +135,7 @@ def get_experiment():
             experiment['artifacts'][art]['url'] = url
 
         status = 'ok'
-    except BaseException as e:
+    except BaseException:
         experiment = {}
         status = traceback.format_exc()
 
