@@ -6,7 +6,8 @@ from keras.layers import Dense, Flatten
 from keras.models import Sequential
 
 ###
-# AS OF 10/18/2017, fashion_mnist available as a part of github master branch of keras
+# AS OF 10/18/2017, fashion_mnist available as a part of github master
+# branch of keras
 # but not a part of pypi package
 # Therefore, to use this, you'll need keras installed from a git repo:
 # git clone https://github.com/fchollet/keras && cd keras && pip install .
