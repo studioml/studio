@@ -112,7 +112,7 @@ class KeyValueProvider(object):
                   experiment.key,
                   experiment.time_added)
 
-        if experiment.project and self.auth:
+        if experiment.project and userid:
             self._set(self._get_projects_keybase() +
                       experiment.project + "/" +
                       experiment.key + "/owner",

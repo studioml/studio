@@ -155,7 +155,7 @@ class CompletionService:
                         timeout=self.cloud_timeout)
 
             self.p = None
-        else:
+        elif self.queue_name == None or self.queue_name == 'local':
             self.logger.debug('Starting local worker')
             self.p = subprocess.Popen([
                 'studio-local-worker',
@@ -163,6 +163,13 @@ class CompletionService:
                 '--timeout=' + str(self.cloud_timeout)],
                 close_fds=True)
 
+        # yet another case is when queue name is specified, but
+        # cloud is not - that means running on a separately
+        # managed server that listens to the queue
+        #
+        # The contract is queue_name that starts with sqs or ec2 
+        # is an SQS queue, otherwise, it is a PubSub queue
+    
         return self
 
     def __exit__(self, *args):
