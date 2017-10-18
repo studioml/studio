@@ -29,6 +29,21 @@ def _get_gpu_info():
         return []
 
 
+def get_gpus_summary():
+    info = _get_gpu_info()
+
+    def info_to_summary(gpuinfo):
+        util = gpuinfo.find('utilization').find('gpu_util').text
+        mem = gpuinfo.find('fb_memory_usage').find('used').text
+
+        return "util: {}, mem {}".format(util, memstr2int(mem))
+
+    return " ".join([
+        "gpu {} {}".format(
+            gpuinfo.find('minor_number').text,
+            info_to_summary(gpuinfo)) for gpuinfo in info])
+
+
 def get_gpu_mapping():
     no_gpus = len(_get_gpu_info())
     gpu_mapping = {}

@@ -1,9 +1,10 @@
 import requests
 import json
 import six
+import time
 
 from . import pyrebase
-from .auth import FirebaseAuth
+from .auth import get_auth
 from .http_artifact_store import HTTPArtifactStore
 from .experiment import experiment_from_dict
 
@@ -25,14 +26,20 @@ class HTTPProvider(object):
         self.app = pyrebase.initialize_app(config)
         guest = config.get('guest')
         if not guest and 'serviceAccount' not in config.keys():
-            self.auth = FirebaseAuth(self.app,
-                                     config.get("use_email_auth"),
-                                     config.get("email"),
-                                     config.get("password"),
-                                     blocking_auth)
+            self.auth = get_auth(self.app,
+                                 config.get("use_email_auth"),
+                                 config.get("email"),
+                                 config.get("password"),
+                                 blocking_auth)
 
     def add_experiment(self, experiment):
         headers = self._get_headers()
+
+        for tag, art in six.iteritems(experiment.artifacts):
+            if not art['mutable'] and art.get('local') is not None:
+                art['hash'] = HTTPArtifactStore(None, None, self.verbose) \
+                    .get_artifact_hash(art)
+
         request = requests.post(
             self.url + '/api/add_experiment',
             headers=headers,
@@ -44,15 +51,20 @@ class HTTPProvider(object):
         self._update_artifacts(experiment, artifacts)
 
     def _update_artifacts(self, experiment, artifacts):
-        for tag, art in six.iteritems(experiment.artifacts):
-            art['key'] = artifacts[tag]['key']
-            art['qualified'] = artifacts[tag]['qualified']
-            art['bucket'] = artifacts[tag]['bucket']
+        self.logger.debug(str(experiment.artifacts.keys()))
+        self.logger.debug(str(artifacts.keys()))
 
-            HTTPArtifactStore(artifacts[tag]['url'],
-                              artifacts[tag]['timestamp'],
-                              self.verbose) \
-                .put_artifact(art)
+        for tag, art in six.iteritems(experiment.artifacts):
+            target_art = artifacts.get(tag)
+            if 'local' in art.keys() and target_art is not None:
+                art['key'] = target_art['key']
+                art['qualified'] = target_art['qualified']
+                art['bucket'] = target_art['bucket']
+
+                HTTPArtifactStore(target_art['url'],
+                                  target_art['timestamp'],
+                                  self.verbose) \
+                    .put_artifact(art)
 
     def delete_experiment(self, experiment):
         if isinstance(experiment, six.string_types):
@@ -79,8 +91,12 @@ class HTTPProvider(object):
                                 data=json.dumps({"key": key})
                                 )
 
-        self._raise_detailed_error(request)
-        return experiment_from_dict(request.json()['experiment'])
+        try:
+            self._raise_detailed_error(request)
+            return experiment_from_dict(request.json()['experiment'])
+        except BaseException as e:
+            self.logger.info(e)
+            return None
 
     def start_experiment(self, experiment):
         self.checkpoint_experiment(experiment)
@@ -97,7 +113,10 @@ class HTTPProvider(object):
         self._raise_detailed_error(request)
 
     def stop_experiment(self, experiment):
-        key = experiment.key
+        if isinstance(experiment, six.string_types):
+            key = experiment
+        else:
+            key = experiment.key
 
         headers = self._get_headers()
         request = requests.post(self.url + '/api/stop_experiment',
@@ -162,12 +181,17 @@ class HTTPProvider(object):
 
         return experiments
 
-    def get_artifacts(self):
-        raise NotImplementedError()
+    def get_artifacts(self, key):
+        return {t: a['url'] for t, a in
+                six.iteritems(self.get_experiment(key).artifacts)}
 
-    def get_artifact(self, artifact, only_newer='True'):
-        return HTTPArtifactStore(artifact['url'], self.verbose) \
-            .get_artifact(artifact)
+    def get_artifact(self, artifact,
+                     local_path=None, only_newer='True'):
+        return HTTPArtifactStore(
+            artifact.get('url'),
+            timestamp=time.time(),
+            verbose=self.verbose) \
+            .get_artifact(artifact, local_path=local_path)
 
     def get_users(self):
         headers = self._get_headers()
@@ -217,13 +241,16 @@ class HTTPProvider(object):
 
     def _raise_detailed_error(self, request):
         if request.status_code != 200:
-            raise ValueError(request.message)
+            raise ValueError(str(request.__dict__))
 
         data = request.json()
-        if data['status'] == 'ok':
-            return
+        if 'status' in data.keys():
+            if data['status'] == 'ok':
+                return
 
-        raise ValueError(data['status'])
+            raise ValueError(data['status'])
+        else:
+            raise ValueError(json.dumps(data))
 
     def __enter__(self):
         return self

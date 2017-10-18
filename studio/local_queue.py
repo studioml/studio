@@ -2,14 +2,18 @@ import os
 from . import fs_tracker
 import uuid
 import glob
+import time
+import logging
 
 
 class LocalQueue:
-    def __init__(self, path=None):
+    def __init__(self, path=None, verbose=10):
         if path is None:
             self.path = fs_tracker.get_queue_directory()
         else:
             self.path = path
+        self.logger = logging.getLogger(self.__class__.__name__)
+        self.logger.setLevel(verbose)
 
     def has_next(self):
         return any(glob.glob(self.path + '/*'))
@@ -22,8 +26,21 @@ class LocalQueue:
     def delete(self):
         self.clean()
 
-    def dequeue(self, acknowledge=True):
-        files = glob.glob(self.path + '/*')
+    def dequeue(self, acknowledge=True, timeout=0):
+
+        wait_step = 1
+        for waited in range(0, timeout + wait_step, wait_step):
+            files = glob.glob(self.path + '/*')
+            if any(files):
+                break
+            elif waited == timeout:
+                return None
+            else:
+                self.logger.info(
+                    ('No messages found, sleeping for {} ' +
+                     ' (total sleep time {})').format(wait_step, waited))
+                time.sleep(wait_step)
+
         if not any(files):
             return None
 

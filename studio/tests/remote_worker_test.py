@@ -33,15 +33,17 @@ class RemoteWorkerTest(unittest.TestCase):
             ['studio-start-remote-worker',
              '--queue=' + queue_name,
              '--single-run',
-             '--image=peterzhokhoff/studioml_test'],
+             '--timeout=30',
+             '--image=peterzhokhoff/studioml'],
             stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT)
+            stderr=subprocess.STDOUT
+        )
 
         stubtest_worker(
             self,
             experiment_name=experiment_name,
             runner_args=['--queue=' + queue_name, '--force-git'],
-            config_name='test_config.yaml',
+            config_name='test_config_http_client.yaml',
             test_script='tf_hello_world.py',
             script_args=['arg0'],
             expected_output='[ 2.  6.]',
@@ -77,7 +79,7 @@ class RemoteWorkerTest(unittest.TestCase):
             ['studio-start-remote-worker',
              '--queue=' + queue_name,
              '--single-run',
-             '--image=peterzhokhoff/studioml_test'],
+             '--image=peterzhokhoff/studioml'],
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT)
 
@@ -88,7 +90,7 @@ class RemoteWorkerTest(unittest.TestCase):
                 '--capture=' + tmpfile + ':f',
                 '--queue=' + queue_name,
                 '--force-git'],
-            config_name='test_config.yaml',
+            config_name='test_config_http_client.yaml',
             test_script='art_hello_world.py',
             script_args=[random_str2],
             expected_output=random_str1,
@@ -104,7 +106,7 @@ class RemoteWorkerTest(unittest.TestCase):
         if os.path.exists(tmppath):
             os.remove(tmppath)
 
-        db.store.get_artifact(
+        db.get_artifact(
             db.get_experiment(experiment_name).artifacts['f'],
             tmppath,
             only_newer=False
@@ -139,7 +141,7 @@ class RemoteWorkerTest(unittest.TestCase):
             ['studio-start-remote-worker',
              '--queue=' + queue_name,
              '--single-run',
-             '--image=peterzhokhoff/studioml_test'],
+             '--image=peterzhokhoff/studioml'],
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT)
 
@@ -150,7 +152,7 @@ class RemoteWorkerTest(unittest.TestCase):
                 '--capture-once=' + tmpfile + ':f',
                 '--queue=' + queue_name,
                 '--force-git'],
-            config_name='test_config.yaml',
+            config_name='test_config_http_client.yaml',
             test_script='art_hello_world.py',
             script_args=[],
             expected_output=random_str,
@@ -174,7 +176,7 @@ class RemoteWorkerTest(unittest.TestCase):
         and run a remote worker tests with it
         '''
         logger = logging.getLogger('test_baked_image')
-        logger.setLevel(10)
+        logger.setLevel(logging.DEBUG)
 
         # check if docker is installed
         dockertestp = subprocess.Popen(['docker'],
@@ -195,7 +197,7 @@ class RemoteWorkerTest(unittest.TestCase):
             [
                 'studio-add-credentials',
                 '--tag=' + image,
-                '--base-image=peterzhokhoff/studioml_test'],
+                '--base-image=peterzhokhoff/studioml'],
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT)
 
@@ -215,6 +217,7 @@ class RemoteWorkerTest(unittest.TestCase):
             ['studio-start-remote-worker',
              '--queue=' + queue_name,
              '--single-run',
+             '--timeout=30',
              '--image=' + image],
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT)
@@ -223,7 +226,7 @@ class RemoteWorkerTest(unittest.TestCase):
             self,
             experiment_name=experiment_name,
             runner_args=['--queue=' + queue_name, '--force-git'],
-            config_name='test_config.yaml',
+            config_name='test_config_http_client.yaml',
             test_script='tf_hello_world.py',
             script_args=['arg0'],
             expected_output='[ 2.  6.]',

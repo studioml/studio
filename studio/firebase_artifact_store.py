@@ -5,7 +5,7 @@ import certifi
 import json
 
 from . import pyrebase
-from .auth import FirebaseAuth
+from .auth import get_auth
 from .tartifact_store import TartifactStore
 
 logging.basicConfig()
@@ -13,8 +13,11 @@ logging.basicConfig()
 
 class FirebaseArtifactStore(TartifactStore):
 
-    def __init__(self, db_config, measure_timestamp_diff=False,
-                 blocking_auth=True, verbose=10):
+    def __init__(self, db_config,
+                 measure_timestamp_diff=False,
+                 blocking_auth=True,
+                 compression='bzip2',
+                 verbose=10):
 
         guest = db_config.get('guest')
 
@@ -22,15 +25,17 @@ class FirebaseArtifactStore(TartifactStore):
 
         self.auth = None
         if not guest and 'serviceAccount' not in db_config.keys():
-            self.auth = FirebaseAuth(self.app,
-                                     db_config.get("use_email_auth"),
-                                     db_config.get("email"),
-                                     db_config.get("password"),
-                                     blocking_auth)
+            self.auth = get_auth(self.app,
+                                 db_config.get("use_email_auth"),
+                                 db_config.get("email"),
+                                 db_config.get("password"),
+                                 blocking_auth)
 
         self.logger = logging.getLogger('FirebaseArtifactStore')
         self.logger.setLevel(verbose)
-        super(FirebaseArtifactStore, self).__init__(measure_timestamp_diff)
+        super(FirebaseArtifactStore, self).__init__(
+            measure_timestamp_diff,
+            compression=compression)
 
     def _upload_file(self, key, local_file_path):
         try:

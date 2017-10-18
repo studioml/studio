@@ -1,7 +1,10 @@
 import os
 import glob
 import uuid
-import pip
+try:
+    import pip
+except ImportError:
+    pip = None
 
 from . import fs_tracker
 
@@ -29,7 +32,11 @@ class Experiment(object):
         self.project = project
 
         workspace_path = os.path.abspath('.')
-        model_dir = fs_tracker.get_model_directory(key)
+        try:
+            model_dir = fs_tracker.get_model_directory(key)
+        except BaseException:
+            model_dir = None
+
         self.artifacts = {
             'workspace': {
                 'local': workspace_path,
@@ -45,6 +52,10 @@ class Experiment(object):
             },
             'tb': {
                 'local': fs_tracker.get_tensorboard_dir(key),
+                'mutable': True
+            },
+            '_metrics': {
+                'local': fs_tracker.get_artifact_cache('_metrics', key),
                 'mutable': True
             }
         }
@@ -62,7 +73,7 @@ class Experiment(object):
         self.metric = metric
 
     def get_model(self, db):
-        modeldir = db.store.get_artifact(self.artifacts['modeldir'])
+        modeldir = db.get_artifact(self.artifacts['modeldir'])
         hdf5_files = [
             (p, os.path.getmtime(p))
             for p in
@@ -123,7 +134,7 @@ def experiment_from_dict(data, info={}):
         time_started=data.get('time_started'),
         time_last_checkpoint=data.get('time_last_checkpoint'),
         time_finished=data.get('time_finished'),
-        info=info,
+        info=info if any(info) else data.get('info'),
         git=data.get('git'),
         metric=data.get('metric')
     )

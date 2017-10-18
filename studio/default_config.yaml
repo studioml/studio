@@ -1,39 +1,20 @@
 database:
-    #type: FireBase
     type: http
-    serverUrl: https://studio-ed756.appspot.com
+    serverUrl: http://zoo.studio.ml
     apiKey: AIzaSyCLQbp5X2B4SWzBw-sz9rUnGHNSdMl0Yx8
+    authDomain: "studio-ed756.firebaseapp.com"
 
-    #projectId: studio-ed756
-    #messagingSenderId: 81790704397
-
-    #authDomain: "{}.firebaseapp.com"
-    #databaseURL: "https://{}.firebaseio.com"
-    #storageBucket: "{}.appspot.com"
-
-    # serviceAccount: $GOOGLE_APPLICATION_CREDENTIALS
-    # guest: true
-    #use_email_auth: false
-
-
-
-#storage:
-    #type: s3
-    #bucket: "studioml-artifacts"
-    #type: gcloud
-    #bucket: studio-ed756.appspot.com
-
-   
 
 queue: local
 
+saveMetricsIntervalMinutes: 1
 saveWorkspaceFrequencyMinutes: 1
+saveMectricsIntervalMinutes: 1
 verbose: error
 
 cloud:
     gcloud:
         zone: us-central1-f
-
 
 resources_needed:
     cpus: 2

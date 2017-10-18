@@ -20,7 +20,7 @@ import boto3
 def remove_backspaces(line):
     splitline = re.split('(\x08+)', line)
     try:
-        splitline = [unicode(s) for s in splitline]
+        splitline = [unicode(s, 'utf-8') for s in splitline]
     except NameError:
         splitline = [str(s) for s in splitline]
 
@@ -220,6 +220,9 @@ def download_file(url, local_path, logger=None):
     response = requests.get(
         url,
         stream=True)
+    if logger:
+        logger.info(("Trying to download file at url {} to " +
+                     "local path {}").format(url, local_path))
 
     if response.status_code == 200:
         with open(local_path, 'wb') as f:
@@ -252,3 +255,18 @@ def download_file_from_qualified(qualified, local_path, logger=None):
 
 def has_aws_credentials():
     return boto3.client('s3')._request_signer._credentials is not None
+
+
+def retry(f,
+          no_retries=5, sleeptime=1,
+          exception_class=BaseException, logger=None):
+    for i in range(no_retries):
+        try:
+            return f()
+        except exception_class as e:
+            if logger:
+                logger.info(
+                    ('Exception {} is caught, ' +
+                     'sleeping {}s and retrying (attempt {} of {})')
+                    .format(e, sleeptime, i, no_retries))
+            time.sleep(sleeptime)

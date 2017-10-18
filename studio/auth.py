@@ -20,6 +20,28 @@ SLEEP_TIME = 0.5
 MAX_NUM_RETRIES = 100
 
 
+_auth_singleton = None
+
+
+def get_auth(
+        firebase,
+        use_email_auth=False,
+        email=None,
+        password=None,
+        blocking=True):
+
+    global _auth_singleton
+    if _auth_singleton is None:
+        _auth_singleton = FirebaseAuth(
+            firebase,
+            use_email_auth,
+            email,
+            password,
+            blocking)
+
+    return _auth_singleton
+
+
 class FirebaseAuth(object):
     def __init__(
             self,
@@ -93,17 +115,17 @@ class FirebaseAuth(object):
                 return
 
             self.user = user
-            self.expired = False
-            if time.time() - os.path.getmtime(api_key) > API_KEY_COOLDOWN:
+            if time.time() > self.user.get('expiration', 0):
                 counter = 0
                 while counter < MAX_NUM_RETRIES:
                     try:
                         self.refresh_token(user['email'], user['refreshToken'])
+                        break
                     except BaseException:
                         time.sleep(SLEEP_TIME)
                         counter += 1
-                    else:
-                        return
+            else:
+                self.expired = False
 
     def sign_in_with_email(self):
         self.user = \
@@ -119,20 +141,22 @@ class FirebaseAuth(object):
         api_key = os.path.join(TOKEN_DIR, self.firebase.api_key)
         self.user = self.firebase.auth().refresh(refresh_token)
         self.user['email'] = email
+        self.user['expiration'] = time.time() + API_KEY_COOLDOWN
         self.expired = False
 
-        if not os.path.exists(api_key) or \
-           time.time() - os.path.getmtime(api_key) > HALF_HOUR:
-            # Rename to ensure atomic writes to json file
-            # (technically more safe, but slower)
-            tmp_api_key = os.path.join(tempfile.gettempdir(),
-                                       "api_key_%s" % rand_string(32))
-            with open(tmp_api_key, 'wb') as f:
-                json.dump(self.user, f)
-                f.flush()
-                os.fsync(f.fileno())
-                f.close()
-            os.rename(tmp_api_key, api_key)
+        # if not os.path.exists(api_key) or \
+        #   time.time() - os.path.getmtime(api_key) > HALF_HOUR:
+        # Rename to ensure atomic writes to json file
+        # (technically more safe, but slower)
+
+        tmp_api_key = os.path.join(tempfile.gettempdir(),
+                                   "api_key_%s" % rand_string(32))
+        with open(tmp_api_key, 'wb') as f:
+            json.dump(self.user, f)
+            f.flush()
+            os.fsync(f.fileno())
+            f.close()
+        os.rename(tmp_api_key, api_key)
 
     def get_token(self):
         if self.expired:
