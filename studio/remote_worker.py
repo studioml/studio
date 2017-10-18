@@ -41,7 +41,7 @@ def main(args=sys.argv):
         '--timeout', '-t',
         help='Timeout after which remote worker stops listening (in seconds)',
         type=int,
-        default=-1)
+        default=100)
 
     parsed_args, script_args = parser.parse_known_args(args)
     verbose = model.parse_verbosity(parsed_args.verbose)
