@@ -441,14 +441,14 @@ def get_queue(queue_name=None, cloud=None, verbose=10):
             queue_name = 'sqs_' + str(uuid.uuid4())
         else:
             queue_name = 'local'
+
+    if queue_name.startswith('ec2') or \
+       queue_name.startswith('sqs'):
+        return SQSQueue(queue_name, verbose=verbose)
+    elif queue_name == 'local':
+        return LocalQueue(verbose=verbose)
     else:
-        if queue_name.startswith('ec2') or \
-           queue_name.startswith('sqs'):
-            return SQSQueue(queue_name, verbose=verbose)
-        elif queue_name == 'local':
-            return LocalQueue(verbose=verbose)
-        else:
-            return PubsubQueue(queue_name, verbose=verbose)
+        return PubsubQueue(queue_name, verbose=verbose)
 
 
 def spin_up_workers(
