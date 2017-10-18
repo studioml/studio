@@ -73,7 +73,7 @@ def experiment(key):
 def tensorboard_exp(key):
     if get_allow_tensorboard():
         experiment = _db_provider.get_experiment(key, getinfo=False)
-        tb_path = _db_provider.store.get_artifact(experiment.artifacts['tb'])
+        tb_path = _db_provider.get_artifact(experiment.artifacts['tb'])
 
         return tensorboard(tb_path)
     else:
@@ -89,7 +89,7 @@ def tensorboard_proj(key):
                        get_db().get_project_experiments(key)]
 
         logdir = ','.join(
-            [e.key + ":" + get_db().store.get_artifact(e.artifacts['tb'])
+            [e.key + ":" + get_db().get_artifact(e.artifacts['tb'])
              for e in experiments])
 
         return tensorboard(logdir)
