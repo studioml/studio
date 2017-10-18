@@ -229,7 +229,9 @@ class HTTPProvider(object):
     def _get_headers(self):
         headers = {"content-type": "application/json"}
         if self.auth:
-            headers["Authorization"] = "Firebase " + self.auth.get_token()
+            token = self.auth.get_token()
+            if token:
+                headers["Authorization"] = "Firebase " + token
         return headers
 
     def _get_userid(self):

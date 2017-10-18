@@ -151,8 +151,8 @@ class FirebaseAuth(object):
 
         tmp_api_key = os.path.join(tempfile.gettempdir(),
                                    "api_key_%s" % rand_string(32))
-        with open(tmp_api_key, 'wb') as f:
-            json.dump(self.user, f)
+        with open(tmp_api_key, 'w') as f:
+            f.write(json.dumps(self.user))
             f.flush()
             os.fsync(f.fileno())
             f.close()
