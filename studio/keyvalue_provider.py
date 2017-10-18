@@ -70,10 +70,12 @@ class KeyValueProvider(object):
     def _get_projects_keybase(self):
         return "projects/"
 
-    def add_experiment(self, experiment, userid=None):
+    def add_experiment(self, experiment, userid=None, compression=None):
         self._delete(self._get_experiments_keybase() + experiment.key)
         experiment.time_added = time.time()
         experiment.status = 'waiting'
+
+        compression = compression if compression else self.compression
 
         if 'local' in experiment.artifacts['workspace'].keys() and \
                 os.path.exists(experiment.artifacts['workspace']['local']):
@@ -84,8 +86,8 @@ class KeyValueProvider(object):
             if art['mutable']:
                 art['key'] = self._get_experiments_keybase() + \
                     experiment.key + '/' + tag + '.tar'
-                if self.compression:
-                    art['key'] = art['key'] + '.' + self.compression
+                if compression:
+                    art['key'] = art['key'] + '.' + compression
 
             else:
                 if 'local' in art.keys():
