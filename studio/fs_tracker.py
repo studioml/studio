@@ -102,7 +102,7 @@ def get_blob_cache(blobkey):
     if not os.path.exists(blobcache_dir):
         os.makedirs(blobcache_dir)
 
-    blobkey = re.sub('\.tar\.[^\.]*\Z', '', blobkey)
+    blobkey = re.sub('\.tar\.?[^\.]*\Z', '', blobkey)
     if blobkey.startswith('blobstore/'):
         blobkey = re.sub('.*/', '', blobkey)
 

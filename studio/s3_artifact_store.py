@@ -19,7 +19,7 @@ class S3ArtifactStore(TartifactStore):
     def __init__(self, config,
                  verbose=10,
                  measure_timestamp_diff=False,
-                 compression='bzip2'):
+                 compression=None):
         self.logger = logging.getLogger('S3ArtifactStore')
         self.logger.setLevel(verbose)
 
@@ -29,6 +29,11 @@ class S3ArtifactStore(TartifactStore):
             aws_secret_access_key=config.get('aws_secret_key'),
             endpoint_url=config.get('endpoint'),
             region_name=config.get('region'))
+
+        if compression is None:
+            compression = config.get('compression')
+        if compression is None:
+            compression = 'bzip2'
 
         self.endpoint = self.client._endpoint.host
 
