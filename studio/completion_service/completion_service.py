@@ -73,6 +73,8 @@ class CompletionService:
         num_workers=1,
         # Compute requirements, amount of RAM, GPU, etc
         resources_needed={},
+        # Name of the queue for submission to a server.
+        queue=None,
         # What computer resource to use, either AWS, Google, or local
         cloud=None,
         # Timeout for cloud instances
@@ -96,12 +98,6 @@ class CompletionService:
         self.experimentId = experimentId
         self.project_name = "completion_service_" + experimentId
 
-        self.queue_name = 'local'
-        if cloud in ['gcloud', 'gcspot']:
-            self.queue_name = 'pubsub_' + experimentId
-        elif cloud in ['ec2', 'ec2spot']:
-            self.queue_name = 'sqs_' + experimentId
-
         self.resources_needed = DEFAULT_RESOURCES_NEEDED
         for key in self.resources_needed:
             if key in resources_needed:
@@ -114,8 +110,11 @@ class CompletionService:
         self.verbose_level = model.parse_verbosity(self.config['verbose'])
         self.logger.setLevel(self.verbose_level)
 
-        self.queue = runner.get_queue(self.queue_name, self.cloud,
+        self.queue = runner.get_queue(queue, self.cloud,
                                       self.verbose_level)
+
+        self.queue_name = self.queue.get_name()
+
         self.clean_queue = clean_queue
         if self.clean_queue:
             self.queue.clean()
