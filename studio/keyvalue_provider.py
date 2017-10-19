@@ -88,7 +88,7 @@ class KeyValueProvider(object):
             if art['mutable']:
                 art['key'] = self._get_experiments_keybase() + \
                     experiment.key + '/' + tag + '.tar' + \
-                    util.compression_to_extension(compression)[0]
+                    util.compression_to_extension(compression)
             else:
                 if 'local' in art.keys():
                     # upload immutable artifacts

@@ -25,8 +25,6 @@ class FirebaseArtifactStore(TartifactStore):
 
         if compression is None:
             compression = db_config.get('compression')
-        if compression is None:
-            compression = 'bzip2'
 
         self.auth = None
         if not guest and 'serviceAccount' not in db_config.keys():

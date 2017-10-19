@@ -78,7 +78,7 @@ def get_artifact_cache(tag, experiment_name=None):
                 '/[^/]*\Z',
                 '',
                 tag))
-        tag = re.sub('\.tar\.[^\.]*\Z', '', re.sub('.*/', '', tag))
+        tag = re.sub('\.tar\.?[^\.]*\Z', '', re.sub('.*/', '', tag))
 
     if tag.startswith('blobstore/'):
         return get_blob_cache(tag)

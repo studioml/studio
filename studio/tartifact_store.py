@@ -19,7 +19,7 @@ import hashlib
 from . import fs_tracker
 from . import util
 from .util import download_file, download_file_from_qualified, retry
-from .util import compression_to_extension
+from .util import compression_to_extension, compression_to_taropt
 
 logging.basicConfig()
 
@@ -79,72 +79,7 @@ class TartifactStore(object):
 
         key = artifact.get('key')
         if os.path.exists(local_path):
-            tar_filename = os.path.join(tempfile.gettempdir(),
-                                        str(uuid.uuid4()))
-
-            if os.path.isdir(local_path):
-                local_basepath = local_path
-                local_nameonly = '.'
-
-            else:
-                local_nameonly = os.path.basename(local_path)
-                local_basepath = os.path.dirname(local_path)
-
-            ignore_arg = ''
-            ignore_filepath = os.path.join(local_basepath, ".studioml_ignore")
-            if os.path.exists(ignore_filepath) and \
-                    not os.path.isdir(ignore_filepath):
-                ignore_arg = "--exclude-from=%s" % ignore_filepath
-                # self.logger.debug('.studioml_ignore found: %s,'
-                #                   ' files listed inside will'
-                #                   ' not be tarred or uploaded'
-                #                   % ignore_filepath)
-
-            if cache and key:
-                cache_dir = fs_tracker.get_artifact_cache(key)
-                if cache_dir != local_path:
-                    debug_str = "Copying local path {} to cache {}" \
-                        .format(local_path, cache_dir)
-                    if ignore_arg != '':
-                        debug_str += ", excluding files in {}" \
-                            .format(ignore_filepath)
-                    self.logger.debug(debug_str)
-
-                    util.rsync_cp(local_path, cache_dir, ignore_arg,
-                                  self.logger)
-
-            debug_str = ("Tarring and hashing artifact. " +
-                         "tar_filename = {}, " +
-                         "local_path = {}, " +
-                         "key = {}").format(
-                tar_filename,
-                local_path,
-                key)
-            if ignore_arg != '':
-                debug_str += ", exclude = {}".format(ignore_filepath)
-            self.logger.debug(debug_str)
-
-            tarcmd = 'tar {} {} -cf {} -C {} {}'.format(
-                ignore_arg,
-                compression_to_extension(self.compression)[1],
-                tar_filename,
-                local_basepath,
-                local_nameonly)
-            self.logger.debug("Tar cmd = {}".format(tarcmd))
-
-            tic = time.time()
-            tarp = subprocess.Popen(['/bin/bash', '-c', tarcmd],
-                                    stdout=subprocess.PIPE,
-                                    stderr=subprocess.STDOUT,
-                                    close_fds=True)
-
-            tarout, _ = tarp.communicate()
-            toc = time.time()
-            if tarp.returncode != 0:
-                self.logger.info('tar had a non-zero return code!')
-                self.logger.info('tar output: \n ' + tarout)
-            self.logger.info('tar finished in {}s'.format(toc - tic))
-
+            tar_filename = self._tartifact(local_path, key)
             retval = util.sha256_checksum(tar_filename)
             os.remove(tar_filename)
             return retval
@@ -168,74 +103,7 @@ class TartifactStore(object):
             return key
 
         if os.path.exists(local_path):
-            tar_filename = os.path.join(tempfile.gettempdir(),
-                                        str(uuid.uuid4()))
-
-            if os.path.isdir(local_path):
-                local_basepath = local_path
-                local_nameonly = '.'
-
-            else:
-                local_nameonly = os.path.basename(local_path)
-                local_basepath = os.path.dirname(local_path)
-
-            ignore_arg = ''
-            ignore_filepath = os.path.join(local_basepath, ".studioml_ignore")
-            if os.path.exists(ignore_filepath) and \
-                    not os.path.isdir(ignore_filepath):
-                ignore_arg = "--exclude-from=%s" % ignore_filepath
-                # self.logger.debug('.studioml_ignore found: %s,'
-                #                   ' files listed inside will'
-                #                   ' not be tarred or uploaded'
-                #                   % ignore_filepath)
-
-            if cache and key:
-                cache_dir = fs_tracker.get_artifact_cache(key)
-                if cache_dir != local_path:
-                    debug_str = "Copying local path {} to cache {}" \
-                        .format(local_path, cache_dir)
-                    if ignore_arg != '':
-                        debug_str += ", excluding files in {}" \
-                            .format(ignore_filepath)
-                    self.logger.debug(debug_str)
-
-                    util.rsync_cp(local_path, cache_dir, ignore_arg,
-                                  self.logger)
-
-            debug_str = ("Tarring artifact. " +
-                         "tar_filename = {}, " +
-                         "local_path = {}, " +
-                         "key = {}").format(
-                tar_filename,
-                local_path,
-                key)
-            if ignore_arg != '':
-                debug_str += ", exclude = {}".format(ignore_filepath)
-            self.logger.debug(debug_str)
-
-            tarcmd = 'tar {} {} -cf {} -C {} {}'.format(
-                ignore_arg,
-                compression_to_extension(self.compression)[1],
-                tar_filename,
-                local_basepath,
-                local_nameonly)
-            self.logger.debug("Tar cmd = {}".format(tarcmd))
-
-            tic = time.time()
-            tarp = subprocess.Popen(['/bin/bash', '-c', tarcmd],
-                                    stdout=subprocess.PIPE,
-                                    stderr=subprocess.STDOUT,
-                                    close_fds=True)
-
-            tarout, _ = tarp.communicate()
-            toc = time.time()
-
-            if tarp.returncode != 0:
-                self.logger.info('tar had a non-zero return code!')
-                self.logger.info('tar output: \n ' + tarout)
-
-            self.logger.info('tar finished in {}s'.format(toc - tic))
-
+            tar_filename = self._tartifact(local_path, key)
             if key is None:
                 key = 'blobstore/' + util.sha256_checksum(tar_filename) \
                       + '.tar' + compression_to_extension(self.compression)
@@ -363,6 +231,9 @@ class TartifactStore(object):
                 tarcmd = ('mkdir -p {} && ' +
                           'tar -xf {} -C {} --keep-newer-files') \
                     .format(basepath, tar_filename, basepath)
+
+                self.logger.debug('Tar cmd = {}'.format(tarcmd))
+
                 tarp = subprocess.Popen(
                     ['/bin/bash', '-c', tarcmd],
                     stdout=subprocess.PIPE,
@@ -445,8 +316,80 @@ class TartifactStore(object):
     def __exit__(self, *args):
         pass
 
+    def _tartifact(self, local_path, key, cache=True):
+
+        tar_filename = os.path.join(tempfile.gettempdir(),
+                                    str(uuid.uuid4()))
+
+        if os.path.isdir(local_path):
+            local_basepath = local_path
+            local_nameonly = '.'
+
+        else:
+            local_nameonly = os.path.basename(local_path)
+            local_basepath = os.path.dirname(local_path)
+
+        ignore_arg = ''
+        ignore_filepath = os.path.join(local_basepath, ".studioml_ignore")
+        if os.path.exists(ignore_filepath) and \
+                not os.path.isdir(ignore_filepath):
+            ignore_arg = "--exclude-from=%s" % ignore_filepath
+            self.logger.debug('.studioml_ignore found: %s,'
+                              ' files listed inside will'
+                              ' not be tarred or uploaded'
+                              % ignore_filepath)
+
+        if cache and key:
+            cache_dir = fs_tracker.get_artifact_cache(key)
+            if cache_dir != local_path:
+                debug_str = "Copying local path {} to cache {}" \
+                    .format(local_path, cache_dir)
+                if ignore_arg != '':
+                    debug_str += ", excluding files in {}" \
+                        .format(ignore_filepath)
+                self.logger.debug(debug_str)
+
+                util.rsync_cp(local_path, cache_dir, ignore_arg,
+                              self.logger)
+
+        debug_str = ("Tarring artifact. " +
+                     "tar_filename = {}, " +
+                     "local_path = {}, " +
+                     "key = {}").format(
+            tar_filename,
+            local_path,
+            key)
+
+        if ignore_arg != '':
+            debug_str += ", exclude = {}".format(ignore_filepath)
+        self.logger.debug(debug_str)
+
+        tarcmd = 'tar {} {} -cf {} -C {} {}'.format(
+            ignore_arg,
+            compression_to_taropt(self.compression),
+            tar_filename,
+            local_basepath,
+            local_nameonly)
+        self.logger.debug("Tar cmd = {}".format(tarcmd))
+
+        tic = time.time()
+        tarp = subprocess.Popen(['/bin/bash', '-c', tarcmd],
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.STDOUT,
+                                close_fds=True)
+
+        tarout, _ = tarp.communicate()
+        toc = time.time()
+
+        if tarp.returncode != 0:
+            self.logger.info('tar had a non-zero return code!')
+            self.logger.info('tar output: \n ' + tarout)
+
+        self.logger.info('tar finished in {}s'.format(toc - tic))
+        return tar_filename
+
 
 def get_immutable_artifact_key(arthash, compression=None):
     retval = "blobstore/" + arthash + ".tar" + \
-             compression_to_extension(compression)[0]
+             compression_to_extension(compression)
     return retval

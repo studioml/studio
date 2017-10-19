@@ -273,6 +273,14 @@ def retry(f,
 
 
 def compression_to_extension(compression):
+    return _compression_to_extension_taropt(compression)[0]
+
+
+def compression_to_taropt(compression):
+    return _compression_to_extension_taropt(compression)[1]
+
+
+def _compression_to_extension_taropt(compression):
     default_compression = 'none'
     if compression is None:
         compression = default_compression
