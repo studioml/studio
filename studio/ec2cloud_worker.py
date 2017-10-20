@@ -204,10 +204,10 @@ class EC2WorkerManager(object):
         startup_script = startup_script.format(
             auth_key=auth_key if auth_key else "",
             queue_name=queue_name,
-            auth_data=base64.b64encode(
-                auth_data.encode('utf-8')) if auth_data else "",
+            auth_data=base64.b64encode(auth_data.encode('utf-8'))
+            .decode('utf-8') if auth_data else "",
             google_app_credentials=base64.b64encode(
-                credentials.encode('utf-8')),
+                credentials.encode('utf-8')).decode('utf-8'),
             aws_access_key=self.client._request_signer._credentials.access_key,
             aws_secret_key=self.client._request_signer._credentials.secret_key,
             autoscaling_group=autoscaling_group if autoscaling_group else "",
