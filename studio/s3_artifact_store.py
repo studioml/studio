@@ -32,8 +32,6 @@ class S3ArtifactStore(TartifactStore):
 
         if compression is None:
             compression = config.get('compression')
-        if compression is None:
-            compression = 'bzip2'
 
         self.endpoint = self.client._endpoint.host
 

@@ -19,10 +19,7 @@ class GCloudArtifactStore(TartifactStore):
 
         self.config = config
 
-        if compression is None:
-            compression = config.get('compression')
-        if compression is None:
-            compression = 'bzip2'
+        compression = compression if compression else config.get('compression')
 
         super(GCloudArtifactStore, self).__init__(
             measure_timestamp_diff,

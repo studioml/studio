@@ -40,8 +40,6 @@ class HTTPProvider(object):
         self.compression = compression
         if self.compression is None:
             self.compression = config.get('compression')
-        if self.compression is None:
-            self.compression = 'bzip2'
 
     def add_experiment(self, experiment, userid=None,
                        compression=None):
