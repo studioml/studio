@@ -116,7 +116,7 @@ class FirebaseAuth(object):
                     with open(api_key, 'rb') as f:
                         user = json.load(f)
                 except BaseException as e:
-                    logger.info(e)
+                    self.logger.info(e)
                     time.sleep(SLEEP_TIME)
                     counter += 1
             if user is None:
@@ -130,7 +130,7 @@ class FirebaseAuth(object):
                         self.refresh_token(user['email'], user['refreshToken'])
                         break
                     except BaseException as e:
-                        logger.info(e)
+                        self.logger.info(e)
                         time.sleep(SLEEP_TIME)
                         counter += 1
             else:
