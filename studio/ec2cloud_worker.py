@@ -70,10 +70,11 @@ class EC2WorkerManager(object):
             os.path.dirname(__file__),
             'scripts/ec2_worker_startup.sh')
 
-        self.region = 'us-east-1'
-        self.client = boto3.client('ec2', region_name=self.region)
-        self.asclient = boto3.client('autoscaling', region_name=self.region)
-        self.cwclient = boto3.client('cloudwatch', region_name=self.region)
+        self.client = boto3.client('ec2')
+        self.asclient = boto3.client('autoscaling')
+        self.cwclient = boto3.client('cloudwatch')
+
+        self.region = self.client._client_config.region_name
 
         self.logger = logging.getLogger('EC2WorkerManager')
         self.logger.setLevel(verbose)
@@ -203,16 +204,17 @@ class EC2WorkerManager(object):
         startup_script = startup_script.format(
             auth_key=auth_key if auth_key else "",
             queue_name=queue_name,
-            auth_data=base64.b64encode(auth_data.encode('utf-8')) if auth_data else "",
-            google_app_credentials=base64.b64encode(credentials.encode('utf-8')),
+            auth_data=base64.b64encode(
+                auth_data.encode('utf-8')) if auth_data else "",
+            google_app_credentials=base64.b64encode(
+                credentials.encode('utf-8')),
             aws_access_key=self.client._request_signer._credentials.access_key,
             aws_secret_key=self.client._request_signer._credentials.secret_key,
             autoscaling_group=autoscaling_group if autoscaling_group else "",
             region=self.region,
             use_gpus=0 if resources_needed['gpus'] == 0 else 1,
             timeout=timeout,
-            studioml_branch=self.branch
-        )
+            studioml_branch=self.branch)
 
         startup_script = insert_user_startup_script(
             self.user_startup_script,
