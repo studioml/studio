@@ -96,8 +96,8 @@ class EC2WorkerManager(object):
             'DeviceName': '/dev/sda1',
             'Ebs': {
                 'DeleteOnTermination': True,
-                'VolumeSize': memstr2int(resources_needed['hdd']) /
-                memstr2int('1g'),
+                'VolumeSize': int(memstr2int(resources_needed['hdd']) /
+                                  memstr2int('1g')),
                 'VolumeType': 'standard'
             }
         }]
@@ -203,8 +203,8 @@ class EC2WorkerManager(object):
         startup_script = startup_script.format(
             auth_key=auth_key if auth_key else "",
             queue_name=queue_name,
-            auth_data=base64.b64encode(auth_data) if auth_data else "",
-            google_app_credentials=base64.b64encode(credentials),
+            auth_data=base64.b64encode(auth_data.encode('utf-8')) if auth_data else "",
+            google_app_credentials=base64.b64encode(credentials.encode('utf-8')),
             aws_access_key=self.client._request_signer._credentials.access_key,
             aws_secret_key=self.client._request_signer._credentials.secret_key,
             autoscaling_group=autoscaling_group if autoscaling_group else "",
