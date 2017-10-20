@@ -70,6 +70,10 @@ if [ ! -d "studio" ]; then
     fi
 fi
 
+sudo apt install python3 pip3
+pip3 install --upgrade pip3
+pip3 install --upgrade boto3
+
 cd studio
 git pull
 git checkout $branch
