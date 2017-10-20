@@ -369,7 +369,7 @@ def add_experiment():
     artifacts = {}
     try:
         experiment = experiment_from_dict(request.json['experiment'])
-        compression = request.json['compression']
+        compression = request.json.get('compression')
         compression = compression if compression else 'bzip2'
 
         if get_db().can_write_experiment(experiment.key, userid):
