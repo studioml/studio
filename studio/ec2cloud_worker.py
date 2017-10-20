@@ -386,10 +386,11 @@ class EC2WorkerManager(object):
                 .format(instance_type)
 
             prices[instance_type] = float(
-                six.iteritems(
-                    six.iteritems(
-                        offer_dict['terms']['OnDemand'][product_sku[0]]
-                    ).next()[1]['priceDimensions']
-                ).next()[1]['pricePerUnit']['USD'])
+                list(
+                    list(
+                        offer_dict['terms']['OnDemand']
+                        [product_sku[0]].values()
+                    )[0]['priceDimensions'].values()
+                )[0]['pricePerUnit']['USD'])
 
         return prices
