@@ -83,6 +83,7 @@ class PubsubQueue(object):
         return retval
 
     def enqueue(self, data):
+        self.logger.debug('Sending message with data \n {}'.format(data))
         data = data.encode('utf-8')
         msg_id = self.pubclient.publish(self.topic_name, data)
         self.logger.debug('Message with id {} published'.format(msg_id))
@@ -135,3 +136,4 @@ class PubsubQueue(object):
     def delete(self):
         self.logger.debug("Deleting pubsub queue with topic" + self.topic_name)
         self.pubclient.delete_topic(self.topic_name)
+        self.subclient.delete_subscription(self.sub_name)
