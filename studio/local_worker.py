@@ -69,7 +69,11 @@ class LocalExecutor(object):
             sched.start()
 
             with open(log_path, 'w') as output_file:
-                p = subprocess.Popen(["python",
+                python = 'python'
+                if experiment.pythonver == 3:
+                    python = 'python3'
+
+                p = subprocess.Popen([python,
                                       experiment.filename] +
                                      experiment.args,
                                      stdout=output_file,
@@ -276,14 +280,15 @@ def worker_loop(queue, parsed_args,
 
 
 def pip_install_packages(packages, logger=None):
-    pipp = subprocess.Popen(
-        ['pip', 'install'] + [p for p in packages],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT)
-    pipout, _ = pipp.communicate()
-    if logger:
-        logger.info("pip output: \n" + pipout)
-    return pipp.returncode
+    # pipp = subprocess.Popen(
+    #    ['pip', 'install'] + [p for p in packages],
+    #    stdout=subprocess.PIPE,
+    #    stderr=subprocess.STDOUT)
+    # pipout, _ = pipp.communicate()
+    return pip.main(['install'] + list(packages))
+    # if logger:
+    #    logger.info("pip output: \n" + pipout)
+    # return pipp.returncode
 
 
 def wait_for_messages(queue, timeout, logger=None):

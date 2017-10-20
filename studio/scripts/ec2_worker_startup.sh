@@ -66,7 +66,9 @@ if [ ! -d "studio" ]; then
     fi
 fi
 
-sudo apt install -y jq
+sudo apt install -y jq python3 pip3
+sudo pip3 install --upgrade pip3
+sudo pip3 install --upgrabe boto3
 
 cd studio
 git pull
