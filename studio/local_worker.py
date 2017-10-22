@@ -250,8 +250,8 @@ def worker_loop(queue, parsed_args,
                                 " failed, "
                                 "trying one package at a time")
 
-                        for pkg in pip_diff:
-                            pip_install_packages([pkg], python, logger)
+                            for pkg in pip_diff:
+                                pip_install_packages([pkg], python, logger)
 
                     for tag, art in six.iteritems(experiment.artifacts):
                         if fetch_artifacts or 'local' not in art.keys():
