@@ -237,10 +237,11 @@ def worker_loop(queue, parsed_args,
                 sched.start()
 
                 try:
-                    python = 'python' 
+                    python = 'python'
                     if experiment.pythonver == 3:
                         python = 'python3'
-                    pip_diff = pip_needed_packages(experiment.pythonenv, python)
+                    pip_diff = pip_needed_packages(
+                        experiment.pythonenv, python)
                     if any(pip_diff):
                         logger.info(
                             'Setting up python packages for experiment')
@@ -288,10 +289,11 @@ def pip_install_packages(packages, python='python', logger=None):
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT)
     pipout, _ = pipp.communicate()
-    #return pip.main(['install'] + list(packages))
+    pipout = pipout.decode('utf-8')
+    # return pip.main(['install'] + list(packages))
 
     if logger:
-       logger.info("pip output: \n" + pipout)
+        logger.info("pip output: \n" + pipout)
     return pipp.returncode
 
 
@@ -337,11 +339,12 @@ def pip_needed_packages(packages, python='python'):
         [python, '-m', 'pip', 'freeze'],
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT)
-    
+
     pipout, _ = pipp.communicate()
+    pipout = pipout.decode('utf-8')
     current_packages = {l.strip() for l in pipout.strip().split('\n')}
 
-    #current_packages = {p._key + '==' + p._version for p in
+    # current_packages = {p._key + '==' + p._version for p in
     #                    pip.pip.get_installed_distributions(local_only=True)}
 
     return {p for p in packages} - current_packages
