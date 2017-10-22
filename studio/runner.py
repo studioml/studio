@@ -526,6 +526,7 @@ def submit_experiments(
     start_time = time.time()
     n_workers = min(multiprocessing.cpu_count() * 2, num_experiments)
 
+    
     with closing(multiprocessing.Pool(n_workers, maxtasksperchild=20)) as p:
         experiments = p.imap_unordered(add_experiment,
                                        zip([config] * num_experiments,
@@ -535,6 +536,14 @@ def submit_experiments(
                                        chunksize=1)
         p.close()
         p.join()
+    
+    '''
+    experiements = [add_experiment(e) for e in 
+                    zip([config] * num_experiments,
+                       [python_pkg] *
+                       num_experiments,
+                       experiments)]
+    '''               
 
     logger.info("Added %s experiments in %s seconds" %
                 (num_experiments, int(time.time() - start_time)))
