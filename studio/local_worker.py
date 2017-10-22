@@ -237,7 +237,10 @@ def worker_loop(queue, parsed_args,
                 sched.start()
 
                 try:
-                    pip_diff = pip_needed_packages(experiment.pythonenv)
+                    python = 'python' 
+                    if experiment.pythonver == 3:
+                        python = 'python3'
+                    pip_diff = pip_needed_packages(experiment.pythonenv, python)
                     if any(pip_diff):
                         logger.info(
                             'Setting up python packages for experiment')
@@ -280,15 +283,16 @@ def worker_loop(queue, parsed_args,
 
 
 def pip_install_packages(packages, logger=None):
-    # pipp = subprocess.Popen(
-    #    ['pip', 'install'] + [p for p in packages],
-    #    stdout=subprocess.PIPE,
-    #    stderr=subprocess.STDOUT)
-    # pipout, _ = pipp.communicate()
-    return pip.main(['install'] + list(packages))
-    # if logger:
-    #    logger.info("pip output: \n" + pipout)
-    # return pipp.returncode
+    pipp = subprocess.Popen(
+        ['pip', 'install'] + [p for p in packages],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT)
+    pipout, _ = pipp.communicate()
+    #return pip.main(['install'] + list(packages))
+
+    if logger:
+       logger.info("pip output: \n" + pipout)
+    return pipp.returncode
 
 
 def wait_for_messages(queue, timeout, logger=None):
@@ -327,10 +331,18 @@ def save_metrics(path):
         f.write(entry)
 
 
-def pip_needed_packages(packages):
+def pip_needed_packages(packages, python='python'):
 
-    current_packages = {p._key + '==' + p._version for p in
-                        pip.pip.get_installed_distributions(local_only=True)}
+    pipp = subprocess.Popen(
+        [python, '-m', 'pip', 'freeze'],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT)
+    
+    pipout, _ = pipp.communicate()
+    current_packages = {l.strip() for l in pipout.strip().split('\n')}
+
+    #current_packages = {p._key + '==' + p._version for p in
+    #                    pip.pip.get_installed_distributions(local_only=True)}
 
     return {p for p in packages} - current_packages
 

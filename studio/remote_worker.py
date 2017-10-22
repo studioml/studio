@@ -1,11 +1,11 @@
-from local_worker import worker_loop
+from .local_worker import worker_loop
 import sys
 import logging
 import model
 
 
-from pubsub_queue import PubsubQueue
-from sqs_queue import SQSQueue
+from .pubsub_queue import PubsubQueue
+from .sqs_queue import SQSQueue
 
 import argparse
 logging.basicConfig()
