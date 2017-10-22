@@ -244,14 +244,14 @@ def worker_loop(queue, parsed_args,
                     if any(pip_diff):
                         logger.info(
                             'Setting up python packages for experiment')
-                        if pip_install_packages(pip_diff, logger) != 0:
+                        if pip_install_packages(pip_diff, python, logger) != 0:
                             logger.info(
                                 "Installation of all packages together " +
                                 " failed, "
                                 "trying one package at a time")
 
                         for pkg in pip_diff:
-                            pip_install_packages([pkg], logger)
+                            pip_install_packages([pkg], python, logger)
 
                     for tag, art in six.iteritems(experiment.artifacts):
                         if fetch_artifacts or 'local' not in art.keys():
