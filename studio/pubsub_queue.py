@@ -135,3 +135,4 @@ class PubsubQueue(object):
     def delete(self):
         self.logger.debug("Deleting pubsub queue with topic" + self.topic_name)
         self.pubclient.delete_topic(self.topic_name)
+        self.pubclient.delete_subscription(self.subscription_name)
