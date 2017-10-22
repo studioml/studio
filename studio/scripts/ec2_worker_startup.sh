@@ -72,7 +72,8 @@ if [ ! -d "studio" ]; then
         sudo dpkg -i $cudnn5
         sudo dpkg -i $cudnn6
 
-        sudo pip install tensorflow tensorflow-gpu --upgrade
+        sudo python  -m pip install tensorflow tensorflow-gpu --upgrade
+        sudo python3 -m pip install tensorflow tensorflow-gpu --upgrade
     else
         sudo apt install -y default-jre
     fi

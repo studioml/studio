@@ -19,7 +19,11 @@ from google.cloud import storage
 from requests.packages.urllib3.contrib.appengine import is_appengine_sandbox
 from requests_toolbelt.adapters import appengine
 import certifi
-import python_jwt as jwt
+
+try:
+    import python_jwt as jwt
+except ImportError:
+    jwt = None
 
 try:
     from Crypto.PublicKey import RSA
