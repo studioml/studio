@@ -282,9 +282,9 @@ def worker_loop(queue, parsed_args,
                 .format(fs_tracker.get_queue_directory()))
 
 
-def pip_install_packages(packages, logger=None):
+def pip_install_packages(packages, python='python', logger=None):
     pipp = subprocess.Popen(
-        ['pip', 'install'] + [p for p in packages],
+        [python, '-m', 'pip', 'install'] + [p for p in packages],
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT)
     pipout, _ = pipp.communicate()
