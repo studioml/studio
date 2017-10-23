@@ -56,7 +56,7 @@ class CompletionServiceTest(unittest.TestCase):
             mypath,
             '..',
             'tests',
-            'test_config.yaml')
+            'test_config_http_client.yaml')
 
         self.test_two_experiments_with_cs_args(
             config=config_path,
@@ -71,7 +71,7 @@ class CompletionServiceTest(unittest.TestCase):
             mypath,
             '..',
             'tests',
-            'test_config.yaml')
+            'test_config_http_client.yaml')
 
         self.test_two_experiments_with_cs_args(
             config=config_path,
