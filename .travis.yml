@@ -14,7 +14,8 @@ install:
   - echo $GOOGLE_CREDENTIALS_ENCODED | base64 --decode > $GOOGLE_APPLICATION_CREDENTIALS
 
 script:
-  - nosetests -v 
+  # - nosetests -v 
+  - cd studio/tests && python artifact_store_test.py
   - pep8 --show-source .
   - python setup.py sdist
 
