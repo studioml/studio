@@ -15,8 +15,7 @@ install:
   - export GOOGLE_APPLICATION_CREDENTIALS=$(pwd)/credentials.json
 
 script:
-  # - nosetests -v 
-  - cd studio/tests && python artifact_store_test.py
+  - nosetests -v 
   - pep8 --show-source .
   - python setup.py sdist
 
