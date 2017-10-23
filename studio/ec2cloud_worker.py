@@ -345,6 +345,10 @@ class EC2WorkerManager(object):
             )
 
     def _get_ondemand_prices(self, instances=_instance_specs.keys()):
+
+        # TODO un-hardcode the us-east as a region 
+        # so that prices are being read for a correct region        
+
         price_path = os.path.join(os.path.expanduser('~'), '.studioml',
                                   'awsprices.json')
         try:
