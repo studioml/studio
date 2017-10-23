@@ -74,10 +74,11 @@ fi
 
 echo "docker_cmd = $docker_cmd"
 if [ $docker_cmd == 'docker' ]; then
-    bash_cmd="pip uninstall -y tensorflow-gpu tensorflow && pip install tensorflow &&"
+    bash_cmd="python -m pip uninstall -y tensorflow-gpu tensorflow && python3 -m pip uninstall -y tensorflow tensorflow-gpu &&"
+    bash_cmd="$bash_cmd python -m pip install tensorflow && python3 -m pip install tensorflow && "
 fi
 
-bash_cmd="$bash_cmd mkdir /workspace && cd workspace && studio-remote-worker --queue=$queue_name --verbose=debug --timeout=$timeout --single-run"
+bash_cmd="$bash_cmd studio-remote-worker --queue=$queue_name --verbose=debug --timeout=$timeout --single-run"
 
 : "${GOOGLE_APPLICATION_CREDENTIALS?Need to point GOOGLE_APPLICATION_CREDENTIALS to the google credentials file}"
 : "${queue_name?Queue name is not specified (pass as a script argument}"

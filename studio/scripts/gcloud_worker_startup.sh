@@ -41,11 +41,30 @@ code_url_base="https://storage.googleapis.com/studio-ed756.appspot.com/src"
 repo_url="https://github.com/studioml/studio"
 branch="{studioml_branch}"
 
+echo "Environment varibles:"
+env
 
 if [ ! -d "studio" ]; then
+    echo "Installing system packages..."
+    sudo add-apt-repository -y ppa:jonathonf/python-3.6
     sudo apt -y update
-    sudo apt install -y wget python-pip git python-dev
-    sudo pip install --upgrade pip
+    sudo apt install -y wget git jq 
+    sudo apt install -y python python-pip python-dev python3.6 python3.6-dev python3-pip
+    echo "python2 version: " $(python -V)
+
+    sudo python -m pip install --upgrade pip
+    sudo python -m pip install --upgrade awscli boto3
+
+    sudo ln -sf /usr/bin/python3.6 /usr/bin/python3
+    #sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.6 0
+    echo "python3 version: " $(python3 -V)
+   
+    sudo python3 -m pip install --upgrade pip
+    sudo python3 -m pip install --upgrade awscli boto3
+
+    #wget $code_url_base/$code_ver
+    #tar -xzf $code_ver
+    #cd studio
     git clone $repo_url
 
     if [[ "{use_gpus}" -eq 1 ]]; then
@@ -58,7 +77,7 @@ if [ ! -d "studio" ]; then
         wget $cuda_base/$cuda_ver
         sudo dpkg -i $cuda_ver
         sudo apt -y update
-        sudo apt install -y cuda
+        sudo apt install -y "cuda-8.0"
 
         # install cudnn
         wget $code_url_base/$cudnn5
@@ -66,13 +85,12 @@ if [ ! -d "studio" ]; then
         sudo dpkg -i $cudnn5
         sudo dpkg -i $cudnn6
 
-        sudo pip install tensorflow tensorflow-gpu --upgrade
+        sudo python  -m pip install tensorflow tensorflow-gpu --upgrade
+        sudo python3 -m pip install tensorflow tensorflow-gpu --upgrade
+    else
+        sudo apt install -y default-jre
     fi
 fi
-
-sudo apt install python3 pip3
-pip3 install --upgrade pip3
-pip3 install --upgrade boto3
 
 cd studio
 git pull

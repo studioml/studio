@@ -1,9 +1,8 @@
-from .local_worker import worker_loop
 import sys
 import logging
-import model
 
-
+from . import model
+from .local_worker import worker_loop
 from .pubsub_queue import PubsubQueue
 from .sqs_queue import SQSQueue
 
