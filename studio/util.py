@@ -307,3 +307,12 @@ def _compression_to_extension_taropt(compression):
 
     raise ValueError('Unknown compression method {}'
                      .format(compression))
+
+
+def sixdecode(s):
+    if isinstance(s, six.string_types):
+        return s
+    if isinstance(s, six.binary_type):
+        return s.decode('utf8')
+
+    raise TypeError("Unknown type of " + str(s))

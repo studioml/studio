@@ -8,6 +8,7 @@ import psutil
 import time
 import six
 
+
 from apscheduler.schedulers.background import BackgroundScheduler
 
 from . import fs_tracker
@@ -15,6 +16,7 @@ from . import model
 from .local_queue import LocalQueue
 from .gpu_util import get_available_gpus, get_gpu_mapping, get_gpus_summary
 from .experiment import Experiment
+from .util import sixdecode
 
 logging.basicConfig()
 logging.getLogger('apscheduler.scheduler').setLevel(logging.ERROR)
@@ -207,7 +209,7 @@ def worker_loop(queue, parsed_args,
         # first_exp, ack_key = queue.dequeue(acknowledge=False)
         first_exp, ack_key = msg
 
-        data_dict = json.loads(first_exp.decode('utf8'))
+        data_dict = json.loads(sixdecode(first_exp))
         experiment_key = data_dict['experiment']['key']
         config = data_dict['config']
 
