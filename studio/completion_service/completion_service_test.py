@@ -90,7 +90,7 @@ class CompletionServiceTest(unittest.TestCase):
         self.test_two_experiments_with_cs_args(config=config_path)
 
     @unittest.skipIf(
-        'GOOGLE_APPLICATION_CREDENTIALS' not in os.environ.keys() or 
+        'GOOGLE_APPLICATION_CREDENTIALS' not in os.environ.keys() or
         sys.version_info[0] > 2,
         'Need GOOGLE_APPLICATION_CREDENTIALS env variable to' +
         'use google cloud')
@@ -165,8 +165,8 @@ class CompletionServiceTest(unittest.TestCase):
         self.assertEquals(results, expected_results)
 
     @unittest.skipIf(
-        'GOOGLE_APPLICATION_CREDENTIALS' not in os.environ.keys() or 
-        sys.version_info[0] > 2
+        'GOOGLE_APPLICATION_CREDENTIALS' not in os.environ.keys() or
+        sys.version_info[0] > 2,
         'Need GOOGLE_APPLICATION_CREDENTIALS env variable to' +
         'use google cloud')
     def test_two_experiments_gcloud_nonspot(self):
