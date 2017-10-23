@@ -7,8 +7,6 @@ import json
 import psutil
 import time
 import six
-import pip
-
 
 from apscheduler.schedulers.background import BackgroundScheduler
 
@@ -209,8 +207,10 @@ def worker_loop(queue, parsed_args,
         # first_exp, ack_key = queue.dequeue(acknowledge=False)
         first_exp, ack_key = msg
 
-        experiment_key = json.loads(first_exp)['experiment']['key']
-        config = json.loads(first_exp)['config']
+        data_dict = json.loads(first_exp.decode('utf8'))
+        experiment_key = data_dict['experiment']['key']
+        config = data_dict['config']
+
         parsed_args.config = config
         if verbose:
             config['verbose'] = verbose
