@@ -90,7 +90,7 @@ class EC2WorkerManager(object):
 
     def _get_image_id(self):
         # return 'ami-cd0f5cb6'  # vanilla ubuntu 16.04 image
-        return 'ami-a9a47cd3' # studio.ml gpu image with python2 and python3
+        return 'ami-a9a47cd3'  # studio.ml gpu image with python2 and python3
 
     def _get_block_device_mappings(self, resources_needed):
         return [{
@@ -346,8 +346,8 @@ class EC2WorkerManager(object):
 
     def _get_ondemand_prices(self, instances=_instance_specs.keys()):
 
-        # TODO un-hardcode the us-east as a region 
-        # so that prices are being read for a correct region        
+        # TODO un-hardcode the us-east as a region
+        # so that prices are being read for a correct region
 
         price_path = os.path.join(os.path.expanduser('~'), '.studioml',
                                   'awsprices.json')
