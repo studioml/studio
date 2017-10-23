@@ -104,9 +104,9 @@ class CompletionServiceTest(unittest.TestCase):
             config=config_path,
             cloud='gcloud')
 
-    # @unittest.skip('TODO peterz scale down or fix')
-    @unittest.skipIf(not has_aws_credentials(),
-                     'AWS credentials needed for this test')
+    @unittest.skip('TODO peterz scale down or fix')
+    # @unittest.skipIf(not has_aws_credentials(),
+    #                 'AWS credentials needed for this test')
     def test_many_experiments_ec2(self):
         experimentId = str(uuid.uuid4())
         mypath = os.path.dirname(os.path.realpath(__file__))
