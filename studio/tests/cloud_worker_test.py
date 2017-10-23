@@ -1,3 +1,4 @@
+import sys
 import unittest
 import os
 import uuid
@@ -10,7 +11,8 @@ from studio.util import has_aws_credentials
 
 
 @unittest.skipIf(
-    'GOOGLE_APPLICATION_CREDENTIALS' not in os.environ.keys(),
+    'GOOGLE_APPLICATION_CREDENTIALS' not in os.environ.keys() or
+    sys.version_info[0] > 2,
     'GOOGLE_APPLICATION_CREDENTIALS environment ' +
     'variable not set, won'' be able to use google cloud')
 class GCloudWorkerTest(unittest.TestCase):
