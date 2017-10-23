@@ -16,7 +16,8 @@ install:
   - pip install pep8
 
 script:
-  - nosetests -v 
+  #- nosetests -v 
+  - cd studio/tests && python -m unittest -q cloud_worker_test.EC2WorkerTest.test_worker
   - pep8 --show-source .
   - python setup.py sdist
 
