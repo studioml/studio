@@ -51,8 +51,8 @@ class RemoteWorkerTest(unittest.TestCase):
 
         workerout, _ = pw.communicate()
         if workerout:
-            workerout = workerout.decode('utf8')
-            logger.debug("studio-start-remote-worker output: \n" + workerout)
+            logger.debug("studio-start-remote-worker output: \n" +
+                         str(workerout))
 
     @timeout(300)
     @unittest.skipIf(
@@ -100,8 +100,8 @@ class RemoteWorkerTest(unittest.TestCase):
 
         workerout, _ = pw.communicate()
         if workerout:
-            workerout = workerout.decode('utf8')
-            logger.debug("studio-start-remote-worker output: \n" + workerout)
+            logger.debug("studio-start-remote-worker output: \n" +
+                         str(workerout))
         os.remove(tmpfile)
 
         tmppath = os.path.join(tempfile.gettempdir(), str(uuid.uuid4()))
@@ -161,8 +161,7 @@ class RemoteWorkerTest(unittest.TestCase):
             queue=PubsubQueue(queue_name))
 
         workerout, _ = pw.communicate()
-        workerout = workerout.decode('utf8')
-        logger.debug('studio-start-remote-worker output: \n' + workerout)
+        logger.debug('studio-start-remote-worker output: \n' + str(workerout))
 
         os.remove(tmpfile)
 
@@ -188,8 +187,7 @@ class RemoteWorkerTest(unittest.TestCase):
 
         dockertestout, _ = dockertestp.communicate()
         if dockertestout:
-            dockertestout = dockertestout.decode('utf8')
-            logger.info("docker test output: \n" + dockertestout)
+            logger.info("docker test output: \n" + str(dockertestout))
 
         if dockertestp.returncode != 0:
             logger.error("docker is not installed (correctly)")
@@ -207,8 +205,7 @@ class RemoteWorkerTest(unittest.TestCase):
 
         addcredsout, _ = addcredsp.communicate()
         if addcredsout:
-            addcredsout = addcredsout.decode('utf8')
-            logger.info('studio-add-credentials output: \n' + addcredsout)
+            logger.info('studio-add-credentials output: \n' + str(addcredsout))
         if addcredsp.returncode != 0:
             logger.error("studio-add-credentials failed.")
             self.assertTrue(False)
@@ -239,8 +236,9 @@ class RemoteWorkerTest(unittest.TestCase):
 
         workerout, _ = pw.communicate()
         if workerout:
-            workerout = workerout.decode('utf8')
-            logger.debug("studio-start-remote-worker output: \n" + workerout)
+            logger.debug(
+                "studio-start-remote-worker output: \n" +
+                str(workerout))
 
         rmip = subprocess.Popen(['docker', 'rmi', image],
                                 stdout=subprocess.PIPE,
@@ -249,8 +247,7 @@ class RemoteWorkerTest(unittest.TestCase):
         rmiout, _ = rmip.communicate()
 
         if rmiout:
-            rmiout = rmiout.decode('utf8')
-            logger.info('docker rmi output: \n' + rmiout)
+            logger.info('docker rmi output: \n' + str(rmiout))
 
 
 if __name__ == "__main__":
