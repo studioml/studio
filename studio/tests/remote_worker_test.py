@@ -51,6 +51,7 @@ class RemoteWorkerTest(unittest.TestCase):
 
         workerout, _ = pw.communicate()
         if workerout:
+            workerout = workerout.decode('utf8')
             logger.debug("studio-start-remote-worker output: \n" + workerout)
 
     @timeout(300)
@@ -99,6 +100,7 @@ class RemoteWorkerTest(unittest.TestCase):
 
         workerout, _ = pw.communicate()
         if workerout:
+            workerout = workerout.decode('utf8')
             logger.debug("studio-start-remote-worker output: \n" + workerout)
         os.remove(tmpfile)
 
@@ -159,6 +161,7 @@ class RemoteWorkerTest(unittest.TestCase):
             queue=PubsubQueue(queue_name))
 
         workerout, _ = pw.communicate()
+        workerout = workerout.decode('utf8')
         logger.debug('studio-start-remote-worker output: \n' + workerout)
 
         os.remove(tmpfile)
@@ -234,6 +237,7 @@ class RemoteWorkerTest(unittest.TestCase):
 
         workerout, _ = pw.communicate()
         if workerout:
+            workerout = workerout.decode('utf8')
             logger.debug("studio-start-remote-worker output: \n" + workerout)
 
         rmip = subprocess.Popen(['docker', 'rmi', image],
