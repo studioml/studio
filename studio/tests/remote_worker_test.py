@@ -188,6 +188,7 @@ class RemoteWorkerTest(unittest.TestCase):
 
         dockertestout, _ = dockertestp.communicate()
         if dockertestout:
+            dockertestout = dockertestout.decode('utf8')
             logger.info("docker test output: \n" + dockertestout)
 
         if dockertestp.returncode != 0:
@@ -206,6 +207,7 @@ class RemoteWorkerTest(unittest.TestCase):
 
         addcredsout, _ = addcredsp.communicate()
         if addcredsout:
+            addcredsout = addcredsout.decode('utf8')
             logger.info('studio-add-credentials output: \n' + addcredsout)
         if addcredsp.returncode != 0:
             logger.error("studio-add-credentials failed.")
@@ -247,6 +249,7 @@ class RemoteWorkerTest(unittest.TestCase):
         rmiout, _ = rmip.communicate()
 
         if rmiout:
+            rmiout = rmiout.decode('utf8')
             logger.info('docker rmi output: \n' + rmiout)
 
 
