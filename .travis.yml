@@ -11,7 +11,8 @@ env:
 install:
   - pip install -e .
   - pip install pep8
-  - echo $GOOGLE_CREDENTIALS_ENCODED | base64 --decode > $GOOGLE_APPLICATION_CREDENTIALS
+  - echo $GOOGLE_CREDENTIALS_ENCODED | base64 --decode > ./credentials.json
+  - export GOOGLE_APPLICATION_CREDENTIALS=$(pwd)/credentials.json
 
 script:
   # - nosetests -v 
