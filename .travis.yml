@@ -11,7 +11,7 @@ env:
 install:
   - pip install -e .
   - pip install pep8
-  - echo $GOOGLE_CREDENTIALS_ENCODED | base64 --decode > $GOOGLE_APPLICATION_CREDENTALS
+  - echo $GOOGLE_CREDENTIALS_ENCODED | base64 --decode > $GOOGLE_APPLICATION_CREDENTIALS
 
 script:
   - nosetests -v 
