@@ -14,7 +14,7 @@ logging.basicConfig()
 
 
 class RemoteWorkerTest(unittest.TestCase):
-    _multiprocess_can_split_ = True
+    _multiprocess_shared_ = True
 
     @timeout(300)
     @unittest.skipIf(

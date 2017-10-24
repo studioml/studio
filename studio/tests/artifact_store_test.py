@@ -23,7 +23,7 @@ from studio.util import has_aws_credentials
 
 
 class ArtifactStoreTest(object):
-    _multiprocess_can_split_ = True
+    _multiprocess_shared_ = True
 
     def get_store(self, config_name='test_config.yaml'):
         config_file = os.path.join(

@@ -16,7 +16,7 @@ from studio.util import has_aws_credentials
     'GOOGLE_APPLICATION_CREDENTIALS environment ' +
     'variable not set, won'' be able to use google cloud')
 class GCloudWorkerTest(unittest.TestCase):
-    _multiprocess_can_split_ = True
+    _multiprocess_shared_ = True
 
     def get_worker_manager(self):
         project = 'studio-ed756'
@@ -55,7 +55,7 @@ class GCloudWorkerTest(unittest.TestCase):
     not has_aws_credentials(),
     'boto3 not present, won\'t be able to use AWS API')
 class EC2WorkerTest(unittest.TestCase):
-    _multiprocess_can_split_ = True
+    _multiprocess_shared_ = True
 
     def get_worker_manager(self):
         return EC2WorkerManager()

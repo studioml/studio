@@ -5,6 +5,7 @@ import json
 import time
 
 from .model import parse_verbosity
+from .util import sixdecode
 
 logging.basicConfig()
 
@@ -112,13 +113,13 @@ class PubsubQueue(object):
             self.logger.debug("Message {} received and acknowledged"
                               .format(retval.message.message_id))
 
-            return retval.message.data
+            return sixdecode(retval.message.data)
         else:
             self.logger.debug(
                 "Message {} received, ack_id {}" .format(
                     retval.message.message_id,
                     retval.ack_id))
-            return (retval.message.data, retval.ack_id)
+            return (sixdecode(retval.message.data), retval.ack_id)
 
     def hold(self, ack_key, delay=5):
         self.logger.debug(

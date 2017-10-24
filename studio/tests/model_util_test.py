@@ -25,7 +25,7 @@ from studio import model_util
 
 
 class ModelUtilTest(unittest.TestCase):
-    _multiprocess_can_split = True
+    _multiprocess_shared_ = True
 
     def test_q2q_batch(self):
         data = six.moves.range(10)
@@ -126,7 +126,7 @@ class BufferedPipeTest(unittest.TestCase):
 
 
 class ModelPipeTest(unittest.TestCase):
-    _multiprocess_can_split = True
+    _multiprocess_shared_ = True
 
     def test_model_pipe(self):
 
