@@ -16,7 +16,8 @@ install:
   - 'if [ -n "$GOOGLE_CREDENTIALS_ENCODED" ]; then echo "$GOOGLE_CREDENTIALS_ENCODED" | base64 --decode > ./credentials.json && export GOOGLE_APPLICATION_CREDENTIALS=$(pwd)/credentials.json; fi'
 
 script:
-  - nosetests -v  --processes=2 --process-timeout=590
+  - echo $GOOGLE_APPLICATION_CREDENTIALS
+  - nosetests -v  --processes=4 --process-timeout=590
   - pep8 --show-source .
   - python setup.py sdist
 
