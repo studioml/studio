@@ -85,7 +85,7 @@ def get_artifact_cache(tag, experiment_name=None):
                 '/[^/]*\Z',
                 '',
                 tag))
-        tag = re.sub('\.tar\.[^\.]*\Z', '', re.sub('.*/', '', tag))
+        tag = re.sub('\.tar\.?[^\.]*\Z', '', re.sub('.*/', '', tag))
 
     if tag.startswith('blobstore/'):
         return get_blob_cache(tag)
@@ -109,7 +109,7 @@ def get_blob_cache(blobkey):
     if not os.path.exists(blobcache_dir):
         os.makedirs(blobcache_dir)
 
-    blobkey = re.sub('\.tar\.[^\.]*\Z', '', blobkey)
+    blobkey = re.sub('\.tar\.?[^\.]*\Z', '', blobkey)
     if blobkey.startswith('blobstore/'):
         blobkey = re.sub('.*/', '', blobkey)
 

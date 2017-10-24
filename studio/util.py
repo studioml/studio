@@ -270,3 +270,40 @@ def retry(f,
                      'sleeping {}s and retrying (attempt {} of {})')
                     .format(e, sleeptime, i, no_retries))
             time.sleep(sleeptime)
+
+
+def compression_to_extension(compression):
+    return _compression_to_extension_taropt(compression)[0]
+
+
+def compression_to_taropt(compression):
+    return _compression_to_extension_taropt(compression)[1]
+
+
+def _compression_to_extension_taropt(compression):
+    default_compression = 'none'
+    if compression is None:
+        compression = default_compression
+
+    compression = compression.lower()
+
+    if compression == 'bzip2':
+        return '.bz2', '--bzip2'
+
+    elif compression == 'gzip':
+        return '.gz', '--gzip'
+
+    elif compression == 'xz':
+        return '.xz', '--xz'
+
+    elif compression == 'lzma':
+        return '.lzma', '--lzma'
+
+    elif compression == 'lzop':
+        return '.lzop', '--lzop'
+
+    elif compression == 'none':
+        return '', ''
+
+    raise ValueError('Unknown compression method {}'
+                     .format(compression))
