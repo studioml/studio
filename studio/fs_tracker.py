@@ -57,7 +57,7 @@ def get_artifact(tag):
                 a_mapping = json.load(f)
             return a_mapping[tag]
         else:
-            return os.path.join(os.getcwd, '..', tag)
+            return os.path.join(os.getcwd(), '..', tag)
 
     except BaseException:
         return None
