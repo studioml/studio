@@ -74,8 +74,7 @@ fi
 
 echo "docker_cmd = $docker_cmd"
 if [ $docker_cmd == 'docker' ]; then
-    bash_cmd="python -m pip uninstall -y tensorflow-gpu tensorflow && python3 -m pip uninstall -y tensorflow tensorflow-gpu &&"
-    bash_cmd="$bash_cmd python -m pip install tensorflow && python3 -m pip install tensorflow && "
+    bash_cmd="$bash_cmd python -m pip install -e ./studio && python3 -m pip install -e ./studio && "
 fi
 
 bash_cmd="$bash_cmd studio-remote-worker --queue=$queue_name --verbose=debug --timeout=$timeout --single-run"
