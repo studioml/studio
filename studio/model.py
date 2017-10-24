@@ -25,6 +25,9 @@ def get_config(config_file=None):
 
     config_paths = []
     if config_file:
+        if not os.path.exists(config_file):
+            raise ValueError('User config file {} not found'
+                             .format(config_file))
         config_paths.append(os.path.expanduser(config_file))
 
     config_paths.append(os.path.expanduser('~/.studioml/config.yaml'))
