@@ -55,9 +55,14 @@ def get_artifact(tag):
         if mapping_path:
             with open(mapping_path, 'r') as f:
                 a_mapping = json.load(f)
-            return a_mapping[tag]
+            retval = a_mapping[tag]
         else:
-            return os.path.join(os.getcwd(), '..', tag)
+            retval = os.path.join(os.getcwd(), '..', tag)
+    
+        if os.path.exists(retval):
+            return retval
+        else:
+            return None
 
     except BaseException:
         return None
