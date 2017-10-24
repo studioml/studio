@@ -58,7 +58,7 @@ def get_artifact(tag):
             retval = a_mapping[tag]
         else:
             retval = os.path.join(os.getcwd(), '..', tag)
-    
+
         if os.path.exists(retval):
             return retval
         else:
