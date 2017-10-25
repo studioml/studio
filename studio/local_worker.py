@@ -107,6 +107,7 @@ class LocalExecutor(object):
                 finally:
                     save_metrics(metrics_path)
                     ptail.kill()
+                    db.checkpoint_experiment(experiment)
                     db.finish_experiment(experiment)
                     sched.shutdown()
 

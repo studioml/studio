@@ -145,7 +145,6 @@ class HTTPProvider(object):
         self._raise_detailed_error(request)
 
     def finish_experiment(self, experiment):
-        self.checkpoint_experiment(experiment)
         if isinstance(experiment, six.string_types):
             key = experiment
         else:
