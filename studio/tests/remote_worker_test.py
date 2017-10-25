@@ -13,7 +13,6 @@ import logging
 logging.basicConfig()
 
 
-@unittest.skip('need to figure out / test docker on travis')
 class RemoteWorkerTest(unittest.TestCase):
     _multiprocess_shared_ = True
 
