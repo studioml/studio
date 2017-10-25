@@ -1,4 +1,3 @@
-from google.cloud import pubsub
 import logging
 import os
 import json
@@ -12,6 +11,8 @@ logging.basicConfig()
 
 class PubsubQueue(object):
     def __init__(self, queue_name, sub_name=None, verbose=10):
+        from google.cloud import pubsub
+
         assert 'GOOGLE_APPLICATION_CREDENTIALS' in os.environ.keys()
         with open(os.environ['GOOGLE_APPLICATION_CREDENTIALS']) as f:
             credentials = json.loads(f.read())

@@ -101,6 +101,8 @@ class ModelUtilTest(unittest.TestCase):
 
 
 class BufferedPipeTest(unittest.TestCase):
+    _multiprocess_shared_ = True
+
     def test_pipe_simple(self):
         p = model_util.BufferedPipe() \
             .add(lambda x: x + 1) \
@@ -189,10 +191,10 @@ class ModelPipeTest(unittest.TestCase):
 
         self.assertEquals(expected_list, output_list)
 
-    @unittest.skipIf(keras is None,
-                     "should have keras for this test")
-    def test_model_pipe_keras(self):
 
+@unittest.skip("Keras does not play nicely with parallel tests")
+class KerasModelPipeTest(unittest.TestCase):
+    def test_model_pipe_keras(self):
         model = Sequential()
         model.add(Flatten(input_shape=(1, 28, 28)))
         model.add(Dense(128, activation='relu'))
@@ -212,8 +214,6 @@ class ModelPipeTest(unittest.TestCase):
         self.assertTrue(np.isclose(np.array(output).flatten(),
                                    np.array(expected_output).flatten()).all())
 
-    @unittest.skipIf(keras is None,
-                     "should have keras for this test")
     def test_model_pipe_mnist_urls(self):
 
         (x_train, y_train), (x_test, y_test) = mnist.load_data()

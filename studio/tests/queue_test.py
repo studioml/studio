@@ -7,6 +7,7 @@ import logging
 
 from studio.pubsub_queue import PubsubQueue
 from studio.sqs_queue import SQSQueue
+from studio.local_queue import LocalQueue
 
 from studio.util import has_aws_credentials
 
@@ -38,7 +39,6 @@ class QueueTest(object):
 
         self.assertTrue(q.dequeue() is None)
 
-    # @skip
     def test_enq_deq_order(self):
         return
         q = self.get_queue()
@@ -100,7 +100,7 @@ class DistributedQueueTest(QueueTest):
 
         q1.enqueue(data1)
 
-        self.assertEquals(data1, q2.dequeue())
+        self.assertEquals(data1, q2.dequeue(timeout=120))
 
         q1.enqueue(data1)
         q1.enqueue(data2)
@@ -135,22 +135,19 @@ class DistributedQueueTest(QueueTest):
         self.assertEquals(data, msg)
 
 
-# @unittest.skipIf(
-#    'GOOGLE_APPLICATION_CREDENTIALS' not in
-#    os.environ.keys() or True,
-#    'GOOGLE_APPLICATION_CREDENTIALS environment ' +
-#    'variable not set, won'' be able to use google ' +
-#    'PubSub')
-@unittest.skip('PubSub create queue fails in parallel tests' +
-               ' for some arcane reason. TODO: peterz fix')
+@unittest.skipIf(
+    'GOOGLE_APPLICATION_CREDENTIALS' not in
+    os.environ.keys(),
+    'GOOGLE_APPLICATION_CREDENTIALS environment ' +
+    'variable not set, won'' be able to use google ' +
+    'PubSub')
 class PubSubQueueTest(DistributedQueueTest, unittest.TestCase):
     _multiprocess_shared_ = True
 
     def get_queue(self, name=None):
-        name = str(uuid.uuid4()) if not name else name
+        name = 'pubsub_queue_test' + str(uuid.uuid4()) if not name else name
         print(name)
-        return PubsubQueue(
-            'pubsub_queue_test_' + name)
+        return PubsubQueue(name)
 
 
 @unittest.skipIf(
@@ -162,6 +159,11 @@ class SQSQueueTest(DistributedQueueTest, unittest.TestCase):
     def get_queue(self, name=None):
         return SQSQueue(
             'sqs_queue_test_' + str(uuid.uuid4()) if not name else name)
+
+class LocalQueueTest(QueueTest, unittest.TestCase):
+    
+    def get_queue(self):
+        return LocalQueue()
 
 
 if __name__ == '__main__':
