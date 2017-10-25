@@ -94,7 +94,10 @@ class KeyValueProvider(object):
                     # upload immutable artifacts
                     art['key'] = self.store.put_artifact(art)
                 elif 'hash' in art.keys():
-                    art['key'] = get_immutable_artifact_key(art['hash'])
+                    art['key'] = get_immutable_artifact_key(
+                        art['hash'],
+                        compression=compression
+                    )
 
             key = art.get('key')
             if key is not None:
