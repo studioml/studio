@@ -173,10 +173,9 @@ class RemoteWorkerTest(unittest.TestCase):
         'variable not set, won'' be able to use google ' +
         'PubSub')
     def test_baked_image(self):
-        '''
-        create a docker image with baked in credentials
-        and run a remote worker tests with it
-        '''
+
+        # create a docker image with baked in credentials
+        # and run a remote worker tests with it
         logger = logging.getLogger('test_baked_image')
         logger.setLevel(logging.DEBUG)
 
