@@ -204,6 +204,11 @@ class CompletionService:
         workspace_new = fs_tracker.get_artifact_cache(
             'workspace', experiment_name)
         rsync_cp(workspace_orig, workspace_new, ignore_arg, self.logger)
+        distpath = os.path.join(old_cwd, 'dist')
+        if os.path.exists(distpath):
+            self.logger.info('dist folder found at {}, ' +
+                             'copying into workspace')
+            rsync_cp(distpath, os.path.join(workspace_new, 'dist'))
 
         self.logger.info('Created workspace ' + workspace_new)
 
