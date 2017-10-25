@@ -17,7 +17,7 @@ install:
 
 script:
   - echo $GOOGLE_APPLICATION_CREDENTIALS
-  - nosetests -v  --processes=4 --process-timeout=590
+  - nosetests -v  --processes=16 --process-timeout=590
   - pep8 --show-source .
   - python setup.py sdist
 

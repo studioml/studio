@@ -160,11 +160,6 @@ class SQSQueueTest(DistributedQueueTest, unittest.TestCase):
         return SQSQueue(
             'sqs_queue_test_' + str(uuid.uuid4()) if not name else name)
 
-class LocalQueueTest(QueueTest, unittest.TestCase):
-    
-    def get_queue(self):
-        return LocalQueue()
-
 
 if __name__ == '__main__':
     unittest.main()
