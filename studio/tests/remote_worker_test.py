@@ -16,7 +16,7 @@ logging.basicConfig()
 class RemoteWorkerTest(unittest.TestCase):
     _multiprocess_shared_ = True
 
-    @timeout(300)
+    @timeout(590)
     @unittest.skipIf(
         'GOOGLE_APPLICATION_CREDENTIALS' not in
         os.environ.keys(),

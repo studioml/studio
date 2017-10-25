@@ -49,6 +49,20 @@ class CompletionServiceTest(unittest.TestCase):
             config=config_path,
             cloud_timeout=60)
 
+    def test_two_experiments_datacenter(self):
+        mypath = os.path.dirname(os.path.realpath(__file__))
+        config_path = os.path.join(
+            mypath,
+            '..',
+            'tests',
+            'test_config.yaml')
+
+        self.test_two_experiments_with_cs_args(
+            config=config_path,
+            queue='peterz_q1',
+            cloud_timeout=60)
+
+
     @unittest.skipIf(not has_aws_credentials(),
                      'AWS credentials needed for this test')
     def test_two_experiments_ec2(self):
