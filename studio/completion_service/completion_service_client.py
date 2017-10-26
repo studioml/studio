@@ -19,16 +19,29 @@ except BaseException:
 def main():
     logger.setLevel(logging.DEBUG)
     logger.debug('copying and importing client module')
+    logger.debug('getting file mappings')
 
-    script_path = fs_tracker.get_artifact('clientscript')
+    artifacts = fs_tracker.get_artifacts()
+    files = {}
+    logger.debug("Artifacts = {}".format(artifacts))
+
+    for tag, path in six.iteritems(artifacts):
+        if tag not in {'workspace', 'modeldir', 'tb'}:
+            if os.path.isfile(path):
+                files[tag] = path
+            elif os.path.isdir(path):
+                dirlist = os.listdir(path)
+                if any(dirlist):
+                    files[tag] = os.path.join(
+                        path,
+                        dirlist[0]
+                    )
+
+    logger.debug("Files = {}".format(files))
+    script_path = files['clientscript']
+
     # script_name = os.path.basename(script_path)
     new_script_path = os.path.join(os.getcwd(), '_clientscript.py')
-    if os.path.isdir(script_path):
-        logger.debug("Script path {} is a directory".format(script_path))
-        script_path = os.path.join(script_path,
-                                   os.listdir(script_path)[0])
-        logger.debug("New script path is " + script_path)
-
     shutil.copy(script_path, new_script_path)
 
     script_path = new_script_path
@@ -42,24 +55,10 @@ def main():
     client_module = importlib.import_module(module_name)
     logger.debug('loading args')
 
-    args_path = fs_tracker.get_artifact('args')
-    if os.path.isdir(args_path):
-        logger.debug("Args path {} is a directory".format(args_path))
-        args_path = os.path.join(args_path, os.listdir(args_path)[0])
-        logger.debug("New args path is {}".format(args_path))
+    args_path = files['args']
 
     with open(args_path, 'rb') as f:
         args = pickle.loads(f.read())
-
-    logger.debug('getting file mappings')
-    artifacts = fs_tracker.get_artifacts()
-    files = {}
-    for tag, path in six.iteritems(artifacts):
-        if tag not in {'workspace', 'modeldir', 'tb'}:
-            if os.path.isfile(path):
-                files[tag] = path
-            elif os.path.isdir(path):
-                files[tag] = os.path.join(path, os.listdir(path)[0])
 
     logger.debug('calling client funciton')
     retval = client_module.clientFunction(args, files)
