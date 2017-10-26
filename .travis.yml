@@ -12,11 +12,13 @@ sudo: required
 services: 
     - docker
 
+before_install:
+    - docker pull peterzhokhoff/studioml
+
 install:
   - pip install -e .
   - pip install pep8
   - pip install -r extra_test_requirements.txt
-  - docker pull peterzhokhoff/studioml
 
   - 'if [ -n "$GOOGLE_CREDENTIALS_ENCODED" ]; then echo "$GOOGLE_CREDENTIALS_ENCODED" | base64 --decode > ./credentials.json && export GOOGLE_APPLICATION_CREDENTIALS=$(pwd)/credentials.json; fi'
 
