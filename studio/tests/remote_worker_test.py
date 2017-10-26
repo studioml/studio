@@ -33,10 +33,11 @@ class RemoteWorkerTest(unittest.TestCase):
             ['studio-start-remote-worker',
              '--queue=' + queue_name,
              '--single-run',
+             '--no-cache',
              '--timeout=30',
              '--image=peterzhokhoff/studioml'],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT
+            #stdout=subprocess.PIPE,
+            #stderr=subprocess.STDOUT
         )
 
         stubtest_worker(
