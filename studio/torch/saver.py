@@ -7,11 +7,15 @@ except ImportError:
     torch = None
 
 
-def load_checkpoint(model, optimizer, model_dir):
+def load_checkpoint(model, optimizer, model_dir, map_to_cpu=False):
     path = os.path.join(model_dir, 'checkpoint')
     if os.path.exists(path):
         print("Loading model from %s" % path)
-        checkpoint = torch.load(path)
+        if map_to_cpu:
+            checkpoint = torch.load(
+                path, map_location=lambda storage, location: storage)
+        else:
+            checkpoint = torch.load(path)
         old_state_dict = model.state_dict()
         for key in old_state_dict.keys():
             if key not in checkpoint['model']:
@@ -46,13 +50,14 @@ class Saver(object):
         self._model = model
         self._optimizer = optimizer
 
-    def restore(self, model_dir):
+    def restore(self, model_dir, map_to_cpu=False):
         """Restores model and optimizer from given directory.
 
         Returns:
            Last training step for the model restored.
         """
-        last_step = load_checkpoint(self._model, self._optimizer, model_dir)
+        last_step = load_checkpoint(
+            self._model, self._optimizer, model_dir,  map_to_cpu)
         return last_step
 
     def save(self, model_dir, step):
