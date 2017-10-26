@@ -4,6 +4,7 @@ import pickle
 import os
 import logging
 import sys
+import six
 
 from studio import fs_tracker, model
 
