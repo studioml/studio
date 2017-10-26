@@ -64,8 +64,14 @@ def get_artifact(tag):
 
 def get_artifacts():
     try:
-        with open(_get_artifact_mapping_path(), 'r') as f:
-            return json.load(f)
+        mapping_path = os.environ.get(STUDIOML_ARTIFACT_MAPPING)
+        if mapping_path:
+            with open(mapping_path, 'r') as f:
+                return json.load(f)
+        else:
+            artifacts = os.listdir(os.path.join(os.getcwd(), '..'))
+            return {art: os.path.join(os.getcwd(), '..', art)
+                    for art in artifacts}
     except BaseException:
         return {}
 
