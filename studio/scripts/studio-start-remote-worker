@@ -40,6 +40,11 @@ do
             echo "Baked credentials mode (not mounting credentials/keys)"
             ;;
 
+            -n|--no-cache)
+            no_cache=1
+            echo "Mounting of the cache is disabled"
+            ;;
+
             -t|--timeout)
             timeout="${1##*=}"
     esac
@@ -96,9 +101,11 @@ gac_name=${GOOGLE_APPLICATION_CREDENTIALS##*/}
 
 # loop until killed
 
-docker_args="run --rm --pid=host \
-            -v $HOME/.studioml/experiments:/root/.studioml/experiemnts
-            -v $HOME/.studioml/blobcache:/root/.studioml/blobcache"
+docker_args="run --rm --pid=host "
+if [[ $no_cache -ne 1 ]]; then
+    docker_args="$docker_args -v $HOME/.studioml/experiments:/root/.studioml/experiemnts"
+    docker_args="$docker_args -v $HOME/.studioml/blobcache:/root/.studioml/blobcache"
+fi
 
 if [[ $baked_credentials -ne 1 ]]; then
     docker_args="$docker_args -v $HOME/.studioml/keys:/root/.studioml/keys"
