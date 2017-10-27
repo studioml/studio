@@ -22,6 +22,8 @@ class GitUtilTest(unittest.TestCase):
         os.remove(filename)
         self.assertFalse(is_clean)
 
+    @unittest.skipIf(os.environ.get('TEST_GIT_REPO_ADDRESS') != 1,
+                     'skip if being tested from a forked repo')
     def test_repo_url(self):
         expected = re.compile(
             'https{0,1}://github\.com/studioml/studio(\.git){0,1}')
