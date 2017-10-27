@@ -14,9 +14,9 @@ logging.basicConfig()
 
 
 class RemoteWorkerTest(unittest.TestCase):
-    _multiprocess_can_split_ = True
+    _multiprocess_shared_ = True
 
-    @timeout(300)
+    @timeout(590)
     @unittest.skipIf(
         'GOOGLE_APPLICATION_CREDENTIALS' not in
         os.environ.keys(),
@@ -33,6 +33,7 @@ class RemoteWorkerTest(unittest.TestCase):
             ['studio-start-remote-worker',
              '--queue=' + queue_name,
              '--single-run',
+             '--no-cache',
              '--timeout=30',
              '--image=peterzhokhoff/studioml'],
             stdout=subprocess.PIPE,
@@ -54,7 +55,7 @@ class RemoteWorkerTest(unittest.TestCase):
             logger.debug("studio-start-remote-worker output: \n" +
                          str(workerout))
 
-    @timeout(300)
+    @timeout(590)
     @unittest.skipIf(
         'GOOGLE_APPLICATION_CREDENTIALS' not in
         os.environ.keys(),
@@ -80,6 +81,7 @@ class RemoteWorkerTest(unittest.TestCase):
             ['studio-start-remote-worker',
              '--queue=' + queue_name,
              '--single-run',
+             '--no-cache',
              '--image=peterzhokhoff/studioml'],
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT)
@@ -119,7 +121,7 @@ class RemoteWorkerTest(unittest.TestCase):
         os.remove(tmppath)
         db.delete_experiment(experiment_name)
 
-    @timeout(300)
+    @timeout(590)
     @unittest.skipIf(
         'GOOGLE_APPLICATION_CREDENTIALS' not in
         os.environ.keys(),
@@ -143,6 +145,7 @@ class RemoteWorkerTest(unittest.TestCase):
             ['studio-start-remote-worker',
              '--queue=' + queue_name,
              '--single-run',
+             '--no-cache',
              '--image=peterzhokhoff/studioml'],
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT)
@@ -165,7 +168,7 @@ class RemoteWorkerTest(unittest.TestCase):
 
         os.remove(tmpfile)
 
-    @timeout(300)
+    @timeout(590)
     @unittest.skipIf(
         'GOOGLE_APPLICATION_CREDENTIALS' not in
         os.environ.keys(),
@@ -173,10 +176,9 @@ class RemoteWorkerTest(unittest.TestCase):
         'variable not set, won'' be able to use google ' +
         'PubSub')
     def test_baked_image(self):
-        '''
-        create a docker image with baked in credentials
-        and run a remote worker tests with it
-        '''
+
+        # create a docker image with baked in credentials
+        # and run a remote worker tests with it
         logger = logging.getLogger('test_baked_image')
         logger.setLevel(logging.DEBUG)
 
@@ -218,6 +220,7 @@ class RemoteWorkerTest(unittest.TestCase):
         pw = subprocess.Popen(
             ['studio-start-remote-worker',
              '--queue=' + queue_name,
+             '--no-cache',
              '--single-run',
              '--timeout=30',
              '--image=' + image],

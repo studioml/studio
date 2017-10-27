@@ -1,16 +1,18 @@
-from google.cloud import pubsub
 import logging
 import os
 import json
 import time
 
 from .model import parse_verbosity
+from .util import sixdecode
 
 logging.basicConfig()
 
 
 class PubsubQueue(object):
     def __init__(self, queue_name, sub_name=None, verbose=10):
+        from google.cloud import pubsub
+
         assert 'GOOGLE_APPLICATION_CREDENTIALS' in os.environ.keys()
         with open(os.environ['GOOGLE_APPLICATION_CREDENTIALS']) as f:
             credentials = json.loads(f.read())
@@ -112,13 +114,13 @@ class PubsubQueue(object):
             self.logger.debug("Message {} received and acknowledged"
                               .format(retval.message.message_id))
 
-            return retval.message.data
+            return sixdecode(retval.message.data)
         else:
             self.logger.debug(
                 "Message {} received, ack_id {}" .format(
                     retval.message.message_id,
                     retval.ack_id))
-            return (retval.message.data, retval.ack_id)
+            return (sixdecode(retval.message.data), retval.ack_id)
 
     def hold(self, ack_key, delay=5):
         self.logger.debug(
