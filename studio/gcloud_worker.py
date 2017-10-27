@@ -155,6 +155,10 @@ class GCloudWorkerManager(object):
 
         startup_script = startup_script.replace(
             "{studioml_branch}", self.branch)
+
+        if resources_needed.get('gpus') > 0:
+            startup_script = startup_script.replace('{use_gpus}', '1')
+
         startup_script = insert_user_startup_script(
             self.user_startup_script,
             startup_script, self.logger)

@@ -41,7 +41,6 @@ code_url_base="https://storage.googleapis.com/studio-ed756.appspot.com/src"
 repo_url="https://github.com/studioml/studio"
 branch="{studioml_branch}"
 
-
 if [ ! -d "studio" ]; then
     sudo apt -y update
     sudo apt install -y wget python-pip git python-dev
@@ -58,7 +57,7 @@ if [ ! -d "studio" ]; then
         wget $cuda_base/$cuda_ver
         sudo dpkg -i $cuda_ver
         sudo apt -y update
-        sudo apt install -y cuda
+        sudo apt install -y cuda-8.0
 
         # install cudnn
         wget $code_url_base/$cudnn5
