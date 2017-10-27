@@ -10,6 +10,7 @@ from local_worker_test import stubtest_worker
 from studio.util import has_aws_credentials
 
 
+@unittest.skip('peterz rebuild image for gce')
 @unittest.skipIf(
     'GOOGLE_APPLICATION_CREDENTIALS' not in os.environ.keys() or
     sys.version_info[0] > 2,
