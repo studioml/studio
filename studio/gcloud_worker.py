@@ -43,7 +43,7 @@ class GCloudWorkerManager(object):
             self,
             queue_name,
             resources_needed={},
-            blocking=True,
+            blocking=False,
             ssh_keypair=None,
             timeout=300):
 
@@ -135,7 +135,7 @@ class GCloudWorkerManager(object):
         self.logger.info('Managed groupd {} created'.format(group_name))
 
     def _get_instance_config(self, resources_needed, queue_name, timeout=300):
-        #image_response = self.compute.images().getFromFamily(
+        # image_response = self.compute.images().getFromFamily(
         #    project='studio-ed756', family='studioml').execute()
 
         image_response = None
