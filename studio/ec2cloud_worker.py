@@ -194,10 +194,7 @@ class EC2WorkerManager(object):
         else:
             self.logger.info('credentials NOT found')
 
-        with open(os.path.join(
-                os.path.dirname(__file__),
-                self.startup_script_file),
-                'r') as f:
+        with open(self.startup_script_file) as f:
 
             startup_script = f.read()
 
