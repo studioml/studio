@@ -369,11 +369,15 @@ def add_experiment():
     artifacts = {}
     try:
         experiment = experiment_from_dict(request.json['experiment'])
+        compression = request.json.get('compression')
+        compression = compression if compression else 'bzip2'
+
         if get_db().can_write_experiment(experiment.key, userid):
             for tag, art in six.iteritems(experiment.artifacts):
                 art.pop('local', None)
 
-            get_db().add_experiment(experiment, userid)
+            get_db().add_experiment(experiment, userid,
+                                    compression=compression)
             added_experiment = get_db().get_experiment(experiment.key)
 
             artifacts = _process_artifacts(added_experiment)

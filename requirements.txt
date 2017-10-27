@@ -4,7 +4,6 @@ setuptools_scm_git_archive
 configparser
 
 numpy
-tensorflow
 h5py
 pillow
 
@@ -13,6 +12,7 @@ jinja2
 
 pyyaml
 cma
+
 
 apscheduler
 pycryptodome

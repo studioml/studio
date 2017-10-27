@@ -15,7 +15,12 @@ logging.basicConfig()
 class HTTPProvider(object):
     """Data provider communicating with API server."""
 
-    def __init__(self, config, verbose=10, blocking_auth=True):
+    def __init__(
+            self,
+            config,
+            verbose=10,
+            blocking_auth=True,
+            compression=None):
         # TODO: implement connection
         self.url = config.get('serverUrl')
         self.verbose = verbose
@@ -32,18 +37,31 @@ class HTTPProvider(object):
                                  config.get("password"),
                                  blocking_auth)
 
-    def add_experiment(self, experiment):
+        self.compression = compression
+        if self.compression is None:
+            self.compression = config.get('compression')
+
+    def add_experiment(self, experiment, userid=None,
+                       compression=None):
+
         headers = self._get_headers()
+        compression = compression if compression else self.compression
 
         for tag, art in six.iteritems(experiment.artifacts):
             if not art['mutable'] and art.get('local') is not None:
-                art['hash'] = HTTPArtifactStore(None, None, self.verbose) \
+                art['hash'] = HTTPArtifactStore(None, None,
+                                                compression,
+                                                self.verbose) \
                     .get_artifact_hash(art)
+
+        data = {}
+        data['experiment'] = experiment.__dict__
+        data['compression'] = compression
 
         request = requests.post(
             self.url + '/api/add_experiment',
             headers=headers,
-            data=json.dumps({"experiment": experiment.__dict__}))
+            data=json.dumps(data))
 
         self._raise_detailed_error(request)
         artifacts = request.json()['artifacts']
@@ -63,7 +81,8 @@ class HTTPProvider(object):
 
                 HTTPArtifactStore(target_art['url'],
                                   target_art['timestamp'],
-                                  self.verbose) \
+                                  compression=self.compression,
+                                  verbose=self.verbose) \
                     .put_artifact(art)
 
     def delete_experiment(self, experiment):
@@ -126,7 +145,6 @@ class HTTPProvider(object):
         self._raise_detailed_error(request)
 
     def finish_experiment(self, experiment):
-        self.checkpoint_experiment(experiment)
         if isinstance(experiment, six.string_types):
             key = experiment
         else:
@@ -176,9 +194,7 @@ class HTTPProvider(object):
         self._raise_detailed_error(response)
         data = response.json()['experiments']
 
-        experiments = [experiment_from_dict(edict)
-                       for edict in data]
-
+        experiments = data
         return experiments
 
     def get_artifacts(self, key):

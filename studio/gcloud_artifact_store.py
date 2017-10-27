@@ -2,7 +2,6 @@ import logging
 import time
 import calendar
 
-from google.cloud import storage
 from .tartifact_store import TartifactStore
 
 logging.basicConfig()
@@ -11,13 +10,15 @@ logging.basicConfig()
 class GCloudArtifactStore(TartifactStore):
     def __init__(self, config,
                  measure_timestamp_diff=False,
-                 compression='bzip2',
+                 compression=None,
                  verbose=10):
 
         self.logger = logging.getLogger('GCloudArtifactStore')
         self.logger.setLevel(verbose)
 
         self.config = config
+
+        compression = compression if compression else config.get('compression')
 
         super(GCloudArtifactStore, self).__init__(
             measure_timestamp_diff,
@@ -42,6 +43,7 @@ class GCloudArtifactStore(TartifactStore):
         return bucket
 
     def get_client(self):
+        from google.cloud import storage
         if 'credentials' in self.config.keys():
             return storage.Client \
                 .from_service_account_json(self.config['serviceAccount'])

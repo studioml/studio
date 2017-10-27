@@ -1,6 +1,8 @@
 import os
 import glob
 import uuid
+import sys
+
 try:
     import pip
 except ImportError:
@@ -23,13 +25,15 @@ class Experiment(object):
                  time_finished=None,
                  info={},
                  git=None,
-                 metric=None):
+                 metric=None,
+                 pythonver=None):
 
         self.key = key
         self.filename = filename
         self.args = args if args else []
         self.pythonenv = pythonenv
         self.project = project
+        self.pythonver = pythonver if pythonver else sys.version_info[0]
 
         workspace_path = os.path.abspath('.')
         try:
@@ -100,8 +104,14 @@ def create_experiment(
         resources_needed=None,
         metric=None):
     key = str(uuid.uuid4()) if not experiment_name else experiment_name
-    packages = [p._key + '==' + p._version for p in
-                pip.pip.get_installed_distributions(local_only=True)]
+    packages = []
+    for i, pkg in enumerate(
+            pip.pip.get_installed_distributions(local_only=True)):
+        if pkg.key == 'tensorflow':
+            if resources_needed is not None:
+                if int(resources_needed.get('gpus')) > 0:
+                    pkg._key = 'tensorflow-gpu'
+        packages.append(pkg._key + '==' + pkg._version)
 
     return Experiment(
         key=key,
@@ -130,5 +140,6 @@ def experiment_from_dict(data, info={}):
         time_finished=data.get('time_finished'),
         info=info if any(info) else data.get('info'),
         git=data.get('git'),
-        metric=data.get('metric')
+        metric=data.get('metric'),
+        pythonver=data.get('pythonver')
     )
