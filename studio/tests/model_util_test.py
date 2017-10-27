@@ -108,11 +108,11 @@ class BufferedPipeTest(unittest.TestCase):
             .add(lambda x: x + 1) \
             .add(lambda x: x * x)
 
-        l = list(p((x for x in range(1, 5))))
+        lst = list(p((x for x in range(1, 5))))
 
         expected_l = [4, 9, 16, 25]
 
-        self.assertEquals(l, expected_l)
+        self.assertEquals(lst, expected_l)
 
     @unittest.skip('ordering problem')
     def test_pipe_buffer(self):

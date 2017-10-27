@@ -90,7 +90,7 @@ class ArtifactStoreTest(object):
         shutil.rmtree(tmp_dir)
         self.assertTrue(line == random_str)
 
-        self.assertTrue(tic3 - tic2 < 0.3 * (tic2 - tic1))
+        self.assertTrue(tic3 - tic2 < (tic2 - tic1))
         fb.delete_artifact(artifact)
 
     def test_get_artifact_url(self):

@@ -17,7 +17,7 @@ before_install:
 
 install:
   - pip install -e .
-  - pip install pep8
+  - pip install pycodestyle
   # - pip install -r extra_test_requirements.txt
 
   - 'if [ -n "$GOOGLE_CREDENTIALS_ENCODED" ]; then echo "$GOOGLE_CREDENTIALS_ENCODED" | base64 --decode > ./credentials.json && export GOOGLE_APPLICATION_CREDENTIALS=$(pwd)/credentials.json; fi'
@@ -25,7 +25,7 @@ install:
 script:
   - echo $GOOGLE_APPLICATION_CREDENTIALS
   - nosetests -v --processes=16 --process-timeout=590
-  - pep8 --show-source .
+  - pycodestyle --show-source .
   - python setup.py sdist
 
 deploy:
