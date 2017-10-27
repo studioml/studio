@@ -113,8 +113,8 @@ class FirebaseAuth(object):
                 if user is not None or counter >= MAX_NUM_RETRIES:
                     break
                 try:
-                    with open(api_key, 'rb') as f:
-                        user = json.load(f)
+                    with open(api_key) as f:
+                        user = json.loads(f.read())
                 except BaseException as e:
                     self.logger.info(e)
                     time.sleep(SLEEP_TIME)
