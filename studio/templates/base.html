@@ -182,7 +182,7 @@
                 }
                 key = experimentKeys[keyIndex]
                 console.log("experiment key = " + key);
-                data_ajax('get_experiment', data={"key":key}).then((data) => {
+                data_ajax('get_experiment', data={"key":key, "get_artifact_urls":false}).then((data) => {
                     updateRow(data);
                     keyIndex++;
                     updateExperiment();

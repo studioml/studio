@@ -9,6 +9,7 @@ from .firebase_artifact_store import FirebaseArtifactStore
 from .auth import get_auth
 from .experiment import experiment_from_dict
 from .tartifact_store import get_immutable_artifact_key
+from .util import timeit
 
 logging.basicConfig()
 
@@ -240,6 +241,7 @@ class KeyValueProvider(object):
         else:
             return checkpoint_threads
 
+    @timeit
     def _get_experiment_info(self, experiment):
         info = {}
         type_found = False
@@ -276,6 +278,7 @@ class KeyValueProvider(object):
 
         return info
 
+    @timeit
     def _get_experiment_logtail(self, experiment):
         try:
             tarf = self.store.stream_artifact(experiment.artifacts['output'])
@@ -293,6 +296,7 @@ class KeyValueProvider(object):
             self.logger.info(e)
             return None
 
+    @timeit
     def get_experiment(self, key, getinfo=True):
         data = self._get(self._get_experiments_keybase() + key)
         if data is None:
@@ -324,15 +328,15 @@ class KeyValueProvider(object):
                 userid = user_ids[0]
 
         experiment_keys = self._get(
-            self._get_user_keybase(userid) + "experiments")
+            self._get_user_keybase(userid) + "experiments/", shallow=True)
         if not experiment_keys:
-            experiment_keys = {}
+            experiment_keys = []
 
-        keys = sorted(experiment_keys.keys(),
-                      key=lambda k: str(experiment_keys[k]),
-                      reverse=True)
+        # keys = sorted(experiment_keys.keys(),
+        #              key=lambda k: str(experiment_keys[k]),
+        #              reverse=True)
 
-        return keys
+        return experiment_keys
 
     def get_project_experiments(self, project):
         experiment_keys = self._get(self._get_projects_keybase() +
@@ -343,7 +347,11 @@ class KeyValueProvider(object):
         return experiment_keys.keys()
 
     def get_artifacts(self, key):
-        experiment = self.get_experiment(key, getinfo=False)
+        if isinstance(key, six.string_types):
+            experiment = self.get_experiment(key, getinfo=False)
+        else:
+            experiment = key
+
         retval = {}
         if experiment.artifacts is not None:
             for tag, art in six.iteritems(experiment.artifacts):
@@ -396,7 +404,7 @@ class KeyValueProvider(object):
         user_ids = self._get('users/', shallow=True)
         retval = {}
         if user_ids:
-            for user_id in user_ids.keys():
+            for user_id in user_ids:
                 retval[user_id] = {
                     'email': self._get('users/' + user_id + '/email')
                 }
