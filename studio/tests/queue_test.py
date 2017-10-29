@@ -31,13 +31,13 @@ class QueueTest(object):
 
     def test_clean(self):
         q = self.get_queue()
-        q.clean()
+        q.clean(timeout=60)
         data = str(uuid.uuid4())
 
         q.enqueue(data)
-        q.clean()
+        q.clean(timeout=60)
 
-        self.assertTrue(q.dequeue(timeout=120) is None)
+        self.assertTrue(q.dequeue(timeout=60) is None)
 
     def test_enq_deq_order(self):
         return
