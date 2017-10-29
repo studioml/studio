@@ -25,7 +25,7 @@ install:
 script:
   - echo $GOOGLE_APPLICATION_CREDENTIALS
   # - nosetests -v --processes=16 --process-timeout=590
-  - cd studio && studio -m unittest -q remote_worker_test.RemoteWorkerTest.test_remote_worker_co
+  - cd studio/tests && python -m unittest -q remote_worker_test.RemoteWorkerTest.test_remote_worker_co
   - pycodestyle --show-source .
   - python setup.py sdist
 
