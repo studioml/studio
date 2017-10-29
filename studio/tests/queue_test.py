@@ -37,7 +37,7 @@ class QueueTest(object):
         q.enqueue(data)
         q.clean()
 
-        self.assertTrue(q.dequeue() is None)
+        self.assertTrue(q.dequeue(timeout=60) is None)
 
     def test_enq_deq_order(self):
         return
