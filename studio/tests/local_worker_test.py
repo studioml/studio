@@ -25,7 +25,7 @@ from queue_test import QueueTest
 logging.basicConfig()
 
 
-class LocalWorkerTest(unittest.TestCase, QueueTest):
+class LocalWorkerTest(unittest.TestCase):
     def get_queue(self):
         return LocalQueue()
 
