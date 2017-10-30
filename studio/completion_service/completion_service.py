@@ -82,7 +82,7 @@ class CompletionService:
         # Bid price for EC2 spot instances
         bid='100%',
         # Keypair to use for EC2 workers
-        ssh_keypair='peterz-k1',
+        ssh_keypair=None,
         # If true, get results that are submitted by other instances of CS
         resumable=False,
         # Whether to clean the submission queue on initialization
