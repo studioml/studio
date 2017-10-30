@@ -46,19 +46,15 @@ env
 
 if [ ! -d "studio" ]; then
     echo "Installing system packages..."
-    sudo add-apt-repository -y ppa:jonathonf/python-3.6
     sudo apt -y update
     sudo apt install -y wget git jq 
-    sudo apt install -y python python-pip python-dev python3.6 python3.6-dev python3-pip
-    echo "python2 version: " $(python -V)
+    sudo apt install -y python python-pip python-dev python3-dev python3-pip
+    echo "python2 version:  $(python -V)"
+    echo "python3 version:  $(python3 -V)"
 
     sudo python -m pip install --upgrade pip
     sudo python -m pip install --upgrade awscli boto3
 
-    sudo ln -sf /usr/bin/python3.6 /usr/bin/python3
-    #sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.6 0
-    echo "python3 version: " $(python3 -V)
-   
     sudo python3 -m pip install --upgrade pip
     sudo python3 -m pip install --upgrade awscli boto3
 
@@ -96,7 +92,9 @@ cd studio
 git pull
 git checkout $branch
 
-sudo pip install -e . --upgrade
+sudo python -m pip install -e . --upgrade
+sudo python3 -m pip install -e . --upgrade
+
 studio-remote-worker --queue=$queue_name --verbose=debug --timeout=${timeout}
 
 if [[ -n $(who) ]]; then
