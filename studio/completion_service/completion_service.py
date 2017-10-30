@@ -133,7 +133,7 @@ class CompletionService:
     def __enter__(self):
         with model.get_db_provider(self.config):
             pass
-
+        self.p = None
         if self.wm:
             self.logger.debug('Spinning up cloud workers')
             if self.use_spot:
@@ -153,7 +153,6 @@ class CompletionService:
                         ssh_keypair=self.ssh_keypair,
                         timeout=self.cloud_timeout)
 
-            self.p = None
         elif self.queue_name is None or self.queue_name == 'local':
             self.logger.debug('Starting local worker')
             self.p = subprocess.Popen([
@@ -204,6 +203,11 @@ class CompletionService:
         workspace_new = fs_tracker.get_artifact_cache(
             'workspace', experiment_name)
         rsync_cp(workspace_orig, workspace_new, ignore_arg, self.logger)
+        distpath = os.path.join(old_cwd, 'dist')
+        if os.path.exists(distpath):
+            self.logger.info('dist folder found at {}, ' +
+                             'copying into workspace')
+            rsync_cp(distpath, os.path.join(workspace_new, 'dist'))
 
         self.logger.info('Created workspace ' + workspace_new)
 
@@ -284,6 +288,19 @@ class CompletionService:
 
                 for key in experiment_keys:
                     e = db.get_experiment(key)
+                    if e is not None:
+                        retval_path = db.get_artifact(e.artifacts['retval'])
+                        if os.path.exists(retval_path):
+                            with open(retval_path, 'rb') as f:
+                                data = pickle.load(f)
+
+                            if not self.resumable:
+                                self.submitted.remove(e.key)
+                            else:
+                                db.delete_experiment(e.key)
+
+                            return (e.key, data)
+                    '''
                     if e is not None and e.status == 'finished':
                         self.logger.debug(
                             'Experiment {} finished, getting results' .format(
@@ -298,6 +315,7 @@ class CompletionService:
                             db.delete_experiment(e.key)
 
                         return (e.key, data)
+                    '''
 
             if timeout == 0 or \
                (timeout > 0 and total_sleep_time > timeout):

@@ -29,6 +29,10 @@ class KeyValueProvider(object):
         self.logger = logging.getLogger(self.__class__.__name__)
         self.logger.setLevel(verbose)
 
+        self.compression = compression
+        if self.compression is None:
+            self.compression = db_config.get('compression')
+
         self.auth = None
         if not guest and 'serviceAccount' not in db_config.keys():
             self.auth = get_auth(self.app,
@@ -41,7 +45,7 @@ class KeyValueProvider(object):
             db_config,
             verbose=verbose,
             blocking_auth=blocking_auth,
-            compression=compression
+            compression=self.compression
         )
 
         if self.auth and not self.auth.expired:
@@ -49,9 +53,6 @@ class KeyValueProvider(object):
                       self.auth.get_user_email())
 
         self.max_keys = db_config.get('max_keys', 100)
-        self.compression = compression
-        if self.compression is None:
-            self.compression = db_config.get('compression')
 
     def _get_userid(self):
         userid = None
@@ -94,7 +95,10 @@ class KeyValueProvider(object):
                     # upload immutable artifacts
                     art['key'] = self.store.put_artifact(art)
                 elif 'hash' in art.keys():
-                    art['key'] = get_immutable_artifact_key(art['hash'])
+                    art['key'] = get_immutable_artifact_key(
+                        art['hash'],
+                        compression=compression
+                    )
 
             key = art.get('key')
             if key is not None:

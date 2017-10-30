@@ -145,7 +145,6 @@ class HTTPProvider(object):
         self._raise_detailed_error(request)
 
     def finish_experiment(self, experiment):
-        self.checkpoint_experiment(experiment)
         if isinstance(experiment, six.string_types):
             key = experiment
         else:
@@ -195,9 +194,7 @@ class HTTPProvider(object):
         self._raise_detailed_error(response)
         data = response.json()['experiments']
 
-        experiments = [experiment_from_dict(edict)
-                       for edict in data]
-
+        experiments = data
         return experiments
 
     def get_artifacts(self, key):
