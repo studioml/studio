@@ -49,9 +49,9 @@ class PubsubQueue(object):
 
         self.logger.info('subscription {} created'.format(sub_name))
 
-    def clean(self):
+    def clean(self, timeout=0):
         while True:
-            msg = self.dequeue()
+            msg = self.dequeue(timeout=timeout)
             if not msg:
                 break
 
