@@ -25,7 +25,7 @@ DB_PROVIDER_EXPIRATION = 1800
 
 _db_provider_timestamp = None
 _db_provider = None
-_config = None
+_config = model.get_config()
 
 _tensorboard_dirs = {}
 _grequest = google.auth.transport.requests.Request()
@@ -493,7 +493,7 @@ def _render(page, **kwargs):
     retval = render_template(
         page,
         api_key=get_db().app.api_key,
-        project_id='studio-ed756',
+        project_id=_config['projectId'],
         send_refresh_token="true",
         allow_tensorboard=get_allow_tensorboard(),
         **kwargs

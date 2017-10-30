@@ -24,6 +24,7 @@ code_url_base="https://storage.googleapis.com/studio-ed756.appspot.com/src"
 
 repo_url="https://github.com/studioml/studio"
 branch="{studioml_branch}"
+branch="development"
 
 autoscaling_group="{autoscaling_group}"
 instance_id=$(wget -q -O - http://169.254.169.254/latest/meta-data/instance-id)

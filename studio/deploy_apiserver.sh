@@ -28,12 +28,13 @@ if [ "$1" = "gae" ]; then
     cp $config default_config.yaml
     cp app.yaml app.yaml.old
     if [ -n "$AWS_ACCESS_KEY_ID" ]; then
+        echo "exporting AWS env variables to app.yaml"
         echo "env_variables:" >> app.yaml
-        echo " AWS_ACCESS_KEY_ID: $AWS_ACCESS_KEY_ID" >> app.yaml
-        echo " AWS_SECRET_ACCESS_KEY: $AWS_SECRET_ACCESS_KEY" >> app.yaml
-        echo " AWS_DEFAULT_REGION: $AWS_DEFAULT_REGION" >> app.yaml
+        echo "  AWS_ACCESS_KEY_ID: $AWS_ACCESS_KEY_ID" >> app.yaml
+        echo "  AWS_SECRET_ACCESS_KEY: $AWS_SECRET_ACCESS_KEY" >> app.yaml
+        echo "  AWS_DEFAULT_REGION: $AWS_DEFAULT_REGION" >> app.yaml
     fi
-    
+
     rm -rf lib
     # pip install -t lib -r ../requirements.txt
     pip install -t lib ../

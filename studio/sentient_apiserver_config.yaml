@@ -1,9 +1,10 @@
 database:
     type: gs
     apiKey: AIzaSyBBXZN-irWpOcdgDQFSTqLMY8r7VmnEwas
-    authDomain: "studio-sentient.firebaseapp.com"
+    authDomain: "{}.firebaseapp.com"
     bucket: "studioml-sentient-meta"
-
+    projectId: "studio-sentient"
+    
     guest: true
     use_email_auth: false
 
