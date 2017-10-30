@@ -13,7 +13,7 @@ services:
     - docker
 
 before_install:
-    - 'if [ -n "GOOGLE_CREDENTIALS_ENCODED" ]; then docker pull peterzhokhoff/studioml; fi'
+    - 'if [ -n "$GOOGLE_CREDENTIALS_ENCODED" ]; then docker pull peterzhokhoff/studioml; fi'
 
 install:
   - pip install -e .
