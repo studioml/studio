@@ -93,8 +93,9 @@ cd studio
 git pull
 git checkout $branch
 
-sudo pip install -e . --upgrade
-studio-remote-worker --queue=$queue_name --verbose=debug --timeout=${timeout}
+sudo python -m pip install -e . --upgrade
+sudo python3 -m pip install -e . --upgrade
+python $(which studio-remote-worker) --queue=$queue_name --verbose=debug --timeout=${timeout}
 
 if [[ -n $(who) ]]; then
     echo "Users logged in, preventing auto-shutdown"
