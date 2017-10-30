@@ -50,8 +50,7 @@ class KeyValueProvider(object):
         )
 
         if self.auth and not self.auth.expired:
-            self._set(self._get_user_keybase() + "email",
-                      self.auth.get_user_email())
+            self.register_user(None, self.auth.get_user_email())
 
         self.max_keys = db_config.get('max_keys', 100)
 
@@ -366,37 +365,6 @@ class KeyValueProvider(object):
                                        local_path=local_path,
                                        only_newer=only_newer)
 
-    def _get_valid_experiments(self, experiment_keys,
-                               getinfo=False, blocking=True):
-
-        if self.max_keys > 0:
-            experiment_keys = experiment_keys[:self.max_keys]
-
-        def cache_valid_experiment(key):
-            try:
-                self._experiment_cache[key] = self.get_experiment(
-                    key, getinfo=getinfo)
-            except BaseException:
-                self.logger.warn(
-                    ("Experiment {} does not exist " +
-                     "or is corrupted, try to delete record").format(key))
-                try:
-                    self.delete_experiment(key)
-                except BaseException:
-                    pass
-
-        if self.pool:
-            if blocking:
-                self.pool.map(cache_valid_experiment, experiment_keys)
-            else:
-                self.pool.map_async(cache_valid_experiment, experiment_keys)
-        else:
-            for e in experiment_keys:
-                cache_valid_experiment(e)
-
-        return [self._experiment_cache[key] for key in experiment_keys
-                if key in self._experiment_cache.keys()]
-
     def get_projects(self):
         return self._get(self._get_projects_keybase(), shallow=True)
 
@@ -435,6 +403,12 @@ class KeyValueProvider(object):
                 return (owner == user)
         else:
             return True
+
+    def register_user(self, userid, email):
+        keypath = self._get_user_keybase(userid) + 'email'
+        existing_email = self._get(keypath)
+        if existing_email != email:
+            self._set(keypath, email)
 
     def __enter__(self):
         return self

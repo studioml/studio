@@ -1,9 +1,7 @@
 import unittest
-import uuid
-from timeout_decorator import timeout
 
 from studio import runner
-from local_worker_test import stubtest_worker
+from studio.local_worker_test import stubtest_worker
 
 
 class RunnerTest(unittest.TestCase):

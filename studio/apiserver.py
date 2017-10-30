@@ -10,7 +10,6 @@ import socket
 import subprocess
 import traceback
 import six
-import profile
 
 import google.oauth2.id_token
 import google.auth.transport.requests
@@ -465,6 +464,8 @@ def get_and_verify_user(request):
                 claims['email'],
                 request.json['refreshToken']
             )
+
+        get_db().register_user(claims['user_id'], claims['email'])
 
         return claims['user_id']
 
