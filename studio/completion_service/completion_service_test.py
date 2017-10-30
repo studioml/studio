@@ -89,6 +89,7 @@ class CompletionServiceTest(unittest.TestCase):
 
         self.test_two_experiments_with_cs_args(config=config_path)
 
+    @unittest.skip("peterz fix")
     @unittest.skipIf(
         'GOOGLE_APPLICATION_CREDENTIALS' not in os.environ.keys() or
         sys.version_info[0] > 2,
@@ -164,6 +165,7 @@ class CompletionServiceTest(unittest.TestCase):
 
         self.assertEquals(results, expected_results)
 
+    @unittest.skip("peterz fix")
     @unittest.skipIf(
         'GOOGLE_APPLICATION_CREDENTIALS' not in os.environ.keys() or
         sys.version_info[0] > 2,
