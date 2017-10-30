@@ -383,7 +383,7 @@ class TartifactStore(object):
 
         if tarp.returncode != 0:
             self.logger.info('tar had a non-zero return code!')
-            self.logger.info('tar output: \n ' + tarout)
+            self.logger.info('tar output: \n ' + str(tarout))
 
         self.logger.info('tar finished in {}s'.format(toc - tic))
         return tar_filename
