@@ -7,6 +7,7 @@ import logging
 
 from studio.pubsub_queue import PubsubQueue
 from studio.sqs_queue import SQSQueue
+from studio.local_queue import LocalQueue
 
 from studio.util import has_aws_credentials
 
@@ -30,15 +31,14 @@ class QueueTest(object):
 
     def test_clean(self):
         q = self.get_queue()
-        q.clean()
+        q.clean(timeout=60)
         data = str(uuid.uuid4())
 
         q.enqueue(data)
-        q.clean()
+        q.clean(timeout=60)
 
-        self.assertTrue(q.dequeue() is None)
+        self.assertTrue(q.dequeue(timeout=60) is None)
 
-    # @skip
     def test_enq_deq_order(self):
         return
         q = self.get_queue()
@@ -64,7 +64,6 @@ class QueueTest(object):
 
 
 class DistributedQueueTest(QueueTest):
-    _multiprocess_can_split_ = True
 
     def test_unacknowledged(self):
         q = self.get_queue()
@@ -101,7 +100,7 @@ class DistributedQueueTest(QueueTest):
 
         q1.enqueue(data1)
 
-        self.assertEquals(data1, q2.dequeue())
+        self.assertEquals(data1, q2.dequeue(timeout=120))
 
         q1.enqueue(data1)
         q1.enqueue(data2)
@@ -143,18 +142,19 @@ class DistributedQueueTest(QueueTest):
     'variable not set, won'' be able to use google ' +
     'PubSub')
 class PubSubQueueTest(DistributedQueueTest, unittest.TestCase):
-    _multiprocess_can_split_ = True
+    _multiprocess_shared_ = True
 
     def get_queue(self, name=None):
-        return PubsubQueue(
-            'pubsub_queue_test_' + str(uuid.uuid4()) if not name else name)
+        name = 'pubsub_queue_test' + str(uuid.uuid4()) if not name else name
+        print(name)
+        return PubsubQueue(name)
 
 
 @unittest.skipIf(
     not has_aws_credentials(),
     "AWS credentials is not present, cannot use SQSQueue")
 class SQSQueueTest(DistributedQueueTest, unittest.TestCase):
-    _multiprocess_can_split_ = True
+    _multiprocess_shared_ = True
 
     def get_queue(self, name=None):
         return SQSQueue(

@@ -89,8 +89,8 @@ class EC2WorkerManager(object):
             self.logger.warn('User startup script argument is deprecated')
 
     def _get_image_id(self):
-        # return 'ami-cd0f5cb6' # vanilla ubuntu 16.04 image
-        return 'ami-eb7d9491'  # studio.ml gpu image
+        # return 'ami-cd0f5cb6'  # vanilla ubuntu 16.04 image
+        return 'ami-a9a47cd3'  # studio.ml gpu image with python2 and python3
 
     def _get_block_device_mappings(self, resources_needed):
         return [{
@@ -194,10 +194,7 @@ class EC2WorkerManager(object):
         else:
             self.logger.info('credentials NOT found')
 
-        with open(os.path.join(
-                os.path.dirname(__file__),
-                self.startup_script_file),
-                'r') as f:
+        with open(self.startup_script_file) as f:
 
             startup_script = f.read()
 
@@ -345,6 +342,10 @@ class EC2WorkerManager(object):
             )
 
     def _get_ondemand_prices(self, instances=_instance_specs.keys()):
+
+        # TODO un-hardcode the us-east as a region
+        # so that prices are being read for a correct region
+
         price_path = os.path.join(os.path.expanduser('~'), '.studioml',
                                   'awsprices.json')
         try:
