@@ -434,24 +434,21 @@ def get_worker_manager(config, cloud=None, verbose=10):
 
 
 def get_queue(queue_name=None, cloud=None, verbose=10):
-    if cloud in ['gcloud', 'gcspot']:
-        if queue_name is None:
+    if queue_name is None:
+        if cloud in ['gcloud', 'gcspot']:
             queue_name = 'pubsub_' + str(uuid.uuid4())
-        return PubsubQueue(queue_name, verbose=verbose)
-
-    elif cloud in ['ec2', 'ec2spot']:
-        if queue_name is None:
+        elif cloud in ['ec2', 'ec2spot']:
             queue_name = 'sqs_' + str(uuid.uuid4())
-        return SQSQueue(queue_name, verbose=verbose)
-    else:
-        if queue_name is None or queue_name == 'local':
-            queue = LocalQueue(verbose=verbose)
-            # not cleaning is important to be able to re-use
-            # the queue from several processes
-            # queue.clean()
-            return queue
         else:
-            return PubsubQueue(queue_name, verbose=verbose)
+            queue_name = 'local'
+
+    if queue_name.startswith('ec2') or \
+       queue_name.startswith('sqs'):
+        return SQSQueue(queue_name, verbose=verbose)
+    elif queue_name == 'local':
+        return LocalQueue(verbose=verbose)
+    else:
+        return PubsubQueue(queue_name, verbose=verbose)
 
 
 def spin_up_workers(
@@ -538,6 +535,14 @@ def submit_experiments(
                                        chunksize=1)
         p.close()
         p.join()
+
+    '''
+    experiements = [add_experiment(e) for e in
+                    zip([config] * num_experiments,
+                       [python_pkg] *
+                       num_experiments,
+                       experiments)]
+    '''
 
     logger.info("Added %s experiments in %s seconds" %
                 (num_experiments, int(time.time() - start_time)))

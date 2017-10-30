@@ -43,7 +43,7 @@ class GCloudWorkerManager(object):
             self,
             queue_name,
             resources_needed={},
-            blocking=True,
+            blocking=False,
             ssh_keypair=None,
             timeout=300):
 
@@ -135,12 +135,14 @@ class GCloudWorkerManager(object):
         self.logger.info('Managed groupd {} created'.format(group_name))
 
     def _get_instance_config(self, resources_needed, queue_name, timeout=300):
-        image_response = self.compute.images().getFromFamily(
-            project='studio-ed756', family='studioml').execute()
+        # image_response = self.compute.images().getFromFamily(
+        #    project='studio-ed756', family='studioml').execute()
+
+        image_response = None
 
         if image_response is None:
             image_response = self.compute.images().getFromFamily(
-                project='debian-cloud', family='debian-9').execute()
+                project='ubuntu-os-cloud', family='ubuntu-1604-lts').execute()
 
         source_disk_image = image_response['selfLink']
 
@@ -153,6 +155,10 @@ class GCloudWorkerManager(object):
 
         startup_script = startup_script.replace(
             "{studioml_branch}", self.branch)
+
+        if resources_needed.get('gpus') > 0:
+            startup_script = startup_script.replace('{use_gpus}', '1')
+
         startup_script = insert_user_startup_script(
             self.user_startup_script,
             startup_script, self.logger)

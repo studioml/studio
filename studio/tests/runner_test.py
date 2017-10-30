@@ -8,18 +8,6 @@ from local_worker_test import stubtest_worker
 
 class RunnerTest(unittest.TestCase):
 
-    @timeout(90)
-    def test_args_conflict(self):
-        stubtest_worker(
-            self,
-            experiment_name='test_runner_conflict_' + str(uuid.uuid4()),
-            runner_args=['--verbose=debug'],
-            config_name='test_config.yaml',
-            test_script='conflicting_args.py',
-            script_args=['--experiment', 'aaa'],
-            expected_output='Experiment key = aaa'
-        )
-
     def test_add_packages(self):
 
         list1 = ['keras==2.0.5', 'boto3==1.1.3']
