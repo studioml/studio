@@ -12,7 +12,7 @@ import logging
 
 logging.basicConfig()
 
-
+@unittest.skip('testing requires docker')
 class RemoteWorkerTest(unittest.TestCase):
     _multiprocess_shared_ = True
 

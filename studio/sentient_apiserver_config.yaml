@@ -1,0 +1,20 @@
+database:
+    type: gs
+    apiKey: AIzaSyBBXZN-irWpOcdgDQFSTqLMY8r7VmnEwas
+    authDomain: "studio-sentient.firebaseapp.com"
+    bucket: "studioml-sentient-meta"
+
+    guest: true
+    use_email_auth: false
+
+
+
+storage:
+    type: s3
+    bucket: "studioml-artifacts-west"
+
+   
+saveWorkspaceFrequencyMinutes: 1
+verbose: debug
+
+

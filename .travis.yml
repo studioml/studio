@@ -8,12 +8,12 @@ python:
 env:
   fast_finish: true
 
-sudo: required
-services: 
-    - docker
+#sudo: required
+#services: 
+#    - docker
 
-before_install:
-    - docker pull peterzhokhoff/studioml
+#before_install:
+#    - docker pull peterzhokhoff/studioml
 
 install:
   - pip install -e .
