@@ -181,7 +181,7 @@ class KeyValueProviderTest(object):
 
 
 class FirebaseProviderTest(unittest.TestCase, KeyValueProviderTest):
-    _multiprocess_can_split_ = True
+    _multiprocess_shared_ = True
 
     def test_get_set_auth_firebase(self):
         remove_all_keys()
@@ -223,7 +223,7 @@ class FirebaseProviderTest(unittest.TestCase, KeyValueProviderTest):
     not has_aws_credentials(),
     'AWS credentials not found, cannot run test')
 class S3ProviderTest(unittest.TestCase, KeyValueProviderTest):
-    _multiprocess_can_split = True
+    _multiprocess_shared_ = True
 
     def get_default_config_name(self):
         return 'test_config_s3.yaml'
@@ -233,8 +233,6 @@ class S3ProviderTest(unittest.TestCase, KeyValueProviderTest):
     'GOOGLE_APPLICATION_CREDENTIALS' not in os.environ.keys(),
     'google app credentials not found, cannot run test')
 class GSProviderTest(unittest.TestCase, KeyValueProviderTest):
-    _multiprocess_can_split = True
-
     def get_default_config_name(self):
         return 'test_config_gs.yaml'
 

@@ -14,9 +14,9 @@ logging.basicConfig()
 
 
 class RemoteWorkerTest(unittest.TestCase):
-    _multiprocess_can_split_ = True
+    _multiprocess_shared_ = True
 
-    @timeout(300)
+    @timeout(590)
     @unittest.skipIf(
         'GOOGLE_APPLICATION_CREDENTIALS' not in
         os.environ.keys(),
@@ -33,6 +33,7 @@ class RemoteWorkerTest(unittest.TestCase):
             ['studio-start-remote-worker',
              '--queue=' + queue_name,
              '--single-run',
+             '--no-cache',
              '--timeout=30',
              '--image=peterzhokhoff/studioml'],
             stdout=subprocess.PIPE,
@@ -51,9 +52,10 @@ class RemoteWorkerTest(unittest.TestCase):
 
         workerout, _ = pw.communicate()
         if workerout:
-            logger.debug("studio-start-remote-worker output: \n" + workerout)
+            logger.debug("studio-start-remote-worker output: \n" +
+                         str(workerout))
 
-    @timeout(300)
+    @timeout(590)
     @unittest.skipIf(
         'GOOGLE_APPLICATION_CREDENTIALS' not in
         os.environ.keys(),
@@ -79,6 +81,7 @@ class RemoteWorkerTest(unittest.TestCase):
             ['studio-start-remote-worker',
              '--queue=' + queue_name,
              '--single-run',
+             '--no-cache',
              '--image=peterzhokhoff/studioml'],
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT)
@@ -99,7 +102,8 @@ class RemoteWorkerTest(unittest.TestCase):
 
         workerout, _ = pw.communicate()
         if workerout:
-            logger.debug("studio-start-remote-worker output: \n" + workerout)
+            logger.debug("studio-start-remote-worker output: \n" +
+                         str(workerout))
         os.remove(tmpfile)
 
         tmppath = os.path.join(tempfile.gettempdir(), str(uuid.uuid4()))
@@ -117,7 +121,7 @@ class RemoteWorkerTest(unittest.TestCase):
         os.remove(tmppath)
         db.delete_experiment(experiment_name)
 
-    @timeout(300)
+    @timeout(590)
     @unittest.skipIf(
         'GOOGLE_APPLICATION_CREDENTIALS' not in
         os.environ.keys(),
@@ -141,6 +145,7 @@ class RemoteWorkerTest(unittest.TestCase):
             ['studio-start-remote-worker',
              '--queue=' + queue_name,
              '--single-run',
+             '--no-cache',
              '--image=peterzhokhoff/studioml'],
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT)
@@ -159,11 +164,11 @@ class RemoteWorkerTest(unittest.TestCase):
             queue=PubsubQueue(queue_name))
 
         workerout, _ = pw.communicate()
-        logger.debug('studio-start-remote-worker output: \n' + workerout)
+        logger.debug('studio-start-remote-worker output: \n' + str(workerout))
 
         os.remove(tmpfile)
 
-    @timeout(300)
+    @timeout(590)
     @unittest.skipIf(
         'GOOGLE_APPLICATION_CREDENTIALS' not in
         os.environ.keys(),
@@ -171,10 +176,9 @@ class RemoteWorkerTest(unittest.TestCase):
         'variable not set, won'' be able to use google ' +
         'PubSub')
     def test_baked_image(self):
-        '''
-        create a docker image with baked in credentials
-        and run a remote worker tests with it
-        '''
+
+        # create a docker image with baked in credentials
+        # and run a remote worker tests with it
         logger = logging.getLogger('test_baked_image')
         logger.setLevel(logging.DEBUG)
 
@@ -185,7 +189,7 @@ class RemoteWorkerTest(unittest.TestCase):
 
         dockertestout, _ = dockertestp.communicate()
         if dockertestout:
-            logger.info("docker test output: \n" + dockertestout)
+            logger.info("docker test output: \n" + str(dockertestout))
 
         if dockertestp.returncode != 0:
             logger.error("docker is not installed (correctly)")
@@ -203,7 +207,7 @@ class RemoteWorkerTest(unittest.TestCase):
 
         addcredsout, _ = addcredsp.communicate()
         if addcredsout:
-            logger.info('studio-add-credentials output: \n' + addcredsout)
+            logger.info('studio-add-credentials output: \n' + str(addcredsout))
         if addcredsp.returncode != 0:
             logger.error("studio-add-credentials failed.")
             self.assertTrue(False)
@@ -216,6 +220,7 @@ class RemoteWorkerTest(unittest.TestCase):
         pw = subprocess.Popen(
             ['studio-start-remote-worker',
              '--queue=' + queue_name,
+             '--no-cache',
              '--single-run',
              '--timeout=30',
              '--image=' + image],
@@ -234,7 +239,9 @@ class RemoteWorkerTest(unittest.TestCase):
 
         workerout, _ = pw.communicate()
         if workerout:
-            logger.debug("studio-start-remote-worker output: \n" + workerout)
+            logger.debug(
+                "studio-start-remote-worker output: \n" +
+                str(workerout))
 
         rmip = subprocess.Popen(['docker', 'rmi', image],
                                 stdout=subprocess.PIPE,
@@ -243,7 +250,7 @@ class RemoteWorkerTest(unittest.TestCase):
         rmiout, _ = rmip.communicate()
 
         if rmiout:
-            logger.info('docker rmi output: \n' + rmiout)
+            logger.info('docker rmi output: \n' + str(rmiout))
 
 
 if __name__ == "__main__":

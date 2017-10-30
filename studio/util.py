@@ -11,6 +11,7 @@ import subprocess
 import os
 import numpy as np
 import requests
+import six
 
 from tensorflow.core.util import event_pb2
 
@@ -308,7 +309,6 @@ def _compression_to_extension_taropt(compression):
     raise ValueError('Unknown compression method {}'
                      .format(compression))
 
-
 def timeit(method):
 
     def timed(*args, **kw):
@@ -328,3 +328,11 @@ def timeit(method):
         return result
 
     return timed
+
+def sixdecode(s):
+    if isinstance(s, six.string_types):
+        return s
+    if isinstance(s, six.binary_type):
+        return s.decode('utf8')
+
+    raise TypeError("Unknown type of " + str(s))
