@@ -1,6 +1,8 @@
 import os
 import glob
 import uuid
+import sys
+
 try:
     import pip
 except ImportError:
@@ -23,13 +25,15 @@ class Experiment(object):
                  time_finished=None,
                  info={},
                  git=None,
-                 metric=None):
+                 metric=None,
+                 pythonver=None):
 
         self.key = key
         self.filename = filename
         self.args = args if args else []
         self.pythonenv = pythonenv
         self.project = project
+        self.pythonver = pythonver if pythonver else sys.version_info[0]
 
         workspace_path = os.path.abspath('.')
         try:
@@ -136,5 +140,6 @@ def experiment_from_dict(data, info={}):
         time_finished=data.get('time_finished'),
         info=info if any(info) else data.get('info'),
         git=data.get('git'),
-        metric=data.get('metric')
+        metric=data.get('metric'),
+        pythonver=data.get('pythonver')
     )

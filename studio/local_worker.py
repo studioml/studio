@@ -7,7 +7,6 @@ import json
 import psutil
 import time
 import six
-import pip
 
 
 from apscheduler.schedulers.background import BackgroundScheduler
@@ -17,6 +16,7 @@ from . import model
 from .local_queue import LocalQueue
 from .gpu_util import get_available_gpus, get_gpu_mapping, get_gpus_summary
 from .experiment import Experiment
+from .util import sixdecode
 
 logging.basicConfig()
 logging.getLogger('apscheduler.scheduler').setLevel(logging.ERROR)
@@ -69,7 +69,11 @@ class LocalExecutor(object):
             sched.start()
 
             with open(log_path, 'w') as output_file:
-                p = subprocess.Popen(["python",
+                python = 'python'
+                if experiment.pythonver == 3:
+                    python = 'python3'
+
+                p = subprocess.Popen([python,
                                       experiment.filename] +
                                      experiment.args,
                                      stdout=output_file,
@@ -206,8 +210,10 @@ def worker_loop(queue, parsed_args,
         # first_exp, ack_key = queue.dequeue(acknowledge=False)
         first_exp, ack_key = msg
 
-        experiment_key = json.loads(first_exp)['experiment']['key']
-        config = json.loads(first_exp)['config']
+        data_dict = json.loads(sixdecode(first_exp))
+        experiment_key = data_dict['experiment']['key']
+        config = data_dict['config']
+
         parsed_args.config = config
         if verbose:
             config['verbose'] = verbose
@@ -234,18 +240,22 @@ def worker_loop(queue, parsed_args,
                 sched.start()
 
                 try:
-                    pip_diff = pip_needed_packages(experiment.pythonenv)
+                    python = 'python'
+                    if experiment.pythonver == 3:
+                        python = 'python3'
+                    pip_diff = pip_needed_packages(
+                        experiment.pythonenv, python)
                     if any(pip_diff):
                         logger.info(
                             'Setting up python packages for experiment')
-                        if pip_install_packages(pip_diff, logger) != 0:
+                        if pip_install_packages(pip_diff, python, logger) != 0:
                             logger.info(
                                 "Installation of all packages together " +
                                 " failed, "
                                 "trying one package at a time")
 
-                        for pkg in pip_diff:
-                            pip_install_packages([pkg], logger)
+                            for pkg in pip_diff:
+                                pip_install_packages([pkg], python, logger)
 
                     for tag, art in six.iteritems(experiment.artifacts):
                         if fetch_artifacts or 'local' not in art.keys():
@@ -276,12 +286,15 @@ def worker_loop(queue, parsed_args,
                 .format(fs_tracker.get_queue_directory()))
 
 
-def pip_install_packages(packages, logger=None):
+def pip_install_packages(packages, python='python', logger=None):
     pipp = subprocess.Popen(
-        ['pip', 'install'] + [p for p in packages],
+        [python, '-m', 'pip', 'install'] + [p for p in packages],
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT)
     pipout, _ = pipp.communicate()
+    pipout = pipout.decode('utf-8')
+    # return pip.main(['install'] + list(packages))
+
     if logger:
         logger.info("pip output: \n" + pipout)
     return pipp.returncode
@@ -323,10 +336,19 @@ def save_metrics(path):
         f.write(entry)
 
 
-def pip_needed_packages(packages):
+def pip_needed_packages(packages, python='python'):
 
-    current_packages = {p._key + '==' + p._version for p in
-                        pip.pip.get_installed_distributions(local_only=True)}
+    pipp = subprocess.Popen(
+        [python, '-m', 'pip', 'freeze'],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT)
+
+    pipout, _ = pipp.communicate()
+    pipout = pipout.decode('utf-8')
+    current_packages = {l.strip() for l in pipout.strip().split('\n')}
+
+    # current_packages = {p._key + '==' + p._version for p in
+    #                    pip.pip.get_installed_distributions(local_only=True)}
 
     return {p for p in packages} - current_packages
 

@@ -35,9 +35,9 @@ class SQSQueue(object):
     def get_name(self):
         return self._name
 
-    def clean(self):
+    def clean(self, timeout=0):
         while True:
-            msg = self.dequeue()
+            msg = self.dequeue(timeout=timeout)
             if not msg:
                 break
 

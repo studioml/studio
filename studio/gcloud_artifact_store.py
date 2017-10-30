@@ -2,7 +2,6 @@ import logging
 import time
 import calendar
 
-from google.cloud import storage
 from .tartifact_store import TartifactStore
 
 logging.basicConfig()
@@ -44,6 +43,7 @@ class GCloudArtifactStore(TartifactStore):
         return bucket
 
     def get_client(self):
+        from google.cloud import storage
         if 'credentials' in self.config.keys():
             return storage.Client \
                 .from_service_account_json(self.config['serviceAccount'])

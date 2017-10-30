@@ -69,6 +69,7 @@ with open('requirements.txt') as f:
             _libcudart = ctypes.cdll.LoadLibrary('libcudart.dylib')
         else:
             _libcudart = ctypes.cdll.LoadLibrary('libcudart.so')
+            _libcuda = ctypes.cdll.LoadLibrary('libcuda.so')
         required.append('tensorflow-gpu')
     except OSError:
         required.append('tensorflow')

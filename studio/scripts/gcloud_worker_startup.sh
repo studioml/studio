@@ -41,10 +41,27 @@ code_url_base="https://storage.googleapis.com/studio-ed756.appspot.com/src"
 repo_url="https://github.com/studioml/studio"
 branch="{studioml_branch}"
 
+echo "Environment varibles:"
+env
+
 if [ ! -d "studio" ]; then
+    echo "Installing system packages..."
     sudo apt -y update
-    sudo apt install -y wget python-pip git python-dev
-    sudo pip install --upgrade pip
+    sudo apt install -y wget git jq 
+    sudo apt install -y python python-pip python-dev python3 python3-dev python3-pip
+    echo "python2 version: " $(python -V)
+
+    sudo python -m pip install --upgrade pip
+    sudo python -m pip install --upgrade awscli boto3
+
+    echo "python3 version: " $(python3 -V)
+   
+    sudo python3 -m pip install --upgrade pip
+    sudo python3 -m pip install --upgrade awscli boto3
+
+    #wget $code_url_base/$code_ver
+    #tar -xzf $code_ver
+    #cd studio
     git clone $repo_url
 
     if [[ "{use_gpus}" -eq 1 ]]; then
@@ -65,7 +82,10 @@ if [ ! -d "studio" ]; then
         sudo dpkg -i $cudnn5
         sudo dpkg -i $cudnn6
 
-        sudo pip install tensorflow tensorflow-gpu --upgrade
+        sudo python  -m pip install tensorflow tensorflow-gpu --upgrade
+        sudo python3 -m pip install tensorflow tensorflow-gpu --upgrade
+    else
+        sudo apt install -y default-jre
     fi
 fi
 
