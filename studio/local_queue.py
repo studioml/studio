@@ -18,7 +18,7 @@ class LocalQueue:
     def has_next(self):
         return any(glob.glob(self.path + '/*'))
 
-    def clean(self):
+    def clean(self, timeout=0):
         while self.has_next():
             self.dequeue()
 

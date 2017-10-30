@@ -8,16 +8,24 @@ python:
 env:
   fast_finish: true
 
+sudo: required
+services: 
+    - docker
+
+before_install:
+    - docker pull peterzhokhoff/studioml
+
 install:
-  # The plugin for the setup tools with git and git archives has to be installed manually
-  # in order that as the pip install runs it can do the git discovery for tags etc
-  #
   - pip install -e .
-  - pip install pep8
+  - pip install pycodestyle
+  # - pip install -r extra_test_requirements.txt
+
+  - 'if [ -n "$GOOGLE_CREDENTIALS_ENCODED" ]; then echo "$GOOGLE_CREDENTIALS_ENCODED" | base64 --decode > ./credentials.json && export GOOGLE_APPLICATION_CREDENTIALS=$(pwd)/credentials.json; fi'
 
 script:
-  - nosetests -v 
-  - pep8 --show-source .
+  - echo $GOOGLE_APPLICATION_CREDENTIALS
+  - nosetests -v --processes=16 --process-timeout=590
+  - pycodestyle --show-source .
   - python setup.py sdist
 
 deploy:

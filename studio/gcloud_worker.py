@@ -135,12 +135,14 @@ class GCloudWorkerManager(object):
         self.logger.info('Managed groupd {} created'.format(group_name))
 
     def _get_instance_config(self, resources_needed, queue_name, timeout=300):
-        image_response = self.compute.images().getFromFamily(
-            project='studio-ed756', family='studioml').execute()
+        # image_response = self.compute.images().getFromFamily(
+        #    project='studio-ed756', family='studioml').execute()
+
+        image_response = None
 
         if image_response is None:
             image_response = self.compute.images().getFromFamily(
-                project='debian-cloud', family='debian-9').execute()
+                project='ubuntu-os-cloud', family='ubuntu-1604-lts').execute()
 
         source_disk_image = image_response['selfLink']
 

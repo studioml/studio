@@ -41,6 +41,18 @@ class LocalWorkerTest(unittest.TestCase, QueueTest):
         ):
             pass
 
+    def test_args_conflict(self):
+        with stubtest_worker(
+            self,
+            experiment_name='test_runner_conflict_' + str(uuid.uuid4()),
+            runner_args=['--verbose=debug'],
+            config_name='test_config.yaml',
+            test_script='conflicting_args.py',
+            script_args=['--experiment', 'aaa'],
+            expected_output='Experiment key = aaa'
+        ):
+            pass
+
     def test_local_hyperparam(self):
         with stubtest_worker(
             self,
