@@ -9,6 +9,7 @@ from .firebase_artifact_store import FirebaseArtifactStore
 from .auth import get_auth
 from .experiment import experiment_from_dict
 from .tartifact_store import get_immutable_artifact_key
+from .util import timeit
 
 logging.basicConfig()
 
@@ -49,8 +50,7 @@ class KeyValueProvider(object):
         )
 
         if self.auth and not self.auth.expired:
-            self._set(self._get_user_keybase() + "email",
-                      self.auth.get_user_email())
+            self.register_user(None, self.auth.get_user_email())
 
         self.max_keys = db_config.get('max_keys', 100)
 
@@ -240,6 +240,7 @@ class KeyValueProvider(object):
         else:
             return checkpoint_threads
 
+    @timeit
     def _get_experiment_info(self, experiment):
         info = {}
         type_found = False
@@ -276,6 +277,7 @@ class KeyValueProvider(object):
 
         return info
 
+    @timeit
     def _get_experiment_logtail(self, experiment):
         try:
             tarf = self.store.stream_artifact(experiment.artifacts['output'])
@@ -293,6 +295,7 @@ class KeyValueProvider(object):
             self.logger.info(e)
             return None
 
+    @timeit
     def get_experiment(self, key, getinfo=True):
         data = self._get(self._get_experiments_keybase() + key)
         if data is None:
@@ -324,15 +327,15 @@ class KeyValueProvider(object):
                 userid = user_ids[0]
 
         experiment_keys = self._get(
-            self._get_user_keybase(userid) + "experiments")
+            self._get_user_keybase(userid) + "experiments/", shallow=True)
         if not experiment_keys:
-            experiment_keys = {}
+            experiment_keys = []
 
-        keys = sorted(experiment_keys.keys(),
-                      key=lambda k: str(experiment_keys[k]),
-                      reverse=True)
+        # keys = sorted(experiment_keys.keys(),
+        #              key=lambda k: str(experiment_keys[k]),
+        #              reverse=True)
 
-        return keys
+        return experiment_keys
 
     def get_project_experiments(self, project):
         experiment_keys = self._get(self._get_projects_keybase() +
@@ -343,7 +346,11 @@ class KeyValueProvider(object):
         return experiment_keys.keys()
 
     def get_artifacts(self, key):
-        experiment = self.get_experiment(key, getinfo=False)
+        if isinstance(key, six.string_types):
+            experiment = self.get_experiment(key, getinfo=False)
+        else:
+            experiment = key
+
         retval = {}
         if experiment.artifacts is not None:
             for tag, art in six.iteritems(experiment.artifacts):
@@ -358,37 +365,6 @@ class KeyValueProvider(object):
                                        local_path=local_path,
                                        only_newer=only_newer)
 
-    def _get_valid_experiments(self, experiment_keys,
-                               getinfo=False, blocking=True):
-
-        if self.max_keys > 0:
-            experiment_keys = experiment_keys[:self.max_keys]
-
-        def cache_valid_experiment(key):
-            try:
-                self._experiment_cache[key] = self.get_experiment(
-                    key, getinfo=getinfo)
-            except BaseException:
-                self.logger.warn(
-                    ("Experiment {} does not exist " +
-                     "or is corrupted, try to delete record").format(key))
-                try:
-                    self.delete_experiment(key)
-                except BaseException:
-                    pass
-
-        if self.pool:
-            if blocking:
-                self.pool.map(cache_valid_experiment, experiment_keys)
-            else:
-                self.pool.map_async(cache_valid_experiment, experiment_keys)
-        else:
-            for e in experiment_keys:
-                cache_valid_experiment(e)
-
-        return [self._experiment_cache[key] for key in experiment_keys
-                if key in self._experiment_cache.keys()]
-
     def get_projects(self):
         return self._get(self._get_projects_keybase(), shallow=True)
 
@@ -396,7 +372,7 @@ class KeyValueProvider(object):
         user_ids = self._get('users/', shallow=True)
         retval = {}
         if user_ids:
-            for user_id in user_ids.keys():
+            for user_id in user_ids:
                 retval[user_id] = {
                     'email': self._get('users/' + user_id + '/email')
                 }
@@ -427,6 +403,12 @@ class KeyValueProvider(object):
                 return (owner == user)
         else:
             return True
+
+    def register_user(self, userid, email):
+        keypath = self._get_user_keybase(userid) + 'email'
+        existing_email = self._get(keypath)
+        if existing_email != email:
+            self._set(keypath, email)
 
     def __enter__(self):
         return self

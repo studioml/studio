@@ -17,7 +17,7 @@ except BaseException:
 
 from studio import model
 from studio.local_queue import LocalQueue
-from studio.util import has_aws_credentials
+from studio.util import has_aws_credentials, sixdecode
 
 from queue_test import QueueTest
 
@@ -25,7 +25,7 @@ from queue_test import QueueTest
 logging.basicConfig()
 
 
-class LocalWorkerTest(unittest.TestCase):
+class LocalWorkerTest(unittest.TestCase, QueueTest):
     def get_queue(self):
         return LocalQueue()
 
@@ -283,7 +283,7 @@ def stubtest_worker(
     pout, _ = p.communicate()
 
     if pout:
-        logger.debug("studio run output: \n" + str(pout))
+        logger.debug("studio run output: \n" + sixdecode(pout))
 
     db = model.get_db_provider(model.get_config(config_name))
     experiments = [e for e in db.get_user_experiments()
