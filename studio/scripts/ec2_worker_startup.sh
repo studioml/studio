@@ -58,6 +58,9 @@ if [ ! -d "studio" ]; then
     #tar -xzf $code_ver
     #cd studio
     git clone $repo_url
+    if [[ $? -ne 0 ]]; then
+        git clone https://github.com/studioml/studio
+    fi
 
     if [[ "{use_gpus}" -eq 1 ]]; then
         cudnn5="libcudnn5_5.1.10-1_cuda8.0_amd64.deb"
