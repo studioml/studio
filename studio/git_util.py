@@ -1,5 +1,6 @@
 import re
 import subprocess
+import os
 
 
 def get_git_info(path='.', abort_dirty=True):
@@ -54,19 +55,6 @@ def get_repo_url(path='.', remove_user=True):
     if remove_user:
         url = re.sub('(?<=://).*@', '', url.decode('utf-8'))
     return url
-
-
-def get_commit(path='.'):
-    p = subprocess.Popen(
-        ['git', 'rev-parse', 'HEAD'],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        cwd=path)
-
-    stdout, _ = p.communicate()
-    assert p.returncode == 0, "git returned non-zero return code"
-
-    return stdout.strip()
 
 
 def get_branch(path='.'):

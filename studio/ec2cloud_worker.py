@@ -11,6 +11,7 @@ import requests
 import json
 import six
 
+from . import git_util
 from .gpu_util import memstr2int
 from .cloud_worker_util import insert_user_startup_script
 

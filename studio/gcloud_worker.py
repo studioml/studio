@@ -8,7 +8,7 @@ import logging
 import math
 import json
 
-import .git_util
+from . import git_util
 from .gpu_util import memstr2int
 from .cloud_worker_util import insert_user_startup_script
 
