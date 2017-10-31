@@ -493,7 +493,7 @@ def _render(page, **kwargs):
     retval = render_template(
         page,
         api_key=get_db().app.api_key,
-        project_id=_config['projectId'],
+        project_id=_config['database']['projectId'],
         send_refresh_token="true",
         allow_tensorboard=get_allow_tensorboard(),
         **kwargs
