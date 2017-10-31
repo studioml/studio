@@ -36,7 +36,7 @@ class GCloudWorkerManager(object):
         self.auth_cookie = auth_cookie
         self.user_startup_script = user_startup_script
         self.repo_url = git_util.get_my_repo_url()
-        self.branch = branch if branch else git_util.get_my_branch()
+        self.branch = branch if branch else git_util.get_my_checkout_target()
 
         if user_startup_script:
             self.logger.warn('User startup script argument is deprecated')

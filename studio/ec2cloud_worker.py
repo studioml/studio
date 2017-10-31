@@ -83,7 +83,7 @@ class EC2WorkerManager(object):
         self.prices = self._get_ondemand_prices(_instance_specs.keys())
 
         self.repo_url = git_util.get_my_repo_url()
-        self.branch = branch if branch else git_util.get_my_branch()
+        self.branch = branch if branch else git_util.get_my_checkout_target()
         self.user_startup_script = user_startup_script
 
         if user_startup_script:
