@@ -52,3 +52,6 @@ class PostgresProvider(object):
 
     def can_write_experiment(self, key=None, user=None):
         raise NotImplementedError()
+
+    def register_user(self, userid, email):
+        raise NotImplementedError()
