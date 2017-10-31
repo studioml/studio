@@ -91,6 +91,8 @@ class CompletionService:
         queue_upscaling=True,
         # Whether to delete the queue on shutdown
         shutdown_del_queue=False,
+        # delay between queries for results
+        sleep_time=1
     ):
 
         self.config = model.get_config(config)
@@ -129,6 +131,7 @@ class CompletionService:
         self.queue_upscaling = queue_upscaling
         self.shutdown_del_queue = shutdown_del_queue
         self.use_spot = cloud in ['ec2spot', 'gcspot']
+        self.sleep_time = sleep_time
 
     def __enter__(self):
         with model.get_db_provider(self.config):
@@ -276,7 +279,7 @@ class CompletionService:
 
     def getResultsWithTimeout(self, timeout=0):
         total_sleep_time = 0
-        sleep_time = 1
+        sleep_time = self.sleep_time
 
         while True:
             with model.get_db_provider(self.config) as db:
