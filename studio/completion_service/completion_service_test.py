@@ -14,6 +14,8 @@ logging.basicConfig()
 
 class CompletionServiceTest(unittest.TestCase):
 
+    _multiprocess_shared_ = True
+
     def test_two_experiments_with_cs_args(self, n_experiments=2, **kwargs):
         if not(any(kwargs)):
             return
