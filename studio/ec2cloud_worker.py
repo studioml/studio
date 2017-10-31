@@ -11,6 +11,7 @@ import requests
 import json
 import six
 
+from . import git_util
 from .gpu_util import memstr2int
 from .cloud_worker_util import insert_user_startup_script
 
@@ -82,7 +83,8 @@ class EC2WorkerManager(object):
 
         self.prices = self._get_ondemand_prices(_instance_specs.keys())
 
-        self.branch = branch if branch else 'master'
+        self.repo_url = git_util.get_my_repo_url()
+        self.branch = branch if branch else git_util.get_my_checkout_target()
         self.user_startup_script = user_startup_script
 
         if user_startup_script:
@@ -211,6 +213,7 @@ class EC2WorkerManager(object):
             region=self.region,
             use_gpus=0 if resources_needed['gpus'] == 0 else 1,
             timeout=timeout,
+            repo_url=self.repo_url,
             studioml_branch=self.branch)
 
         startup_script = insert_user_startup_script(

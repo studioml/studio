@@ -310,6 +310,27 @@ def _compression_to_extension_taropt(compression):
                      .format(compression))
 
 
+def timeit(method):
+
+    def timed(*args, **kw):
+        ts = time.time()
+        result = method(*args, **kw)
+        te = time.time()
+
+        line = '%r (%r, %r) %2.2f sec' % \
+            (method.__name__, args, kw, te - ts)
+
+        try:
+            logger = args[0].logger
+            logger.info(line)
+        except BaseException:
+            print(line)
+
+        return result
+
+    return timed
+
+
 def sixdecode(s):
     if isinstance(s, six.string_types):
         return s

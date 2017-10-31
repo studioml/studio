@@ -7,7 +7,6 @@ import logging
 
 from studio.pubsub_queue import PubsubQueue
 from studio.sqs_queue import SQSQueue
-from studio.local_queue import LocalQueue
 
 from studio.util import has_aws_credentials
 

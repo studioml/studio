@@ -8,6 +8,7 @@ import logging
 import math
 import json
 
+from . import git_util
 from .gpu_util import memstr2int
 from .cloud_worker_util import insert_user_startup_script
 
@@ -34,7 +35,8 @@ class GCloudWorkerManager(object):
         self.logger.setLevel(verbose)
         self.auth_cookie = auth_cookie
         self.user_startup_script = user_startup_script
-        self.branch = branch if branch else 'master'
+        self.repo_url = git_util.get_my_repo_url()
+        self.branch = branch if branch else git_util.get_my_checkout_target()
 
         if user_startup_script:
             self.logger.warn('User startup script argument is deprecated')
@@ -155,6 +157,9 @@ class GCloudWorkerManager(object):
 
         startup_script = startup_script.replace(
             "{studioml_branch}", self.branch)
+
+        startup_script = startup_script.replace(
+            "{repo_url}", self.repo_url)
 
         if resources_needed.get('gpus') > 0:
             startup_script = startup_script.replace('{use_gpus}', '1')

@@ -64,7 +64,7 @@ def _list(args, cli_args):
         elif args[0] == 'users':
             assert len(args) == 1
             users = db.get_users()
-            for u in users.keys():
+            for u in users:
                 print(users[u].get('email'))
             return
         elif args[0] == 'user':

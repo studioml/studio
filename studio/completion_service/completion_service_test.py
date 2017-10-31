@@ -14,7 +14,8 @@ logging.basicConfig()
 
 class CompletionServiceTest(unittest.TestCase):
 
-    @unittest.skip('peterz fix local cs tests')
+    _multiprocess_shared_ = True
+
     def test_two_experiments_with_cs_args(self, n_experiments=2, **kwargs):
         if not(any(kwargs)):
             return
@@ -36,19 +37,6 @@ class CompletionServiceTest(unittest.TestCase):
                 results[result[0]] = result[1]
 
         self.assertEquals(results, expected_results)
-
-    @unittest.skip('peterz fix local cs tests')
-    def test_two_experiments(self):
-        mypath = os.path.dirname(os.path.realpath(__file__))
-        config_path = os.path.join(
-            mypath,
-            '..',
-            'tests',
-            'test_config.yaml')
-
-        self.test_two_experiments_with_cs_args(
-            config=config_path,
-            cloud_timeout=60)
 
     @unittest.skipIf(not has_aws_credentials(),
                      'AWS credentials needed for this test')
@@ -80,7 +68,8 @@ class CompletionServiceTest(unittest.TestCase):
             cloud_timeout=100,
             cloud='ec2spot')
 
-    @unittest.skip('peterz fix local cs tests')
+    @unittest.skip('conflicts with other local runner tests,' +
+                   'left for debugging purposes')
     def test_two_experiments_apiserver(self):
         mypath = os.path.dirname(os.path.realpath(__file__))
         config_path = os.path.join(
@@ -91,10 +80,8 @@ class CompletionServiceTest(unittest.TestCase):
 
         self.test_two_experiments_with_cs_args(config=config_path)
 
-    @unittest.skip("peterz fix")
     @unittest.skipIf(
-        'GOOGLE_APPLICATION_CREDENTIALS' not in os.environ.keys() or
-        sys.version_info[0] > 2,
+        'GOOGLE_APPLICATION_CREDENTIALS' not in os.environ.keys(),
         'Need GOOGLE_APPLICATION_CREDENTIALS env variable to' +
         'use google cloud')
     def test_two_experiments_gcloud(self):
@@ -167,10 +154,8 @@ class CompletionServiceTest(unittest.TestCase):
 
         self.assertEquals(results, expected_results)
 
-    @unittest.skip("peterz fix")
     @unittest.skipIf(
-        'GOOGLE_APPLICATION_CREDENTIALS' not in os.environ.keys() or
-        sys.version_info[0] > 2,
+        'GOOGLE_APPLICATION_CREDENTIALS' not in os.environ.keys(),
         'Need GOOGLE_APPLICATION_CREDENTIALS env variable to' +
         'use google cloud')
     def test_two_experiments_gcloud_nonspot(self):

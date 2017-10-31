@@ -15,10 +15,25 @@
 #creds="./firebase_admin_creds.json"
 #cp $firebase_creds $creds
 
+config="apiserver_config.yaml"
+if [ -n "$2" ]; then
+    config=$2
+fi
+
+echo "config file = $config"
+
 if [ "$1" = "gae" ]; then
 
     mv default_config.yaml default_config.yaml.orig
-    cp apiserver_config.yaml default_config.yaml
+    cp $config default_config.yaml
+    cp app.yaml app.yaml.old
+    if [ -n "$AWS_ACCESS_KEY_ID" ]; then
+        echo "exporting AWS env variables to app.yaml"
+        echo "env_variables:" >> app.yaml
+        echo "  AWS_ACCESS_KEY_ID: $AWS_ACCESS_KEY_ID" >> app.yaml
+        echo "  AWS_SECRET_ACCESS_KEY: $AWS_SECRET_ACCESS_KEY" >> app.yaml
+        echo "  AWS_DEFAULT_REGION: $AWS_DEFAULT_REGION" >> app.yaml
+    fi
 
     rm -rf lib
     # pip install -t lib -r ../requirements.txt
@@ -30,6 +45,7 @@ if [ "$1" = "gae" ]; then
     yes Y | gcloud app deploy --no-promote
 
     mv default_config.yaml.orig default_config.yaml
+    mv app.yaml.old app.yaml
 else if [ "$1" = "local" ]; then
         port=$2
         studio ui --config=apiserver_config.yaml --port=$port
