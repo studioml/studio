@@ -1,8 +1,6 @@
 import unittest
 
 from studio import runner
-from local_worker_test import stubtest_worker
-
 
 class RunnerTest(unittest.TestCase):
 
