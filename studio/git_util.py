@@ -80,3 +80,19 @@ def get_branch(path='.'):
     assert p.returncode == 0, "git returned non-zero return code"
 
     return stdout.strip().decode('utf8')
+
+
+def get_my_repo_url():
+    mypath = os.path.dirname(os.path.realpath(__file__))
+    repo = get_repo_url(mypath)
+    if repo is None:
+        repo = "https://github.com/studioml/studio"
+    return repo
+
+
+def get_my_branch():
+    mypath = os.path.dirname(os.path.realpath(__file__))
+    branch = get_branch(mypath)
+    if branch is None:
+        branch = "master"
+    return branch

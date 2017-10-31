@@ -22,9 +22,9 @@ export AWS_SECRET_ACCESS_KEY="{aws_secret_key}"
 code_url_base="https://storage.googleapis.com/studio-ed756.appspot.com/src"
 #code_ver="tfstudio-64_config_location-2017-08-04_1.tgz"
 
-repo_url="https://github.com/studioml/studio"
+repo_url="{repo_url}"
 branch="{studioml_branch}"
-branch="development"
+
 
 autoscaling_group="{autoscaling_group}"
 instance_id=$(wget -q -O - http://169.254.169.254/latest/meta-data/instance-id)
