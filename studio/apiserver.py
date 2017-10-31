@@ -127,19 +127,25 @@ def tensorboard(logdir):
 def get_experiment():
     tic = time.time()
     key = request.json['key']
+    get_urls = request.json.get('get_artifact_urls', True)
     getlogger().info('Getting experiment {} '.format(key))
     try:
-        experiment = get_db().get_experiment(key).__dict__
-        artifacts = get_db().get_artifacts(key)
-        for art, url in six.iteritems(artifacts):
-            experiment['artifacts'][art]['url'] = url
+        experiment = get_db().get_experiment(key)
+        if get_urls:
+            artifacts = get_db().get_artifacts(experiment)
+            for art, url in six.iteritems(artifacts):
+                experiment.artifacts[art]['url'] = url
 
+        experiment_data = experiment.__dict__
         status = 'ok'
     except BaseException:
-        experiment = {}
+        experiment_data = {}
         status = traceback.format_exc()
 
-    retval = json.dumps({'status': status, 'experiment': experiment})
+    retval = json.dumps({
+        'status': status,
+        'experiment': experiment_data
+    })
 
     toc = time.time()
     getlogger().info('Processed get_experiment request in {} s'
@@ -162,7 +168,9 @@ def get_user_experiments():
     getlogger().info('Getting experiments of user {}'
                      .format(user))
 
-    experiments = get_db().get_user_experiments(user, blocking=True)
+    experiments = [
+        e for e in get_db().get_user_experiments(
+            user, blocking=True)]
     status = "ok"
     retval = json.dumps({
         "status": status,
@@ -456,6 +464,8 @@ def get_and_verify_user(request):
                 claims['email'],
                 request.json['refreshToken']
             )
+
+        get_db().register_user(claims['user_id'], claims['email'])
 
         return claims['user_id']
 

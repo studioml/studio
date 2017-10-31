@@ -15,12 +15,11 @@ logging.basicConfig()
 class CompletionServiceTest(unittest.TestCase):
 
     @unittest.skip('peterz fix local cs tests')
-    def test_two_experiments_with_cs_args(self, **kwargs):
+    def test_two_experiments_with_cs_args(self, n_experiments=2, **kwargs):
         if not(any(kwargs)):
             return
         mypath = os.path.dirname(os.path.realpath(__file__))
         experimentId = str(uuid.uuid4())
-        n_experiments = 2
         results = {}
         expected_results = {}
         with CompletionService(experimentId, **kwargs) as cs:

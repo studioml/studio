@@ -3,6 +3,7 @@ import time
 import re
 from .keyvalue_provider import KeyValueProvider
 from .gcloud_artifact_store import GCloudArtifactStore
+from .util import timeit
 
 
 class GSProvider(KeyValueProvider):
@@ -18,22 +19,27 @@ class GSProvider(KeyValueProvider):
             verbose,
             store)
 
+    @timeit
     def _get(self, key, shallow=False):
         bucket = self.meta_store._get_bucket_obj()
         retval = {}
         if shallow:
             blob_iterator = bucket.list_blobs(
                 prefix=key, delimiter='/')
-            list(blob_iterator)
-            prefixes = blob_iterator.prefixes
-            suffixes = [re.sub('^' + key, '', p) for p in prefixes]
+            bloblist = list(blob_iterator)
+            blobnames = {b.name for b in bloblist}
 
+            prefixes = blob_iterator.prefixes
+            suffixes = [re.sub('^' + key, '', p) for p in prefixes | blobnames]
+
+            retval = set({})
             for s in suffixes:
                 if s.endswith('/'):
-                    retval[s[:-1]] = True
+                    retval.add(s[:-1])
                 else:
-                    blob = bucket.blob(key + s)
-                    retval[s] = json.loads(blob.download_as_string())
+                    retval.add(s)
+
+            return retval
 
         else:
             blob_iterator = bucket.list_blobs(prefix=key)
