@@ -26,7 +26,8 @@ class Experiment(object):
                  info={},
                  git=None,
                  metric=None,
-                 pythonver=None):
+                 pythonver=None,
+                 max_duration=None):
 
         self.key = key
         self.filename = filename
@@ -75,6 +76,7 @@ class Experiment(object):
         self.info = info
         self.git = git
         self.metric = metric
+        self.max_duration = max_duration
 
     def get_model(self, db):
         modeldir = db.get_artifact(self.artifacts['modeldir'])
@@ -102,7 +104,8 @@ def create_experiment(
         project=None,
         artifacts={},
         resources_needed=None,
-        metric=None):
+        metric=None,
+        max_duration=None):
     key = str(uuid.uuid4()) if not experiment_name else experiment_name
     packages = []
     for i, pkg in enumerate(
@@ -121,7 +124,8 @@ def create_experiment(
         project=project,
         artifacts=artifacts,
         resources_needed=resources_needed,
-        metric=metric)
+        metric=metric,
+        max_duration=max_duration)
 
 
 def experiment_from_dict(data, info={}):
@@ -141,5 +145,6 @@ def experiment_from_dict(data, info={}):
         info=info if any(info) else data.get('info'),
         git=data.get('git'),
         metric=data.get('metric'),
-        pythonver=data.get('pythonver')
+        pythonver=data.get('pythonver'),
+        max_duration=data.get('max_duration')
     )
