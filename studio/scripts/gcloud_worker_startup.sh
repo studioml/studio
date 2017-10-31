@@ -61,10 +61,6 @@ if [ ! -d "studio" ]; then
     #wget $code_url_base/$code_ver
     #tar -xzf $code_ver
     #cd studio
-    git clone $repo_url
-    if [[ $? -ne 0 ]]; then
-        git clone https://github.com/studioml/studio
-    fi
 
     if [[ "{use_gpus}" -eq 1 ]]; then
         cudnn5="libcudnn5_5.1.10-1_cuda8.0_amd64.deb"
@@ -89,6 +85,12 @@ if [ ! -d "studio" ]; then
     else
         sudo apt install -y default-jre
     fi
+fi
+
+rm -rf studio
+git clone $repo_url
+if [[ $? -ne 0 ]]; then
+    git clone https://github.com/studioml/studio
 fi
 
 cd studio
