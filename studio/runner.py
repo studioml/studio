@@ -197,7 +197,7 @@ def main(args=sys.argv):
     parser.add_argument(
         '--max-duration',
         help='Max experiment runtime (i.e. time after which experiment ' +
-             'should be killed no matter what.'
+             'should be killed no matter what.',
         default=None)
 
     # detect which argument is the script filename
