@@ -101,7 +101,12 @@ class LocalExecutor(object):
                 def kill_if_stopped():
                     if db.get_experiment(
                             experiment.key,
-                            getinfo=False).status == 'stopped':
+                            getinfo=False).status == 'stopped' or \
+                        p.kill()
+                    
+                    if experiment.max_duration is not None and \
+                        time.time() > experiment.start_time + experiment.max_duration:
+
                         p.kill()
 
                 sched.add_job(kill_if_stopped, 'interval', seconds=10)
