@@ -98,9 +98,6 @@ class LocalExecutor(object):
                     minutes=self.config['saveMetricsIntervalMinutes']
                 )
 
-                import pdb
-                pdb.set_trace()
-
                 def kill_if_stopped():
                     if db.get_experiment(
                             experiment.key,

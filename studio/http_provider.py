@@ -242,6 +242,9 @@ class HTTPProvider(object):
         if self.auth:
             self.auth.refresh_token(email, refresh_token)
 
+    def register_user(self, userid, email):
+        pass
+
     def _get_headers(self):
         headers = {"content-type": "application/json"}
         if self.auth:

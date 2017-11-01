@@ -253,8 +253,6 @@ def main(args=sys.argv):
         config['cloud']['user_startup_script'] = \
             runner_args.user_startup_script
 
-    import pdb
-    pdb.set_trace()
     if runner_args.max_duration:
         runner_args.max_duration = util.str2duration(runner_args.max_duration)
 

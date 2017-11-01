@@ -545,7 +545,7 @@ def main(args=sys.argv[1:]):
     config = model.get_config()
     if args.config:
         with open(args.config) as f:
-            config.update(yaml.load(f))
+            config = yaml.load(f)
 
     if args.verbose:
         config['verbose'] = args.verbose
