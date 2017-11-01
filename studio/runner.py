@@ -24,6 +24,7 @@ from .experiment import create_experiment
 
 from . import model
 from . import auth
+from . import util
 from . import git_util
 from . import local_worker
 from . import fs_tracker
@@ -252,6 +253,8 @@ def main(args=sys.argv):
         config['cloud']['user_startup_script'] = \
             runner_args.user_startup_script
 
+    import pdb
+    pdb.set_trace()
     if runner_args.max_duration:
         runner_args.max_duration = util.str2duration(runner_args.max_duration)
 

@@ -26,7 +26,7 @@ terminaltables
 
 google-api-python-client
 google-cloud-storage
-google-cloud-pubsub <= 0.28.3
+google-cloud-pubsub 
 google-gax <= 0.15.14
 google-auth-httplib2
 

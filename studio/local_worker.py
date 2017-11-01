@@ -98,14 +98,18 @@ class LocalExecutor(object):
                     minutes=self.config['saveMetricsIntervalMinutes']
                 )
 
+                import pdb
+                pdb.set_trace()
+
                 def kill_if_stopped():
                     if db.get_experiment(
                             experiment.key,
-                            getinfo=False).status == 'stopped' or \
+                            getinfo=False).status == 'stopped':
                         p.kill()
-                    
+
                     if experiment.max_duration is not None and \
-                        time.time() > experiment.start_time + experiment.max_duration:
+                            time.time() > experiment.start_time + \
+                            experiment.max_duration:
 
                         p.kill()
 
