@@ -105,12 +105,12 @@ class HTTPProvider(object):
             key = experiment.key
 
         headers = self._get_headers()
-        request = requests.post(self.url + '/api/get_experiment',
-                                headers=headers,
-                                data=json.dumps({"key": key})
-                                )
-
         try:
+            request = requests.post(self.url + '/api/get_experiment',
+                                    headers=headers,
+                                    data=json.dumps({"key": key})
+                                    )
+
             self._raise_detailed_error(request)
             return experiment_from_dict(request.json()['experiment'])
         except BaseException as e:
