@@ -8,11 +8,12 @@ python:
 env:
   fast_finish: true
 
-# sudo: required
-# services: 
-#     - docker
-# before_install:
-#     - 'if [ -n "GOOGLE_CREDENTIALS_ENCODED" ]; then docker pull peterzhokhoff/studioml; fi'
+#sudo: required
+#services: 
+#    - docker
+#
+#before_install:
+#    - 'if [ -n "$GOOGLE_CREDENTIALS_ENCODED" ]; then docker pull peterzhokhoff/studioml; fi'
 
 install:
   - pip install -e .
