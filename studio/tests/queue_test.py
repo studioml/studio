@@ -124,13 +124,12 @@ class DistributedQueueTest(QueueTest):
         data = str(uuid.uuid4())
         q.enqueue(data)
 
-        msg, ack_id = q.dequeue(acknowledge=False, timeout=120)
+        msg, ack_id = q.dequeue(acknowledge=False, timeout=60)
+        q.hold(ack_id, 1)
 
-        self.assertTrue(q.dequeue() is None)
-        q.hold(ack_id, 0.5)
-        time.sleep(35)
-        msg = q.dequeue(timeout=120)
+        self.assertTrue(q.dequeue(timeout=45) is None)
 
+        msg = q.dequeue(timeout=60)
         self.assertEquals(data, msg)
 
 
