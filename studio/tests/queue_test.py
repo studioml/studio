@@ -129,7 +129,7 @@ class DistributedQueueTest(QueueTest):
 
         self.assertTrue(q.dequeue(timeout=10) is None)
 
-        msg = q.dequeue(timeout=60)
+        msg = q.dequeue(timeout=120)
         self.assertEquals(data, msg)
 
 
