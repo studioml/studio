@@ -65,8 +65,6 @@ with open('requirements.txt') as f:
     try:
         if platform.system() == "Microsoft":
             _libcudart = ctypes.windll.LoadLibrary('cudart.dll')
-        #elif platform.system() == "Darwin":
-        #    _libcudart = ctypes.cdll.LoadLibrary('libcudart.dylib')
         else:
             _libcudart = ctypes.cdll.LoadLibrary('libcudart.so')
             _libcuda = ctypes.cdll.LoadLibrary('libcuda.so')
