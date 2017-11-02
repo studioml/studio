@@ -132,27 +132,10 @@ def allocate_resources(experiment, config=None, verbose=10):
     gpus_needed = int(experiment.resources_needed.get('gpus')) \
         if experiment.resources_needed else 0
 
-    pythonenv_nogpu = [pkg for pkg in experiment.pythonenv
-                       if not pkg.startswith('tensorflow-gpu')]
-
     if gpus_needed > 0:
         ret_val = ret_val and allocate_gpus(gpus_needed, config)
-        # experiments with GPU should have tensorflow-gpu version
-        # matching tensorflow version
-
-        tensorflow_pkg = [pkg for pkg in experiment.pythonenv
-                          if pkg.startswith('tensorflow==') or
-                          pkg.startswith('tensorflow-gpu==')][0]
-
-        experiment.pythonenv = pythonenv_nogpu + \
-            [tensorflow_pkg.replace('tensorflow==', 'tensorflow-gpu==')]
-
     else:
         allocate_gpus(0, config)
-        # experiments without GPUs should not have
-        # tensorflow-gpu package in the evironment, because it won't
-        # work on the machines that do not have cuda installed
-        experiment.pythonenv = pythonenv_nogpu
 
     return ret_val
 
