@@ -24,6 +24,7 @@ timeout_decorator
 
 terminaltables
 
+google-api-python-client
 google-cloud-storage <= 1.5.0
 google-cloud-pubsub <= 0.28.3
 google-gax <= 0.15.14
