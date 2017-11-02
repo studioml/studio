@@ -77,6 +77,11 @@ def main(args=sys.argv):
         default=None)
 
     parser.add_argument(
+        '--gpuMem',
+        help='Amount of GPU RAM needed to run the experiment',
+        default=None)
+
+    parser.add_argument(
         '--hdd',
         help='Amount of hard drive space needed to run the experiment' +
              ' (used to configure cloud instance), ex: 10G, 10GB',
