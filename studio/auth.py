@@ -5,12 +5,16 @@ import json
 import shutil
 import atexit
 import tempfile
+import logging
+
 try:
     from apscheduler.schedulers.background import BackgroundScheduler
 except BaseException:
     BackgroundScheduler = None
 
 from .util import rand_string
+
+logging.basicConfig()
 
 TOKEN_DIR = os.path.expanduser('~/.studioml/keys')
 HOUR = 3600
@@ -52,6 +56,9 @@ class FirebaseAuth(object):
             blocking=True):
         if not os.path.exists(TOKEN_DIR):
             os.makedirs(TOKEN_DIR)
+
+        self.logger = logging.getLogger(self.__class__.__name__)
+        self.logger.setLevel(logging.DEBUG)
 
         self.firebase = firebase
         self.user = {}
@@ -106,9 +113,10 @@ class FirebaseAuth(object):
                 if user is not None or counter >= MAX_NUM_RETRIES:
                     break
                 try:
-                    with open(api_key, 'rb') as f:
-                        user = json.load(f)
-                except BaseException:
+                    with open(api_key) as f:
+                        user = json.loads(f.read())
+                except BaseException as e:
+                    self.logger.info(e)
                     time.sleep(SLEEP_TIME)
                     counter += 1
             if user is None:
@@ -121,7 +129,8 @@ class FirebaseAuth(object):
                     try:
                         self.refresh_token(user['email'], user['refreshToken'])
                         break
-                    except BaseException:
+                    except BaseException as e:
+                        self.logger.info(e)
                         time.sleep(SLEEP_TIME)
                         counter += 1
             else:
@@ -151,8 +160,8 @@ class FirebaseAuth(object):
 
         tmp_api_key = os.path.join(tempfile.gettempdir(),
                                    "api_key_%s" % rand_string(32))
-        with open(tmp_api_key, 'wb') as f:
-            json.dump(self.user, f)
+        with open(tmp_api_key, 'w') as f:
+            f.write(json.dumps(self.user))
             f.flush()
             os.fsync(f.fileno())
             f.close()

@@ -17,7 +17,7 @@ except BaseException:
 
 from studio import model
 from studio.local_queue import LocalQueue
-from studio.util import has_aws_credentials
+from studio.util import has_aws_credentials, sixdecode
 
 from queue_test import QueueTest
 
@@ -38,6 +38,18 @@ class LocalWorkerTest(unittest.TestCase, QueueTest):
             test_script='tf_hello_world.py',
             script_args=['arg0'],
             expected_output='[ 2.  6.]'
+        ):
+            pass
+
+    def test_args_conflict(self):
+        with stubtest_worker(
+            self,
+            experiment_name='test_runner_conflict_' + str(uuid.uuid4()),
+            runner_args=['--verbose=debug'],
+            config_name='test_config.yaml',
+            test_script='conflicting_args.py',
+            script_args=['--experiment', 'aaa'],
+            expected_output='Experiment key = aaa'
         ):
             pass
 
@@ -271,7 +283,7 @@ def stubtest_worker(
     pout, _ = p.communicate()
 
     if pout:
-        logger.debug("studio run output: \n" + str(pout))
+        logger.debug("studio run output: \n" + sixdecode(pout))
 
     db = model.get_db_provider(model.get_config(config_name))
     experiments = [e for e in db.get_user_experiments()

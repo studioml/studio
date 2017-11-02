@@ -25,7 +25,7 @@ DB_PROVIDER_EXPIRATION = 1800
 
 _db_provider_timestamp = None
 _db_provider = None
-_config = None
+_config = model.get_config()
 
 _tensorboard_dirs = {}
 _grequest = google.auth.transport.requests.Request()
@@ -127,19 +127,25 @@ def tensorboard(logdir):
 def get_experiment():
     tic = time.time()
     key = request.json['key']
+    get_urls = request.json.get('get_artifact_urls', True)
     getlogger().info('Getting experiment {} '.format(key))
     try:
-        experiment = get_db().get_experiment(key).__dict__
-        artifacts = get_db().get_artifacts(key)
-        for art, url in six.iteritems(artifacts):
-            experiment['artifacts'][art]['url'] = url
+        experiment = get_db().get_experiment(key)
+        if get_urls:
+            artifacts = get_db().get_artifacts(experiment)
+            for art, url in six.iteritems(artifacts):
+                experiment.artifacts[art]['url'] = url
 
+        experiment_data = experiment.__dict__
         status = 'ok'
-    except BaseException as e:
-        experiment = {}
+    except BaseException:
+        experiment_data = {}
         status = traceback.format_exc()
 
-    retval = json.dumps({'status': status, 'experiment': experiment})
+    retval = json.dumps({
+        'status': status,
+        'experiment': experiment_data
+    })
 
     toc = time.time()
     getlogger().info('Processed get_experiment request in {} s'
@@ -162,7 +168,9 @@ def get_user_experiments():
     getlogger().info('Getting experiments of user {}'
                      .format(user))
 
-    experiments = get_db().get_user_experiments(user, blocking=True)
+    experiments = [
+        e for e in get_db().get_user_experiments(
+            user, blocking=True)]
     status = "ok"
     retval = json.dumps({
         "status": status,
@@ -369,11 +377,15 @@ def add_experiment():
     artifacts = {}
     try:
         experiment = experiment_from_dict(request.json['experiment'])
+        compression = request.json.get('compression')
+        compression = compression if compression else 'bzip2'
+
         if get_db().can_write_experiment(experiment.key, userid):
             for tag, art in six.iteritems(experiment.artifacts):
                 art.pop('local', None)
 
-            get_db().add_experiment(experiment, userid)
+            get_db().add_experiment(experiment, userid,
+                                    compression=compression)
             added_experiment = get_db().get_experiment(experiment.key)
 
             artifacts = _process_artifacts(added_experiment)
@@ -453,6 +465,8 @@ def get_and_verify_user(request):
                 request.json['refreshToken']
             )
 
+        get_db().register_user(claims['user_id'], claims['email'])
+
         return claims['user_id']
 
 
@@ -489,7 +503,7 @@ def _render(page, **kwargs):
     retval = render_template(
         page,
         api_key=get_db().app.api_key,
-        project_id='studio-ed756',
+        project_id=_config['database']['projectId'],
         send_refresh_token="true",
         allow_tensorboard=get_allow_tensorboard(),
         **kwargs

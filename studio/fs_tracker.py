@@ -9,6 +9,7 @@ import six
 
 STUDIOML_EXPERIMENT = 'STUDIOML_EXPERIMENT'
 STUDIOML_HOME = 'STUDIOML_HOME'
+STUDIOML_ARTIFACT_MAPPING = 'STUDIOML_ARTIFACT_MAPPING'
 
 
 def get_experiment_key():
@@ -34,31 +35,43 @@ def setup_experiment(env, experiment, clean=True):
         artifacts = {}
 
     env[STUDIOML_EXPERIMENT] = key
-
     _setup_model_directory(key, clean)
+
+    artifact_mapping_path = _get_artifact_mapping_path(key)
+    env[STUDIOML_ARTIFACT_MAPPING] = artifact_mapping_path
 
     amapping = {}
     for tag, art in six.iteritems(artifacts):
         if art.get('local') is not None:
             amapping[tag] = art['local']
 
-        with open(_get_artifact_mapping_path(key), 'w') as f:
+        with open(artifact_mapping_path, 'w') as f:
             json.dump(amapping, f)
 
 
 def get_artifact(tag):
     try:
-        with open(_get_artifact_mapping_path(), 'r') as f:
-            a_mapping = json.load(f)
-        return a_mapping[tag]
+        mapping_path = os.environ.get(STUDIOML_ARTIFACT_MAPPING)
+        if mapping_path:
+            with open(mapping_path, 'r') as f:
+                a_mapping = json.load(f)
+            return a_mapping[tag]
+        else:
+            return os.path.join(os.getcwd(), '..', tag)
     except BaseException:
         return None
 
 
 def get_artifacts():
     try:
-        with open(_get_artifact_mapping_path(), 'r') as f:
-            return json.load(f)
+        mapping_path = os.environ.get(STUDIOML_ARTIFACT_MAPPING)
+        if mapping_path:
+            with open(mapping_path, 'r') as f:
+                return json.load(f)
+        else:
+            artifacts = os.listdir(os.path.join(os.getcwd(), '..'))
+            return {art: os.path.join(os.getcwd(), '..', art)
+                    for art in artifacts}
     except BaseException:
         return {}
 
@@ -78,7 +91,7 @@ def get_artifact_cache(tag, experiment_name=None):
                 '/[^/]*\Z',
                 '',
                 tag))
-        tag = re.sub('\.tar\.[^\.]*\Z', '', re.sub('.*/', '', tag))
+        tag = re.sub('\.tar\.?[^\.]*\Z', '', re.sub('.*/', '', tag))
 
     if tag.startswith('blobstore/'):
         return get_blob_cache(tag)
@@ -102,7 +115,7 @@ def get_blob_cache(blobkey):
     if not os.path.exists(blobcache_dir):
         os.makedirs(blobcache_dir)
 
-    blobkey = re.sub('\.tar\.[^\.]*\Z', '', blobkey)
+    blobkey = re.sub('\.tar\.?[^\.]*\Z', '', blobkey)
     if blobkey.startswith('blobstore/'):
         blobkey = re.sub('.*/', '', blobkey)
 

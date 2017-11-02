@@ -1,9 +1,9 @@
 from studio import fs_tracker
 import numpy as np
 
-if fs_tracker.get_artifact('lr') is not None:
+try:
     lr = np.load(fs_tracker.get_artifact('lr'))
-else:
+except BaseException:
     lr = np.random.random(10)
 
 print("fitness: %s" % np.abs(np.sum(lr)))

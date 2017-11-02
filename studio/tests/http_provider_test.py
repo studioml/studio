@@ -11,10 +11,12 @@ from studio.util import has_aws_credentials
 from model_test import get_test_experiment
 
 
-@unittest.skipIf(not has_aws_credentials(),
-                 "AWS credentials is missing, needed for " +
+@unittest.skipIf('GOOGLE_APPLICATION_CREDENTIALS' not in os.environ.keys(),
+                 "GOOGLE_APPLICATION_CREDENTIALS is missing, needed for " +
                  "server to communicate with storage")
 class HTTPProviderTest(unittest.TestCase):
+
+    _mutliprocess_shared_ = True
 
     @classmethod
     def setUpClass(self):

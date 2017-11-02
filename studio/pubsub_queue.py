@@ -1,16 +1,18 @@
-from google.cloud import pubsub
 import logging
 import os
 import json
 import time
 
 from .model import parse_verbosity
+from .util import sixdecode
 
 logging.basicConfig()
 
 
 class PubsubQueue(object):
     def __init__(self, queue_name, sub_name=None, verbose=10):
+        from google.cloud import pubsub
+
         assert 'GOOGLE_APPLICATION_CREDENTIALS' in os.environ.keys()
         with open(os.environ['GOOGLE_APPLICATION_CREDENTIALS']) as f:
             credentials = json.loads(f.read())
@@ -47,9 +49,9 @@ class PubsubQueue(object):
 
         self.logger.info('subscription {} created'.format(sub_name))
 
-    def clean(self):
+    def clean(self, timeout=0):
         while True:
-            msg = self.dequeue()
+            msg = self.dequeue(timeout=timeout)
             if not msg:
                 break
 
@@ -83,6 +85,7 @@ class PubsubQueue(object):
         return retval
 
     def enqueue(self, data):
+        self.logger.debug('Sending message with data \n {}'.format(data))
         data = data.encode('utf-8')
         msg_id = self.pubclient.publish(self.topic_name, data)
         self.logger.debug('Message with id {} published'.format(msg_id))
@@ -111,13 +114,13 @@ class PubsubQueue(object):
             self.logger.debug("Message {} received and acknowledged"
                               .format(retval.message.message_id))
 
-            return retval.message.data
+            return sixdecode(retval.message.data)
         else:
             self.logger.debug(
                 "Message {} received, ack_id {}" .format(
                     retval.message.message_id,
                     retval.ack_id))
-            return (retval.message.data, retval.ack_id)
+            return (sixdecode(retval.message.data), retval.ack_id)
 
     def hold(self, ack_key, delay=5):
         self.logger.debug(
@@ -135,3 +138,4 @@ class PubsubQueue(object):
     def delete(self):
         self.logger.debug("Deleting pubsub queue with topic" + self.topic_name)
         self.pubclient.delete_topic(self.topic_name)
+        self.subclient.delete_subscription(self.sub_name)

@@ -16,12 +16,15 @@ class FirebaseArtifactStore(TartifactStore):
     def __init__(self, db_config,
                  measure_timestamp_diff=False,
                  blocking_auth=True,
-                 compression='bzip2',
+                 compression=None,
                  verbose=10):
 
         guest = db_config.get('guest')
 
         self.app = pyrebase.initialize_app(db_config)
+
+        if compression is None:
+            compression = db_config.get('compression')
 
         self.auth = None
         if not guest and 'serviceAccount' not in db_config.keys():

@@ -13,6 +13,7 @@ jinja2
 pyyaml
 cma
 
+
 apscheduler
 pycryptodome
 requests
@@ -24,7 +25,7 @@ timeout_decorator
 terminaltables
 
 google-api-python-client
-google-cloud-storage
+google-cloud-storage <= 1.5.0
 google-cloud-pubsub <= 0.28.3
 google-gax <= 0.15.14
 google-auth-httplib2

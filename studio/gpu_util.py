@@ -3,6 +3,8 @@ import subprocess
 import tensorflow as tf
 import xml.etree.ElementTree as ET
 
+from .util import sixdecode
+
 
 def get_available_gpus():
     gpus = _get_gpu_info()
@@ -22,7 +24,7 @@ def _get_gpu_info():
                                     stderr=subprocess.STDOUT)
 
         smi_output, _ = smi_proc.communicate()
-        xmlroot = ET.fromstring(smi_output)
+        xmlroot = ET.fromstring(sixdecode(smi_output))
 
         return xmlroot.findall('gpu')
     except Exception:
@@ -64,7 +66,7 @@ def get_gpu_mapping():
         if loadp.returncode != 0:
             return {str(i): i for i in range(0, no_gpus)}
 
-        gpu_minor_number = pstdout.split('\n')[-2]
+        gpu_minor_number = sixdecode(pstdout).split('\n')[-2]
         gpu_mapping[gpu_minor_number] = i
 
     return gpu_mapping

@@ -1,5 +1,6 @@
 import re
 import subprocess
+import os
 
 
 def get_git_info(path='.', abort_dirty=True):
@@ -56,19 +57,6 @@ def get_repo_url(path='.', remove_user=True):
     return url
 
 
-def get_commit(path='.'):
-    p = subprocess.Popen(
-        ['git', 'rev-parse', 'HEAD'],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        cwd=path)
-
-    stdout, _ = p.communicate()
-    assert p.returncode == 0, "git returned non-zero return code"
-
-    return stdout.strip()
-
-
 def get_branch(path='.'):
     p = subprocess.Popen(
         ['git', 'rev-parse', '--abbrev-ref', 'HEAD'],
@@ -80,3 +68,41 @@ def get_branch(path='.'):
     assert p.returncode == 0, "git returned non-zero return code"
 
     return stdout.strip().decode('utf8')
+
+
+def get_commit(path='.'):
+    p = subprocess.Popen(
+        ['git', 'rev-parse', 'HEAD'],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        cwd=path)
+
+    stdout, _ = p.communicate()
+    assert p.returncode == 0, "git returned non-zero return code"
+
+    return stdout.strip().decode('utf8')
+
+
+def get_my_repo_url():
+    mypath = os.path.dirname(os.path.realpath(__file__))
+    repo = get_repo_url(mypath)
+    if repo is None:
+        repo = "https://github.com/studioml/studio"
+    return repo
+
+
+def get_my_branch():
+    mypath = os.path.dirname(os.path.realpath(__file__))
+    branch = get_branch(mypath)
+    if branch is None:
+        branch = "master"
+    return branch
+
+
+def get_my_checkout_target():
+    mypath = os.path.dirname(os.path.realpath(__file__))
+    target = get_commit(mypath)
+    if target is None:
+        target = get_my_branch()
+
+    return target
