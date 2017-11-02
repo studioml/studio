@@ -78,9 +78,12 @@ class EC2WorkerTest(unittest.TestCase):
         stubtest_worker(
             self,
             experiment_name=experiment_name,
-            runner_args=['--cloud=ec2spot', '--force-git',
-                         '--bid=25%', '--cloud-timeout=-1', '--ssh-keypair=peterz-k1'],
-
+            runner_args=[
+                '--cloud=ec2spot',
+                '--force-git',
+                '--bid=25%',
+                '--cloud-timeout=-1',
+            ],
             config_name='test_config_http_client.yaml',
             test_script='tf_hello_world.py',
             script_args=['arg0'],
