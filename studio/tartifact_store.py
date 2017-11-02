@@ -20,6 +20,7 @@ from . import fs_tracker
 from . import util
 from .util import download_file, download_file_from_qualified, retry
 from .util import compression_to_extension, compression_to_taropt
+from .util import sixdecode
 
 logging.basicConfig()
 
@@ -383,7 +384,7 @@ class TartifactStore(object):
 
         if tarp.returncode != 0:
             self.logger.info('tar had a non-zero return code!')
-            self.logger.info('tar output: \n ' + tarout)
+            self.logger.info('tar output: \n ' + sixdecode(tarout))
 
         self.logger.info('tar finished in {}s'.format(toc - tic))
         return tar_filename
