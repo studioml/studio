@@ -19,7 +19,7 @@ import hashlib
 from . import fs_tracker
 from . import util
 from .util import download_file, download_file_from_qualified, retry
-from .util import compression_to_extension, compression_to_taropt
+from .util import compression_to_extension, compression_to_taropt, timeit
 from .util import sixdecode
 
 logging.basicConfig()
@@ -271,6 +271,7 @@ class TartifactStore(object):
             finish_download()
             return local_path
 
+    @timeit
     def get_artifact_url(self, artifact, method='GET', get_timestamp=False):
         if 'key' in artifact.keys():
             url = self._get_file_url(artifact['key'], method=method)
@@ -296,6 +297,7 @@ class TartifactStore(object):
         if 'key' in artifact.keys():
             self._delete_file(artifact['key'])
 
+    @timeit
     def stream_artifact(self, artifact):
         url = self.get_artifact_url(artifact)
         if url is None:

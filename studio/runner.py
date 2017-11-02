@@ -412,10 +412,6 @@ def get_worker_manager(config, cloud=None, verbose=10):
     )
 
     branch = config['cloud'].get('branch')
-    if branch is None:
-        branch = git_util.get_branch(
-            os.path.dirname(
-                os.path.realpath(__file__)))
 
     logger.info('using branch {}'.format(branch))
 
