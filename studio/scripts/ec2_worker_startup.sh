@@ -75,12 +75,15 @@ if [ ! -d "studio" ]; then
         sudo dpkg -i $cudnn5
         sudo dpkg -i $cudnn6
 
-        sudo python  -m pip install tensorflow tensorflow-gpu --upgrade
-        sudo python3 -m pip install tensorflow tensorflow-gpu --upgrade
+        sudo python  -m pip install tf-nightly tf-nightly-gpu --upgrade
+        sudo python3 -m pip install tf-nightly tf-nightly-gpu --upgrade
     else
         sudo apt install -y default-jre
-        sudo update-alternatives --set python3 0
     fi
+fi
+
+if [[ "{use_gpus}" -ne 1 ]]; then
+    rm -rf /usr/lib/x86_64-linux-gnu/libcuda*
 fi
 
 rm -rf studio

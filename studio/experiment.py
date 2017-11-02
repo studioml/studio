@@ -110,10 +110,13 @@ def create_experiment(
     packages = []
     for i, pkg in enumerate(
             pip.pip.get_installed_distributions(local_only=True)):
-        if pkg.key == 'tensorflow':
-            if resources_needed is not None:
-                if int(resources_needed.get('gpus')) > 0:
+        if resources_needed is not None:
+            if int(resources_needed.get('gpus')) > 0:
+                if pkg.key == 'tensorflow':
                     pkg._key = 'tensorflow-gpu'
+                if pkg.key == 'tf-nightly':
+                    pkg._key = 'tf-nightly-gpu'
+
         packages.append(pkg._key + '==' + pkg._version)
 
     return Experiment(
