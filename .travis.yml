@@ -24,7 +24,7 @@ install:
 
 script:
   - echo $GOOGLE_APPLICATION_CREDENTIALS
-  - nosetests -v --processes=16 --process-timeout=1200
+  - cd studio/tests && nosetests -v --processes=16 --process-timeout=1200 http_provider_test && cd ../..
   - pycodestyle --show-source .
   - python setup.py sdist
 
