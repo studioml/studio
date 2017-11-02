@@ -11,9 +11,8 @@ env:
 # sudo: required
 # services: 
 #     - docker
-
-before_install:
-    - 'if [ -n "GOOGLE_CREDENTIALS_ENCODED" ]; then docker pull peterzhokhoff/studioml; fi'
+# before_install:
+#     - 'if [ -n "GOOGLE_CREDENTIALS_ENCODED" ]; then docker pull peterzhokhoff/studioml; fi'
 
 install:
   - pip install -e .
