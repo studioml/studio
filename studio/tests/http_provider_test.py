@@ -21,6 +21,7 @@ class HTTPProviderTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(self):
+        return
         if not has_aws_credentials():
             return
         print("Starting up the API server")
@@ -51,6 +52,7 @@ class HTTPProviderTest(unittest.TestCase):
 
     @classmethod
     def tearDownClass(self):
+        return
         if not has_aws_credentials():
             return
 
