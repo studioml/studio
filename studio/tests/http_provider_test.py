@@ -16,7 +16,7 @@ from model_test import get_test_experiment
                  "server to communicate with storage")
 class HTTPProviderTest(unittest.TestCase):
 
-    _mutliprocess_shared_ = True
+    # _mutliprocess_shared_ = True
 
     @classmethod
     def setUpClass(self):
