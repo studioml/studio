@@ -552,10 +552,9 @@ def submit_experiments(
     '''
     experiements = [add_experiment(e) for e in
                     zip([config] * num_experiments,
-                       [python_pkg] *
-                       num_experiments,
-                       experiments)]
-    
+                        [python_pkg] *
+                        num_experiments,
+                        experiments)]
 
     logger.info("Added %s experiments in %s seconds" %
                 (num_experiments, int(time.time() - start_time)))

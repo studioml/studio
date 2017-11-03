@@ -87,7 +87,7 @@ class EC2WorkerTest(unittest.TestCase):
                 '--cloud=ec2spot',
                 '--force-git',
                 '--bid=50%',
-                '--cloud-timeout=120', 
+                '--cloud-timeout=120',
             ],
             config_name='test_config_http_client.yaml',
             test_script='tf_hello_world.py',
