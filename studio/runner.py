@@ -24,6 +24,7 @@ from .experiment import create_experiment
 
 from . import model
 from . import auth
+from . import util
 from . import git_util
 from . import local_worker
 from . import fs_tracker
@@ -74,6 +75,11 @@ def main(args=sys.argv):
         '--ram',
         help='Amount of RAM needed to run the experiment' +
              ' (used to configure cloud instance), ex: 10G, 10GB',
+        default=None)
+
+    parser.add_argument(
+        '--gpuMem',
+        help='Amount of GPU RAM needed to run the experiment',
         default=None)
 
     parser.add_argument(
@@ -194,19 +200,33 @@ def main(args=sys.argv):
              'for debugging pull requests. Default is current',
         default=None)
 
+    parser.add_argument(
+        '--max-duration',
+        help='Max experiment runtime (i.e. time after which experiment ' +
+             'should be killed no matter what.)',
+        default=None)
+
+    parser.add_argument(
+        '--lifetime',
+        help='Max experiment lifetime (i.e. wait time after which ' +
+             'experiment loses relevance and should not be started)',
+        default=None)
+
     # detect which argument is the script filename
     # and attribute all arguments past that index as related to the script
     py_suffix_args = [i for i, arg in enumerate(args) if arg.endswith('.py')]
+    rerun = False
     if len(py_suffix_args) < 1:
-        print('At least one argument should be a python script ' +
-              '(end with *.py)')
-        parser.print_help()
-        exit()
+        print('None of the arugments end with .py, ' +
+              'treating last argument as experiment name to rerun')
+        rerun = True
+        runner_args = parser.parse_args(args[1:-1])
+        experiment_key = args[-1]
+    else:
+        script_index = py_suffix_args[0]
+        exec_filename, other_args = args[script_index], args[script_index + 1:]
+        runner_args = parser.parse_args(args[1:script_index])
 
-    script_index = py_suffix_args[0]
-    runner_args = parser.parse_args(args[1:script_index])
-
-    exec_filename, other_args = args[script_index], args[script_index + 1:]
     # TODO: Queue the job based on arguments and only then execute.
 
     config = model.get_config(runner_args.config)
@@ -220,7 +240,7 @@ def main(args=sys.argv):
     verbose = model.parse_verbosity(config['verbose'])
     logger.setLevel(verbose)
 
-    if git_util.is_git() and not git_util.is_clean():
+    if git_util.is_git() and not git_util.is_clean() and not rerun:
         logger.warn('Running from dirty git repo')
         if not runner_args.force_git:
             logger.error(
@@ -243,6 +263,12 @@ def main(args=sys.argv):
     if runner_args.user_startup_script:
         config['cloud']['user_startup_script'] = \
             runner_args.user_startup_script
+
+    if runner_args.max_duration:
+        runner_args.max_duration = util.str2duration(runner_args.max_duration)
+
+    if runner_args.lifetime:
+        config['experimentLifetime'] = runner_args.lifetime
 
     if any(runner_args.hyperparam):
         if runner_args.optimizer is "grid":
@@ -340,14 +366,27 @@ def main(args=sys.argv):
                 except BaseException:
                     logger.warn('Optimizer has no disp() method')
     else:
-        experiments = [create_experiment(
-            filename=exec_filename,
-            args=other_args,
-            experiment_name=runner_args.experiment,
-            project=runner_args.project,
-            artifacts=artifacts,
-            resources_needed=resources_needed,
-            metric=runner_args.metric)]
+        if rerun:
+            with model.get_db_provider(config) as db:
+                experiment = db.get_experiment(experiment_key)
+                new_key = runner_args.experiment if runner_args.experiment \
+                    else experiment_key + '_rerun' + str(uuid.uuid4())
+                experiment.key = new_key
+                for _, art in six.iteritems(experiment.artifacts):
+                    art['mutable'] = False
+
+                experiments = [experiment]
+
+        else:
+            experiments = [create_experiment(
+                filename=exec_filename,
+                args=other_args,
+                experiment_name=runner_args.experiment,
+                project=runner_args.project,
+                artifacts=artifacts,
+                resources_needed=resources_needed,
+                metric=runner_args.metric,
+                max_duration=runner_args.max_duration)]
 
         queue_name = submit_experiments(
             experiments,
@@ -393,10 +432,6 @@ def get_worker_manager(config, cloud=None, verbose=10):
     )
 
     branch = config['cloud'].get('branch')
-    if branch is None:
-        branch = git_util.get_branch(
-            os.path.dirname(
-                os.path.realpath(__file__)))
 
     logger.info('using branch {}'.format(branch))
 
@@ -420,24 +455,21 @@ def get_worker_manager(config, cloud=None, verbose=10):
 
 
 def get_queue(queue_name=None, cloud=None, verbose=10):
-    if cloud in ['gcloud', 'gcspot']:
-        if queue_name is None:
+    if queue_name is None:
+        if cloud in ['gcloud', 'gcspot']:
             queue_name = 'pubsub_' + str(uuid.uuid4())
-        return PubsubQueue(queue_name, verbose=verbose)
-
-    elif cloud in ['ec2', 'ec2spot']:
-        if queue_name is None:
+        elif cloud in ['ec2', 'ec2spot']:
             queue_name = 'sqs_' + str(uuid.uuid4())
-        return SQSQueue(queue_name, verbose=verbose)
-    else:
-        if queue_name is None or queue_name == 'local':
-            queue = LocalQueue()
-            # not cleaning is important to be able to re-use
-            # the queue from several processes
-            # queue.clean()
-            return queue
         else:
-            return PubsubQueue(queue_name, verbose=verbose)
+            queue_name = 'local'
+
+    if queue_name.startswith('ec2') or \
+       queue_name.startswith('sqs'):
+        return SQSQueue(queue_name, verbose=verbose)
+    elif queue_name == 'local':
+        return LocalQueue(verbose=verbose)
+    else:
+        return PubsubQueue(queue_name, verbose=verbose)
 
 
 def spin_up_workers(
@@ -514,6 +546,8 @@ def submit_experiments(
 
     start_time = time.time()
     n_workers = min(multiprocessing.cpu_count() * 2, num_experiments)
+
+    '''
     with closing(multiprocessing.Pool(n_workers, maxtasksperchild=20)) as p:
         experiments = p.imap_unordered(add_experiment,
                                        zip([config] * num_experiments,
@@ -523,8 +557,14 @@ def submit_experiments(
                                        chunksize=1)
         p.close()
         p.join()
-    # for e in experiments:
-    #     logger.info("Added experiment " + e.key)
+
+    '''
+    experiements = [add_experiment(e) for e in
+                    zip([config] * num_experiments,
+                        [python_pkg] *
+                        num_experiments,
+                        experiments)]
+
     logger.info("Added %s experiments in %s seconds" %
                 (num_experiments, int(time.time() - start_time)))
 
@@ -669,6 +709,8 @@ def parse_artifacts(art_list, mutable):
                 'local': os.path.expanduser(path),
                 'mutable': mutable
             }
+            if not mutable:
+                assert os.path.exists(retval[tag]['local'])
     return retval
 
 
@@ -781,7 +823,8 @@ def add_hyperparam_experiments(
                 project=project,
                 artifacts=current_artifacts,
                 resources_needed=resources_needed,
-                metric=runner_args.metric))
+                metric=runner_args.metric,
+                max_duration=runner_args.max_duration))
         return experiments
 
     if optimizer is not None:

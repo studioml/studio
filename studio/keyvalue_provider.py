@@ -6,36 +6,51 @@ from threading import Thread
 
 from . import util, git_util, pyrebase
 from .firebase_artifact_store import FirebaseArtifactStore
-from . auth import FirebaseAuth
+from .auth import get_auth
 from .experiment import experiment_from_dict
+from .tartifact_store import get_immutable_artifact_key
+from .util import timeit
 
 logging.basicConfig()
 
 
-class NoSQLProvider(object):
+class KeyValueProvider(object):
     """Data provider for Firebase."""
 
-    def __init__(self, db_config, blocking_auth=True, verbose=10, store=None):
+    def __init__(
+            self,
+            db_config,
+            blocking_auth=True,
+            verbose=10,
+            store=None,
+            compression=None):
         guest = db_config.get('guest')
 
         self.app = pyrebase.initialize_app(db_config)
-        self.logger = logging.getLogger('FirebaseProvider')
+        self.logger = logging.getLogger(self.__class__.__name__)
         self.logger.setLevel(verbose)
+
+        self.compression = compression
+        if self.compression is None:
+            self.compression = db_config.get('compression')
 
         self.auth = None
         if not guest and 'serviceAccount' not in db_config.keys():
-            self.auth = FirebaseAuth(self.app,
-                                     db_config.get("use_email_auth"),
-                                     db_config.get("email"),
-                                     db_config.get("password"),
-                                     blocking_auth)
+            self.auth = get_auth(self.app,
+                                 db_config.get("use_email_auth"),
+                                 db_config.get("email"),
+                                 db_config.get("password"),
+                                 blocking_auth)
 
         self.store = store if store else FirebaseArtifactStore(
-            db_config, verbose=verbose, blocking_auth=blocking_auth)
+            db_config,
+            verbose=verbose,
+            blocking_auth=blocking_auth,
+            compression=self.compression
+        )
 
         if self.auth and not self.auth.expired:
-            self.__setitem__(self._get_user_keybase() + "email",
-                             self.auth.get_user_email())
+            self.register_user(None, self.auth.get_user_email())
 
         self.max_keys = db_config.get('max_keys', 100)
 
@@ -58,10 +73,12 @@ class NoSQLProvider(object):
     def _get_projects_keybase(self):
         return "projects/"
 
-    def add_experiment(self, experiment, userid=None):
+    def add_experiment(self, experiment, userid=None, compression=None):
         self._delete(self._get_experiments_keybase() + experiment.key)
         experiment.time_added = time.time()
         experiment.status = 'waiting'
+
+        compression = compression if compression else self.compression
 
         if 'local' in experiment.artifacts['workspace'].keys() and \
                 os.path.exists(experiment.artifacts['workspace']['local']):
@@ -71,80 +88,93 @@ class NoSQLProvider(object):
         for tag, art in six.iteritems(experiment.artifacts):
             if art['mutable']:
                 art['key'] = self._get_experiments_keybase() + \
-                    experiment.key + '/' + tag + '.tgz'
+                    experiment.key + '/' + tag + '.tar' + \
+                    util.compression_to_extension(compression)
             else:
                 if 'local' in art.keys():
                     # upload immutable artifacts
                     art['key'] = self.store.put_artifact(art)
+                elif 'hash' in art.keys():
+                    art['key'] = get_immutable_artifact_key(
+                        art['hash'],
+                        compression=compression
+                    )
 
-            if 'key' in art.keys():
-                art['qualified'] = self.store.get_qualified_location(
-                    art['key'])
+            key = art.get('key')
+            if key is not None:
+                art['qualified'] = self.store.get_qualified_location(key)
 
             art['bucket'] = self.store.get_bucket()
 
         userid = userid if userid else self._get_userid()
+        experiment.owner = userid
 
         experiment_dict = experiment.__dict__.copy()
-        experiment_dict['owner'] = userid
 
-        self.__setitem__(self._get_experiments_keybase() + experiment.key,
-                         experiment_dict)
+        self._set(self._get_experiments_keybase() + experiment.key,
+                  experiment_dict)
 
-        self.__setitem__(self._get_user_keybase(userid) + "experiments/" +
-                         experiment.key,
-                         experiment.time_added)
+        self._set(self._get_user_keybase(userid) + "experiments/" +
+                  experiment.key,
+                  experiment.time_added)
 
-        if experiment.project and self.auth:
-            self.__setitem__(self._get_projects_keybase() +
-                             experiment.project + "/" +
-                             experiment.key + "/owner",
-                             userid)
+        if experiment.project and userid:
+            self._set(self._get_projects_keybase() +
+                      experiment.project + "/" +
+                      experiment.key + "/owner",
+                      userid)
 
         self.checkpoint_experiment(experiment, blocking=True)
         self.logger.info("Added experiment " + experiment.key)
 
     def start_experiment(self, experiment):
-        experiment.time_started = time.time()
+        time_started = time.time()
+        experiment.time_started = time_started
         experiment.status = 'running'
-        self.__setitem__(self._get_experiments_keybase() +
-                         experiment.key + "/status",
-                         "running")
 
-        self.__setitem__(self._get_experiments_keybase() +
-                         experiment.key + "/time_started",
-                         experiment.time_started)
+        experiment_dict = self._get(self._get_experiments_keybase() +
+                                    experiment.key)
+        experiment_dict['time_started'] = time_started
+        experiment_dict['status'] = 'running'
+
+        self._set(self._get_experiments_keybase() +
+                  experiment.key,
+                  experiment_dict)
 
         self.checkpoint_experiment(experiment)
 
     def stop_experiment(self, key):
         # can be called remotely (the assumption is
         # that remote worker checks experiments status periodically,
-        # and if it is 'stopped', kills the experiment.
-        if not isinstance(key, str):
+        # and if it is 'stopped', kills the experiment)
+        if not isinstance(key, six.string_types):
             key = key.key
 
-        self.__setitem__(self._get_experiments_keybase() +
-                         key + "/status",
-                         "stopped")
+        experiment_data = self._get(self._get_experiments_keybase() +
+                                    key)
+
+        experiment_data['status'] = 'stopped'
+
+        self._set(self._get_experiments_keybase() +
+                  key, experiment_data)
 
     def finish_experiment(self, experiment):
         time_finished = time.time()
-        if isinstance(experiment, six.string_types):
-            key = experiment
-        else:
+        if not isinstance(experiment, six.string_types):
             key = experiment.key
-            self.checkpoint_experiment(experiment, blocking=True)
             experiment.status = 'finished'
             experiment.time_finished = time_finished
+        else:
+            key = experiment
 
-        self.__setitem__(self._get_experiments_keybase() +
-                         key + "/status",
-                         "finished")
+        experiment_dict = self._get(
+            self._get_experiments_keybase() + key)
 
-        self.__setitem__(self._get_experiments_keybase() +
-                         key + "/time_finished",
-                         time_finished)
+        experiment_dict['status'] = 'finished'
+        experiment_dict['time_finished'] = time_finished
+
+        self._set(self._get_experiments_keybase() +
+                  key, experiment_dict)
 
     def delete_experiment(self, experiment):
         if isinstance(experiment, six.string_types):
@@ -157,8 +187,11 @@ class NoSQLProvider(object):
         else:
             experiment_key = experiment.key
 
-        self._delete(self._get_user_keybase() + 'experiments/' +
-                     experiment_key)
+        experiment_owner = self._get(self._get_experiments_keybase() +
+                                     experiment_key).get('owner')
+
+        self._delete(self._get_user_keybase(experiment_owner) +
+                     'experiments/' + experiment_key)
         if experiment is not None:
             for tag, art in six.iteritems(experiment.artifacts):
                 if art.get('key') is not None:
@@ -177,11 +210,12 @@ class NoSQLProvider(object):
         self._delete(self._get_experiments_keybase() + experiment_key)
 
     def checkpoint_experiment(self, experiment, blocking=False):
-        if isinstance(experiment, six.string_types):
-            key = experiment
-            experiment = self.get_experiment(key, getinfo=False)
-        else:
+        if not isinstance(experiment, six.string_types):
             key = experiment.key
+        else:
+            key = experiment
+
+        experiment_dict = self._get(self._get_experiments_keybase() + key)
 
         checkpoint_threads = [
             Thread(
@@ -193,15 +227,20 @@ class NoSQLProvider(object):
         for t in checkpoint_threads:
             t.start()
 
-        self.__setitem__(self._get_experiments_keybase() +
-                         key + "/time_last_checkpoint",
-                         time.time())
+        checkpoint_time = time.time()
+        experiment.time_last_checkpoint = checkpoint_time
+        experiment_dict['time_last_checkpoint'] = checkpoint_time
+
+        self._set(self._get_experiments_keybase() +
+                  key, experiment_dict)
+
         if blocking:
             for t in checkpoint_threads:
                 t.join()
         else:
             return checkpoint_threads
 
+    @timeit
     def _get_experiment_info(self, experiment):
         info = {}
         type_found = False
@@ -238,13 +277,17 @@ class NoSQLProvider(object):
 
         return info
 
+    @timeit
     def _get_experiment_logtail(self, experiment):
         try:
             tarf = self.store.stream_artifact(experiment.artifacts['output'])
             if not tarf:
                 return None
+            tarf_member = tarf.members[0]
+            while tarf_member is not None and tarf_member.name == '':
+                tarf_member = tarf.next()
 
-            logdata = tarf.extractfile(tarf.members[0]).read()
+            logdata = tarf.extractfile(tarf_member).read()
             logdata = util.remove_backspaces(logdata).split('\n')
             return logdata
         except BaseException as e:
@@ -252,10 +295,12 @@ class NoSQLProvider(object):
             self.logger.info(e)
             return None
 
+    @timeit
     def get_experiment(self, key, getinfo=True):
         data = self._get(self._get_experiments_keybase() + key)
-        assert data, "data at path %s not found! " % (
-            self._get_experiments_keybase() + key)
+        if data is None:
+            return None
+
         data['key'] = key
 
         experiment_stub = experiment_from_dict(data)
@@ -282,15 +327,15 @@ class NoSQLProvider(object):
                 userid = user_ids[0]
 
         experiment_keys = self._get(
-            self._get_user_keybase(userid) + "/experiments")
+            self._get_user_keybase(userid) + "experiments/", shallow=True)
         if not experiment_keys:
-            experiment_keys = {}
+            experiment_keys = []
 
-        keys = sorted(experiment_keys.keys(),
-                      key=lambda k: str(experiment_keys[k]),
-                      reverse=True)
+        # keys = sorted(experiment_keys.keys(),
+        #              key=lambda k: str(experiment_keys[k]),
+        #              reverse=True)
 
-        return keys
+        return experiment_keys
 
     def get_project_experiments(self, project):
         experiment_keys = self._get(self._get_projects_keybase() +
@@ -301,7 +346,11 @@ class NoSQLProvider(object):
         return experiment_keys.keys()
 
     def get_artifacts(self, key):
-        experiment = self.get_experiment(key, getinfo=False)
+        if isinstance(key, six.string_types):
+            experiment = self.get_experiment(key, getinfo=False)
+        else:
+            experiment = key
+
         retval = {}
         if experiment.artifacts is not None:
             for tag, art in six.iteritems(experiment.artifacts):
@@ -311,39 +360,10 @@ class NoSQLProvider(object):
 
         return retval
 
-    def get_artifact(self, artifact, only_newer=True):
-        return self.store.get_artifact(artifact, only_newer=only_newer)
-
-    def _get_valid_experiments(self, experiment_keys,
-                               getinfo=False, blocking=True):
-
-        if self.max_keys > 0:
-            experiment_keys = experiment_keys[:self.max_keys]
-
-        def cache_valid_experiment(key):
-            try:
-                self._experiment_cache[key] = self.get_experiment(
-                    key, getinfo=getinfo)
-            except BaseException:
-                self.logger.warn(
-                    ("Experiment {} does not exist " +
-                     "or is corrupted, try to delete record").format(key))
-                try:
-                    self.delete_experiment(key)
-                except BaseException:
-                    pass
-
-        if self.pool:
-            if blocking:
-                self.pool.map(cache_valid_experiment, experiment_keys)
-            else:
-                self.pool.map_async(cache_valid_experiment, experiment_keys)
-        else:
-            for e in experiment_keys:
-                cache_valid_experiment(e)
-
-        return [self._experiment_cache[key] for key in experiment_keys
-                if key in self._experiment_cache.keys()]
+    def get_artifact(self, artifact, local_path=None, only_newer=True):
+        return self.store.get_artifact(artifact,
+                                       local_path=local_path,
+                                       only_newer=only_newer)
 
     def get_projects(self):
         return self._get(self._get_projects_keybase(), shallow=True)
@@ -351,10 +371,11 @@ class NoSQLProvider(object):
     def get_users(self):
         user_ids = self._get('users/', shallow=True)
         retval = {}
-        for user_id in user_ids.keys():
-            retval[user_id] = {
-                'email': self._get('users/' + user_id + '/email')
-            }
+        if user_ids:
+            for user_id in user_ids:
+                retval[user_id] = {
+                    'email': self._get('users/' + user_id + '/email')
+                }
         return retval
 
     def refresh_auth_token(self, email, refresh_token):
@@ -371,12 +392,23 @@ class NoSQLProvider(object):
         assert key is not None
         user = user if user else self._get_userid()
 
-        owner = self._get(
-            self._get_experiments_keybase() + key + "/owner")
-        if owner is None or owner == 'guest':
-            return True
+        experiment = self._get(
+            self._get_experiments_keybase() + key)
+
+        if experiment:
+            owner = experiment.get('owner')
+            if owner is None or owner == 'guest':
+                return True
+            else:
+                return (owner == user)
         else:
-            return (owner == user)
+            return True
+
+    def register_user(self, userid, email):
+        keypath = self._get_user_keybase(userid) + 'email'
+        existing_email = self._get(keypath)
+        if existing_email != email:
+            self._set(keypath, email)
 
     def __enter__(self):
         return self

@@ -5,6 +5,8 @@ import json
 import shutil
 import atexit
 import tempfile
+import logging
+
 try:
     from apscheduler.schedulers.background import BackgroundScheduler
 except BaseException:
@@ -12,12 +14,36 @@ except BaseException:
 
 from .util import rand_string
 
+logging.basicConfig()
+
 TOKEN_DIR = os.path.expanduser('~/.studioml/keys')
 HOUR = 3600
 HALF_HOUR = 1800
 API_KEY_COOLDOWN = 900
 SLEEP_TIME = 0.5
 MAX_NUM_RETRIES = 100
+
+
+_auth_singleton = None
+
+
+def get_auth(
+        firebase,
+        use_email_auth=False,
+        email=None,
+        password=None,
+        blocking=True):
+
+    global _auth_singleton
+    if _auth_singleton is None:
+        _auth_singleton = FirebaseAuth(
+            firebase,
+            use_email_auth,
+            email,
+            password,
+            blocking)
+
+    return _auth_singleton
 
 
 class FirebaseAuth(object):
@@ -30,6 +56,9 @@ class FirebaseAuth(object):
             blocking=True):
         if not os.path.exists(TOKEN_DIR):
             os.makedirs(TOKEN_DIR)
+
+        self.logger = logging.getLogger(self.__class__.__name__)
+        self.logger.setLevel(logging.DEBUG)
 
         self.firebase = firebase
         self.user = {}
@@ -84,26 +113,28 @@ class FirebaseAuth(object):
                 if user is not None or counter >= MAX_NUM_RETRIES:
                     break
                 try:
-                    with open(api_key, 'rb') as f:
-                        user = json.load(f)
-                except BaseException:
+                    with open(api_key) as f:
+                        user = json.loads(f.read())
+                except BaseException as e:
+                    self.logger.info(e)
                     time.sleep(SLEEP_TIME)
                     counter += 1
             if user is None:
                 return
 
             self.user = user
-            self.expired = False
-            if time.time() - os.path.getmtime(api_key) > API_KEY_COOLDOWN:
+            if time.time() > self.user.get('expiration', 0):
                 counter = 0
                 while counter < MAX_NUM_RETRIES:
                     try:
                         self.refresh_token(user['email'], user['refreshToken'])
-                    except BaseException:
+                        break
+                    except BaseException as e:
+                        self.logger.info(e)
                         time.sleep(SLEEP_TIME)
                         counter += 1
-                    else:
-                        return
+            else:
+                self.expired = False
 
     def sign_in_with_email(self):
         self.user = \
@@ -119,20 +150,22 @@ class FirebaseAuth(object):
         api_key = os.path.join(TOKEN_DIR, self.firebase.api_key)
         self.user = self.firebase.auth().refresh(refresh_token)
         self.user['email'] = email
+        self.user['expiration'] = time.time() + API_KEY_COOLDOWN
         self.expired = False
 
-        if not os.path.exists(api_key) or \
-           time.time() - os.path.getmtime(api_key) > HALF_HOUR:
-            # Rename to ensure atomic writes to json file
-            # (technically more safe, but slower)
-            tmp_api_key = os.path.join(tempfile.gettempdir(),
-                                       "api_key_%s" % rand_string(32))
-            with open(tmp_api_key, 'wb') as f:
-                json.dump(self.user, f)
-                f.flush()
-                os.fsync(f.fileno())
-                f.close()
-            os.rename(tmp_api_key, api_key)
+        # if not os.path.exists(api_key) or \
+        #   time.time() - os.path.getmtime(api_key) > HALF_HOUR:
+        # Rename to ensure atomic writes to json file
+        # (technically more safe, but slower)
+
+        tmp_api_key = os.path.join(tempfile.gettempdir(),
+                                   "api_key_%s" % rand_string(32))
+        with open(tmp_api_key, 'w') as f:
+            f.write(json.dumps(self.user))
+            f.flush()
+            os.fsync(f.fileno())
+            f.close()
+        os.rename(tmp_api_key, api_key)
 
     def get_token(self):
         if self.expired:

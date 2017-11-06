@@ -17,7 +17,7 @@ except BaseException:
 
 from studio import model
 from studio.local_queue import LocalQueue
-from studio.util import has_aws_credentials
+from studio.util import has_aws_credentials, sixdecode
 
 from queue_test import QueueTest
 
@@ -34,10 +34,22 @@ class LocalWorkerTest(unittest.TestCase, QueueTest):
             self,
             experiment_name='test_runner_local_' + str(uuid.uuid4()),
             runner_args=['--verbose=debug'],
-            config_name='test_config.yaml',
+            config_name='test_config_http_client.yaml',
             test_script='tf_hello_world.py',
             script_args=['arg0'],
             expected_output='[ 2.  6.]'
+        ):
+            pass
+
+    def test_args_conflict(self):
+        with stubtest_worker(
+            self,
+            experiment_name='test_runner_conflict_' + str(uuid.uuid4()),
+            runner_args=['--verbose=debug'],
+            config_name='test_config.yaml',
+            test_script='conflicting_args.py',
+            script_args=['--experiment', 'aaa'],
+            expected_output='Experiment key = aaa'
         ):
             pass
 
@@ -46,7 +58,7 @@ class LocalWorkerTest(unittest.TestCase, QueueTest):
             self,
             experiment_name='test_local_hyperparam' + str(uuid.uuid4()),
             runner_args=['--verbose=debug'],
-            config_name='test_config.yaml',
+            config_name='test_config_http_client.yaml',
             test_script='hyperparam_hello_world.py',
             expected_output='0.3'
         ):
@@ -56,7 +68,7 @@ class LocalWorkerTest(unittest.TestCase, QueueTest):
             self,
             experiment_name='test_local_hyperparam' + str(uuid.uuid4()),
             runner_args=['--verbose=debug', '--hyperparam=learning_rate=0.4'],
-            config_name='test_config.yaml',
+            config_name='test_config_http_client.yaml',
             test_script='hyperparam_hello_world.py',
             expected_output='0.4'
         ):
@@ -78,7 +90,7 @@ class LocalWorkerTest(unittest.TestCase, QueueTest):
             experiment_name=experiment_name,
             runner_args=['--capture=' + tmpfile + ':f',
                          '--verbose=debug'],
-            config_name='test_config.yaml',
+            config_name='test_config_http_client.yaml',
             test_script='art_hello_world.py',
             script_args=[random_str2],
             expected_output=random_str1,
@@ -87,7 +99,7 @@ class LocalWorkerTest(unittest.TestCase, QueueTest):
 
             tmppath = os.path.join(tempfile.gettempdir(), str(uuid.uuid4()))
 
-            db.store.get_artifact(
+            db.get_artifact(
                 db.get_experiment(experiment_name).artifacts['f'],
                 tmppath)
 
@@ -99,7 +111,7 @@ class LocalWorkerTest(unittest.TestCase, QueueTest):
             self,
             experiment_name='test_local_worker_e' + str(uuid.uuid4()),
             runner_args=['--reuse={}/f:f'.format(experiment_name)],
-            config_name='test_config.yaml',
+            config_name='test_config_http_client.yaml',
             test_script='art_hello_world.py',
             script_args=[],
             expected_output=random_str2
@@ -119,7 +131,7 @@ class LocalWorkerTest(unittest.TestCase, QueueTest):
             self,
             experiment_name='test_local_worker_co' + str(uuid.uuid4()),
             runner_args=['--capture-once=' + tmpfile + ':f'],
-            config_name='test_config.yaml',
+            config_name='test_config_http_client.yaml',
             test_script='art_hello_world.py',
             script_args=[],
             expected_output=random_str
@@ -135,7 +147,7 @@ class LocalWorkerTest(unittest.TestCase, QueueTest):
             self,
             experiment_name='test_local_worker_co_url' + str(uuid.uuid4()),
             runner_args=['--capture-once=' + url + ':f'],
-            config_name='test_config.yaml',
+            config_name='test_config_http_client.yaml',
             test_script='art_hello_world.py',
             script_args=[],
             expected_output=expected_str
@@ -153,7 +165,7 @@ class LocalWorkerTest(unittest.TestCase, QueueTest):
             self,
             experiment_name='test_local_worker_co_s3' + str(uuid.uuid4()),
             runner_args=['--capture-once=' + s3loc + ':f'],
-            config_name='test_config.yaml',
+            config_name='test_config_http_client.yaml',
             test_script='art_hello_world.py',
             script_args=[],
             expected_output=expected_str
@@ -168,7 +180,7 @@ class LocalWorkerTest(unittest.TestCase, QueueTest):
             self,
             experiment_name=experiment_name,
             runner_args=[],
-            config_name='test_config.yaml',
+            config_name='test_config_http_client.yaml',
             test_script='save_model.py',
             script_args=[],
             expected_output='',
@@ -194,7 +206,7 @@ class LocalWorkerTest(unittest.TestCase, QueueTest):
         logger = logging.getLogger('test_stop_experiment')
         logger.setLevel(10)
 
-        config_name = os.path.join(my_path, 'test_config.yaml')
+        config_name = os.path.join(my_path, 'test_config_http_client.yaml')
         key = 'test_stop_experiment' + str(uuid.uuid4())
 
         with model.get_db_provider(model.get_config(config_name)) as db:
@@ -224,6 +236,72 @@ class LocalWorkerTest(unittest.TestCase, QueueTest):
 
             logger.info('Stopping experiment')
             db.stop_experiment(key)
+            pout, _ = p.communicate()
+            if pout:
+                logger.debug("studio run output: \n" + pout.decode())
+
+            db.delete_experiment(key)
+
+    @timeout(120)
+    def test_experiment_maxduration(self):
+        my_path = os.path.dirname(os.path.realpath(__file__))
+
+        logger = logging.getLogger('test_experiment_maxduration')
+        logger.setLevel(10)
+
+        config_name = os.path.join(my_path, 'test_config_http_client.yaml')
+        key = 'test_experiment_maxduration' + str(uuid.uuid4())
+
+        with model.get_db_provider(model.get_config(config_name)) as db:
+            try:
+                db.delete_experiment(key)
+            except Exception:
+                pass
+
+            p = subprocess.Popen(['studio', 'run',
+                                  '--config=' + config_name,
+                                  '--experiment=' + key,
+                                  '--force-git',
+                                  '--verbose=debug',
+                                  '--max-duration=10s',
+                                  'stop_experiment.py'],
+                                 stdout=subprocess.PIPE,
+                                 stderr=subprocess.STDOUT,
+                                 cwd=my_path)
+
+            pout, _ = p.communicate()
+            if pout:
+                logger.debug("studio run output: \n" + pout.decode())
+
+            db.delete_experiment(key)
+
+    @timeout(120)
+    def test_experiment_lifetime(self):
+        my_path = os.path.dirname(os.path.realpath(__file__))
+
+        logger = logging.getLogger('test_experiment_lifetime')
+        logger.setLevel(10)
+
+        config_name = os.path.join(my_path, 'test_config_http_client.yaml')
+        key = 'test_experiment_lifetime' + str(uuid.uuid4())
+
+        with model.get_db_provider(model.get_config(config_name)) as db:
+            try:
+                db.delete_experiment(key)
+            except Exception:
+                pass
+
+            p = subprocess.Popen(['studio', 'run',
+                                  '--config=' + config_name,
+                                  '--experiment=' + key,
+                                  '--force-git',
+                                  '--verbose=debug',
+                                  '--lifetime=-1m',
+                                  'stop_experiment.py'],
+                                 stdout=subprocess.PIPE,
+                                 stderr=subprocess.STDOUT,
+                                 cwd=my_path)
+
             pout, _ = p.communicate()
             if pout:
                 logger.debug("studio run output: \n" + pout.decode())
@@ -271,7 +349,7 @@ def stubtest_worker(
     pout, _ = p.communicate()
 
     if pout:
-        logger.debug("studio run output: \n" + str(pout))
+        logger.debug("studio run output: \n" + sixdecode(pout))
 
     db = model.get_db_provider(model.get_config(config_name))
     experiments = [e for e in db.get_user_experiments()
@@ -283,25 +361,14 @@ def stubtest_worker(
     experiment_name = experiments[0]
 
     try:
-        # test saved arguments
-        keybase = "/experiments/" + experiment_name
-        saved_args = db._get(keybase + '/args')
-        if saved_args is not None:
-            testclass.assertTrue(len(saved_args) == len(script_args))
-            for i in range(len(saved_args)):
-                testclass.assertTrue(saved_args[i] == script_args[i])
-            testclass.assertTrue(db._get(keybase + '/filename') == test_script)
-        else:
-            testclass.assertTrue(script_args is None or len(script_args) == 0)
-
         experiment = db.get_experiment(experiment_name)
         if wait_for_experiment:
-            while not experiment.status == 'finished':
+            while not experiment or not experiment.status == 'finished':
                 time.sleep(1)
                 experiment = db.get_experiment(experiment_name)
 
         if test_output:
-            with open(db.store.get_artifact(experiment.artifacts['output']),
+            with open(db.get_artifact(experiment.artifacts['output']),
                       'r') as f:
                 data = f.read()
                 split_data = data.strip().split('\n')
@@ -327,10 +394,10 @@ def check_workspace(testclass, db, key):
     tmpdir = os.path.join(tempfile.gettempdir(), str(uuid.uuid4()))
     os.mkdir(tmpdir)
     artifact = db.get_experiment(key).artifacts['workspace']
-    db.store.get_artifact(artifact,
-                          tmpdir, only_newer=False)
+    localpath = db.get_artifact(artifact,
+                                tmpdir, only_newer=False)
 
-    for _, _, files in os.walk(artifact['local'], topdown=False):
+    for _, _, files in os.walk(localpath, topdown=False):
         for filename in files:
             downloaded_filename = os.path.join(tmpdir, filename)
             if downloaded_filename.endswith('.pyc'):
@@ -338,7 +405,8 @@ def check_workspace(testclass, db, key):
 
             with open(downloaded_filename, 'rb') as f1:
                 data1 = f1.read()
-            with open(os.path.join(artifact['local'], filename), 'rb') as f2:
+            with open(os.path.join(db.get_artifact(artifact), filename),
+                      'rb') as f2:
                 data2 = f2.read()
 
             testclass.assertTrue(

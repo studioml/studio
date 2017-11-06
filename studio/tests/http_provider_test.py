@@ -3,16 +3,20 @@ import subprocess
 import time
 from random import randint
 import os
+import tempfile
+import uuid
 
 from studio import model
 from studio.util import has_aws_credentials
 from model_test import get_test_experiment
 
 
-@unittest.skipIf(not has_aws_credentials(),
-                 "AWS credentials is missing, needed for " +
+@unittest.skipIf('GOOGLE_APPLICATION_CREDENTIALS' not in os.environ.keys(),
+                 "GOOGLE_APPLICATION_CREDENTIALS is missing, needed for " +
                  "server to communicate with storage")
 class HTTPProviderTest(unittest.TestCase):
+
+    _mutliprocess_shared_ = True
 
     @classmethod
     def setUpClass(self):
@@ -68,6 +72,37 @@ class HTTPProviderTest(unittest.TestCase):
         self.assertEquals(experiment.args, experiment_tuple[0].args)
 
         db.delete_experiment(experiment_tuple[1])
+
+    def test_add_get_experiment_artifacts(self):
+        experiment_tuple = get_test_experiment()
+        e_experiment = experiment_tuple[0]
+        e_artifacts = e_experiment.artifacts
+
+        a1_filename = os.path.join(tempfile.gettempdir(), str(uuid.uuid4()))
+        a2_filename = os.path.join(tempfile.gettempdir(), str(uuid.uuid4()))
+
+        with open(a1_filename, 'w') as f:
+            f.write('hello world')
+
+        e_artifacts['a1'] = {
+            'local': a1_filename,
+            'mutable': False
+        }
+
+        e_artifacts['a2'] = {
+            'local': a2_filename,
+            'mutable': True
+        }
+
+        db = self.get_db_provider()
+        db.add_experiment(e_experiment)
+
+        experiment = db.get_experiment(e_experiment.key)
+        self.assertEquals(experiment.key, e_experiment.key)
+        self.assertEquals(experiment.filename, e_experiment.filename)
+        self.assertEquals(experiment.args, e_experiment.args)
+        db.delete_experiment(e_experiment.key)
+        os.remove(a1_filename)
 
     def test_start_experiment(self):
         db = self.get_db_provider()

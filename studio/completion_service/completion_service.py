@@ -2,12 +2,11 @@ import os
 import subprocess
 import uuid
 import logging
-import time
 import pickle
 import tempfile
-import signal
 import re
 import six
+import time
 
 from studio import runner, model, fs_tracker
 from studio.util import rsync_cp
@@ -74,6 +73,8 @@ class CompletionService:
         num_workers=1,
         # Compute requirements, amount of RAM, GPU, etc
         resources_needed={},
+        # Name of the queue for submission to a server.
+        queue=None,
         # What computer resource to use, either AWS, Google, or local
         cloud=None,
         # Timeout for cloud instances
@@ -81,7 +82,7 @@ class CompletionService:
         # Bid price for EC2 spot instances
         bid='100%',
         # Keypair to use for EC2 workers
-        ssh_keypair='peterz-k1',
+        ssh_keypair=None,
         # If true, get results that are submitted by other instances of CS
         resumable=False,
         # Whether to clean the submission queue on initialization
@@ -90,18 +91,14 @@ class CompletionService:
         queue_upscaling=True,
         # Whether to delete the queue on shutdown
         shutdown_del_queue=False,
+        # delay between queries for results
+        sleep_time=1
     ):
 
         self.config = model.get_config(config)
         self.cloud = cloud
         self.experimentId = experimentId
         self.project_name = "completion_service_" + experimentId
-
-        self.queue_name = 'local'
-        if cloud in ['gcloud', 'gcspot']:
-            self.queue_name = 'pubsub_' + experimentId
-        elif cloud in ['ec2', 'ec2spot']:
-            self.queue_name = 'sqs_' + experimentId
 
         self.resources_needed = DEFAULT_RESOURCES_NEEDED
         for key in self.resources_needed:
@@ -115,8 +112,11 @@ class CompletionService:
         self.verbose_level = model.parse_verbosity(self.config['verbose'])
         self.logger.setLevel(self.verbose_level)
 
-        self.queue = runner.get_queue(self.queue_name, self.cloud,
+        self.queue = runner.get_queue(queue, self.cloud,
                                       self.verbose_level)
+
+        self.queue_name = self.queue.get_name()
+
         self.clean_queue = clean_queue
         if self.clean_queue:
             self.queue.clean()
@@ -131,8 +131,12 @@ class CompletionService:
         self.queue_upscaling = queue_upscaling
         self.shutdown_del_queue = shutdown_del_queue
         self.use_spot = cloud in ['ec2spot', 'gcspot']
+        self.sleep_time = sleep_time
 
     def __enter__(self):
+        with model.get_db_provider(self.config):
+            pass
+        self.p = None
         if self.wm:
             self.logger.debug('Spinning up cloud workers')
             if self.use_spot:
@@ -152,14 +156,20 @@ class CompletionService:
                         ssh_keypair=self.ssh_keypair,
                         timeout=self.cloud_timeout)
 
-            self.p = None
-        else:
+        elif self.queue_name is None or self.queue_name == 'local':
             self.logger.debug('Starting local worker')
             self.p = subprocess.Popen([
                 'studio-local-worker',
                 '--verbose=%s' % self.config['verbose'],
                 '--timeout=' + str(self.cloud_timeout)],
                 close_fds=True)
+
+        # yet another case is when queue name is specified, but
+        # cloud is not - that means running on a separately
+        # managed server that listens to the queue
+        #
+        # The contract is queue_name that starts with sqs or ec2
+        # is an SQS queue, otherwise, it is a PubSub queue
 
         return self
 
@@ -173,8 +183,8 @@ class CompletionService:
             self.queue.delete()
 
         if self.p:
-            os.kill(self.p.pid, signal.SIGKILL)
-            # self.p.terminate()
+            self.p.kill()
+            # os.kill(self.p.pid, signal.SIGKILL)
 
     def submitTaskWithFiles(self, clientCodeFile, args, files={}):
         old_cwd = os.getcwd()
@@ -196,6 +206,11 @@ class CompletionService:
         workspace_new = fs_tracker.get_artifact_cache(
             'workspace', experiment_name)
         rsync_cp(workspace_orig, workspace_new, ignore_arg, self.logger)
+        distpath = os.path.join(old_cwd, 'dist')
+        if os.path.exists(distpath):
+            self.logger.info('dist folder found at {}, ' +
+                             'copying into workspace')
+            rsync_cp(distpath, os.path.join(workspace_new, 'dist'))
 
         self.logger.info('Created workspace ' + workspace_new)
 
@@ -243,6 +258,7 @@ class CompletionService:
             artifacts=artifacts,
             resources_needed=self.resources_needed)
 
+        tic = time.time()
         runner.submit_experiments(
             [experiment],
             config=self.config,
@@ -252,6 +268,9 @@ class CompletionService:
 
         self.submitted.add(experiment.key)
         os.chdir(old_cwd)
+        toc = time.time()
+        self.logger.info('Submitted experiment ' + experiment.key +
+                         ' in ' + str(toc - tic) + ' s')
 
         return experiment_name
 
@@ -260,18 +279,32 @@ class CompletionService:
 
     def getResultsWithTimeout(self, timeout=0):
         total_sleep_time = 0
-        sleep_time = 1
+        sleep_time = self.sleep_time
 
         while True:
             with model.get_db_provider(self.config) as db:
                 if self.resumable:
-                    experiments = db.get_project_experiments(self.project_name)
+                    experiment_keys = db.get_project_experiments(
+                        self.project_name).keys()
                 else:
-                    experiments = [db.get_experiment(key)
-                                   for key in self.submitted]
+                    experiment_keys = self.submitted
 
-                for e in experiments:
-                    if e.status == 'finished':
+                for key in experiment_keys:
+                    e = db.get_experiment(key)
+                    if e is not None:
+                        retval_path = db.get_artifact(e.artifacts['retval'])
+                        if os.path.exists(retval_path):
+                            with open(retval_path, 'rb') as f:
+                                data = pickle.load(f)
+
+                            if not self.resumable:
+                                self.submitted.remove(e.key)
+                            else:
+                                db.delete_experiment(e.key)
+
+                            return (e.key, data)
+                    '''
+                    if e is not None and e.status == 'finished':
                         self.logger.debug(
                             'Experiment {} finished, getting results' .format(
                                 e.key))
@@ -285,6 +318,7 @@ class CompletionService:
                             db.delete_experiment(e.key)
 
                         return (e.key, data)
+                    '''
 
             if timeout == 0 or \
                (timeout > 0 and total_sleep_time > timeout):

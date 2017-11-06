@@ -1,0 +1,22 @@
+import __main__ as _M
+import pickle
+import six
+from studio import fs_tracker
+
+with open(fs_tracker.get_artifact('_ns')) as f:
+    _M.__dict__.update(pickle.loads(f.read()))
+
+{script}   
+
+ns_dict = _M.__dict__.copy()
+pickleable_ns = dict()
+for varname, var in six.iteritems(ns_dict):
+    try:
+        pickle.dumps(var)
+        pickleable_ns[varname] = var
+    except BaseException:
+        pass
+
+with open(fs_tracker.get_artifact('_ns'), 'w') as f:
+    f.write(pickle.dumps(pickleable_ns))
+            

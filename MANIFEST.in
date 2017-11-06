@@ -1,6 +1,4 @@
 include README.rst
-include README
-include studio/.version
 include studio/default_config.yaml
 include studio/templates/*.html
 include requirements.txt

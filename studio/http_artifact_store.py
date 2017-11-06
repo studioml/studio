@@ -7,14 +7,21 @@ logging.basicConfig()
 
 
 class HTTPArtifactStore(TartifactStore):
-    def __init__(self, url, timestamp=None, verbose=10):
+    def __init__(self, url,
+                 timestamp=None,
+                 compression=None,
+                 verbose=logging.DEBUG):
+
         self.logger = logging.getLogger(self.__class__.__name__)
         self.logger.setLevel(verbose)
 
         self.url = url
-        self.timestamp = None
+        self.timestamp = timestamp
 
-        super(HTTPArtifactStore, self).__init__(False)
+        super(HTTPArtifactStore, self).__init__(
+            False,
+            compression=compression,
+            verbose=verbose)
     '''
     def _upload_file(self, key, local_path):
         with open(local_path, 'rb') as f:

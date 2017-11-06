@@ -2,28 +2,48 @@ import logging
 import time
 import calendar
 
-from google.cloud import storage
 from .tartifact_store import TartifactStore
 
 logging.basicConfig()
 
 
 class GCloudArtifactStore(TartifactStore):
-    def __init__(self, config, verbose=10, measure_timestamp_diff=False):
+    def __init__(self, config,
+                 measure_timestamp_diff=False,
+                 compression=None,
+                 verbose=10):
+
         self.logger = logging.getLogger('GCloudArtifactStore')
         self.logger.setLevel(verbose)
 
         self.config = config
 
-        try:
-            self.bucket = self.getclient().get_bucket(config['bucket'])
-        except BaseException as e:
-            self.logger.exception(e)
-            self.bucket = self.getclient().create_bucket(config['bucket'])
+        compression = compression if compression else config.get('compression')
 
-        super(GCloudArtifactStore, self).__init__(measure_timestamp_diff)
+        super(GCloudArtifactStore, self).__init__(
+            measure_timestamp_diff,
+            compression=compression)
 
-    def getclient(self):
+    def _get_bucket_obj(self):
+
+        while True:
+            try:
+                bucket = self.get_client().get_bucket(self.config['bucket'])
+                break
+            except BaseException as e:
+                self.logger.exception(e)
+                try:
+                    bucket = self.get_client().create_bucket(
+                        self.config['bucket'])
+                    break
+                except BaseException as e:
+                    self.logger.exception(e)
+            time.sleep(5)
+
+        return bucket
+
+    def get_client(self):
+        from google.cloud import storage
         if 'credentials' in self.config.keys():
             return storage.Client \
                 .from_service_account_json(self.config['serviceAccount'])
@@ -31,24 +51,24 @@ class GCloudArtifactStore(TartifactStore):
             return storage.Client()
 
     def _upload_file(self, key, local_path):
-        self.bucket.blob(key).upload_from_filename(local_path)
+        self._get_bucket_obj().blob(key).upload_from_filename(local_path)
 
     def _download_file(self, key, local_path):
-        self.bucket.get_blob(key).download_to_filename(local_path)
+        self._get_bucket_obj().get_blob(key).download_to_filename(local_path)
 
     def _delete_file(self, key):
-        blob = self.bucket.get_blob(key)
+        blob = self._get_bucket_obj().get_blob(key)
         if blob:
             blob.delete()
 
     def _get_file_url(self, key, method='GET'):
         expiration = int(time.time() + 100000)
-        return self.bucket.blob(key).generate_signed_url(
+        return self._get_bucket_obj().blob(key).generate_signed_url(
             expiration,
             method=method)
 
     def _get_file_timestamp(self, key):
-        blob = self.bucket.get_blob(key)
+        blob = self._get_bucket_obj().get_blob(key)
         if blob is None:
             return None
         time_updated = blob.updated
@@ -59,9 +79,9 @@ class GCloudArtifactStore(TartifactStore):
             return None
 
     def grant_write(self, key, user):
-        blob = self.bucket.get_blob(key)
+        blob = self._get_bucket_obj().get_blob(key)
         if not blob:
-            blob = self.bucket.blob(key)
+            blob = self._get_bucket_obj().blob(key)
             blob.upload_from_string("dummy")
 
         acl = blob.acl
@@ -73,7 +93,7 @@ class GCloudArtifactStore(TartifactStore):
         acl.save()
 
     def get_qualified_location(self, key):
-        return 'gs://' + self.bucket.name + '/' + key
+        return 'gs://' + self.get_bucket() + '/' + key
 
     def get_bucket(self):
-        return self.bucket.name
+        return self._get_bucket_obj().name

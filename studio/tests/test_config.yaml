@@ -15,11 +15,12 @@ log:
     name: output.log
 
 saveWorkspaceFrequencyMinutes: 1 #how often is workspace being saved (minutes)
+saveMetricsIntervalMinutes: 1
 verbose: error
 
 cloud:
     gcloud:
-        zone: us-central1-f
+        zone: us-east1-c
 
 resources_needed:
     cpus: 2

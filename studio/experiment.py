@@ -1,7 +1,12 @@
 import os
 import glob
 import uuid
-import pip
+import sys
+
+try:
+    import pip
+except ImportError:
+    pip = None
 
 from . import fs_tracker
 
@@ -20,16 +25,23 @@ class Experiment(object):
                  time_finished=None,
                  info={},
                  git=None,
-                 metric=None):
+                 metric=None,
+                 pythonver=None,
+                 max_duration=None):
 
         self.key = key
         self.filename = filename
         self.args = args if args else []
         self.pythonenv = pythonenv
         self.project = project
+        self.pythonver = pythonver if pythonver else sys.version_info[0]
 
         workspace_path = os.path.abspath('.')
-        model_dir = fs_tracker.get_model_directory(key)
+        try:
+            model_dir = fs_tracker.get_model_directory(key)
+        except BaseException:
+            model_dir = None
+
         self.artifacts = {
             'workspace': {
                 'local': workspace_path,
@@ -46,6 +58,10 @@ class Experiment(object):
             'tb': {
                 'local': fs_tracker.get_tensorboard_dir(key),
                 'mutable': True
+            },
+            '_metrics': {
+                'local': fs_tracker.get_artifact_cache('_metrics', key),
+                'mutable': True
             }
         }
         if artifacts is not None:
@@ -60,9 +76,10 @@ class Experiment(object):
         self.info = info
         self.git = git
         self.metric = metric
+        self.max_duration = max_duration
 
     def get_model(self, db):
-        modeldir = db.store.get_artifact(self.artifacts['modeldir'])
+        modeldir = db.get_artifact(self.artifacts['modeldir'])
         hdf5_files = [
             (p, os.path.getmtime(p))
             for p in
@@ -87,20 +104,36 @@ def create_experiment(
         project=None,
         artifacts={},
         resources_needed=None,
-        metric=None):
+        metric=None,
+        max_duration=None):
     key = str(uuid.uuid4()) if not experiment_name else experiment_name
-    packages = [p._key + '==' + p._version for p in
-                pip.pip.get_installed_distributions(local_only=True)]
+    packages = set([])
+    for i, pkg in enumerate(
+            pip.pip.get_installed_distributions(local_only=True)):
+        if resources_needed is not None and \
+           int(resources_needed.get('gpus')) > 0:
+            if pkg.key == 'tensorflow':
+                pkg._key = 'tensorflow-gpu'
+            if pkg.key == 'tf-nightly':
+                pkg._key = 'tf-nightly-gpu'
+        else:
+            if pkg.key == 'tensorflow-gpu':
+                pkg._key = 'tensorflow'
+            if pkg.key == 'tf-nightly-gpu':
+                pkg._key = 'tf-nightly'
+
+        packages.add(pkg._key + '==' + pkg._version)
 
     return Experiment(
         key=key,
         filename=filename,
         args=args,
-        pythonenv=packages,
+        pythonenv=[p for p in packages],
         project=project,
         artifacts=artifacts,
         resources_needed=resources_needed,
-        metric=metric)
+        metric=metric,
+        max_duration=max_duration)
 
 
 def experiment_from_dict(data, info={}):
@@ -117,7 +150,9 @@ def experiment_from_dict(data, info={}):
         time_started=data.get('time_started'),
         time_last_checkpoint=data.get('time_last_checkpoint'),
         time_finished=data.get('time_finished'),
-        info=info,
+        info=info if any(info) else data.get('info'),
         git=data.get('git'),
-        metric=data.get('metric')
+        metric=data.get('metric'),
+        pythonver=data.get('pythonver'),
+        max_duration=data.get('max_duration')
     )

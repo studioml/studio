@@ -4,6 +4,14 @@ import urllib
 from keras.layers import Dense, Flatten
 
 from keras.models import Sequential
+
+###
+# AS OF 10/18/2017, fashion_mnist available as a part of github master
+# branch of keras
+# but not a part of pypi package
+# Therefore, to use this, you'll need keras installed from a git repo:
+# git clone https://github.com/fchollet/keras && cd keras && pip install .
+###
 from keras.datasets import fashion_mnist
 from keras.utils import to_categorical
 
@@ -87,7 +95,7 @@ class_labels = [
 
 pipe = model_util.ModelPipe()
 pipe.add(
-    lambda url: urllib.urlopen(url).read(), num_workers=2)
+    lambda url: urllib.urlopen(url).read(), num_workers=2, timeout=5)
 pipe.add(lambda img: Image.open(BytesIO(img)))
 pipe.add(model_util.resize_to_model_input(model))
 pipe.add(lambda x: 1 - x)

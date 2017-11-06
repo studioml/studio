@@ -16,7 +16,7 @@
 
 docker_cmd=docker
 docker_img=peterzhokhoff/studioml
-
+timeout=100
 
 while [[ $# -gt 0 ]] 
 do 
@@ -39,6 +39,14 @@ do
             baked_credentials=1
             echo "Baked credentials mode (not mounting credentials/keys)"
             ;;
+
+            -n|--no-cache)
+            no_cache=1
+            echo "Mounting of the cache is disabled"
+            ;;
+
+            -t|--timeout)
+            timeout="${1##*=}"
     esac
     shift
 done
@@ -71,10 +79,10 @@ fi
 
 echo "docker_cmd = $docker_cmd"
 if [ $docker_cmd == 'docker' ]; then
-    bash_cmd="pip uninstall -y tensorflow-gpu tensorflow && pip install tensorflow &&"
+    bash_cmd="$bash_cmd python -m pip install -e ./studio && python3 -m pip install -e ./studio && "
 fi
 
-bash_cmd="$bash_cmd mkdir /workspace && cd workspace && studio-remote-worker --queue=$queue_name --verbose=debug --single-run"
+bash_cmd="$bash_cmd studio-remote-worker --queue=$queue_name --verbose=debug --timeout=$timeout --single-run"
 
 : "${GOOGLE_APPLICATION_CREDENTIALS?Need to point GOOGLE_APPLICATION_CREDENTIALS to the google credentials file}"
 : "${queue_name?Queue name is not specified (pass as a script argument}"
@@ -93,9 +101,11 @@ gac_name=${GOOGLE_APPLICATION_CREDENTIALS##*/}
 
 # loop until killed
 
-docker_args="run --rm --pid=host \
-            -v $HOME/.studioml/experiments:/root/.studioml/experiemnts
-            -v $HOME/.studioml/blobcache:/root/.studioml/blobcache"
+docker_args="run --rm --pid=host "
+if [[ $no_cache -ne 1 ]]; then
+    docker_args="$docker_args -v $HOME/.studioml/experiments:/root/.studioml/experiemnts"
+    docker_args="$docker_args -v $HOME/.studioml/blobcache:/root/.studioml/blobcache"
+fi
 
 if [[ $baked_credentials -ne 1 ]]; then
     docker_args="$docker_args -v $HOME/.studioml/keys:/root/.studioml/keys"

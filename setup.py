@@ -6,6 +6,10 @@ from subprocess import call
 from setuptools.command.install import install
 from setuptools.command.develop import develop
 
+import sys
+import platform
+import ctypes
+
 
 def read(fname):
     try:
@@ -66,6 +70,19 @@ def copyconfig():
 
 with open('requirements.txt') as f:
     required = f.read().splitlines()
+    # Add the tensorflow python package as a dependency for the studioml
+    # python modules but be selective about whether the GPU version is used
+    # or the default CPU version.  Not doing this will result in the CPU
+    # version taking precedence in many cases.
+    try:
+        if platform.system() == "Microsoft":
+            _libcudart = ctypes.windll.LoadLibrary('cudart.dll')
+        else:
+            _libcudart = ctypes.cdll.LoadLibrary('libcudart.so')
+            _libcuda = ctypes.cdll.LoadLibrary('libcuda.so')
+        required.append('tf-nightly-gpu')
+    except OSError:
+        required.append('tf-nightly')
 
 with open('test_requirements.txt') as f:
     test_required = f.read().splitlines()
@@ -77,7 +94,7 @@ setup(
     name='studioml',
     # version=VERSION,
     description='TensorFlow model and data management tool',
-    packages=find_packages(),
+    packages=find_packages(exclude=['tensorflow']),
     long_description=read('README.rst'),
     url='https://github.com/studioml/studio',
     license='Apache License, Version 2.0',

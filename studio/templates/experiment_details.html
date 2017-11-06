@@ -7,6 +7,7 @@
     <p id=project></p>
     <p id=filename></p>
     <p id=args></p>
+    <p id=pythonver></p>
     
     <div id="container-pyenv" hidden>
         <p> <a data-toggle="collapse" href="#collapse-pyenv">Python environment:</a> </p>
@@ -114,6 +115,9 @@
                 
                 $('#filename').html('Filename: ' + e.filename)
                 $('#args').html('Args: ' + e.args)
+                if (e.pythonver) {
+                    $('#pythonver').html('Python: ' + e.pythonver)
+                }
 
                 for (i in e.pythonenv) {
                     $('#listgroup-pyenv').append('<li class=list-group-item>' + e.pythonenv[i] + '</li>')

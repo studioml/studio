@@ -16,29 +16,40 @@ logging.basicConfig()
 
 
 class S3ArtifactStore(TartifactStore):
-    def __init__(self, config, verbose=10, measure_timestamp_diff=False):
+    def __init__(self, config,
+                 verbose=10,
+                 measure_timestamp_diff=False,
+                 compression=None):
         self.logger = logging.getLogger('S3ArtifactStore')
         self.logger.setLevel(verbose)
 
-        if 'aws_access_key' in config.keys():
-            access_key = config['aws_access_key']
-            secret_key = config['aws_secret_key']
-            self.client = boto3.client(
-                's3',
-                aws_access_key_id=access_key,
-                aws_secret_access_key=secret_key)
+        self.client = boto3.client(
+            's3',
+            aws_access_key_id=config.get('aws_access_key'),
+            aws_secret_access_key=config.get('aws_secret_key'),
+            endpoint_url=config.get('endpoint'),
+            region_name=config.get('region'))
 
-        else:
-            self.client = boto3.client(service_name='s3')
+        if compression is None:
+            compression = config.get('compression')
+
         self.endpoint = self.client._endpoint.host
 
         self.bucket = config['bucket']
         buckets = self.client.list_buckets()
 
         if self.bucket not in [b['Name'] for b in buckets['Buckets']]:
-            self.client.create_bucket(Bucket=self.bucket)
+            self.client.create_bucket(
+                Bucket=self.bucket,
+                CreateBucketConfiguration={
+                    'LocationConstraint': self.client._client_config
+                    .region_name
+                }
+            )
 
-        super(S3ArtifactStore, self).__init__(measure_timestamp_diff)
+        super(S3ArtifactStore, self).__init__(
+            measure_timestamp_diff,
+            compression=compression)
 
     def _upload_file(self, key, local_path):
         self.client.upload_file(local_path, self.bucket, key)

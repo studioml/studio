@@ -15,17 +15,21 @@ from sseclient import SSEClient
 import threading
 import socket
 from oauth2client.service_account import ServiceAccountCredentials
-from google.cloud import storage
 from requests.packages.urllib3.contrib.appengine import is_appengine_sandbox
 from requests_toolbelt.adapters import appengine
 import certifi
 
-import python_jwt as jwt
+try:
+    import python_jwt as jwt
+except ImportError:
+    jwt = None
+
 try:
     from Crypto.PublicKey import RSA
 except BaseException:
     RSA = None
 import datetime
+from .util import retry
 
 NUM_RETRIES = 3
 POOL_SIZE = 100
@@ -483,6 +487,7 @@ class Storage:
     """ Storage Service """
 
     def __init__(self, credentials, storage_bucket, requests):
+        from google.cloud import storage
         self.storage_bucket = \
             "https://firebasestorage.googleapis.com/v0/b/" + storage_bucket
 
@@ -517,21 +522,42 @@ class Storage:
 
     def _put_file(self, path, file_object, token, userid):
         request_ref = self.storage_bucket + "/o?name={0}".format(path)
+
+        def post_file(**kwargs):
+            def _post_file():
+                request_object = self.requests.post(
+                    request_ref, data=file_object, **kwargs)
+                raise_detailed_error(request_object)
+                return request_object
+
+            return retry(
+                _post_file,
+                no_retries=10,
+                sleeptime=5,
+                exception_class=HTTPServerError)
+
         if token:
             headers = {"Authorization": "Firebase " + token}
 
-            request_object = self.requests.post(
-                request_ref, headers=headers, data=file_object)
-            raise_detailed_error(request_object)
-
+            request_object = post_file(headers=headers)
             if userid:
                 headers['Content-Type'] = 'application/json'
-                patch_request = self.requests.patch(
-                    request_ref,
-                    headers=headers,
-                    data=json.dumps({'metadata': {'owner': userid}})
-                )
-                raise_detailed_error(patch_request)
+
+                def patch_owner():
+                    patch_request = self.requests.patch(
+                        request_ref,
+                        headers=headers,
+                        data=json.dumps({'metadata': {'owner': userid}})
+                    )
+
+                    raise_detailed_error(patch_request)
+                    return patch_request
+
+                retry(
+                    patch_owner,
+                    no_retries=10,
+                    sleeptime=5,
+                    exception_class=HTTPServerError)
 
             return request_object.json()
         elif self.credentials:
@@ -541,9 +567,7 @@ class Storage:
             else:
                 return blob.upload_from_file(file_obj=file_object)
         else:
-            request_object = self.requests.post(request_ref, data=file_object)
-            raise_detailed_error(request_object)
-            return request_object.json()
+            return post_file().json()
 
     def delete(self, name):
         self.bucket.delete_blob(name)
@@ -559,11 +583,21 @@ class Storage:
             blob = self.bucket.get_blob(path)
             blob.download_to_filename(filename)
         else:
-            r = requests.get(url, stream=True)
-            if r.status_code == 200:
-                with open(filename, 'wb') as f:
-                    for chunk in r:
-                        f.write(chunk)
+            def _download_internal():
+                r = requests.get(url, stream=True)
+                raise_detailed_error(r)
+                if r.status_code == 200:
+                    with open(filename, 'wb') as f:
+                        for chunk in r:
+                            f.write(chunk)
+                elif r.status_code >= 500:
+                    raise HTTPServerError(r.status_code, r.text)
+
+            retry(
+                _download_internal,
+                no_retries=10,
+                sleeptime=5,
+                exception_class=HTTPServerError)
 
     def get_url(self, token):
         path = self.path
@@ -580,8 +614,17 @@ class Storage:
         return self.bucket.list_blobs()
 
 
+class HTTPServerError(Exception):
+    def __init__(self, statuscode, message):
+        self.msg = message
+        self.statuscode = statuscode
+
+
 def raise_detailed_error(request_object):
     try:
+        status = request_object.status_code
+        if status >= 500:
+            raise HTTPServerError(status, request_object.text)
         request_object.raise_for_status()
     except HTTPError as e:
         # raise detailed error message

@@ -182,7 +182,7 @@
                 }
                 key = experimentKeys[keyIndex]
                 console.log("experiment key = " + key);
-                data_ajax('get_experiment', data={"key":key}).then((data) => {
+                data_ajax('get_experiment', data={"key":key, "get_artifact_urls":false}).then((data) => {
                     updateRow(data);
                     keyIndex++;
                     updateExperiment();
@@ -221,8 +221,11 @@
                 console.log('Deleting experiment with key ' + selectedData[i][0])
                 data_ajax('delete_experiment', data={"key":selectedData[i][0]}).then((response) => {
                     data = JSON.parse(response);
-                    if (data.status != 'ok') {
-                        alert(response);
+                    if (data.status == 'Unauthorized') {
+                        alert('Unauthorized!')
+                    } else if (data.status != 'ok') {
+                        console.log('Deletion failed! Response:')
+                        console.log(response);
                     }       
                 });                   
             }            
