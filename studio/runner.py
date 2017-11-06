@@ -24,6 +24,7 @@ from .experiment import create_experiment
 
 from . import model
 from . import auth
+from . import util
 from . import git_util
 from . import local_worker
 from . import fs_tracker
@@ -199,6 +200,12 @@ def main(args=sys.argv):
              'for debugging pull requests. Default is current',
         default=None)
 
+    parser.add_argument(
+        '--max-duration',
+        help='Max experiment runtime (i.e. time after which experiment ' +
+             'should be killed no matter what.',
+        default=None)
+
     # detect which argument is the script filename
     # and attribute all arguments past that index as related to the script
     py_suffix_args = [i for i, arg in enumerate(args) if arg.endswith('.py')]
@@ -250,6 +257,9 @@ def main(args=sys.argv):
     if runner_args.user_startup_script:
         config['cloud']['user_startup_script'] = \
             runner_args.user_startup_script
+
+    if runner_args.max_duration:
+        runner_args.max_duration = util.str2duration(runner_args.max_duration)
 
     if any(runner_args.hyperparam):
         if runner_args.optimizer is "grid":
@@ -366,7 +376,8 @@ def main(args=sys.argv):
                 project=runner_args.project,
                 artifacts=artifacts,
                 resources_needed=resources_needed,
-                metric=runner_args.metric)]
+                metric=runner_args.metric,
+                max_duration=runner_args.max_duration)]
 
         queue_name = submit_experiments(
             experiments,
@@ -527,6 +538,7 @@ def submit_experiments(
     start_time = time.time()
     n_workers = min(multiprocessing.cpu_count() * 2, num_experiments)
 
+    '''
     with closing(multiprocessing.Pool(n_workers, maxtasksperchild=20)) as p:
         experiments = p.imap_unordered(add_experiment,
                                        zip([config] * num_experiments,
@@ -540,10 +552,9 @@ def submit_experiments(
     '''
     experiements = [add_experiment(e) for e in
                     zip([config] * num_experiments,
-                       [python_pkg] *
-                       num_experiments,
-                       experiments)]
-    '''
+                        [python_pkg] *
+                        num_experiments,
+                        experiments)]
 
     logger.info("Added %s experiments in %s seconds" %
                 (num_experiments, int(time.time() - start_time)))
@@ -803,7 +814,8 @@ def add_hyperparam_experiments(
                 project=project,
                 artifacts=current_artifacts,
                 resources_needed=resources_needed,
-                metric=runner_args.metric))
+                metric=runner_args.metric,
+                max_duration=runner_args.max_duration))
         return experiments
 
     if optimizer is not None:

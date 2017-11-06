@@ -17,6 +17,10 @@ from tensorflow.core.util import event_pb2
 
 import boto3
 
+DAY = 86400
+HOUR = 3600
+MINUTE = 60
+
 
 def remove_backspaces(line):
     splitline = re.split('(\x08+)', line)
@@ -338,3 +342,21 @@ def sixdecode(s):
         return s.decode('utf8')
 
     raise TypeError("Unknown type of " + str(s))
+
+
+def str2duration(s):
+    s = s.lower()
+    try:
+        if s.endswith('d'):
+            return DAY * float(s[:-1])
+        elif s.endswith('h'):
+            return HOUR * float(s[:-1])
+        elif s.endswith('m'):
+            return MINUTE * float(s[:-1])
+        elif s.endswith('s'):
+            return float(s[:-1])
+        else:
+            return float(s)
+
+    except BaseException:
+        return None

@@ -6,6 +6,7 @@ database:
 
     guest: true
     use_email_auth: false
+    projectId: studio-ed756
 
 
 

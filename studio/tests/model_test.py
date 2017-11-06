@@ -31,7 +31,7 @@ class ModelTest(unittest.TestCase):
         self.assertTrue(experiment.filename == filename)
         self.assertTrue(experiment.args == args)
         self.assertTrue(experiment.project == experiment_project)
-        self.assertTrue(experiment.pythonenv == packages)
+        self.assertTrue(sorted(experiment.pythonenv) == sorted(packages))
 
     def test_get_config_env(self):
         value1 = str(uuid.uuid4())
