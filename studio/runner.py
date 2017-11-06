@@ -203,7 +203,13 @@ def main(args=sys.argv):
     parser.add_argument(
         '--max-duration',
         help='Max experiment runtime (i.e. time after which experiment ' +
-             'should be killed no matter what.',
+             'should be killed no matter what.)',
+        default=None)
+
+    parser.add_argument(
+        '--lifetime',
+        help='Max experiment lifetime (i.e. wait time after which ' +
+             'experiment loses relevance and should not be started)',
         default=None)
 
     # detect which argument is the script filename
@@ -260,6 +266,9 @@ def main(args=sys.argv):
 
     if runner_args.max_duration:
         runner_args.max_duration = util.str2duration(runner_args.max_duration)
+
+    if runner_args.lifetime:
+        config['experimentLifetime'] = runner_args.lifetime
 
     if any(runner_args.hyperparam):
         if runner_args.optimizer is "grid":
