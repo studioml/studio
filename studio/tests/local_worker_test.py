@@ -242,6 +242,39 @@ class LocalWorkerTest(unittest.TestCase, QueueTest):
 
             db.delete_experiment(key)
 
+    @timeout(120)
+    def test_experiment_maxduration(self):
+        my_path = os.path.dirname(os.path.realpath(__file__))
+
+        logger = logging.getLogger('test_stop_experiment')
+        logger.setLevel(10)
+
+        config_name = os.path.join(my_path, 'test_config_http_client.yaml')
+        key = 'test_stop_experiment' + str(uuid.uuid4())
+
+        with model.get_db_provider(model.get_config(config_name)) as db:
+            try:
+                db.delete_experiment(key)
+            except Exception:
+                pass
+
+            p = subprocess.Popen(['studio', 'run',
+                                  '--config=' + config_name,
+                                  '--experiment=' + key,
+                                  '--force-git',
+                                  '--verbose=debug',
+                                  '--max-duration=10s',
+                                  'stop_experiment.py'],
+                                 stdout=subprocess.PIPE,
+                                 stderr=subprocess.STDOUT,
+                                 cwd=my_path)
+
+            pout, _ = p.communicate()
+            if pout:
+                logger.debug("studio run output: \n" + pout.decode())
+
+            db.delete_experiment(key)
+
 
 def stubtest_worker(
         testclass,

@@ -105,7 +105,7 @@ class LocalExecutor(object):
                         p.kill()
 
                     if experiment.max_duration is not None and \
-                            time.time() > experiment.start_time + \
+                            time.time() > experiment.time_started + \
                             experiment.max_duration:
 
                         p.kill()

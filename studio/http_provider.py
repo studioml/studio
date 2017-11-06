@@ -130,6 +130,7 @@ class HTTPProvider(object):
                                 data=json.dumps({"key": key})
                                 )
         self._raise_detailed_error(request)
+        experiment.time_started = time.time()
 
     def stop_experiment(self, experiment):
         if isinstance(experiment, six.string_types):
@@ -156,6 +157,7 @@ class HTTPProvider(object):
                                 data=json.dumps({"key": key})
                                 )
         self._raise_detailed_error(request)
+        experiment.time_finished = time.time()
 
     def get_user_experiments(self, user=None, blocking=True):
         headers = self._get_headers()
@@ -237,6 +239,7 @@ class HTTPProvider(object):
         artifacts = request.json()['artifacts']
 
         self._update_artifacts(experiment, artifacts)
+        experiment.time_last_checkpoint = time.time()
 
     def refresh_auth_token(self, email, refresh_token):
         if self.auth:
