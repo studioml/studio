@@ -89,9 +89,9 @@ fi
 
 ### Runner part 
  # Install anaconda2
-curl -O https://repo.continuum.io/archive/Anaconda2-5.1.0-Linux-x86_64.sh
-bash Anaconda2-5.1.0-Linux-x86_64.sh -b
-PATH=$HOME/anaconda2/bin:$PATH
+curl -O https://repo.continuum.io/archive/Anaconda2-5.0.1-Linux-x86_64.sh
+bash Anaconda2-5.0.1-Linux-x86_64.sh -b
+export PATH=/anaconda2/bin:$PATH
 
  # install opensim-rl
 conda create -y -n opensim-rl -c kidzik opensim git python=2.7
@@ -110,7 +110,7 @@ fi
 cd studio
 git pull
 git checkout $branch
-sudo python -m pip install -e . --upgrade
+python -m pip install -e . --upgrade
 # sudo python3 -m pip install -e . --upgrade
 
 python $(which studio-remote-worker) --queue=$queue_name  --verbose=debug --timeout={timeout}
