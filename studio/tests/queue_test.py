@@ -30,7 +30,7 @@ class QueueTest(object):
 
     def test_clean(self):
         q = self.get_queue()
-        q.clean(timeout=60)
+        q.clean()
         data = str(uuid.uuid4())
 
         q.enqueue(data)
@@ -124,13 +124,12 @@ class DistributedQueueTest(QueueTest):
         data = str(uuid.uuid4())
         q.enqueue(data)
 
-        msg, ack_id = q.dequeue(acknowledge=False, timeout=120)
+        msg, ack_id = q.dequeue(acknowledge=False, timeout=60)
+        q.hold(ack_id, 1.5)
 
-        self.assertTrue(q.dequeue() is None)
-        q.hold(ack_id, 0.5)
-        time.sleep(35)
+        self.assertTrue(q.dequeue(timeout=10) is None)
+
         msg = q.dequeue(timeout=120)
-
         self.assertEquals(data, msg)
 
 

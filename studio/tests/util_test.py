@@ -51,6 +51,11 @@ class UtilTest(unittest.TestCase):
         else:
             self.assertTrue(False)
 
+    def test_str2duration(self):
+        self.assertEqual(
+            util.str2duration('0.5h'),
+            1800)
+
 
 if __name__ == "__main__":
     unittest.main()
