@@ -16,7 +16,7 @@ from . import model
 from .local_queue import LocalQueue
 from .gpu_util import get_available_gpus, get_gpu_mapping, get_gpus_summary
 from .experiment import Experiment
-from .util import sixdecode
+from .util import sixdecode, str2duration
 
 logging.basicConfig()
 logging.getLogger('apscheduler.scheduler').setLevel(logging.ERROR)
@@ -218,6 +218,16 @@ def worker_loop(queue, parsed_args,
 
         with model.get_db_provider(config) as db:
             experiment = db.get_experiment(experiment_key)
+
+            if config.get('experimentLifetime') is not None and \
+                str2duration(config['experimentLifetime']) + \
+                    experiment.time_added < time.time():
+                logger.info(
+                    'Experiment expired (max lifetime of {} was exceeded)'
+                    .format(config.get('experimentLifetime'))
+                )
+                queue.acknowledge(ack_key)
+                continue
 
             if allocate_resources(experiment, config, verbose=verbose):
                 def hold_job():
