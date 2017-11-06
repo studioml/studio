@@ -598,12 +598,12 @@ def get_experiment_fitnesses(experiments, optimizer, config, logger):
                     continue
                 returned_experiment = db.get_experiment(experiment.key,
                                                         getinfo=True)
-                # try:
-                #     experiment_output = returned_experiment.info['logtail']
-                # except BaseException:
-                #     logger.warn('Cannot access "logtail" in experiment.info')
-                output = db._get_experiment_logtail(
-                    returned_experiment)
+                try:
+                    output = returned_experiment.info.get('logtail')
+                except BaseException:
+                    logger.warn('Cannot access "logtail" in experiment.info')
+                # output = db._get_experiment_logtail(
+                #    returned_experiment)
                 if output is None:
                     continue
 
