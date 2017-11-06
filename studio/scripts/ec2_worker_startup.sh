@@ -86,6 +86,21 @@ if [[ "{use_gpus}" -ne 1 ]]; then
     rm -rf /usr/lib/x86_64-linux-gnu/libcuda*
 fi
 
+
+### Runner part 
+ # Install anaconda2
+curl -O https://repo.continuum.io/archive/Anaconda2-5.1.0-Linux-x86_64.sh
+bash Anaconda2-5.1.0-Linux-x86_64.sh -b
+PATH=$HOME/anaconda2/bin:$PATH
+
+ # install opensim-rl
+conda create -y -n opensim-rl -c kidzik opensim git python=2.7
+source activate opensim-rl
+conda install -y -c conda-forge lapack git
+pip install git+https://github.com/stanfordnmbl/osim-rl.git
+
+### 
+
 rm -rf studio
 git clone $repo_url
 if [[ $? -ne 0 ]]; then
@@ -96,7 +111,7 @@ cd studio
 git pull
 git checkout $branch
 sudo python -m pip install -e . --upgrade
-sudo python3 -m pip install -e . --upgrade
+# sudo python3 -m pip install -e . --upgrade
 
 python $(which studio-remote-worker) --queue=$queue_name  --verbose=debug --timeout={timeout}
 
