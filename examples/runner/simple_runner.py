@@ -30,8 +30,8 @@ for i in range(TIMESTEPS):
 
 print "All finished, total reward is: %s" % total_reward
 try:
-  # total_reward += np.abs(np.sum(np.load(fs_tracker.get_artifact('lr'))))
-  total_reward += np.abs(np.sum(np.random.rand((10,))))
+  total_reward += np.abs(np.sum(np.load(fs_tracker.get_artifact('lr'))))
+  # total_reward += np.abs(np.sum(np.random.rand((10,))))
 except:
   pass
 print "Fitness: %s" % max(total_reward, 1e-12)
