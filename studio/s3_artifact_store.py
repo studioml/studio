@@ -39,7 +39,13 @@ class S3ArtifactStore(TartifactStore):
         buckets = self.client.list_buckets()
 
         if self.bucket not in [b['Name'] for b in buckets['Buckets']]:
-            self.client.create_bucket(Bucket=self.bucket)
+            self.client.create_bucket(
+                Bucket=self.bucket,
+                CreateBucketConfiguration={
+                    'LocationConstraint': self.client._client_config
+                    .region_name
+                }
+            )
 
         super(S3ArtifactStore, self).__init__(
             measure_timestamp_diff,
