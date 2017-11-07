@@ -1,5 +1,6 @@
 import hashlib
 from io import StringIO
+from datetime import timedelta
 import re
 import random
 import string
@@ -344,19 +345,23 @@ def sixdecode(s):
     raise TypeError("Unknown type of " + str(s))
 
 
-def str2duration(s):
-    s = s.lower()
-    try:
-        if s.endswith('d'):
-            return DAY * float(s[:-1])
-        elif s.endswith('h'):
-            return HOUR * float(s[:-1])
-        elif s.endswith('m'):
-            return MINUTE * float(s[:-1])
-        elif s.endswith('s'):
-            return float(s[:-1])
-        else:
-            return float(s)
+regex = re.compile(
+    r'((?P<hours>\d+?)h)?((?P<minutes>\d+?)m)?((?P<seconds>\d+?)s)?')
 
-    except BaseException:
-        return None
+
+# parse_duration parses strings into time delta values that python can
+# deal with.  Examples include 12h, 11h60m, 719m60s, 11h3600s
+#
+def parse_duration(duration_str):
+    parts = regex.match(duration_str)
+    if not parts:
+        return
+    parts = parts.groupdict()
+    time_params = {}
+    for (name, param) in parts.iteritems():
+        if param:
+            time_params[name] = int(param)
+    return timedelta(**time_params)
+
+def str2duration(s):
+    return parse_duration(s.lower())
