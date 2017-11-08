@@ -53,7 +53,7 @@ class UtilTest(unittest.TestCase):
 
     def test_str2duration(self):
         self.assertEqual(
-            util.str2duration('0.5h'),
+            int(util.str2duration('30m').total_seconds()),
             1800)
 
 
