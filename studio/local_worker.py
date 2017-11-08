@@ -84,19 +84,32 @@ class LocalExecutor(object):
                 # simple hack to show what's in the log file
                 ptail = subprocess.Popen(["tail", "-f", log_path])
 
+                minutes = 0
+                if self.config.get('saveWorkspaceFrequency'):
+                    minutes = int(
+                        str2duration(
+                            self.config['saveWorkspaceFrequency'])
+                        .total_seconds() / 60)
+
                 sched.add_job(
                     lambda: db.checkpoint_experiment(experiment),
                     'interval',
-                    minutes=self.config['saveWorkspaceFrequencyMinutes'])
+                    minutes=minutes)
 
                 metrics_path = fs_tracker.get_artifact_cache(
                     '_metrics', experiment.key)
 
+                minutes = 0
+                if self.config.get('saveMetricsFrequency'):
+                    minutes = int(
+                        str2duration(
+                            self.config['saveMetricsFrequency'])
+                        .total_seconds() / 60)
+
                 sched.add_job(
                     lambda: save_metrics(metrics_path),
                     'interval',
-                    minutes=self.config['saveMetricsIntervalMinutes']
-                )
+                    minutes=minutes)
 
                 def kill_if_stopped():
                     if db.get_experiment(
@@ -106,7 +119,8 @@ class LocalExecutor(object):
 
                     if experiment.max_duration is not None and \
                             time.time() > experiment.time_started + \
-                            experiment.max_duration:
+                            int(str2duration(experiment.max_duration)
+                                .total_seconds()):
 
                         p.kill()
 
@@ -116,10 +130,10 @@ class LocalExecutor(object):
                     p.wait()
                 finally:
                     save_metrics(metrics_path)
+                    sched.shutdown()
                     ptail.kill()
                     db.checkpoint_experiment(experiment)
                     db.finish_experiment(experiment)
-                    sched.shutdown()
 
 
 def allocate_resources(experiment, config=None, verbose=10):
@@ -219,9 +233,9 @@ def worker_loop(queue, parsed_args,
         with model.get_db_provider(config) as db:
             experiment = db.get_experiment(experiment_key)
 
-            if config.get('experimentLifetime') is not None and \
-                str2duration(config['experimentLifetime']) + \
-                    experiment.time_added < time.time():
+            if config.get('experimentLifetime') and \
+                int(str2duration(config['experimentLifetime'])
+                    .total_seconds()) + experiment.time_added < time.time():
                 logger.info(
                     'Experiment expired (max lifetime of {} was exceeded)'
                     .format(config.get('experimentLifetime'))

@@ -8,9 +8,8 @@ database:
 
 queue: local
 
-saveMetricsIntervalMinutes: 1
-saveWorkspaceFrequencyMinutes: 1
-saveMectricsIntervalMinutes: 1
+saveMetricsFrequency: 1m
+saveWorkspaceFrequency: 1m
 verbose: error
 
 cloud:
