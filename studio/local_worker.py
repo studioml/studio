@@ -86,7 +86,7 @@ class LocalExecutor(object):
 
                 minutes = 0
                 if None != self.config['saveWorkspaceFrequency']:
-                    minutes = int(parse_time(
+                    minutes = int(str2duration(
                         self.config['saveWorkspaceFrequency']).total_seconds() / 60)
 
                 sched.add_job(
@@ -99,7 +99,7 @@ class LocalExecutor(object):
 
                 minutes = 0
                 if None != self.config['saveMetricsFrequency']:
-                    minutes = int(parse_time(
+                    minutes = int(str2duration(
                         self.config['saveMetricsFrequency']).total_seconds() / 60)
 
                 sched.add_job(
@@ -115,7 +115,7 @@ class LocalExecutor(object):
 
                     if experiment.max_duration is not None and \
                             time.time() > experiment.time_started + \
-                            int(str2duration(experiment.max_duration)):
+                            int(str2duration(experiment.max_duration).total_seconds()):
 
                         p.kill()
 
