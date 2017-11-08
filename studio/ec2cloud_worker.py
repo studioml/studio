@@ -71,6 +71,10 @@ class EC2WorkerManager(object):
             os.path.dirname(__file__),
             'scripts/ec2_worker_startup.sh')
 
+        self.install_studio_script = os.path.join(
+            os.path.dirname(__file__),
+            'scripts/install_studio.sh')
+
         self.client = boto3.client('ec2')
         self.asclient = boto3.client('autoscaling')
         self.cwclient = boto3.client('cloudwatch')
@@ -197,8 +201,13 @@ class EC2WorkerManager(object):
             self.logger.info('credentials NOT found')
 
         with open(self.startup_script_file) as f:
-
             startup_script = f.read()
+
+        with open(self.install_studio_script) as f:
+            install_studio_script = f.read()
+
+        startup_script = startup_script.replace(
+            '{install_studio}', install_studio_script)
 
         startup_script = startup_script.format(
             auth_key=auth_key if auth_key else "",
@@ -214,7 +223,8 @@ class EC2WorkerManager(object):
             use_gpus=0 if resources_needed['gpus'] == 0 else 1,
             timeout=timeout,
             repo_url=self.repo_url,
-            studioml_branch=self.branch)
+            studioml_branch=self.branch,
+        )
 
         startup_script = insert_user_startup_script(
             self.user_startup_script,
