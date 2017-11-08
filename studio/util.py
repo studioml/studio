@@ -358,7 +358,7 @@ def parse_duration(duration_str):
         return
     parts = parts.groupdict()
     time_params = {}
-    for (name, param) in parts.iteritems():
+    for (name, param) in six.iteritems(parts):
         if param:
             time_params[name] = int(param)
     return timedelta(**time_params)
