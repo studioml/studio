@@ -245,11 +245,16 @@ def upload_file(url, local_path, logger=None):
     if logger:
         logger.info(("Trying to upload file {} to " +
                      "url {}").format(local_path, url))
+    tic = time.time()
     with open(local_path, 'rb') as f:
         resp = requests.put(url, data=f)
 
     if resp.status_code != 200 and logger:
         logger.error(str(resp.reason))
+
+    if logger:
+        logger.debug('File upload done in {} s'
+            .format(time.time() - tic))
 
 
 def download_file_from_qualified(qualified, local_path, logger=None):
