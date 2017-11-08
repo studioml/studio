@@ -37,6 +37,7 @@ class GCloudWorkerManager(object):
         self.user_startup_script = user_startup_script
         self.repo_url = git_util.get_my_repo_url()
         self.branch = branch if branch else git_util.get_my_checkout_target()
+        self.log_bucket = "studioml-logs"
 
         if user_startup_script:
             self.logger.warn('User startup script argument is deprecated')
@@ -160,6 +161,9 @@ class GCloudWorkerManager(object):
 
         startup_script = startup_script.replace(
             "{repo_url}", self.repo_url)
+
+        startup_script = startup_script.replace(
+            "{log_bucket}", self.log_bucket)
 
         if resources_needed.get('gpus') > 0:
             startup_script = startup_script.replace('{use_gpus}', '1')
