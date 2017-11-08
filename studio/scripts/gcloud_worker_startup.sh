@@ -101,6 +101,11 @@ sudo python -m pip install -e . --upgrade
 sudo python3 -m pip install -e . --upgrade
 python $(which studio-remote-worker) --queue=$queue_name --verbose=debug --timeout=${timeout}
 
+logbucket={log_bucket}
+if [[ -n $logbucket ]]; then
+    gsutil cp /var/log/syslog gs://$logbucket/$queue_name/$instance_name.log
+fi
+
 if [[ -n $(who) ]]; then
     echo "Users logged in, preventing auto-shutdown"
     echo "Do not forget to turn the instance off manually"

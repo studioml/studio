@@ -1,5 +1,6 @@
 import os
 import shutil
+import sys
 from setuptools import setup, find_packages
 from subprocess import call
 from setuptools.command.install import install
@@ -9,7 +10,26 @@ import sys
 import platform
 import ctypes
 
-VERSION = ""
+
+def read(fname):
+    try:
+        with open(os.path.join(os.path.dirname(__file__), fname)) as f:
+            data = f.read()
+            return data
+    except BaseException:
+        return None
+
+
+def local_scheme(version):
+    if version.distance > 0:
+        return '.post' + str(version.distance)
+    else:
+        return ''
+
+
+def version_scheme(version):
+    return str(version.tag)
+
 
 sys.path.append('studio/')
 # This file contains metadata related to the studioml client and python base
@@ -18,20 +38,16 @@ sys.path.append('studio/')
 
 class MyDevelop(develop):
     def run(self):
-        if "TRAVIS_TAG" in os.environ:
-            global VERSION
-            VERSION = os.environ["TRAVIS_TAG"]
+        # print " >>> MyDevelop with verison {} <<< ".format(VERSION)
         call(["pip install -r requirements.txt --no-clean"], shell=True)
         copyconfig()
         develop.run(self)
 
 
 class MyInstall(install):
-    if "TRAVIS_TAG" in os.environ:
-        global VERSION
-        VERSION = os.environ["TRAVIS_TAG"]
 
     def run(self):
+        # print " >>> MyInstall with verison {} <<< ".format(VERSION)
         call(["pip install -r requirements.txt --no-clean"], shell=True)
         copyconfig()
         install.run(self)
@@ -50,10 +66,6 @@ def copyconfig():
         shutil.copyfile(
             default_config_path,
             os.path.expanduser('~/.studioml/config.yaml'))
-
-
-def read(fname):
-    return open(os.path.join(os.path.dirname(__file__), fname)).read()
 
 
 with open('requirements.txt') as f:
@@ -80,7 +92,7 @@ with open('test_requirements.txt') as f:
 
 setup(
     name='studioml',
-    version=VERSION,
+    # version=VERSION,
     description='TensorFlow model and data management tool',
     packages=find_packages(exclude=['tensorflow']),
     long_description=read('README.rst'),
@@ -103,6 +115,9 @@ setup(
             'studio/scripts/ec2_worker_startup.sh'],
     test_suite='nose.collector',
     tests_require=test_required,
+    use_scm_version={
+        "version_scheme": version_scheme,
+        "local_scheme": local_scheme},
     setup_requires=['setuptools_scm', 'setuptools_scm_git_archive'],
     cmdclass={'develop': MyDevelop, 'install': MyInstall},
     classifiers=[
