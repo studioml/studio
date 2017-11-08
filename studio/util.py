@@ -254,7 +254,7 @@ def upload_file(url, local_path, logger=None):
 
     if logger:
         logger.debug('File upload done in {} s'
-            .format(time.time() - tic))
+                     .format(time.time() - tic))
 
 
 def download_file_from_qualified(qualified, local_path, logger=None):
