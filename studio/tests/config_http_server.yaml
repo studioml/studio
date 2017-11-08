@@ -13,7 +13,7 @@ storage:
     type: gcloud
     bucket: "studio-ed756.appspot.com"
 
-saveWorkspaceFrequencyMinutes: 1 #how often is workspace being saved (minutes)
-saveMetricsIntervalMinutes: 1
+saveWorkspaceFrequency: 1m #how often is workspace being saved (minutes)
+saveMetricsFrequency: 1m
 
 
