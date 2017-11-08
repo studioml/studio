@@ -125,10 +125,10 @@ class LocalExecutor(object):
                     p.wait()
                 finally:
                     save_metrics(metrics_path)
+                    sched.shutdown()
                     ptail.kill()
                     db.checkpoint_experiment(experiment)
                     db.finish_experiment(experiment)
-                    sched.shutdown()
 
 
 def allocate_resources(experiment, config=None, verbose=10):
