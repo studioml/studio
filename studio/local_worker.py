@@ -85,9 +85,11 @@ class LocalExecutor(object):
                 ptail = subprocess.Popen(["tail", "-f", log_path])
 
                 minutes = 0
-                if None != self.config['saveWorkspaceFrequency']:
-                    minutes = int(str2duration(
-                        self.config['saveWorkspaceFrequency']).total_seconds() / 60)
+                if self.config.get('saveWorkspaceFrequency'):
+                    minutes = int(
+                        str2duration(
+                            self.config['saveWorkspaceFrequency'])
+                        .total_seconds() / 60)
 
                 sched.add_job(
                     lambda: db.checkpoint_experiment(experiment),
@@ -98,9 +100,11 @@ class LocalExecutor(object):
                     '_metrics', experiment.key)
 
                 minutes = 0
-                if None != self.config['saveMetricsFrequency']:
-                    minutes = int(str2duration(
-                        self.config['saveMetricsFrequency']).total_seconds() / 60)
+                if self.config.get('saveMetricsFrequency'):
+                    minutes = int(
+                        str2duration(
+                            self.config['saveMetricsFrequency'])
+                        .total_seconds() / 60)
 
                 sched.add_job(
                     lambda: save_metrics(metrics_path),
@@ -115,7 +119,8 @@ class LocalExecutor(object):
 
                     if experiment.max_duration is not None and \
                             time.time() > experiment.time_started + \
-                            int(str2duration(experiment.max_duration).total_seconds()):
+                            int(str2duration(experiment.max_duration)
+                                .total_seconds()):
 
                         p.kill()
 
@@ -228,9 +233,9 @@ def worker_loop(queue, parsed_args,
         with model.get_db_provider(config) as db:
             experiment = db.get_experiment(experiment_key)
 
-            if config.get('experimentLifetime') is not None and \
-                int(str2duration(config['experimentLifetime']).total_seconds()) + \
-                    experiment.time_added < time.time():
+            if config.get('experimentLifetime') and \
+                int(str2duration(config['experimentLifetime'])
+                    .total_seconds()) + experiment.time_added < time.time():
                 logger.info(
                     'Experiment expired (max lifetime of {} was exceeded)'
                     .format(config.get('experimentLifetime'))

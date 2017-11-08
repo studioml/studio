@@ -363,5 +363,6 @@ def parse_duration(duration_str):
             time_params[name] = int(param)
     return timedelta(**time_params)
 
+
 def str2duration(s):
     return parse_duration(s.lower())
