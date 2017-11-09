@@ -7,6 +7,7 @@ from . import pyrebase
 from .auth import get_auth
 from .http_artifact_store import HTTPArtifactStore
 from .experiment import experiment_from_dict
+from .util import retry
 
 import logging
 logging.basicConfig()
@@ -58,12 +59,16 @@ class HTTPProvider(object):
         data['experiment'] = experiment.__dict__
         data['compression'] = compression
 
-        request = requests.post(
-            self.url + '/api/add_experiment',
-            headers=headers,
-            data=json.dumps(data))
+        def post_request():
+            request = requests.post(
+                self.url + '/api/add_experiment',
+                headers=headers,
+                data=json.dumps(data))
 
-        self._raise_detailed_error(request)
+            self._raise_detailed_error(request)
+            return request
+
+        request = retry(post_request, sleep_time=10, logger=self.logger)
         artifacts = request.json()['artifacts']
 
         self._update_artifacts(experiment, artifacts)
