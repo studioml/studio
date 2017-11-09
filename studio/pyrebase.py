@@ -533,7 +533,7 @@ class Storage:
             return retry(
                 _post_file,
                 no_retries=10,
-                sleeptime=5,
+                sleep_time=5,
                 exception_class=HTTPServerError)
 
         if token:
@@ -556,7 +556,7 @@ class Storage:
                 retry(
                     patch_owner,
                     no_retries=10,
-                    sleeptime=5,
+                    sleep_time=5,
                     exception_class=HTTPServerError)
 
             return request_object.json()
@@ -596,7 +596,7 @@ class Storage:
             retry(
                 _download_internal,
                 no_retries=10,
-                sleeptime=5,
+                sleep_time=5,
                 exception_class=HTTPServerError)
 
     def get_url(self, token):

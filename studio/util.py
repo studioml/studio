@@ -280,7 +280,7 @@ def has_aws_credentials():
 
 
 def retry(f,
-          no_retries=5, sleeptime=1,
+          no_retries=5, sleep_time=1,
           exception_class=BaseException, logger=None):
     for i in range(no_retries):
         try:
@@ -290,8 +290,8 @@ def retry(f,
                 logger.info(
                     ('Exception {} is caught, ' +
                      'sleeping {}s and retrying (attempt {} of {})')
-                    .format(e, sleeptime, i, no_retries))
-            time.sleep(sleeptime)
+                    .format(e, sleep_time, i, no_retries))
+            time.sleep(sleep_time)
 
 
 def compression_to_extension(compression):
