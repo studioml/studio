@@ -2,6 +2,7 @@ import logging
 import os
 import json
 import time
+import google
 
 from .model import parse_verbosity
 from .util import sixdecode
@@ -137,5 +138,9 @@ class PubsubQueue(object):
 
     def delete(self):
         self.logger.debug("Deleting pubsub queue with topic" + self.topic_name)
-        self.pubclient.delete_topic(self.topic_name)
-        self.subclient.delete_subscription(self.sub_name)
+        try:
+            self.pubclient.delete_topic(self.topic_name)
+            self.subclient.delete_subscription(self.sub_name)
+        except google.gax.errors.RetryError as e:
+            self.logger.error('Queue deletion failed with exception:')
+            self.logger.exception(e)

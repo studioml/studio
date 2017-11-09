@@ -2,11 +2,13 @@ import requests
 import json
 import six
 import time
+import re
 
 from . import pyrebase
 from .auth import get_auth
 from .http_artifact_store import HTTPArtifactStore
 from .experiment import experiment_from_dict
+from .util import retry
 
 import logging
 logging.basicConfig()
@@ -58,12 +60,16 @@ class HTTPProvider(object):
         data['experiment'] = experiment.__dict__
         data['compression'] = compression
 
-        request = requests.post(
-            self.url + '/api/add_experiment',
-            headers=headers,
-            data=json.dumps(data))
+        def post_request():
+            request = requests.post(
+                self.url + '/api/add_experiment',
+                headers=headers,
+                data=json.dumps(data))
 
-        self._raise_detailed_error(request)
+            self._raise_detailed_error(request)
+            return request
+
+        request = retry(post_request, sleep_time=10, logger=self.logger)
         artifacts = request.json()['artifacts']
 
         self._update_artifacts(experiment, artifacts)
@@ -205,6 +211,13 @@ class HTTPProvider(object):
 
     def get_artifact(self, artifact,
                      local_path=None, only_newer='True'):
+
+        if isinstance(artifact, six.string_types):
+            experiment_key = re.match(r'.*(?=/)', artifact).group(0)
+            artifact_tag = re.search(r'(?<=/)[^/]*\Z', artifact).group(0)
+            experiment = self.get_experiment(experiment_key)
+            artifact = experiment.artifacts[artifact_tag]
+
         return HTTPArtifactStore(
             artifact.get('url'),
             timestamp=time.time(),

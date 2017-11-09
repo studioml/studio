@@ -254,7 +254,7 @@ class TartifactStore(object):
                             actual_path, local_path))
                     retry(lambda: os.rename(actual_path, local_path),
                           no_retries=5,
-                          sleeptime=1,
+                          sleep_time=1,
                           exception_class=OSError,
                           logger=self.logger)
 
