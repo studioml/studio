@@ -8,10 +8,3 @@ storage:
     type: gcloud
     bucket: "studioml-artifacts"
 
-
-
-
-saveMetricsIntervalMinutes: 1
-saveWorkspaceFrequencyMinutes: 1 #how often is workspace being saved (minutes)
-
-

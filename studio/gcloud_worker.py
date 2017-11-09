@@ -29,6 +29,10 @@ class GCloudWorkerManager(object):
             os.path.dirname(__file__),
             'scripts/gcloud_worker_startup.sh')
 
+        self.install_studio_script = os.path.join(
+            os.path.dirname(__file__),
+            'scripts/install_studio.sh')
+
         self.zone = zone
         self.projectid = credentials_dict['project_id']
         self.logger = logging.getLogger("GCloudWorkerManager")
@@ -156,8 +160,14 @@ class GCloudWorkerManager(object):
         with open(self.startup_script_file, 'r') as f:
             startup_script = f.read()
 
+        with open(self.install_studio_script) as f:
+            install_studio_script = f.read()
+
         startup_script = startup_script.replace(
-            "{studioml_branch}", self.branch)
+            "{install_studio}", install_studio_script)
+
+        startup_script = startup_script.replace(
+            "{branch}", self.branch)
 
         startup_script = startup_script.replace(
             "{repo_url}", self.repo_url)

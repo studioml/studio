@@ -20,7 +20,7 @@ storage:
 
 queue: local
 
-saveWorkspaceFrequencyMinutes: 1
+saveWorkspaceFrequency: 1m
 verbose: error
 
 cloud:

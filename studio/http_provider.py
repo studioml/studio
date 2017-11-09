@@ -2,6 +2,7 @@ import requests
 import json
 import six
 import time
+import re
 
 from . import pyrebase
 from .auth import get_auth
@@ -210,6 +211,13 @@ class HTTPProvider(object):
 
     def get_artifact(self, artifact,
                      local_path=None, only_newer='True'):
+
+        if isinstance(artifact, six.string_types):
+            experiment_key = re.match(r'.*(?=/)', artifact).group(0)
+            artifact_tag = re.search(r'(?<=/)[^/]*\Z', artifact).group(0)
+            experiment = self.get_experiment(experiment_key)
+            artifact = experiment.artifacts[artifact_tag]
+
         return HTTPArtifactStore(
             artifact.get('url'),
             timestamp=time.time(),

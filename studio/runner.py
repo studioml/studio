@@ -203,13 +203,15 @@ def main(args=sys.argv):
     parser.add_argument(
         '--max-duration',
         help='Max experiment runtime (i.e. time after which experiment ' +
-             'should be killed no matter what.)',
+             'should be killed no matter what.).  Examples of values ' +
+             'might include 5h, 48h2m10s',
         default=None)
 
     parser.add_argument(
         '--lifetime',
         help='Max experiment lifetime (i.e. wait time after which ' +
-             'experiment loses relevance and should not be started)',
+             'experiment loses relevance and should not be started)' +
+             '  Examples include 240h30m10s',
         default=None)
 
     # detect which argument is the script filename
@@ -263,9 +265,6 @@ def main(args=sys.argv):
     if runner_args.user_startup_script:
         config['cloud']['user_startup_script'] = \
             runner_args.user_startup_script
-
-    if runner_args.max_duration:
-        runner_args.max_duration = util.str2duration(runner_args.max_duration)
 
     if runner_args.lifetime:
         config['experimentLifetime'] = runner_args.lifetime
