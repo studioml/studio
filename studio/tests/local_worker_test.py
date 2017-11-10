@@ -298,8 +298,8 @@ class LocalWorkerTest(unittest.TestCase, QueueTest):
                                   '--verbose=debug',
                                   '--lifetime=-10m',
                                   'stop_experiment.py'],
-                                 # stdout=subprocess.PIPE,
-                                 # stderr=subprocess.STDOUT,
+                                 stdout=subprocess.PIPE,
+                                 stderr=subprocess.STDOUT,
                                  cwd=my_path)
 
             pout, _ = p.communicate()
