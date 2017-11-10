@@ -249,7 +249,8 @@ def worker_loop(queue, parsed_args,
         executor = LocalExecutor(parsed_args)
 
         with model.get_db_provider(config) as db:
-            experiment = experiment_from_dict(data_dict['experiment'])
+            # experiment = experiment_from_dict(data_dict['experiment'])
+            experiment = db.get_experiment(experiment_key)
 
             if config.get('experimentLifetime') and \
                 int(str2duration(config['experimentLifetime'])

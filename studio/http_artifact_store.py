@@ -35,11 +35,6 @@ class HTTPArtifactStore(TartifactStore):
     def _get_file_url(self, key):
         raise NotImplementedError
 
-    def _get_file_post(self, key):
-        return self.client.generate_presigned_post(
-            Bucket=self.bucket,
-            Key=key)
-
     def _get_file_timestamp(self, key):
         return self.timestamp
 
