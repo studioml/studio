@@ -105,7 +105,7 @@ class HTTPProvider(object):
                                     data=json.dumps({"key": key})
                                     )
             self._raise_detailed_error(request)
-        
+
         retry(post_request, sleep_time=10, logger=self.logger)
 
     def get_experiment(self, experiment, getinfo='True'):
