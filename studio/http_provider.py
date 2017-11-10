@@ -98,11 +98,15 @@ class HTTPProvider(object):
             key = experiment.key
 
         headers = self._get_headers()
-        request = requests.post(self.url + '/api/delete_experiment',
-                                headers=headers,
-                                data=json.dumps({"key": key})
-                                )
-        self._raise_detailed_error(request)
+
+        def post_request():
+            request = requests.post(self.url + '/api/delete_experiment',
+                                    headers=headers,
+                                    data=json.dumps({"key": key})
+                                    )
+            self._raise_detailed_error(request)
+        
+        retry(post_request, sleep_time=10, logger=self.logger)
 
     def get_experiment(self, experiment, getinfo='True'):
         if isinstance(experiment, six.string_types):
