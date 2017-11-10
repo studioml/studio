@@ -81,6 +81,17 @@ class LocalExecutor(object):
                     if not container:
                         container = container_artifact.get('qualified')
 
+                    cwd = fs_tracker.get_artifact_cache(
+                        'workspace', experiment.key)
+
+                    for tag, art in six.iteritems(experiment.artifacts):
+                        local_path = art.get('local')
+                        if not art['mutable'] and os.path.exists(local_path):
+                            os.symlink(
+                                art['local'],
+                                os.path.join(cwd, '..', tag)
+                            )
+
                     if experiment.filename is not None:
                         cmd = [
                             'singularity',
@@ -275,7 +286,7 @@ def worker_loop(queue, parsed_args,
                     python = 'python'
                     if experiment.pythonver == 3:
                         python = 'python3'
-                    if '_singularity' in experiment.artifacts.keys():
+                    if '_singularity' not in experiment.artifacts.keys():
                         pip_diff = pip_needed_packages(
                             experiment.pythonenv, python)
                         if any(pip_diff):
