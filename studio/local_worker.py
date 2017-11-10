@@ -15,7 +15,7 @@ from . import fs_tracker
 from . import model
 from .local_queue import LocalQueue
 from .gpu_util import get_available_gpus, get_gpu_mapping, get_gpus_summary
-from .experiment import Experiment
+from .experiment import Experiment, experiment_from_dict
 from .util import sixdecode, str2duration
 
 logging.basicConfig()
@@ -73,14 +73,32 @@ class LocalExecutor(object):
                 if experiment.pythonver == 3:
                     python = 'python3'
 
-                p = subprocess.Popen([python,
-                                      experiment.filename] +
-                                     experiment.args,
-                                     stdout=output_file,
-                                     stderr=subprocess.STDOUT,
-                                     env=env,
-                                     cwd=experiment
-                                     .artifacts['workspace']['local'])
+                cmd = [python, experiment.filename] + experiment.args
+                cwd = experiment.artifacts['workspace']['local']
+                if experiment.container is not None:
+                    container = experiment.container
+                    if container == 'studio://_container':
+                        container = db.get_artifact(
+                            experiment.artifacts['_container'])
+
+                    if experiment.filename is not None:
+                        cmd = [
+                            'singularity',
+                            'exec',
+                            container,
+                        ] + cmd
+                    else:
+                        cmd = ['singularity', 'run', container]
+
+                self.logger.info('Running cmd: \n {} '.format(cmd))
+
+                p = subprocess.Popen(
+                    cmd,
+                    stdout=output_file,
+                    stderr=subprocess.STDOUT,
+                    env=env,
+                    cwd=cwd
+                )
                 # simple hack to show what's in the log file
                 ptail = subprocess.Popen(["tail", "-f", log_path])
 
@@ -231,7 +249,7 @@ def worker_loop(queue, parsed_args,
         executor = LocalExecutor(parsed_args)
 
         with model.get_db_provider(config) as db:
-            experiment = db.get_experiment(experiment_key)
+            experiment = experiment_from_dict(data_dict['experiment'])
 
             if config.get('experimentLifetime') and \
                 int(str2duration(config['experimentLifetime'])
@@ -256,19 +274,25 @@ def worker_loop(queue, parsed_args,
                     python = 'python'
                     if experiment.pythonver == 3:
                         python = 'python3'
-                    pip_diff = pip_needed_packages(
-                        experiment.pythonenv, python)
-                    if any(pip_diff):
-                        logger.info(
-                            'Setting up python packages for experiment')
-                        if pip_install_packages(pip_diff, python, logger) != 0:
+                    if experiment.container is None:
+                        pip_diff = pip_needed_packages(
+                            experiment.pythonenv, python)
+                        if any(pip_diff):
                             logger.info(
-                                "Installation of all packages together " +
-                                " failed, "
-                                "trying one package at a time")
+                                'Setting up python packages for experiment')
+                            if pip_install_packages(
+                                    pip_diff,
+                                    python,
+                                    logger
+                            ) != 0:
 
-                            for pkg in pip_diff:
-                                pip_install_packages([pkg], python, logger)
+                                logger.info(
+                                    "Installation of all packages together " +
+                                    " failed, "
+                                    "trying one package at a time")
+
+                                for pkg in pip_diff:
+                                    pip_install_packages([pkg], python, logger)
 
                     for tag, art in six.iteritems(experiment.artifacts):
                         if fetch_artifacts or 'local' not in art.keys():
