@@ -238,6 +238,7 @@ def main(args=sys.argv):
         else:
             print("Too many extra arguments - should be either none " +
                   "for container job or one for experiment re-run")
+            sys.exit(1)
     else:
         script_index = py_suffix_args[0]
         exec_filename, other_args = args[script_index], args[script_index + 1:]
