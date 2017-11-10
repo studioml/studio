@@ -291,6 +291,7 @@ def main(args=sys.argv):
         if runner_args.optimizer is "grid":
             experiments = add_hyperparam_experiments(
                 exec_filename,
+                other_args,
                 runner_args,
                 artifacts,
                 resources_needed,
