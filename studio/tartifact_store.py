@@ -160,6 +160,13 @@ class TartifactStore(object):
             if artifact.get('url') is not None:
                 download_file(remote_path, local_path, self.logger)
             else:
+                if remote_path.startswith('dockerhub://') or \
+                   remote_path.startswith('shub://'):
+                    self.logger.info((
+                        'Qualified {} points to a shub or dockerhub,' +
+                        ' skipping the download'))
+                    return remote_path
+
                 download_file_from_qualified(
                     remote_path, local_path, self.logger)
 

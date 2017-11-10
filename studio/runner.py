@@ -254,17 +254,8 @@ def main(args=sys.argv):
         config['database']['guest'] = True
 
     if runner_args.container:
-        if not runner_args.container.startswith('shub://') and \
-           not runner_args.container.startswith('dockerhub://'):
-
-            container_path = os.path.expanduser(runner_args.container)
-            if os.path.exists(container_path):
-                runner_args.capture_once.append(container_path + ':_container')
-                runner_args.container = 'studio://_container'
-            else:
-                logger.error('Container {} does not exist!'
-                             .format(runner_args.container))
-                sys.exit(1)
+        runner_args.capture_once.append(
+            runner_args.container + ':_singularity')
 
     verbose = model.parse_verbosity(config['verbose'])
     logger.setLevel(verbose)
@@ -300,7 +291,6 @@ def main(args=sys.argv):
         if runner_args.optimizer is "grid":
             experiments = add_hyperparam_experiments(
                 exec_filename,
-                other_args,
                 runner_args,
                 artifacts,
                 resources_needed,
@@ -413,7 +403,6 @@ def main(args=sys.argv):
                 resources_needed=resources_needed,
                 metric=runner_args.metric,
                 max_duration=runner_args.max_duration,
-                container=runner_args.container
             )]
 
         queue_name = submit_experiments(
@@ -712,8 +701,11 @@ def get_experiment_fitnesses(experiments, optimizer, config, logger):
 def parse_artifacts(art_list, mutable):
     retval = {}
     url_schema = re.compile('^https{0,1}://')
-    s3_schema = re.compile('^s3://')
-    gcs_schema = re.compile('^gs://')
+    s3_schema = re.compile('s3://')
+    gcs_schema = re.compile('gs://')
+    dhub_schema = re.compile('dockerhub://')
+    shub_schema = re.compile('shub://')
+
     for entry in art_list:
         path = re.sub(':[^:]*\Z', '', entry)
         tag = re.sub('.*:(?=[^:]*\Z)', '', entry)
@@ -725,7 +717,11 @@ def parse_artifacts(art_list, mutable):
                 'url': path,
                 'mutable': False
             }
-        elif s3_schema.match(entry) or gcs_schema.match(entry):
+        elif s3_schema.match(entry) or \
+                gcs_schema.match(entry) or \
+                dhub_schema.match(entry) or \
+                shub_schema.match(entry):
+
             assert not mutable, \
                 'artifacts specfied by url can only be immutable'
             retval[tag] = {
@@ -853,7 +849,6 @@ def add_hyperparam_experiments(
                 resources_needed=resources_needed,
                 metric=runner_args.metric,
                 max_duration=runner_args.max_duration,
-                container=runner_args.container
             ))
         return experiments
 

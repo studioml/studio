@@ -258,6 +258,10 @@ def upload_file(url, local_path, logger=None):
 
 
 def download_file_from_qualified(qualified, local_path, logger=None):
+    if qualified.startswith('dockerhub://') or \
+       qualified.startswith('shub://'):
+        return
+
     assert qualified.startswith('s3://') or \
         qualified.startswith('gs://')
 

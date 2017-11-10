@@ -75,11 +75,11 @@ class LocalExecutor(object):
 
                 cmd = [python, experiment.filename] + experiment.args
                 cwd = experiment.artifacts['workspace']['local']
-                if experiment.container is not None:
-                    container = experiment.container
-                    if container == 'studio://_container':
-                        container = db.get_artifact(
-                            experiment.artifacts['_container'])
+                container_artifact = experiment.artifacts.get('_singularity')
+                if container_artifact:
+                    container = container_artifact.get('local')
+                    if not container:
+                        container = container_artifact.get('qualified')
 
                     if experiment.filename is not None:
                         cmd = [
@@ -274,7 +274,7 @@ def worker_loop(queue, parsed_args,
                     python = 'python'
                     if experiment.pythonver == 3:
                         python = 'python3'
-                    if experiment.container is None:
+                    if '_singularity' in experiment.artifacts.keys():
                         pip_diff = pip_needed_packages(
                             experiment.pythonenv, python)
                         if any(pip_diff):
