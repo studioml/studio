@@ -17,7 +17,7 @@ except BaseException:
 
 from studio import model
 from studio.local_queue import LocalQueue
-from studio.util import has_aws_credentials, sixdecode
+from studio.util import has_aws_credentials, sixdecode, retry
 
 from queue_test import QueueTest
 
@@ -377,7 +377,7 @@ def stubtest_worker(
         check_workspace(testclass, db, experiment_name)
 
         if delete_when_done:
-            db.delete_experiment(experiment_name)
+            retry(lambda: db.delete_experiment(experiment_name), sleep_time=10)
 
         return db
 
