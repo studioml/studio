@@ -361,15 +361,16 @@ def sixdecode(s):
     raise TypeError("Unknown type of " + str(s))
 
 
-regex = re.compile(
-    r'((?P<hours>\d+?)h)?((?P<minutes>\d+?)m)?((?P<seconds>\d+?)s)?')
-
+duration_regex = re.compile(
+    r'((?P<hours>-?\d+?)h)?((?P<minutes>-?\d+?)m)?((?P<seconds>-?\d+?)s)?')
 
 # parse_duration parses strings into time delta values that python can
 # deal with.  Examples include 12h, 11h60m, 719m60s, 11h3600s
 #
+
+
 def parse_duration(duration_str):
-    parts = regex.match(duration_str)
+    parts = duration_regex.match(duration_str)
     if not parts:
         return
     parts = parts.groupdict()
@@ -377,7 +378,8 @@ def parse_duration(duration_str):
     for (name, param) in six.iteritems(parts):
         if param:
             time_params[name] = int(param)
-    return timedelta(**time_params)
+    retval = timedelta(**time_params)
+    return retval
 
 
 def str2duration(s):
