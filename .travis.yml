@@ -25,7 +25,8 @@ install:
 
 script:
   - echo $GOOGLE_APPLICATION_CREDENTIALS
-  - nosetests -v --processes=4 --process-timeout=900
+  # - nosetests -v --processes=4 --process-timeout=900
+  - cd studio && python -m unittest -q completion_service.completion_service_test.CompletionServiceTest.test_two_experiments_ec2spot
   - pycodestyle --show-source .
   - python setup.py sdist
 
