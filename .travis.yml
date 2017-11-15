@@ -26,7 +26,8 @@ install:
 
 script:
   - echo $GOOGLE_APPLICATION_CREDENTIALS
-  - py.test -n 8 -v studio/completion_service/completion_service_test.py::CompletionServiceTest
+  # - py.test -n 8 -v studio/completion_service/completion_service_test.py::CompletionServiceTest
+  - python -m unittest -q studio.completion_service.completion_service_test.CompletionServiceTest.test_two_experiments_ec2spot
   - pycodestyle --show-source .
   - python setup.py sdist
 

@@ -77,9 +77,9 @@ class DistributedQueueTest(QueueTest):
         q.enqueue(data1)
         q.enqueue(data2)
 
-        recv1 = q.dequeue(timeout=120)
+        recv1 = q.dequeue(timeout=self.get_timeout())
         time.sleep(15)
-        recv2 = q.dequeue(timeout=120)
+        recv2 = q.dequeue(timeout=self.get_timeout())
 
         self.assertTrue(data1 == recv1 or data2 == recv1)
         self.assertTrue(data1 == recv2 or data2 == recv2)
@@ -103,7 +103,7 @@ class DistributedQueueTest(QueueTest):
 
         q1.enqueue(data1)
 
-        self.assertEquals(data1, q2.dequeue(timeout=get_timeout()))
+        self.assertEquals(data1, q2.dequeue(timeout=self.get_timeout()))
 
         q1.enqueue(data1)
         q1.enqueue(data2)
@@ -133,7 +133,7 @@ class DistributedQueueTest(QueueTest):
 
         self.assertTrue(q.dequeue(timeout=10) is None)
 
-        msg = q.dequeue(timeout=120)
+        msg = q.dequeue(timeout=self.get_timeout())
         self.assertEquals(data, msg)
 
     def get_timeout(self):
