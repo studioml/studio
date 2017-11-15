@@ -108,8 +108,8 @@ class DistributedQueueTest(QueueTest):
         q1.enqueue(data1)
         q1.enqueue(data2)
 
-        recv1 = q1.dequeue(timeout=get_timeout())
-        recv2 = q2.dequeue(timeout=get_timeout())
+        recv1 = q1.dequeue(timeout=self.get_timeout())
+        recv2 = q2.dequeue(timeout=self.get_timeout())
 
         logger.debug('recv1 = ' + recv1)
         logger.debug('recv2 = ' + recv2)
