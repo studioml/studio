@@ -103,13 +103,13 @@ class DistributedQueueTest(QueueTest):
 
         q1.enqueue(data1)
 
-        self.assertEquals(data1, q2.dequeue(timeout=120))
+        self.assertEquals(data1, q2.dequeue(timeout=get_timeout()))
 
         q1.enqueue(data1)
         q1.enqueue(data2)
 
-        recv1 = q1.dequeue(timeout=120)
-        recv2 = q2.dequeue(timeout=120)
+        recv1 = q1.dequeue(timeout=get_timeout())
+        recv2 = q2.dequeue(timeout=get_timeout())
 
         logger.debug('recv1 = ' + recv1)
         logger.debug('recv2 = ' + recv2)
@@ -136,6 +136,9 @@ class DistributedQueueTest(QueueTest):
         msg = q.dequeue(timeout=120)
         self.assertEquals(data, msg)
 
+    def get_timeout(self):
+        return 120
+
 
 @unittest.skipIf(
     'GOOGLE_APPLICATION_CREDENTIALS' not in
@@ -150,9 +153,6 @@ class PubSubQueueTest(DistributedQueueTest, unittest.TestCase):
         name = 'pubsub_queue_test' + str(uuid.uuid4()) if not name else name
         print(name)
         return PubsubQueue(name)
-
-    def get_timeout(self):
-        return 60
 
 
 @unittest.skipIf(
