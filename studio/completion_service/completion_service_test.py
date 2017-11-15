@@ -17,6 +17,7 @@ _ec2_test_lock = filelock.FileLock(
     os.path.expanduser('~/.studioml/.ec2_tests.lock')
 )
 
+
 class CompletionServiceTest(unittest.TestCase):
 
     _multiprocess_shared_ = True
@@ -69,7 +70,6 @@ class CompletionServiceTest(unittest.TestCase):
             'tests',
             'test_config_http_client.yaml')
 
- 
         with _ec2_test_lock:
             self.test_two_experiments_with_cs_args(
                 config=config_path,
