@@ -2,6 +2,7 @@ import uuid
 import unittest
 import os
 import logging
+import filelock
 
 from .completion_service import CompletionService
 
@@ -11,6 +12,10 @@ from studio.local_queue import get_local_queue_lock
 
 logging.basicConfig()
 
+
+_ec2_test_lock = filelock.FileLock(
+    os.path.expanduser('~/.studioml/.ec2_tests.lock')
+)
 
 class CompletionServiceTest(unittest.TestCase):
 
@@ -48,12 +53,12 @@ class CompletionServiceTest(unittest.TestCase):
             'tests',
             'test_config_http_client.yaml')
 
-        self.test_two_experiments_with_cs_args(
-            config=config_path,
-            cloud_timeout=100,
-            cloud='ec2')
+        with _ec2_test_lock:
+            self.test_two_experiments_with_cs_args(
+                config=config_path,
+                cloud_timeout=100,
+                cloud='ec2')
 
-    @unittest.skip('race condition between ec2 tests?')
     @unittest.skipIf(not has_aws_credentials(),
                      'AWS credentials needed for this test')
     def test_two_experiments_ec2spot(self):
@@ -64,10 +69,12 @@ class CompletionServiceTest(unittest.TestCase):
             'tests',
             'test_config_http_client.yaml')
 
-        self.test_two_experiments_with_cs_args(
-            config=config_path,
-            cloud_timeout=100,
-            cloud='ec2spot')
+ 
+        with _ec2_test_lock:
+            self.test_two_experiments_with_cs_args(
+                config=config_path,
+                cloud_timeout=100,
+                cloud='ec2spot')
 
     def test_two_experiments_apiserver(self):
         mypath = os.path.dirname(os.path.realpath(__file__))
