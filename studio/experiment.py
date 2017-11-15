@@ -110,6 +110,9 @@ def create_experiment(
     packages = set([])
     for i, pkg in enumerate(
             pip.pip.get_installed_distributions(local_only=True)):
+        if pkg._key == 'studioml':
+            continue
+
         if resources_needed is not None and \
            int(resources_needed.get('gpus')) > 0:
             if pkg.key == 'tensorflow':
