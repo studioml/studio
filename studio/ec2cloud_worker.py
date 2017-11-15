@@ -10,6 +10,7 @@ import base64
 import requests
 import json
 import six
+import filelock
 
 from . import git_util
 from .gpu_util import memstr2int
@@ -361,12 +362,15 @@ class EC2WorkerManager(object):
 
         price_path = os.path.join(os.path.expanduser('~'), '.studioml',
                                   'awsprices.json')
+        offer_file_lock = filelock.FileLock(pricepath + '.lock')
+
         try:
             self.logger.info('Reading AWS prices from cache...')
-            with open(price_path, 'r') as f:
-                offer_dict = json.load(f)
+            with offer_file_lock:
+                with open(price_path, 'r') as f:
+                    offer_dict = json.load(f)
 
-        except BaseException:
+        except IOError:
             self.logger.info(
                 'Getting prices info from AWS (this may take a moment...)')
 
@@ -379,8 +383,10 @@ class EC2WorkerManager(object):
                         r.status_code))
 
             offer_dict = r.json()
-            with open(price_path, 'w') as f:
-                f.write(json.dumps(offer_dict))
+
+            with offer_file_lock:
+                with open(price_path, 'w') as f:
+                    f.write(json.dumps(offer_dict))
 
         self.logger.info('Done!')
 
