@@ -2,6 +2,7 @@ import os
 import glob
 import uuid
 import sys
+import time
 
 try:
     import pip
@@ -106,7 +107,9 @@ def create_experiment(
         resources_needed=None,
         metric=None,
         max_duration=None):
-    key = str(uuid.uuid4()) if not experiment_name else experiment_name
+    key = experiment_name if experiment_name else \
+        str(int(time.time())) + "_" + str(uuid.uuid4())
+
     packages = set([])
     for i, pkg in enumerate(
             pip.pip.get_installed_distributions(local_only=True)):

@@ -8,6 +8,7 @@ import logging
 import os
 import base64
 import json
+import yaml
 import six
 import filelock
 
@@ -358,6 +359,12 @@ class EC2WorkerManager(object):
 
         # TODO un-hardcode the us-east as a region
         # so that prices are being read for a correct region
+
+        price_path = os.path.join(os.path.dirname(__file__), 'aws_prices.yaml')
+        with open(price_path, 'r') as f:
+            data = yaml.load(f.read())
+
+        return {i: data[i] for i in instances}
 
         price_path = os.path.join(os.path.expanduser('~'), '.studioml',
                                   'awsprices.json')
