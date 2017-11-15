@@ -4,6 +4,11 @@ import uuid
 import glob
 import time
 import logging
+import filelock
+
+_local_queue_lock = filelock.FileLock(
+    os.path.expanduser('~/.studioml/local_queue.lock')
+)
 
 
 class LocalQueue:
@@ -72,3 +77,7 @@ class LocalQueue:
 
     def get_name(self):
         return 'local'
+
+
+def get_local_queue_lock():
+    return _local_queue_lock

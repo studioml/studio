@@ -16,63 +16,64 @@ except BaseException:
     keras = None
 
 from studio import model
-from studio.local_queue import LocalQueue
+from studio.local_queue import LocalQueue, get_local_queue_lock
 from studio.util import has_aws_credentials, sixdecode, retry
-
-from queue_test import QueueTest
-
 
 logging.basicConfig()
 
 
-class LocalWorkerTest(unittest.TestCase, QueueTest):
-    def get_queue(self):
-        return LocalQueue()
+class LocalWorkerTest(unittest.TestCase):
 
     def test_runner_local(self):
-        with stubtest_worker(
-            self,
-            experiment_name='test_runner_local_' + str(uuid.uuid4()),
-            runner_args=['--verbose=debug'],
-            config_name='test_config_http_client.yaml',
-            test_script='tf_hello_world.py',
-            script_args=['arg0'],
-            expected_output='[ 2.  6.]'
-        ):
-            pass
+        with get_local_queue_lock():
+            with stubtest_worker(
+                self,
+                experiment_name='test_runner_local_' + str(uuid.uuid4()),
+                runner_args=['--verbose=debug'],
+                config_name='test_config_http_client.yaml',
+                test_script='tf_hello_world.py',
+                script_args=['arg0'],
+                expected_output='[ 2.  6.]'
+            ):
+                pass
 
     def test_args_conflict(self):
-        with stubtest_worker(
-            self,
-            experiment_name='test_runner_conflict_' + str(uuid.uuid4()),
-            runner_args=['--verbose=debug'],
-            config_name='test_config.yaml',
-            test_script='conflicting_args.py',
-            script_args=['--experiment', 'aaa'],
-            expected_output='Experiment key = aaa'
-        ):
-            pass
+        with get_local_queue_lock():
+            with stubtest_worker(
+                self,
+                experiment_name='test_runner_conflict_' + str(uuid.uuid4()),
+                runner_args=['--verbose=debug'],
+                config_name='test_config.yaml',
+                test_script='conflicting_args.py',
+                script_args=['--experiment', 'aaa'],
+                expected_output='Experiment key = aaa'
+            ):
+                pass
 
     def test_local_hyperparam(self):
-        with stubtest_worker(
-            self,
-            experiment_name='test_local_hyperparam' + str(uuid.uuid4()),
-            runner_args=['--verbose=debug'],
-            config_name='test_config_http_client.yaml',
-            test_script='hyperparam_hello_world.py',
-            expected_output='0.3'
-        ):
-            pass
+        with get_local_queue_lock():
+            with stubtest_worker(
+                self,
+                experiment_name='test_local_hyperparam' + str(uuid.uuid4()),
+                runner_args=['--verbose=debug'],
+                config_name='test_config_http_client.yaml',
+                test_script='hyperparam_hello_world.py',
+                expected_output='0.3'
+            ):
+                pass
 
-        with stubtest_worker(
-            self,
-            experiment_name='test_local_hyperparam' + str(uuid.uuid4()),
-            runner_args=['--verbose=debug', '--hyperparam=learning_rate=0.4'],
-            config_name='test_config_http_client.yaml',
-            test_script='hyperparam_hello_world.py',
-            expected_output='0.4'
-        ):
-            pass
+            with stubtest_worker(
+                self,
+                experiment_name='test_local_hyperparam' + str(uuid.uuid4()),
+                runner_args=[
+                    '--verbose=debug',
+                    '--hyperparam=learning_rate=0.4'
+                ],
+                config_name='test_config_http_client.yaml',
+                test_script='hyperparam_hello_world.py',
+                expected_output='0.4'
+            ):
+                pass
 
     def test_local_worker_ce(self):
         tmpfile = os.path.join(tempfile.gettempdir(),
@@ -85,39 +86,42 @@ class LocalWorkerTest(unittest.TestCase, QueueTest):
         random_str2 = str(uuid.uuid4())
         experiment_name = 'test_local_worker_c' + str(uuid.uuid4())
 
-        with stubtest_worker(
-            self,
-            experiment_name=experiment_name,
-            runner_args=['--capture=' + tmpfile + ':f',
-                         '--verbose=debug'],
-            config_name='test_config_http_client.yaml',
-            test_script='art_hello_world.py',
-            script_args=[random_str2],
-            expected_output=random_str1,
-            delete_when_done=False
-        ) as db:
+        with get_local_queue_lock():
+            with stubtest_worker(
+                self,
+                experiment_name=experiment_name,
+                runner_args=['--capture=' + tmpfile + ':f',
+                             '--verbose=debug'],
+                config_name='test_config_http_client.yaml',
+                test_script='art_hello_world.py',
+                script_args=[random_str2],
+                expected_output=random_str1,
+                delete_when_done=False
+            ) as db:
 
-            tmppath = os.path.join(tempfile.gettempdir(), str(uuid.uuid4()))
+                tmppath = os.path.join(
+                    tempfile.gettempdir(), str(
+                        uuid.uuid4()))
 
-            db.get_artifact(
-                db.get_experiment(experiment_name).artifacts['f'],
-                tmppath)
+                db.get_artifact(
+                    db.get_experiment(experiment_name).artifacts['f'],
+                    tmppath)
 
-            with open(tmppath, 'r') as f:
-                self.assertTrue(f.read() == random_str2)
-            os.remove(tmppath)
+                with open(tmppath, 'r') as f:
+                    self.assertTrue(f.read() == random_str2)
+                os.remove(tmppath)
 
-        with stubtest_worker(
-            self,
-            experiment_name='test_local_worker_e' + str(uuid.uuid4()),
-            runner_args=['--reuse={}/f:f'.format(experiment_name)],
-            config_name='test_config_http_client.yaml',
-            test_script='art_hello_world.py',
-            script_args=[],
-            expected_output=random_str2
-        ) as db:
+            with stubtest_worker(
+                self,
+                experiment_name='test_local_worker_e' + str(uuid.uuid4()),
+                runner_args=['--reuse={}/f:f'.format(experiment_name)],
+                config_name='test_config_http_client.yaml',
+                test_script='art_hello_world.py',
+                script_args=[],
+                expected_output=random_str2
+            ) as db:
 
-            db.delete_experiment(experiment_name)
+                db.delete_experiment(experiment_name)
 
     def test_local_worker_co(self):
         tmpfile = os.path.join(tempfile.gettempdir(),
@@ -127,32 +131,34 @@ class LocalWorkerTest(unittest.TestCase, QueueTest):
         with open(tmpfile, 'w') as f:
             f.write(random_str)
 
-        with stubtest_worker(
-            self,
-            experiment_name='test_local_worker_co' + str(uuid.uuid4()),
-            runner_args=['--capture-once=' + tmpfile + ':f'],
-            config_name='test_config_http_client.yaml',
-            test_script='art_hello_world.py',
-            script_args=[],
-            expected_output=random_str
-        ):
-            pass
+        with get_local_queue_lock():
+            with stubtest_worker(
+                self,
+                experiment_name='test_local_worker_co' + str(uuid.uuid4()),
+                runner_args=['--capture-once=' + tmpfile + ':f'],
+                config_name='test_config_http_client.yaml',
+                test_script='art_hello_world.py',
+                script_args=[],
+                expected_output=random_str
+            ):
+                pass
 
     def test_local_worker_co_url(self):
         expected_str = 'Zabil zaryad ya v pushku tugo'
         url = 'https://storage.googleapis.com/studio-ed756.appspot.com/' + \
               'tests/url_artifact.txt'
 
-        with stubtest_worker(
-            self,
-            experiment_name='test_local_worker_co_url' + str(uuid.uuid4()),
-            runner_args=['--capture-once=' + url + ':f'],
-            config_name='test_config_http_client.yaml',
-            test_script='art_hello_world.py',
-            script_args=[],
-            expected_output=expected_str
-        ):
-            pass
+        with get_local_queue_lock():
+            with stubtest_worker(
+                self,
+                experiment_name='test_local_worker_co_url' + str(uuid.uuid4()),
+                runner_args=['--capture-once=' + url + ':f'],
+                config_name='test_config_http_client.yaml',
+                test_script='art_hello_world.py',
+                script_args=[],
+                expected_output=expected_str
+            ):
+                pass
 
     @unittest.skipIf(
         not has_aws_credentials(),
@@ -161,45 +167,47 @@ class LocalWorkerTest(unittest.TestCase, QueueTest):
         expected_str = 'No4 ulica fonar apteka, bessmyslennyj i tusklyj svet'
         s3loc = 's3://studioml-artifacts/tests/download_test/download_test.txt'
 
-        with stubtest_worker(
-            self,
-            experiment_name='test_local_worker_co_s3' + str(uuid.uuid4()),
-            runner_args=['--capture-once=' + s3loc + ':f'],
-            config_name='test_config_http_client.yaml',
-            test_script='art_hello_world.py',
-            script_args=[],
-            expected_output=expected_str
-        ):
-            pass
+        with get_local_queue_lock():
+            with stubtest_worker(
+                self,
+                experiment_name='test_local_worker_co_s3' + str(uuid.uuid4()),
+                runner_args=['--capture-once=' + s3loc + ':f'],
+                config_name='test_config_http_client.yaml',
+                test_script='art_hello_world.py',
+                script_args=[],
+                expected_output=expected_str
+            ):
+                pass
 
     @unittest.skipIf(keras is None,
                      'keras is required for this test')
     def test_save_get_model(self):
         experiment_name = 'test_save_get_model' + str(uuid.uuid4())
-        with stubtest_worker(
-            self,
-            experiment_name=experiment_name,
-            runner_args=[],
-            config_name='test_config_http_client.yaml',
-            test_script='save_model.py',
-            script_args=[],
-            expected_output='',
-            delete_when_done=False,
-            test_output=False
-        ) as db:
+        with get_local_queue_lock():
+            with stubtest_worker(
+                self,
+                experiment_name=experiment_name,
+                runner_args=[],
+                config_name='test_config_http_client.yaml',
+                test_script='save_model.py',
+                script_args=[],
+                expected_output='',
+                delete_when_done=False,
+                test_output=False
+            ) as db:
 
-            experiment = db.get_experiment(experiment_name)
-            saved_model = experiment.get_model(db)
+                experiment = db.get_experiment(experiment_name)
+                saved_model = experiment.get_model(db)
 
-            v = np.random.rand(1, 2)
-            prediction = saved_model.predict(v)
-            expected = v * 2
+                v = np.random.rand(1, 2)
+                prediction = saved_model.predict(v)
+                expected = v * 2
 
-            self.assertTrue(np.isclose(prediction, expected).all())
+                self.assertTrue(np.isclose(prediction, expected).all())
 
-            db.delete_experiment(experiment)
+                db.delete_experiment(experiment)
 
-    @timeout(120)
+    @timeout(500, use_signals=False)
     def test_stop_experiment(self):
         my_path = os.path.dirname(os.path.realpath(__file__))
 
@@ -215,34 +223,36 @@ class LocalWorkerTest(unittest.TestCase, QueueTest):
             except Exception:
                 pass
 
-            p = subprocess.Popen(['studio', 'run',
-                                  '--config=' + config_name,
-                                  '--experiment=' + key,
-                                  '--force-git',
-                                  '--verbose=debug',
-                                  'stop_experiment.py'],
-                                 stdout=subprocess.PIPE,
-                                 stderr=subprocess.STDOUT,
-                                 cwd=my_path)
+            with get_local_queue_lock():
+                p = subprocess.Popen(['studio', 'run',
+                                      '--config=' + config_name,
+                                      '--experiment=' + key,
+                                      '--force-git',
+                                      '--verbose=debug',
+                                      'stop_experiment.py'],
+                                     stdout=subprocess.PIPE,
+                                     stderr=subprocess.STDOUT,
+                                     cwd=my_path)
 
-            # wait till experiment spins up
-            experiment = None
-            while experiment is None or experiment.status == 'waiting':
-                time.sleep(1)
-                try:
-                    experiment = db.get_experiment(key)
-                except BaseException:
-                    pass
+                # wait till experiment spins up
+                experiment = None
+                while experiment is None or experiment.status == 'waiting':
+                    time.sleep(1)
+                    try:
+                        experiment = db.get_experiment(key)
+                    except BaseException:
+                        pass
 
-            logger.info('Stopping experiment')
-            db.stop_experiment(key)
-            pout, _ = p.communicate()
+                logger.info('Stopping experiment')
+                db.stop_experiment(key)
+                pout, _ = p.communicate()
+
             if pout:
                 logger.debug("studio run output: \n" + pout.decode())
 
             db.delete_experiment(key)
 
-    @timeout(120)
+    @timeout(500, use_signals=False)
     def test_experiment_maxduration(self):
         my_path = os.path.dirname(os.path.realpath(__file__))
 
@@ -258,24 +268,25 @@ class LocalWorkerTest(unittest.TestCase, QueueTest):
             except Exception:
                 pass
 
-            p = subprocess.Popen(['studio', 'run',
-                                  '--config=' + config_name,
-                                  '--experiment=' + key,
-                                  '--force-git',
-                                  '--verbose=debug',
-                                  '--max-duration=10s',
-                                  'stop_experiment.py'],
-                                 stdout=subprocess.PIPE,
-                                 stderr=subprocess.STDOUT,
-                                 cwd=my_path)
+            with get_local_queue_lock():
+                p = subprocess.Popen(['studio', 'run',
+                                      '--config=' + config_name,
+                                      '--experiment=' + key,
+                                      '--force-git',
+                                      '--verbose=debug',
+                                      '--max-duration=10s',
+                                      'stop_experiment.py'],
+                                     stdout=subprocess.PIPE,
+                                     stderr=subprocess.STDOUT,
+                                     cwd=my_path)
 
-            pout, _ = p.communicate()
+                pout, _ = p.communicate()
             if pout:
                 logger.debug("studio run output: \n" + pout.decode())
 
             db.delete_experiment(key)
 
-    @timeout(120)
+    @timeout(500, use_signals=False)
     def test_experiment_lifetime(self):
         my_path = os.path.dirname(os.path.realpath(__file__))
 
@@ -291,18 +302,20 @@ class LocalWorkerTest(unittest.TestCase, QueueTest):
             except Exception:
                 pass
 
-            p = subprocess.Popen(['studio', 'run',
-                                  '--config=' + config_name,
-                                  '--experiment=' + key,
-                                  '--force-git',
-                                  '--verbose=debug',
-                                  '--lifetime=-10m',
-                                  'stop_experiment.py'],
-                                 # stdout=subprocess.PIPE,
-                                 # stderr=subprocess.STDOUT,
-                                 cwd=my_path)
+            with get_local_queue_lock():
+                p = subprocess.Popen(['studio', 'run',
+                                      '--config=' + config_name,
+                                      '--experiment=' + key,
+                                      '--force-git',
+                                      '--verbose=debug',
+                                      '--lifetime=-10m',
+                                      'stop_experiment.py'],
+                                     # stdout=subprocess.PIPE,
+                                     # stderr=subprocess.STDOUT,
+                                     cwd=my_path)
 
-            pout, _ = p.communicate()
+                pout, _ = p.communicate()
+
             if pout:
                 logger.debug("studio run output: \n" + pout.decode())
 

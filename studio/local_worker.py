@@ -15,7 +15,7 @@ from . import fs_tracker
 from . import model
 from .local_queue import LocalQueue
 from .gpu_util import get_available_gpus, get_gpu_mapping, get_gpus_summary
-from .experiment import Experiment, experiment_from_dict
+from .experiment import Experiment
 from .util import sixdecode, str2duration
 
 logging.basicConfig()

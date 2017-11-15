@@ -4,13 +4,24 @@ import os
 import time
 import logging
 
-
 from studio.pubsub_queue import PubsubQueue
 from studio.sqs_queue import SQSQueue
+from studio.local_queue import LocalQueue, get_local_queue_lock
 
 from studio.util import has_aws_credentials
 
 logging.basicConfig()
+
+
+class DummyContextManager(object):
+    def __init__(self):
+        pass
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args):
+        pass
 
 
 class QueueTest(object):
@@ -18,48 +29,41 @@ class QueueTest(object):
         pass
 
     def test_simple(self):
-        q = self.get_queue()
-        q.clean()
-        data = str(uuid.uuid4())
+        with self.get_lock():
+            q = self.get_queue()
+            q.clean()
+            data = str(uuid.uuid4())
 
-        q.enqueue(data)
-        recv_data = q.dequeue(timeout=120)
+            q.enqueue(data)
+            recv_data = q.dequeue(timeout=self.get_timeout())
 
-        self.assertEquals(data, recv_data)
-        self.assertTrue(q.dequeue() is None)
+            self.assertEquals(data, recv_data)
+            self.assertTrue(q.dequeue() is None)
 
     def test_clean(self):
-        q = self.get_queue()
-        q.clean()
-        data = str(uuid.uuid4())
+        with self.get_lock():
+            q = self.get_queue()
+            q.clean()
+            data = str(uuid.uuid4())
 
-        q.enqueue(data)
-        q.clean(timeout=60)
+            q.enqueue(data)
+            q.clean(timeout=self.get_timeout())
 
-        self.assertTrue(q.dequeue(timeout=60) is None)
+            self.assertTrue(q.dequeue(timeout=self.get_timeout()) is None)
 
-    def test_enq_deq_order(self):
-        return
-        q = self.get_queue()
-        q.clean()
-        data1 = str(uuid.uuid4())
-        data2 = str(uuid.uuid4())
+    def get_lock(self):
+        return DummyContextManager()
 
-        q.enqueue(data1)
-        # neither pubsub nor local queue are actually
-        # very punctual about the order. This delay is
-        # intended to ensure the messages are not
-        # swapped accidentally
-        time.sleep(1)
-        q.enqueue(data2)
+    def get_timeout(self):
+        return 0
 
-        recv_data1 = q.dequeue()
-        recv_data2 = q.dequeue()
 
-        self.assertEquals(data1, recv_data1)
-        self.assertEquals(data2, recv_data2)
+class LocalQueueTest(QueueTest, unittest.TestCase):
+    def get_queue(self):
+        return LocalQueue()
 
-        self.assertTrue(q.dequeue() is None)
+    def get_lock(self):
+        return get_local_queue_lock()
 
 
 class DistributedQueueTest(QueueTest):
@@ -146,6 +150,9 @@ class PubSubQueueTest(DistributedQueueTest, unittest.TestCase):
         name = 'pubsub_queue_test' + str(uuid.uuid4()) if not name else name
         print(name)
         return PubsubQueue(name)
+
+    def get_timeout(self):
+        return 60
 
 
 @unittest.skipIf(

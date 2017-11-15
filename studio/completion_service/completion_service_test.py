@@ -1,4 +1,3 @@
-import sys
 import uuid
 import unittest
 import os
