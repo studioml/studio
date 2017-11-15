@@ -80,9 +80,9 @@ with open('requirements.txt') as f:
         else:
             _libcudart = ctypes.cdll.LoadLibrary('libcudart.so')
             _libcuda = ctypes.cdll.LoadLibrary('libcuda.so')
-        required.append('tensorflow-gpu')
+        required.append('tf-nightly-gpu')
     except OSError:
-        required.append('tensorflow')
+        required.append('tf-nightly')
 
 with open('test_requirements.txt') as f:
     test_required = f.read().splitlines()

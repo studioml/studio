@@ -7,12 +7,11 @@ import uuid
 import logging
 import os
 import base64
-import requests
 import json
 import six
 import filelock
 
-from . import git_util
+from . import git_util, util
 from .gpu_util import memstr2int
 from .cloud_worker_util import insert_user_startup_script
 
@@ -374,19 +373,14 @@ class EC2WorkerManager(object):
             self.logger.info(
                 'Getting prices info from AWS (this may take a moment...)')
 
-            r = requests.get(
-                'https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/' +
-                'AmazonEC2/current/index.json')
-            if r.status_code != 200:
-                self.logger.error(
-                    'Getting AWS offers returned code {}'.format(
-                        r.status_code))
-
-            offer_dict = r.json()
-
             with offer_file_lock:
-                with open(price_path, 'w') as f:
-                    f.write(json.dumps(offer_dict))
+                util.download_file(
+                    'https://pricing.us-east-1.amazonaws.com/offers/v1.0/'
+                    'aws/AmazonEC2/current/index.json',
+                    price_path)
+
+                with open(price_path, 'r') as f:
+                    offer_dict = json.load(f)
 
         self.logger.info('Done!')
 
