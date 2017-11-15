@@ -362,7 +362,7 @@ class EC2WorkerManager(object):
 
         price_path = os.path.join(os.path.expanduser('~'), '.studioml',
                                   'awsprices.json')
-        offer_file_lock = filelock.FileLock(pricepath + '.lock')
+        offer_file_lock = filelock.FileLock(price_path + '.lock')
 
         try:
             self.logger.info('Reading AWS prices from cache...')

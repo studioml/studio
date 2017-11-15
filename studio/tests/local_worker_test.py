@@ -77,8 +77,8 @@ class LocalWorkerTest(unittest.TestCase):
 
     def test_local_worker_ce(self):
         tmpfile = os.path.join(tempfile.gettempdir(),
-                               'tmpfile' + 
-                                str(uuid.uuid4()) + '.txt')
+                               'tmpfile' +
+                               str(uuid.uuid4()) + '.txt')
 
         random_str1 = str(uuid.uuid4())
         with open(tmpfile, 'w') as f:
@@ -126,8 +126,8 @@ class LocalWorkerTest(unittest.TestCase):
 
     def test_local_worker_co(self):
         tmpfile = os.path.join(tempfile.gettempdir(),
-                               'tmpfile' + 
-                                str(uuid.uuid4()) + '.txt')
+                               'tmpfile' +
+                               str(uuid.uuid4()) + '.txt')
 
         random_str = str(uuid.uuid4())
         with open(tmpfile, 'w') as f:
