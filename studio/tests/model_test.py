@@ -25,7 +25,7 @@ class ModelTest(unittest.TestCase):
             p._key +
             '==' +
             p._version for p in pip.pip.get_installed_distributions(
-                local_only=True)]
+                local_only=True) if p._key != 'studioml']
 
         self.assertTrue(experiment.key == experiment_name)
         self.assertTrue(experiment.filename == filename)
