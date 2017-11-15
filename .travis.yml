@@ -26,7 +26,7 @@ install:
 
 script:
   - echo $GOOGLE_APPLICATION_CREDENTIALS
-  - py.test -n 16 -v
+  - py.test -n 16 -v studio/tests/cloud_worker_test.py::EC2WorkerTest
   - pycodestyle --show-source .
   - python setup.py sdist
 
