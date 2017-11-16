@@ -109,4 +109,4 @@ url_boot = 'https://images-na.ssl-images-amazon.com/' + \
 
 url_broken = 'https://asda.scene7.com/is/image/Asda/5054622127954_B'
 output = pipe({'pants': url_pants, 'boot': url_boot, 'broken': url_broken})
-print output
+print(output)
