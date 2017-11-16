@@ -21,7 +21,7 @@ class GCloudWorkerTest(unittest.TestCase):
         project = 'studio-ed756'
         return GCloudWorkerManager(project)
 
-    @timeout(500, use_signals=False)
+    @timeout(800, use_signals=False)
     def test_worker(self):
         experiment_name = 'test_gcloud_worker_' + str(uuid.uuid4())
         with stubtest_worker(
@@ -36,7 +36,7 @@ class GCloudWorkerTest(unittest.TestCase):
         ):
             pass
 
-    @timeout(500, use_signals=False)
+    @timeout(800, use_signals=False)
     def test_worker_spot(self):
         experiment_name = 'test_gcloud_spot_worker_' + str(uuid.uuid4())
         with stubtest_worker(
@@ -61,7 +61,7 @@ class EC2WorkerTest(unittest.TestCase):
     def get_worker_manager(self):
         return EC2WorkerManager()
 
-    @timeout(500, use_signals=False)
+    @timeout(800, use_signals=False)
     def test_worker(self):
         experiment_name = 'test_ec2_worker_' + str(uuid.uuid4())
         with stubtest_worker(
@@ -76,7 +76,7 @@ class EC2WorkerTest(unittest.TestCase):
         ):
             pass
 
-    @timeout(500, use_signals=False)
+    @timeout(800, use_signals=False)
     def test_worker_spot(self):
         experiment_name = 'test_ec2_worker_' + str(uuid.uuid4())
         stubtest_worker(
