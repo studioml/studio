@@ -11,21 +11,21 @@ of containers. Containers can be used in two main ways:
 -------------------------------------------------
 In this mode, an environment is set up within the container, but the python code is outside. Studio.ML with help of Singularity 
 mounts copy of current directory and artifacts into the container and executes the script. Typical command line will look like
-    ::
+    
         studio run --container=/path/to/container.simg script.py args
 Note that if your script is using Studio.ML library functions (such as `fs_tracker.get_artifact()`), Studio.ML will need to be
 installed within the container. 
 
 2. Running experiment using executable container
------------------------------------------------
+------------------------------------------------
 Both singularity and docker support executable containers. Studio.ML experiment can consist solely out of an executable container:
-    ::
+    
         studio run --container=/path/to/container.simg
 In this case, the code does not even need to be python, but all Studio.ML perks (such as cloud execution with hardware selection,
 keeping track of inputs and outputs of the experiment etc) still apply. There is even an artifact management - artifacts will be
 seen in the container in the folder one level up from working directory. 
 
-Container can be located either locally as `*.simg` file, or in the Singularity/Docker hub. In the latter case, provide a link that 
+Containers can be located either locally as `*.simg` files, or in the Singularity/Docker hub. In the latter case, provide a link that 
 starts with `shub://` or `dockerhub://`
 
 
