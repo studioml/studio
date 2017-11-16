@@ -73,14 +73,43 @@ class LocalExecutor(object):
                 if experiment.pythonver == 3:
                     python = 'python3'
 
-                p = subprocess.Popen([python,
-                                      experiment.filename] +
-                                     experiment.args,
-                                     stdout=output_file,
-                                     stderr=subprocess.STDOUT,
-                                     env=env,
-                                     cwd=experiment
-                                     .artifacts['workspace']['local'])
+                cmd = [python, experiment.filename] + experiment.args
+                cwd = experiment.artifacts['workspace']['local']
+                container_artifact = experiment.artifacts.get('_singularity')
+                if container_artifact:
+                    container = container_artifact.get('local')
+                    if not container:
+                        container = container_artifact.get('qualified')
+
+                    cwd = fs_tracker.get_artifact_cache(
+                        'workspace', experiment.key)
+
+                    for tag, art in six.iteritems(experiment.artifacts):
+                        local_path = art.get('local')
+                        if not art['mutable'] and os.path.exists(local_path):
+                            os.symlink(
+                                art['local'],
+                                os.path.join(cwd, '..', tag)
+                            )
+
+                    if experiment.filename is not None:
+                        cmd = [
+                            'singularity',
+                            'exec',
+                            container,
+                        ] + cmd
+                    else:
+                        cmd = ['singularity', 'run', container]
+
+                self.logger.info('Running cmd: \n {} '.format(cmd))
+
+                p = subprocess.Popen(
+                    cmd,
+                    stdout=output_file,
+                    stderr=subprocess.STDOUT,
+                    env=env,
+                    cwd=cwd
+                )
                 # simple hack to show what's in the log file
                 ptail = subprocess.Popen(["tail", "-f", log_path])
 
@@ -231,6 +260,7 @@ def worker_loop(queue, parsed_args,
         executor = LocalExecutor(parsed_args)
 
         with model.get_db_provider(config) as db:
+            # experiment = experiment_from_dict(data_dict['experiment'])
             experiment = db.get_experiment(experiment_key)
 
             if config.get('experimentLifetime') and \
@@ -256,19 +286,25 @@ def worker_loop(queue, parsed_args,
                     python = 'python'
                     if experiment.pythonver == 3:
                         python = 'python3'
-                    pip_diff = pip_needed_packages(
-                        experiment.pythonenv, python)
-                    if any(pip_diff):
-                        logger.info(
-                            'Setting up python packages for experiment')
-                        if pip_install_packages(pip_diff, python, logger) != 0:
+                    if '_singularity' not in experiment.artifacts.keys():
+                        pip_diff = pip_needed_packages(
+                            experiment.pythonenv, python)
+                        if any(pip_diff):
                             logger.info(
-                                "Installation of all packages together " +
-                                " failed, "
-                                "trying one package at a time")
+                                'Setting up python packages for experiment')
+                            if pip_install_packages(
+                                    pip_diff,
+                                    python,
+                                    logger
+                            ) != 0:
 
-                            for pkg in pip_diff:
-                                pip_install_packages([pkg], python, logger)
+                                logger.info(
+                                    "Installation of all packages together " +
+                                    " failed, "
+                                    "trying one package at a time")
+
+                                for pkg in pip_diff:
+                                    pip_install_packages([pkg], python, logger)
 
                     for tag, art in six.iteritems(experiment.artifacts):
                         if fetch_artifacts or 'local' not in art.keys():

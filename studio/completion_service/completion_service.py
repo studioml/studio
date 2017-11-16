@@ -290,19 +290,26 @@ class CompletionService:
                     experiment_keys = self.submitted
 
                 for key in experiment_keys:
-                    e = db.get_experiment(key)
-                    if e is not None:
-                        retval_path = db.get_artifact(e.artifacts['retval'])
-                        if os.path.exists(retval_path):
-                            with open(retval_path, 'rb') as f:
-                                data = pickle.load(f)
+                    try:
+                        e = db.get_experiment(key)
+                        if e is not None:
+                            retval_path = db.get_artifact(
+                                e.artifacts['retval'])
+                            if os.path.exists(retval_path):
+                                with open(retval_path, 'rb') as f:
+                                    data = pickle.load(f)
 
-                            if not self.resumable:
-                                self.submitted.remove(e.key)
-                            else:
-                                db.delete_experiment(e.key)
+                                if not self.resumable:
+                                    self.submitted.remove(e.key)
+                                else:
+                                    db.delete_experiment(e.key)
 
-                            return (e.key, data)
+                                return (e.key, data)
+                    except BaseException as e:
+                        self.logger.debug(
+                            "Getting result failed due to exception:")
+                        self.logger.debug(e)
+
                     '''
                     if e is not None and e.status == 'finished':
                         self.logger.debug(
