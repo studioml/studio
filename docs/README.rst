@@ -44,7 +44,7 @@ You can see the results of your job at http://127.0.0.1:5000. Run
 Installation
 ------------
 
-pip install ``studioml`` from the master pypi repositry:
+pip install ``studioml`` from the master pypi repository:
 
 ::
 
@@ -79,7 +79,8 @@ Further reading and cool features
 
 -  `Artifact management <http://docs.studio.ml/en/latest/artifacts.html>`__
 -  `Hyperparameter search <http://docs.studio.ml/en/latest/hyperparams.html>`__
--  `Pipeline for trained models <http://docs.studio.ml/en/latest/model_pipelines.html>`__
+-  `Pipelines for trained models <http://docs.studio.ml/en/latest/model_pipelines.html>`__
+-  `Containerized experiments <containers.rst> __`
 
 .. |Hex.pm| image:: https://img.shields.io/hexpm/l/plug.svg
    :target: https://github.com/studioml/studio/blob/master/LICENSE
