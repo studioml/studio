@@ -267,7 +267,7 @@ class TartifactStore(object):
 
                 os.remove(tar_filename)
             else:
-                self.logger.warn(
+                self.logger.warning(
                     'file {} download failed'.format(tar_filename))
 
         if background:
