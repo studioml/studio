@@ -80,16 +80,17 @@ class HTTPProvider(object):
 
         for tag, art in six.iteritems(experiment.artifacts):
             target_art = artifacts.get(tag)
-            if 'local' in art.keys() and target_art is not None:
+            if target_art is not None:
                 art['key'] = target_art['key']
                 art['qualified'] = target_art['qualified']
                 art['bucket'] = target_art['bucket']
 
-                HTTPArtifactStore(target_art['url'],
-                                  target_art['timestamp'],
-                                  compression=self.compression,
-                                  verbose=self.verbose) \
-                    .put_artifact(art)
+                if art.get('local'):
+                    HTTPArtifactStore(target_art['url'],
+                                      target_art['timestamp'],
+                                      compression=self.compression,
+                                      verbose=self.verbose) \
+                        .put_artifact(art)
 
     def delete_experiment(self, experiment):
         if isinstance(experiment, six.string_types):
