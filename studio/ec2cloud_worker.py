@@ -100,7 +100,7 @@ class EC2WorkerManager(object):
             os.path.dirname(__file__),
             'aws/aws_amis.yaml')
         with open(price_path) as f:
-            ami_dict = yaml.loads(f.read())
+            ami_dict = yaml.load(f.read())
 
         region = self.client._client_config.region_name
         image_type = 'ubuntu16.04'
