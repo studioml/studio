@@ -129,7 +129,6 @@ class EC2WorkerTest(unittest.TestCase):
             runner_args=['--cloud=ec2spot',
                          '--force-git',
                          '--cloud-timeout=120',
-                         '--ssh-keypair=peterz-k1',
                          '--container=shub://vsoch/hello-world'],
 
             config_name='test_config_http_client.yaml',

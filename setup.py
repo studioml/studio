@@ -76,7 +76,7 @@ with open('requirements.txt') as f:
     # or the default CPU version.  Not doing this will result in the CPU
     # version taking precedence in many cases.
     tensorflow = 'tensorflow'
-    package_set = {p._key for p in 
+    package_set = {p._key for p in
                    pip.pip.get_installed_distributions(local_only=True)}
 
     if 'tf-nightly' in package_set or 'tf-nightly-gpu' in package_set:
