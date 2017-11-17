@@ -96,7 +96,9 @@ class EC2WorkerManager(object):
             self.logger.warn('User startup script argument is deprecated')
 
     def _get_image_id(self):
-        price_path = os.path.join(os.path.dirname(__file__), 'aws/aws_amis.yaml')
+        price_path = os.path.join(
+            os.path.dirname(__file__),
+            'aws/aws_amis.yaml')
         with open(price_path) as f:
             ami_dict = yaml.loads(f.read())
 
@@ -365,7 +367,9 @@ class EC2WorkerManager(object):
         # TODO un-hardcode the us-east as a region
         # so that prices are being read for a correct region
 
-        price_path = os.path.join(os.path.dirname(__file__), 'aws/aws_prices.yaml')
+        price_path = os.path.join(
+            os.path.dirname(__file__),
+            'aws/aws_prices.yaml')
         with open(price_path, 'r') as f:
             data = yaml.load(f.read())
 
