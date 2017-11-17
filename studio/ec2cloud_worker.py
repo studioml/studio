@@ -96,8 +96,13 @@ class EC2WorkerManager(object):
             self.logger.warn('User startup script argument is deprecated')
 
     def _get_image_id(self):
-        return 'ami-cd0f5cb6'  # vanilla ubuntu 16.04 image
-        # return 'ami-b5f576cf'  # studio.ml gpu image with python2 and python3
+        price_path = os.path.join(os.path.dirname(__file__), 'aws/aws_amis.yaml')
+        with open(price_path) as f:
+            ami_dict = yaml.loads(f.read())
+
+        region = self.client._client_config.region_name
+        image_type = 'ubuntu16.04'
+        return ami_dict[image_type][region]
 
     def _get_block_device_mappings(self, resources_needed):
         return [{
@@ -360,7 +365,7 @@ class EC2WorkerManager(object):
         # TODO un-hardcode the us-east as a region
         # so that prices are being read for a correct region
 
-        price_path = os.path.join(os.path.dirname(__file__), 'aws_prices.yaml')
+        price_path = os.path.join(os.path.dirname(__file__), 'aws/aws_prices.yaml')
         with open(price_path, 'r') as f:
             data = yaml.load(f.read())
 
