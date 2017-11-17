@@ -97,7 +97,7 @@ class EC2WorkerManager(object):
 
     def _get_image_id(self):
         # return 'ami-cd0f5cb6'  # vanilla ubuntu 16.04 image
-        return 'ami-a9a47cd3'  # studio.ml gpu image with python2 and python3
+        return 'ami-b5f576cf'  # studio.ml gpu image with python2 and python3
 
     def _get_block_device_mappings(self, resources_needed):
         return [{
