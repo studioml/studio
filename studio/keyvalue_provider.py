@@ -2,6 +2,7 @@ import logging
 import time
 import os
 import six
+import re
 from threading import Thread
 
 from . import util, git_util, pyrebase
@@ -103,8 +104,13 @@ class KeyValueProvider(object):
             key = art.get('key')
             if key is not None:
                 art['qualified'] = self.store.get_qualified_location(key)
-
-            art['bucket'] = self.store.get_bucket()
+                art['bucket'] = self.store.get_bucket()
+            elif art.get('qualified'):
+                qualified = art.get('qualified')
+                bucket = re.search('(?<=://)[^/]+(?=/)', qualified).group(0)
+                key = re.search('(?<=' + bucket + '/).+\Z', qualified).group(0)
+                art['bucket'] = bucket
+                art['key'] = key
 
         userid = userid if userid else self._get_userid()
         experiment.owner = userid
