@@ -108,7 +108,7 @@ class KeyValueProvider(object):
             elif art.get('qualified'):
                 qualified = art.get('qualified')
                 bucket = re.search('(?<=://)[^/]+(?=/)', qualified).group(0)
-                if bucket.endswith('amazonaws.com'):
+                if bucket.endswith('.com'):
                     bucket = re.search(
                         '(?<=' + re.escape(bucket) + '/).+(?=/)',
                         bucket
