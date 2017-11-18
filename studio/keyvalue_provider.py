@@ -110,8 +110,8 @@ class KeyValueProvider(object):
                 bucket = re.search('(?<=://)[^/]+(?=/)', qualified).group(0)
                 if bucket.endswith('.com'):
                     bucket = re.search(
-                        '(?<=' + re.escape(bucket) + '/).+(?=/)',
-                        bucket
+                        '(?<=' + re.escape(bucket) + '/)[^/]+(?=/)',
+                        qualified
                     ).group(0)
 
                 key = re.search('(?<=' + bucket + '/).+\Z', qualified).group(0)
