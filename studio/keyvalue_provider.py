@@ -108,6 +108,12 @@ class KeyValueProvider(object):
             elif art.get('qualified'):
                 qualified = art.get('qualified')
                 bucket = re.search('(?<=://)[^/]+(?=/)', qualified).group(0)
+                if bucket.endswith('.com'):
+                    bucket = re.search(
+                        '(?<=' + re.escape(bucket) + '/)[^/]+(?=/)',
+                        qualified
+                    ).group(0)
+
                 key = re.search('(?<=' + bucket + '/).+\Z', qualified).group(0)
                 art['bucket'] = bucket
                 art['key'] = key
