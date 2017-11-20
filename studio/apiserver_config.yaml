@@ -6,6 +6,7 @@ database:
 
     guest: true
     use_email_auth: false
+    projectId: studio-ed756
 
 
 
@@ -19,7 +20,7 @@ storage:
 
 queue: local
 
-saveWorkspaceFrequencyMinutes: 1
+saveWorkspaceFrequency: 1m
 verbose: error
 
 cloud:

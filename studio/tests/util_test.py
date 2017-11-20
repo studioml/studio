@@ -34,7 +34,7 @@ class UtilTest(unittest.TestCase):
 
         retval = util.retry(failing_func,
                             no_retries=2,
-                            sleeptime=1,
+                            sleep_time=1,
                             exception_class=ValueError)
 
         self.assertEquals(retval, value)
@@ -44,12 +44,17 @@ class UtilTest(unittest.TestCase):
         try:
             retval = util.retry(failing_func,
                                 no_retries=2,
-                                sleeptime=1,
+                                sleep_time=1,
                                 exception_class=OSError)
         except ValueError:
             pass
         else:
             self.assertTrue(False)
+
+    def test_str2duration(self):
+        self.assertEqual(
+            int(util.str2duration('30m').total_seconds()),
+            1800)
 
 
 if __name__ == "__main__":

@@ -25,13 +25,13 @@ class ModelTest(unittest.TestCase):
             p._key +
             '==' +
             p._version for p in pip.pip.get_installed_distributions(
-                local_only=True)]
+                local_only=True) if p._key != 'studioml']
 
         self.assertTrue(experiment.key == experiment_name)
         self.assertTrue(experiment.filename == filename)
         self.assertTrue(experiment.args == args)
         self.assertTrue(experiment.project == experiment_project)
-        self.assertTrue(experiment.pythonenv == packages)
+        self.assertTrue(sorted(experiment.pythonenv) == sorted(packages))
 
     def test_get_config_env(self):
         value1 = str(uuid.uuid4())

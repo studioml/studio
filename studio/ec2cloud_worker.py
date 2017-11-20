@@ -7,11 +7,12 @@ import uuid
 import logging
 import os
 import base64
-import requests
 import json
+import yaml
 import six
+import filelock
 
-from . import git_util
+from . import git_util, util
 from .gpu_util import memstr2int
 from .cloud_worker_util import insert_user_startup_script
 
@@ -70,6 +71,10 @@ class EC2WorkerManager(object):
         self.startup_script_file = os.path.join(
             os.path.dirname(__file__),
             'scripts/ec2_worker_startup.sh')
+
+        self.install_studio_script = os.path.join(
+            os.path.dirname(__file__),
+            'scripts/install_studio.sh')
 
         self.client = boto3.client('ec2')
         self.asclient = boto3.client('autoscaling')
@@ -197,8 +202,13 @@ class EC2WorkerManager(object):
             self.logger.info('credentials NOT found')
 
         with open(self.startup_script_file) as f:
-
             startup_script = f.read()
+
+        with open(self.install_studio_script) as f:
+            install_studio_script = f.read()
+
+        startup_script = startup_script.replace(
+            '{install_studio}', install_studio_script)
 
         startup_script = startup_script.format(
             auth_key=auth_key if auth_key else "",
@@ -214,7 +224,8 @@ class EC2WorkerManager(object):
             use_gpus=0 if resources_needed['gpus'] == 0 else 1,
             timeout=timeout,
             repo_url=self.repo_url,
-            studioml_branch=self.branch)
+            studioml_branch=self.branch,
+        )
 
         startup_script = insert_user_startup_script(
             self.user_startup_script,
@@ -349,28 +360,34 @@ class EC2WorkerManager(object):
         # TODO un-hardcode the us-east as a region
         # so that prices are being read for a correct region
 
+        price_path = os.path.join(os.path.dirname(__file__), 'aws_prices.yaml')
+        with open(price_path, 'r') as f:
+            data = yaml.load(f.read())
+
+        return {i: data[i] for i in instances}
+
         price_path = os.path.join(os.path.expanduser('~'), '.studioml',
                                   'awsprices.json')
+        offer_file_lock = filelock.FileLock(price_path + '.lock')
+
         try:
             self.logger.info('Reading AWS prices from cache...')
-            with open(price_path, 'r') as f:
-                offer_dict = json.load(f)
+            with offer_file_lock:
+                with open(price_path, 'r') as f:
+                    offer_dict = json.load(f)
 
-        except BaseException:
+        except IOError:
             self.logger.info(
                 'Getting prices info from AWS (this may take a moment...)')
 
-            r = requests.get(
-                'https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/' +
-                'AmazonEC2/current/index.json')
-            if r.status_code != 200:
-                self.logger.error(
-                    'Getting AWS offers returned code {}'.format(
-                        r.status_code))
+            with offer_file_lock:
+                util.download_file(
+                    'https://pricing.us-east-1.amazonaws.com/offers/v1.0/'
+                    'aws/AmazonEC2/current/index.json',
+                    price_path)
 
-            offer_dict = r.json()
-            with open(price_path, 'w') as f:
-                f.write(json.dumps(offer_dict))
+                with open(price_path, 'r') as f:
+                    offer_dict = json.load(f)
 
         self.logger.info('Done!')
 

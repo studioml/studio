@@ -199,16 +199,46 @@ def main(args=sys.argv):
              'for debugging pull requests. Default is current',
         default=None)
 
+    parser.add_argument(
+        '--max-duration',
+        help='Max experiment runtime (i.e. time after which experiment ' +
+             'should be killed no matter what.).  Examples of values ' +
+             'might include 5h, 48h2m10s',
+        default=None)
+
+    parser.add_argument(
+        '--lifetime',
+        help='Max experiment lifetime (i.e. wait time after which ' +
+             'experiment loses relevance and should not be started)' +
+             '  Examples include 240h30m10s',
+        default=None)
+
+    parser.add_argument(
+        '--container',
+        help='Singularity container in which experiment should be run. ' +
+             'Assumes that container has all dependencies installed',
+        default=None
+    )
+
     # detect which argument is the script filename
     # and attribute all arguments past that index as related to the script
     py_suffix_args = [i for i, arg in enumerate(args) if arg.endswith('.py')]
     rerun = False
     if len(py_suffix_args) < 1:
-        print('None of the arugments end with .py, ' +
-              'treating last argument as experiment name to rerun')
-        rerun = True
-        runner_args = parser.parse_args(args[1:-1])
-        experiment_key = args[-1]
+        print('None of the arugments end with .py')
+        (runner_args, other_args) = parser.parse_known_args(args[1:])
+        if len(other_args) == 0:
+            print("Trying to run a container job")
+            assert runner_args.container is not None
+            exec_filename = None
+        elif len(other_args) == 1:
+            print("Treating last argument as experiment key to rerun")
+            rerun = True
+            experiment_key = args[-1]
+        else:
+            print("Too many extra arguments - should be either none " +
+                  "for container job or one for experiment re-run")
+            sys.exit(1)
     else:
         script_index = py_suffix_args[0]
         exec_filename, other_args = args[script_index], args[script_index + 1:]
@@ -223,6 +253,10 @@ def main(args=sys.argv):
 
     if runner_args.guest:
         config['database']['guest'] = True
+
+    if runner_args.container:
+        runner_args.capture_once.append(
+            runner_args.container + ':_singularity')
 
     verbose = model.parse_verbosity(config['verbose'])
     logger.setLevel(verbose)
@@ -250,6 +284,9 @@ def main(args=sys.argv):
     if runner_args.user_startup_script:
         config['cloud']['user_startup_script'] = \
             runner_args.user_startup_script
+
+    if runner_args.lifetime:
+        config['experimentLifetime'] = runner_args.lifetime
 
     if any(runner_args.hyperparam):
         if runner_args.optimizer is "grid":
@@ -366,7 +403,9 @@ def main(args=sys.argv):
                 project=runner_args.project,
                 artifacts=artifacts,
                 resources_needed=resources_needed,
-                metric=runner_args.metric)]
+                metric=runner_args.metric,
+                max_duration=runner_args.max_duration,
+            )]
 
         queue_name = submit_experiments(
             experiments,
@@ -538,11 +577,11 @@ def submit_experiments(
         p.join()
 
     '''
-    experiements = [add_experiment(e) for e in
+    experiments = [add_experiment(e) for e in
                     zip([config] * num_experiments,
-                       [python_pkg] *
-                       num_experiments,
-                       experiments)]
+                        [python_pkg] *
+                        num_experiments,
+                        experiments)]
     '''
 
     logger.info("Added %s experiments in %s seconds" %
@@ -664,8 +703,11 @@ def get_experiment_fitnesses(experiments, optimizer, config, logger):
 def parse_artifacts(art_list, mutable):
     retval = {}
     url_schema = re.compile('^https{0,1}://')
-    s3_schema = re.compile('^s3://')
-    gcs_schema = re.compile('^gs://')
+    s3_schema = re.compile('s3://')
+    gcs_schema = re.compile('gs://')
+    dhub_schema = re.compile('dockerhub://')
+    shub_schema = re.compile('shub://')
+
     for entry in art_list:
         path = re.sub(':[^:]*\Z', '', entry)
         tag = re.sub('.*:(?=[^:]*\Z)', '', entry)
@@ -677,7 +719,11 @@ def parse_artifacts(art_list, mutable):
                 'url': path,
                 'mutable': False
             }
-        elif s3_schema.match(entry) or gcs_schema.match(entry):
+        elif s3_schema.match(entry) or \
+                gcs_schema.match(entry) or \
+                dhub_schema.match(entry) or \
+                shub_schema.match(entry):
+
             assert not mutable, \
                 'artifacts specfied by url can only be immutable'
             retval[tag] = {
@@ -803,7 +849,9 @@ def add_hyperparam_experiments(
                 project=project,
                 artifacts=current_artifacts,
                 resources_needed=resources_needed,
-                metric=runner_args.metric))
+                metric=runner_args.metric,
+                max_duration=runner_args.max_duration,
+            ))
         return experiments
 
     if optimizer is not None:

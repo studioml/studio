@@ -160,6 +160,13 @@ class TartifactStore(object):
             if artifact.get('url') is not None:
                 download_file(remote_path, local_path, self.logger)
             else:
+                if remote_path.startswith('dockerhub://') or \
+                   remote_path.startswith('shub://'):
+                    self.logger.info((
+                        'Qualified {} points to a shub or dockerhub,' +
+                        ' skipping the download'))
+                    return remote_path
+
                 download_file_from_qualified(
                     remote_path, local_path, self.logger)
 
@@ -206,8 +213,8 @@ class TartifactStore(object):
         def finish_download():
             try:
                 self._download_file(key, tar_filename)
-            except BaseException:
-                pass
+            except BaseException as e:
+                self.logger.debug(e)
 
             if os.path.exists(tar_filename):
                 # first, figure out if the tar file has a base path of .
@@ -254,13 +261,13 @@ class TartifactStore(object):
                             actual_path, local_path))
                     retry(lambda: os.rename(actual_path, local_path),
                           no_retries=5,
-                          sleeptime=1,
+                          sleep_time=1,
                           exception_class=OSError,
                           logger=self.logger)
 
                 os.remove(tar_filename)
             else:
-                self.logger.warn(
+                self.logger.warning(
                     'file {} download failed'.format(tar_filename))
 
         if background:

@@ -1,5 +1,6 @@
 import hashlib
 from io import StringIO
+from datetime import timedelta
 import re
 import random
 import string
@@ -16,6 +17,10 @@ import six
 from tensorflow.core.util import event_pb2
 
 import boto3
+
+DAY = 86400
+HOUR = 3600
+MINUTE = 60
 
 
 def remove_backspaces(line):
@@ -236,7 +241,27 @@ def download_file(url, local_path, logger=None):
     return response
 
 
+def upload_file(url, local_path, logger=None):
+    if logger:
+        logger.info(("Trying to upload file {} to " +
+                     "url {}").format(local_path, url))
+    tic = time.time()
+    with open(local_path, 'rb') as f:
+        resp = requests.put(url, data=f)
+
+    if resp.status_code != 200 and logger:
+        logger.error(str(resp.reason))
+
+    if logger:
+        logger.debug('File upload done in {} s'
+                     .format(time.time() - tic))
+
+
 def download_file_from_qualified(qualified, local_path, logger=None):
+    if qualified.startswith('dockerhub://') or \
+       qualified.startswith('shub://'):
+        return
+
     assert qualified.startswith('s3://') or \
         qualified.startswith('gs://')
 
@@ -259,7 +284,7 @@ def has_aws_credentials():
 
 
 def retry(f,
-          no_retries=5, sleeptime=1,
+          no_retries=5, sleep_time=1,
           exception_class=BaseException, logger=None):
     for i in range(no_retries):
         try:
@@ -269,8 +294,8 @@ def retry(f,
                 logger.info(
                     ('Exception {} is caught, ' +
                      'sleeping {}s and retrying (attempt {} of {})')
-                    .format(e, sleeptime, i, no_retries))
-            time.sleep(sleeptime)
+                    .format(e, sleep_time, i, no_retries))
+            time.sleep(sleep_time)
 
 
 def compression_to_extension(compression):
@@ -338,3 +363,28 @@ def sixdecode(s):
         return s.decode('utf8')
 
     raise TypeError("Unknown type of " + str(s))
+
+
+duration_regex = re.compile(
+    r'((?P<hours>-?\d+?)h)?((?P<minutes>-?\d+?)m)?((?P<seconds>-?\d+?)s)?')
+
+# parse_duration parses strings into time delta values that python can
+# deal with.  Examples include 12h, 11h60m, 719m60s, 11h3600s
+#
+
+
+def parse_duration(duration_str):
+    parts = duration_regex.match(duration_str)
+    if not parts:
+        return
+    parts = parts.groupdict()
+    time_params = {}
+    for (name, param) in six.iteritems(parts):
+        if param:
+            time_params[name] = int(param)
+    retval = timedelta(**time_params)
+    return retval
+
+
+def str2duration(s):
+    return parse_duration(s.lower())

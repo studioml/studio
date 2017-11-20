@@ -16,7 +16,7 @@ from . import model
 from .local_queue import LocalQueue
 from .gpu_util import get_available_gpus, get_gpu_mapping, get_gpus_summary
 from .experiment import Experiment
-from .util import sixdecode
+from .util import sixdecode, str2duration
 
 logging.basicConfig()
 logging.getLogger('apscheduler.scheduler').setLevel(logging.ERROR)
@@ -73,35 +73,84 @@ class LocalExecutor(object):
                 if experiment.pythonver == 3:
                     python = 'python3'
 
-                p = subprocess.Popen([python,
-                                      experiment.filename] +
-                                     experiment.args,
-                                     stdout=output_file,
-                                     stderr=subprocess.STDOUT,
-                                     env=env,
-                                     cwd=experiment
-                                     .artifacts['workspace']['local'])
+                cmd = [python, experiment.filename] + experiment.args
+                cwd = experiment.artifacts['workspace']['local']
+                container_artifact = experiment.artifacts.get('_singularity')
+                if container_artifact:
+                    container = container_artifact.get('local')
+                    if not container:
+                        container = container_artifact.get('qualified')
+
+                    cwd = fs_tracker.get_artifact_cache(
+                        'workspace', experiment.key)
+
+                    for tag, art in six.iteritems(experiment.artifacts):
+                        local_path = art.get('local')
+                        if not art['mutable'] and os.path.exists(local_path):
+                            os.symlink(
+                                art['local'],
+                                os.path.join(cwd, '..', tag)
+                            )
+
+                    if experiment.filename is not None:
+                        cmd = [
+                            'singularity',
+                            'exec',
+                            container,
+                        ] + cmd
+                    else:
+                        cmd = ['singularity', 'run', container]
+
+                self.logger.info('Running cmd: \n {} '.format(cmd))
+
+                p = subprocess.Popen(
+                    cmd,
+                    stdout=output_file,
+                    stderr=subprocess.STDOUT,
+                    env=env,
+                    cwd=cwd
+                )
                 # simple hack to show what's in the log file
                 ptail = subprocess.Popen(["tail", "-f", log_path])
+
+                minutes = 0
+                if self.config.get('saveWorkspaceFrequency'):
+                    minutes = int(
+                        str2duration(
+                            self.config['saveWorkspaceFrequency'])
+                        .total_seconds() / 60)
 
                 sched.add_job(
                     lambda: db.checkpoint_experiment(experiment),
                     'interval',
-                    minutes=self.config['saveWorkspaceFrequencyMinutes'])
+                    minutes=minutes)
 
                 metrics_path = fs_tracker.get_artifact_cache(
                     '_metrics', experiment.key)
 
+                minutes = 0
+                if self.config.get('saveMetricsFrequency'):
+                    minutes = int(
+                        str2duration(
+                            self.config['saveMetricsFrequency'])
+                        .total_seconds() / 60)
+
                 sched.add_job(
                     lambda: save_metrics(metrics_path),
                     'interval',
-                    minutes=self.config['saveMetricsIntervalMinutes']
-                )
+                    minutes=minutes)
 
                 def kill_if_stopped():
                     if db.get_experiment(
                             experiment.key,
                             getinfo=False).status == 'stopped':
+                        p.kill()
+
+                    if experiment.max_duration is not None and \
+                            time.time() > experiment.time_started + \
+                            int(str2duration(experiment.max_duration)
+                                .total_seconds()):
+
                         p.kill()
 
                 sched.add_job(kill_if_stopped, 'interval', seconds=10)
@@ -110,10 +159,10 @@ class LocalExecutor(object):
                     p.wait()
                 finally:
                     save_metrics(metrics_path)
+                    sched.shutdown()
                     ptail.kill()
                     db.checkpoint_experiment(experiment)
                     db.finish_experiment(experiment)
-                    sched.shutdown()
 
 
 def allocate_resources(experiment, config=None, verbose=10):
@@ -126,27 +175,10 @@ def allocate_resources(experiment, config=None, verbose=10):
     gpus_needed = int(experiment.resources_needed.get('gpus')) \
         if experiment.resources_needed else 0
 
-    pythonenv_nogpu = [pkg for pkg in experiment.pythonenv
-                       if not pkg.startswith('tensorflow-gpu')]
-
     if gpus_needed > 0:
         ret_val = ret_val and allocate_gpus(gpus_needed, config)
-        # experiments with GPU should have tensorflow-gpu version
-        # matching tensorflow version
-
-        tensorflow_pkg = [pkg for pkg in experiment.pythonenv
-                          if pkg.startswith('tensorflow==') or
-                          pkg.startswith('tensorflow-gpu==')][0]
-
-        experiment.pythonenv = pythonenv_nogpu + \
-            [tensorflow_pkg.replace('tensorflow==', 'tensorflow-gpu==')]
-
     else:
         allocate_gpus(0, config)
-        # experiments without GPUs should not have
-        # tensorflow-gpu package in the evironment, because it won't
-        # work on the machines that do not have cuda installed
-        experiment.pythonenv = pythonenv_nogpu
 
     return ret_val
 
@@ -228,7 +260,18 @@ def worker_loop(queue, parsed_args,
         executor = LocalExecutor(parsed_args)
 
         with model.get_db_provider(config) as db:
+            # experiment = experiment_from_dict(data_dict['experiment'])
             experiment = db.get_experiment(experiment_key)
+
+            if config.get('experimentLifetime') and \
+                int(str2duration(config['experimentLifetime'])
+                    .total_seconds()) + experiment.time_added < time.time():
+                logger.info(
+                    'Experiment expired (max lifetime of {} was exceeded)'
+                    .format(config.get('experimentLifetime'))
+                )
+                queue.acknowledge(ack_key)
+                continue
 
             if allocate_resources(experiment, config, verbose=verbose):
                 def hold_job():
@@ -243,19 +286,25 @@ def worker_loop(queue, parsed_args,
                     python = 'python'
                     if experiment.pythonver == 3:
                         python = 'python3'
-                    pip_diff = pip_needed_packages(
-                        experiment.pythonenv, python)
-                    if any(pip_diff):
-                        logger.info(
-                            'Setting up python packages for experiment')
-                        if pip_install_packages(pip_diff, python, logger) != 0:
+                    if '_singularity' not in experiment.artifacts.keys():
+                        pip_diff = pip_needed_packages(
+                            experiment.pythonenv, python)
+                        if any(pip_diff):
                             logger.info(
-                                "Installation of all packages together " +
-                                " failed, "
-                                "trying one package at a time")
+                                'Setting up python packages for experiment')
+                            if pip_install_packages(
+                                    pip_diff,
+                                    python,
+                                    logger
+                            ) != 0:
 
-                            for pkg in pip_diff:
-                                pip_install_packages([pkg], python, logger)
+                                logger.info(
+                                    "Installation of all packages together " +
+                                    " failed, "
+                                    "trying one package at a time")
+
+                                for pkg in pip_diff:
+                                    pip_install_packages([pkg], python, logger)
 
                     for tag, art in six.iteritems(experiment.artifacts):
                         if fetch_artifacts or 'local' not in art.keys():

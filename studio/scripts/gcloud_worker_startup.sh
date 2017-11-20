@@ -38,68 +38,18 @@ gac_name=${GOOGLE_APPLICATION_CREDENTIALS##*/}
 
 code_url_base="https://storage.googleapis.com/studio-ed756.appspot.com/src"
 #code_ver="tfstudio-64_config_location-2017-08-04_1.tgz"
-repo_url="{repo_url}"
-branch="{studioml_branch}"
 
 echo "Environment varibles:"
 env
 
-if [ ! -d "studio" ]; then
-    echo "Installing system packages..."
-    sudo apt -y update
-    sudo apt install -y wget git jq 
-    sudo apt install -y python python-pip python-dev python3-dev python3-pip
-    echo "python2 version:  $(python -V)"
-    echo "python3 version:  $(python3 -V)"
+{install_studio}
 
-    sudo python -m pip install --upgrade pip
-    sudo python -m pip install --upgrade awscli boto3
-
-    sudo python3 -m pip install --upgrade pip
-    sudo python3 -m pip install --upgrade awscli boto3
-
-    #wget $code_url_base/$code_ver
-    #tar -xzf $code_ver
-    #cd studio
-
-    if [[ "{use_gpus}" -eq 1 ]]; then
-        cudnn5="libcudnn5_5.1.10-1_cuda8.0_amd64.deb"
-        cudnn6="libcudnn6_6.0.21-1_cuda8.0_amd64.deb"
-        cuda_base="https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1604/x86_64/"
-        cuda_ver="cuda-repo-ubuntu1604_8.0.61-1_amd64.deb"
-
-        # install cuda
-        wget $cuda_base/$cuda_ver
-        sudo dpkg -i $cuda_ver
-        sudo apt -y update
-        sudo apt install -y cuda-8.0
-
-        # install cudnn
-        wget $code_url_base/$cudnn5
-        wget $code_url_base/$cudnn6
-        sudo dpkg -i $cudnn5
-        sudo dpkg -i $cudnn6
-
-        sudo python  -m pip install tensorflow tensorflow-gpu --upgrade
-        sudo python3 -m pip install tensorflow tensorflow-gpu --upgrade
-    else
-        sudo apt install -y default-jre
-    fi
-fi
-
-rm -rf studio
-git clone $repo_url
-if [[ $? -ne 0 ]]; then
-    git clone https://github.com/studioml/studio
-fi
-
-cd studio
-git pull
-git checkout $branch
-
-sudo python -m pip install -e . --upgrade
-sudo python3 -m pip install -e . --upgrade
 python $(which studio-remote-worker) --queue=$queue_name --verbose=debug --timeout=${timeout}
+
+logbucket={log_bucket}
+if [[ -n $logbucket ]]; then
+    gsutil cp /var/log/syslog gs://$logbucket/$queue_name/$instance_name.log
+fi
 
 if [[ -n $(who) ]]; then
     echo "Users logged in, preventing auto-shutdown"

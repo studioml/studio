@@ -57,7 +57,7 @@ class Saver(object):
            Last training step for the model restored.
         """
         last_step = load_checkpoint(
-            self._model, self._optimizer, model_dir,  map_to_cpu)
+            self._model, self._optimizer, model_dir, map_to_cpu)
         return last_step
 
     def save(self, model_dir, step):

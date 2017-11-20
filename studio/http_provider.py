@@ -2,11 +2,13 @@ import requests
 import json
 import six
 import time
+import re
 
 from . import pyrebase
 from .auth import get_auth
 from .http_artifact_store import HTTPArtifactStore
 from .experiment import experiment_from_dict
+from .util import retry
 
 import logging
 logging.basicConfig()
@@ -58,12 +60,16 @@ class HTTPProvider(object):
         data['experiment'] = experiment.__dict__
         data['compression'] = compression
 
-        request = requests.post(
-            self.url + '/api/add_experiment',
-            headers=headers,
-            data=json.dumps(data))
+        def post_request():
+            request = requests.post(
+                self.url + '/api/add_experiment',
+                headers=headers,
+                data=json.dumps(data))
 
-        self._raise_detailed_error(request)
+            self._raise_detailed_error(request)
+            return request
+
+        request = retry(post_request, sleep_time=10, logger=self.logger)
         artifacts = request.json()['artifacts']
 
         self._update_artifacts(experiment, artifacts)
@@ -74,16 +80,17 @@ class HTTPProvider(object):
 
         for tag, art in six.iteritems(experiment.artifacts):
             target_art = artifacts.get(tag)
-            if 'local' in art.keys() and target_art is not None:
+            if target_art is not None:
                 art['key'] = target_art['key']
                 art['qualified'] = target_art['qualified']
                 art['bucket'] = target_art['bucket']
 
-                HTTPArtifactStore(target_art['url'],
-                                  target_art['timestamp'],
-                                  compression=self.compression,
-                                  verbose=self.verbose) \
-                    .put_artifact(art)
+                if art.get('local'):
+                    HTTPArtifactStore(target_art['url'],
+                                      target_art['timestamp'],
+                                      compression=self.compression,
+                                      verbose=self.verbose) \
+                        .put_artifact(art)
 
     def delete_experiment(self, experiment):
         if isinstance(experiment, six.string_types):
@@ -92,11 +99,16 @@ class HTTPProvider(object):
             key = experiment.key
 
         headers = self._get_headers()
-        request = requests.post(self.url + '/api/delete_experiment',
-                                headers=headers,
-                                data=json.dumps({"key": key})
-                                )
-        self._raise_detailed_error(request)
+
+        def post_request():
+            request = requests.post(self.url + '/api/delete_experiment',
+                                    headers=headers,
+                                    data=json.dumps({"key": key})
+                                    )
+            self._raise_detailed_error(request)
+
+        post_request()
+        # retry(post_request, sleep_time=10, logger=self.logger)
 
     def get_experiment(self, experiment, getinfo='True'):
         if isinstance(experiment, six.string_types):
@@ -105,12 +117,12 @@ class HTTPProvider(object):
             key = experiment.key
 
         headers = self._get_headers()
-        request = requests.post(self.url + '/api/get_experiment',
-                                headers=headers,
-                                data=json.dumps({"key": key})
-                                )
-
         try:
+            request = requests.post(self.url + '/api/get_experiment',
+                                    headers=headers,
+                                    data=json.dumps({"key": key})
+                                    )
+
             self._raise_detailed_error(request)
             return experiment_from_dict(request.json()['experiment'])
         except BaseException as e:
@@ -130,6 +142,7 @@ class HTTPProvider(object):
                                 data=json.dumps({"key": key})
                                 )
         self._raise_detailed_error(request)
+        experiment.time_started = time.time()
 
     def stop_experiment(self, experiment):
         if isinstance(experiment, six.string_types):
@@ -156,6 +169,7 @@ class HTTPProvider(object):
                                 data=json.dumps({"key": key})
                                 )
         self._raise_detailed_error(request)
+        experiment.time_finished = time.time()
 
     def get_user_experiments(self, user=None, blocking=True):
         headers = self._get_headers()
@@ -203,6 +217,13 @@ class HTTPProvider(object):
 
     def get_artifact(self, artifact,
                      local_path=None, only_newer='True'):
+
+        if isinstance(artifact, six.string_types):
+            experiment_key = re.match(r'.*(?=/)', artifact).group(0)
+            artifact_tag = re.search(r'(?<=/)[^/]*\Z', artifact).group(0)
+            experiment = self.get_experiment(experiment_key)
+            artifact = experiment.artifacts[artifact_tag]
+
         return HTTPArtifactStore(
             artifact.get('url'),
             timestamp=time.time(),
@@ -237,10 +258,14 @@ class HTTPProvider(object):
         artifacts = request.json()['artifacts']
 
         self._update_artifacts(experiment, artifacts)
+        experiment.time_last_checkpoint = time.time()
 
     def refresh_auth_token(self, email, refresh_token):
         if self.auth:
             self.auth.refresh_token(email, refresh_token)
+
+    def register_user(self, userid, email):
+        pass
 
     def _get_headers(self):
         headers = {"content-type": "application/json"}
