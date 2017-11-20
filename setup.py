@@ -21,7 +21,7 @@ def read(fname):
 
 
 def local_scheme(version):
-    if version.distance > 0:
+    if version.distance and version.distance > 0:
         return '.post' + str(version.distance)
     else:
         return ''
