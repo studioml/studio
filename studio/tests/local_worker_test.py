@@ -312,8 +312,8 @@ class LocalWorkerTest(unittest.TestCase):
                                       '--verbose=debug',
                                       '--lifetime=-10m',
                                       'stop_experiment.py'],
-                                     # stdout=subprocess.PIPE,
-                                     # stderr=subprocess.STDOUT,
+                                     stdout=subprocess.PIPE,
+                                     stderr=subprocess.STDOUT,
                                      cwd=my_path)
 
                 pout, _ = p.communicate()
@@ -335,7 +335,8 @@ def stubtest_worker(
         queue=LocalQueue(),
         wait_for_experiment=True,
         delete_when_done=True,
-        test_output=True):
+        test_output=True,
+        test_workspace=True):
 
     my_path = os.path.dirname(os.path.realpath(__file__))
     config_name = os.path.join(my_path, config_name)
@@ -379,7 +380,6 @@ def stubtest_worker(
         experiment = db.get_experiment(experiment_name)
         if wait_for_experiment:
             while not experiment or not experiment.status == 'finished':
-                time.sleep(1)
                 experiment = db.get_experiment(experiment_name)
 
         if test_output:
@@ -389,7 +389,8 @@ def stubtest_worker(
                 split_data = data.strip().split('\n')
                 testclass.assertEquals(split_data[-1], expected_output)
 
-        check_workspace(testclass, db, experiment_name)
+        if test_workspace:
+            check_workspace(testclass, db, experiment_name)
 
         if delete_when_done:
             retry(lambda: db.delete_experiment(experiment_name), sleep_time=10)
