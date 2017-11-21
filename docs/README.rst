@@ -42,7 +42,10 @@ Run your jobs:
     studio run train_mnist_keras.py
 
 You can see results of your job at http://127.0.0.1:5000. Run
-``studio {ui|run} --help`` for a full list of ui / runner options
+``studio {ui|run} --help`` for a full list of ui / runner options.
+WARNING: because studio tries to create a reproducible environment 
+for your experiment, if you run it in a large folder, it will take
+a while to archive and upload the folder. 
 
 Installation
 ------------
