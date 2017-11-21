@@ -63,7 +63,7 @@ mode, in studio/default\_config.yaml, uncomment "guest: true" under the
 database section.
 
 Alternatively, you can set up your own database and configure Studio to
-use it. See `setting up database <docs/setup_database.rst>`__. This is a
+use it. See `setting up database <setup_database.rst>`__. This is a
 preferred option if you want to keep your models and artifacts private.
 
 
