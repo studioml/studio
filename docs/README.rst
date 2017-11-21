@@ -53,12 +53,12 @@ pip install studioml from the master pypi repositry:
 
     pip install studioml
 
-Find more `details <docs/installation.rst>`__ on installation methods and the release process. 
+Find more `details <installation.rst>`__ on installation methods and the release process. 
 
 Authentication
 --------------
 
-Currently Studio supports 2 methods of authentication: `email / password <docs/authentication.rst#email--password-authentication>`__ and using a `Google account. <docs/authentication.rst#google-account-authentication>`__ To use studio runner and studio ui in guest
+Currently Studio supports 2 methods of authentication: `email / password <authentication.rst#email--password-authentication>`__ and using a `Google account. <authentication.rst#google-account-authentication>`__ To use studio runner and studio ui in guest
 mode, in studio/default\_config.yaml, uncomment "guest: true" under the
 database section.
 
@@ -70,20 +70,20 @@ preferred option if you want to keep your models and artifacts private.
 Further reading and cool features
 ---------------------------------
 
--  `Running experiments remotely <docs/remote_worker.rst>`__
+-  `Running experiments remotely <remote_worker.rst>`__
    
-   -  `Custom Python environments for remote workers <docs/customenv.rst>`__
+   -  `Custom Python environments for remote workers <customenv.rst>`__
 
--  `Running experiments in the cloud <docs/cloud.rst>`__
+-  `Running experiments in the cloud <cloud.rst>`__
 
-   -  `Google Cloud setup instructions <docs/gcloud_setup.rst>`__
+   -  `Google Cloud setup instructions <gcloud_setup.rst>`__
 
-   -  `Amazon EC2 setup instructions <docs/ec2_setup.rst>`__
+   -  `Amazon EC2 setup instructions <ec2_setup.rst>`__
 
--  `Artifact management <docs/artifacts.rst>`__
--  `Hyperparameter search <docs/hyperparams.rst>`__
--  `Pipelines for trained models <docs/model_pipelines.rst>`__
--  `Containerized experiments <docs/containers.rst>`__
+-  `Artifact management <artifacts.rst>`__
+-  `Hyperparameter search <hyperparams.rst>`__
+-  `Pipelines for trained models <model_pipelines.rst>`__
+-  `Containerized experiments <containers.rst>`__
 
 .. |Hex.pm| image:: https://img.shields.io/hexpm/l/plug.svg
    :target: https://github.com/studioml/studio/blob/master/LICENSE
