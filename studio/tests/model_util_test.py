@@ -193,7 +193,7 @@ class ModelPipeTest(unittest.TestCase):
         self.assertEquals(expected_list, output_list)
 
 
-@unittest.skip("Keras does not play nicely with parallel tests")
+# @unittest.skip("Keras does not play nicely with parallel tests")
 class KerasModelPipeTest(unittest.TestCase):
     def test_model_pipe_keras(self):
         model = Sequential()

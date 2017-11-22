@@ -114,6 +114,7 @@ setup(
             'studio/scripts/studio',
             'studio/scripts/studio-ui',
             'studio/scripts/studio-run',
+            'studio/scripts/studio-serve',
             'studio/scripts/studio-runs',
             'studio/scripts/studio-local-worker',
             'studio/scripts/studio-remote-worker',

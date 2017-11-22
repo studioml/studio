@@ -166,9 +166,20 @@ class EC2WorkerManager(object):
             kwargs['SecurityGroupIds'] = [groupid]
 
         response = self.client.run_instances(**kwargs)
+        instance_id = response['Instances'][0]['InstanceId']
         self.logger.info(
-            'Starting instance {}'.format(
-                response['Instances'][0]['InstanceId']))
+            'Starting instance {}'.format(instance_id))
+        
+        if blocking:
+            while True:
+                response = self.client.describe_instances(
+                    InstanceIds=[instance_id]
+                )
+                instance_data = response['Reservations'][0]['Instances'][0]
+                ip_addr = instance_data.get('PublicIpAddress')
+                if ip_addr:
+                    print("ip address: {}".format(ip_addr))
+                    return 
 
     def _select_instance_type(self, resources_needed):
         sorted_specs = sorted(_instance_specs.items(),
@@ -261,6 +272,13 @@ class EC2WorkerManager(object):
                 'IpProtocol': 'tcp',
                 'FromPort': 22,
                 'ToPort': 22,
+                'IpRanges': [{
+                    'CidrIp': '0.0.0.0/0'
+                }]
+            },{
+                'IpProtocol': 'tcp',
+                'FromPort': 5000,
+                'ToPort': 5000,
                 'IpRanges': [{
                     'CidrIp': '0.0.0.0/0'
                 }]

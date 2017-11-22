@@ -73,6 +73,7 @@ class LocalExecutor(object):
                 if experiment.pythonver == 3:
                     python = 'python3'
 
+                
                 cmd = [python, experiment.filename] + experiment.args
                 cwd = experiment.artifacts['workspace']['local']
                 container_artifact = experiment.artifacts.get('_singularity')
