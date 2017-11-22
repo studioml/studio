@@ -73,9 +73,9 @@ preferred option if you want to keep your models and artifacts private.
 Further reading and cool features
 ---------------------------------
 
--  :doc:`Running experiments remotely <remote_worker>`
+-  :any:`Running experiments remotely <remote_worker>`
    
-   -  :doc:`Custom Python environments for remote workers <customenv>`
+   -  :any:`Custom Python environments for remote workers <customenv.rst>`
 
 -  `Running experiments in the cloud <cloud>`__
 
