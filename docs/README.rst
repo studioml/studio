@@ -73,11 +73,11 @@ preferred option if you want to keep your models and artifacts private.
 Further reading and cool features
 ---------------------------------
 
--  `Running experiments remotely <remote_worker.rst>`__
+-  :doc:`Running experiments remotely <remote_worker>`__
    
-   -  `Custom Python environments for remote workers <customenv.rst>`__
+   -  :doc:`Custom Python environments for remote workers <customenv>`__
 
--  `Running experiments in the cloud <cloud.rst>`__
+-  `Running experiments in the cloud <cloud>`__
 
    -  `Google Cloud setup instructions <gcloud_setup.rst>`__
 
