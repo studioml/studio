@@ -8,6 +8,7 @@ from setuptools.command.develop import develop
 import sys
 import platform
 import ctypes
+import pip
 
 VERSION = ""
 
