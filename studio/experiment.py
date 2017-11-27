@@ -107,22 +107,19 @@ def create_experiment(
         metric=None,
         max_duration=None):
     key = str(uuid.uuid4()) if not experiment_name else experiment_name
-    packages = set([])
+    packages = []
     for i, pkg in enumerate(
             pip.pip.get_installed_distributions(local_only=True)):
         if resources_needed is not None and \
-           int(resources_needed.get('gpus')) > 0:
-            if pkg.key == 'tensorflow':
-                pkg._key = 'tensorflow-gpu'
-            if pkg.key == 'tf-nightly':
-                pkg._key = 'tf-nightly-gpu'
-        else:
-            if pkg.key == 'tensorflow-gpu':
-                pkg._key = 'tensorflow'
-            if pkg.key == 'tf-nightly-gpu':
-                pkg._key = 'tf-nightly'
+           int(resources_needed.get('gpus')) > 0 and \
+                (pkg._key == 'tensorflow' or pkg._key == 'tf-nightly'):
+                packages.insert(0, pkg._key +'-gpu==' + pkg._version)
+                packages.insert(0, pkg._key +'==' + pkg._version)
 
-        packages.add(pkg._key + '==' + pkg._version)
+        elif pkg._key == 'tensorflow-gpu' or pkg._key == 'tf-nightly-gpu':
+           packages.insert(0, pkg._key[:-4] + '==' + pkg._version
+        else:
+           packages.add(pkg._key + '==' + pkg._version)
 
     return Experiment(
         key=key,
