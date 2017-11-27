@@ -3,29 +3,28 @@ branch="{studioml_branch}"
 
 if [ ! -d "studio" ]; then
     echo "Installing system packages..."
-    #sudo add-apt-repository -y ppa:jonathonf/python-3.6
     sudo apt -y update
     sudo apt install -y wget git jq 
-    #sudo apt install -y python python-pip python-dev python3.6 python3.6-dev python3-pip
-    sudo apt install -y python python-pip python-dev python3 python3-dev python3-pip
+    sudo apt install -y python python-pip python-dev python3 python3-dev python3-pip dh-autoreconf build-essential
     echo "python2 version: " $(python -V)
 
     sudo python -m pip install --upgrade pip
     sudo python -m pip install --upgrade awscli boto3
-
-    #sudo ln -sf /usr/bin/python3.6 /usr/bin/python3
-    #sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.6 2
-    #sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.5 1
-    #sudo update-alternatives --set python3 /usr/bin/python3.6
-
+       
     echo "python3 version: " $(python3 -V)
    
     sudo python3 -m pip install --upgrade pip
     sudo python3 -m pip install --upgrade awscli boto3
 
-    #wget $code_url_base/$code_ver
-    #tar -xzf $code_ver
-    #cd studio
+    # Install singularity
+    git clone https://github.com/singularityware/singularity.git
+    cd singularity
+    ./autogen.sh
+    ./configure --prefix=/usr/local --sysconfdir=/etc
+    make
+    make install
+    cd ..
+
     if [[ "{use_gpus}" -eq 1 ]]; then
         cudnn5="libcudnn5_5.1.10-1_cuda8.0_amd64.deb"
         cudnn6="libcudnn6_6.0.21-1_cuda8.0_amd64.deb"
@@ -44,8 +43,8 @@ if [ ! -d "studio" ]; then
         sudo dpkg -i $cudnn5
         sudo dpkg -i $cudnn6
 
-        sudo python  -m pip install tf-nightly tf-nightly-gpu --upgrade
-        sudo python3 -m pip install tf-nightly tf-nightly-gpu --upgrade
+        # sudo python  -m pip install tf-nightly tf-nightly-gpu --upgrade
+        # sudo python3 -m pip install tf-nightly tf-nightly-gpu --upgrade
     else
         sudo apt install -y default-jre
     fi

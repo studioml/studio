@@ -1,5 +1,4 @@
 import logging
-import requests
 
 from .tartifact_store import TartifactStore
 from .util import download_file, upload_file

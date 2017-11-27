@@ -20,8 +20,6 @@ class HTTPProviderTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(self):
-        if not has_aws_credentials():
-            return
         print("Starting up the API server")
         self.port = randint(5000, 9000)
 
@@ -50,9 +48,6 @@ class HTTPProviderTest(unittest.TestCase):
 
     @classmethod
     def tearDownClass(self):
-        if not has_aws_credentials():
-            return
-
         print("Shutting down the API server")
         self.serverp.kill()
 

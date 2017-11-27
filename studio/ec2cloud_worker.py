@@ -7,11 +7,12 @@ import uuid
 import logging
 import os
 import base64
-import requests
 import json
+import yaml
 import six
+import filelock
 
-from . import git_util
+from . import git_util, util
 from .gpu_util import memstr2int
 from .cloud_worker_util import insert_user_startup_script
 
@@ -95,8 +96,15 @@ class EC2WorkerManager(object):
             self.logger.warn('User startup script argument is deprecated')
 
     def _get_image_id(self):
-        # return 'ami-cd0f5cb6'  # vanilla ubuntu 16.04 image
-        return 'ami-a9a47cd3'  # studio.ml gpu image with python2 and python3
+        price_path = os.path.join(
+            os.path.dirname(__file__),
+            'aws/aws_amis.yaml')
+        with open(price_path) as f:
+            ami_dict = yaml.load(f.read())
+
+        region = self.client._client_config.region_name
+        image_type = 'ubuntu16.04'
+        return ami_dict[image_type][region]
 
     def _get_block_device_mappings(self, resources_needed):
         return [{
@@ -359,28 +367,36 @@ class EC2WorkerManager(object):
         # TODO un-hardcode the us-east as a region
         # so that prices are being read for a correct region
 
+        price_path = os.path.join(
+            os.path.dirname(__file__),
+            'aws/aws_prices.yaml')
+        with open(price_path, 'r') as f:
+            data = yaml.load(f.read())
+
+        return {i: data[i] for i in instances}
+
         price_path = os.path.join(os.path.expanduser('~'), '.studioml',
                                   'awsprices.json')
+        offer_file_lock = filelock.FileLock(price_path + '.lock')
+
         try:
             self.logger.info('Reading AWS prices from cache...')
-            with open(price_path, 'r') as f:
-                offer_dict = json.load(f)
+            with offer_file_lock:
+                with open(price_path, 'r') as f:
+                    offer_dict = json.load(f)
 
-        except BaseException:
+        except IOError:
             self.logger.info(
                 'Getting prices info from AWS (this may take a moment...)')
 
-            r = requests.get(
-                'https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/' +
-                'AmazonEC2/current/index.json')
-            if r.status_code != 200:
-                self.logger.error(
-                    'Getting AWS offers returned code {}'.format(
-                        r.status_code))
+            with offer_file_lock:
+                util.download_file(
+                    'https://pricing.us-east-1.amazonaws.com/offers/v1.0/'
+                    'aws/AmazonEC2/current/index.json',
+                    price_path)
 
-            offer_dict = r.json()
-            with open(price_path, 'w') as f:
-                f.write(json.dumps(offer_dict))
+                with open(price_path, 'r') as f:
+                    offer_dict = json.load(f)
 
         self.logger.info('Done!')
 

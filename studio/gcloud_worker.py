@@ -167,7 +167,7 @@ class GCloudWorkerManager(object):
             "{install_studio}", install_studio_script)
 
         startup_script = startup_script.replace(
-            "{branch}", self.branch)
+            "{studioml_branch}", self.branch)
 
         startup_script = startup_script.replace(
             "{repo_url}", self.repo_url)

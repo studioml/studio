@@ -577,7 +577,7 @@ def submit_experiments(
         p.join()
 
     '''
-    experiements = [add_experiment(e) for e in
+    experiments = [add_experiment(e) for e in
                     zip([config] * num_experiments,
                         [python_pkg] *
                         num_experiments,

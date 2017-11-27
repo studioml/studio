@@ -1,4 +1,3 @@
-import sys
 import uuid
 import unittest
 import os
@@ -7,6 +6,7 @@ import logging
 from .completion_service import CompletionService
 
 from studio.util import has_aws_credentials
+from studio.local_queue import get_local_queue_lock
 
 
 logging.basicConfig()
@@ -65,12 +65,9 @@ class CompletionServiceTest(unittest.TestCase):
 
         self.test_two_experiments_with_cs_args(
             config=config_path,
-	    ssh_keypair='peterz-k1',
             cloud_timeout=100,
             cloud='ec2spot')
 
-    @unittest.skip('conflicts with other local runner tests,' +
-                   'left for debugging purposes')
     def test_two_experiments_apiserver(self):
         mypath = os.path.dirname(os.path.realpath(__file__))
         config_path = os.path.join(
@@ -79,7 +76,8 @@ class CompletionServiceTest(unittest.TestCase):
             'tests',
             'test_config_http_client.yaml')
 
-        self.test_two_experiments_with_cs_args(config=config_path)
+        with get_local_queue_lock():
+            self.test_two_experiments_with_cs_args(config=config_path)
 
     @unittest.skipIf(
         'GOOGLE_APPLICATION_CREDENTIALS' not in os.environ.keys(),
