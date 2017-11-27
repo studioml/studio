@@ -23,6 +23,7 @@ if [ ! -d "studio" ]; then
     ./configure --prefix=/usr/local --sysconfdir=/etc
     make
     make install
+    cd ..
 
     if [[ "{use_gpus}" -eq 1 ]]; then
         cudnn5="libcudnn5_5.1.10-1_cuda8.0_amd64.deb"
