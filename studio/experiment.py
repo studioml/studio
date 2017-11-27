@@ -33,7 +33,7 @@ class Experiment(object):
         self.key = key
         self.args = []
         self.filename = filename
-        if '::' in filename:
+        if filename and '::' in filename:
             self.filename = '-m'
             module_name = filename.replace('::', '.')
             if module_name.startswith('.'):
