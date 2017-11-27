@@ -167,8 +167,9 @@ class EC2WorkerManager(object):
             ports.append(22)  # ssh port
         if any(ports):
             groupid = self._get_security_group(ports)
-            kwargs['KeyName'] = ssh_keypair
             kwargs['SecurityGroupIds'] = [groupid]
+            if ssh_keypair is not None:
+                kwargs['KeyName'] = ssh_keypair
 
         response = self.client.run_instances(**kwargs)
         instance_id = response['Instances'][0]['InstanceId']
@@ -351,7 +352,8 @@ class EC2WorkerManager(object):
         if any(ports):
             groupid = self._get_security_group(ports)
             launch_config['SecurityGroups'] = [groupid]
-            launch_config['KeyName'] = ssh_keypair
+            if ssh_keypair is not None:
+                kwargs['KeyName'] = ssh_keypair
 
         response = self.asclient.create_launch_configuration(
             LaunchConfigurationName=launch_config_name, **launch_config)
