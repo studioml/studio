@@ -53,7 +53,6 @@ checkpointer = ModelCheckpoint(
     '/checkpoint.{epoch:02d}-{val_loss:.2f}.hdf')
 
 
-
 tbcallback = TensorBoard(log_dir=fs_tracker.get_tensorboard_dir(),
                          histogram_freq=0,
                          write_graph=True,

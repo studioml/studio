@@ -12,7 +12,7 @@ try:
     from keras.datasets import mnist
     from keras.utils import to_categorical
 
-except BaseException:
+except ImportError:
     keras = None
 
 from timeout_decorator import timeout
@@ -196,10 +196,10 @@ class ModelPipeTest(unittest.TestCase):
 # @unittest.skip("Keras does not play nicely with parallel tests")
 class KerasModelPipeTest(unittest.TestCase):
     def test_model_pipe_keras(self):
-        model = Sequential()
-        model.add(Flatten(input_shape=(1, 28, 28)))
-        model.add(Dense(128, activation='relu'))
-        model.add(Dense(10, activation='softmax'))
+        model = keras.models.Sequential()
+        model.add(keras.layers.Flatten(input_shape=(1, 28, 28)))
+        model.add(keras.layers.Dense(128, activation='relu'))
+        model.add(keras.layers.Dense(10, activation='softmax'))
 
         p = model_util.ModelPipe()
         input_data = [np.random.random((1, 1, 28, 28)) for _ in range(2)]
@@ -217,7 +217,7 @@ class KerasModelPipeTest(unittest.TestCase):
 
     def test_model_pipe_mnist_urls(self):
 
-        (x_train, y_train), (x_test, y_test) = mnist.load_data()
+        (x_train, y_train), (x_test, y_test) = keras.datasets.mnist.load_data()
 
         x_train = x_train.reshape(60000, 28, 28, 1)
         x_test = x_test.reshape(10000, 28, 28, 1)
