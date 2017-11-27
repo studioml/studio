@@ -126,7 +126,7 @@ def create_experiment(
         elif pkg._key == 'tensorflow-gpu' or pkg._key == 'tf-nightly-gpu':
             packages.insert(0, pkg._key[:-4] + '==' + pkg._version)
         else:
-            packages.add(pkg._key + '==' + pkg._version)
+            packages.append(pkg._key + '==' + pkg._version)
 
     return Experiment(
         key=key,
