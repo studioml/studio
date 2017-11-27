@@ -194,7 +194,7 @@ class ModelPipeTest(unittest.TestCase):
 
 
 @unittest.skipIf(keras is None,
-    "These tests require keras")
+                 "These tests require keras")
 class KerasModelPipeTest(unittest.TestCase):
     def test_model_pipe_keras(self):
         model = Sequential()
