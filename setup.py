@@ -84,7 +84,7 @@ with open('requirements.txt') as f:
         tensorflow = 'tf-nightly'
     '''
     required.append(tensorflow)
-    
+
 
 with open('test_requirements.txt') as f:
     test_required = f.read().splitlines()
