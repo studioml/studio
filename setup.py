@@ -82,6 +82,7 @@ with open('requirements.txt') as f:
     if 'tf-nightly' in package_set or 'tf-nightly-gpu' in package_set:
         tensorflow = 'tf-nightly'
 
+    '''
     try:
         if platform.system() == "Microsoft":
             _libcudart = ctypes.windll.LoadLibrary('cudart.dll')
@@ -90,7 +91,8 @@ with open('requirements.txt') as f:
             _libcuda = ctypes.cdll.LoadLibrary('libcuda.so')
         required.append(tensorflow + '-gpu')
     except OSError:
-        required.append(tensorflow)
+    '''
+    required.append(tensorflow)
 
 with open('test_requirements.txt') as f:
     test_required = f.read().splitlines()
