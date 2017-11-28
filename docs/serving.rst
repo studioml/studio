@@ -20,9 +20,10 @@ arbitrary python code.
 Basics
 ------
 The basic command for serving is 
-    
-    ::
-        studio serve <experiment_key> 
+
+::
+       studio serve <experiment_key> 
+
 
 where `<experiment_key>` is a key of the experiment responsible for training models. 
 This command takes the same cloud execution arguments as `studio run`, which 
@@ -32,13 +33,13 @@ To figure out which model to serve, `studio serve` fetches the artifact `modeldi
 By default (as of now, only Keras models are supported by default), it `studio serve` takes the last
 training checkpoint. Served model expects POST request with data being dictionary of the form 
 
-    ::
-        {key1: <pickled numpy array1>, key2: <pickled numpy array2>, ...}
+::
+    {key1: <pickled numpy array1>, key2: <pickled numpy array2>, ...}
 
 and returns the dictionary of the form
-    
-    ::
-        {key1: <pickled inference result1, key2: <pickled inference result2>, ...}
+
+::
+    {key1: <pickled inference result1, key2: <pickled inference result2>, ...}
 
 
 The pickling is necessary because numpy arrays are not JSON serializable. 
@@ -55,47 +56,47 @@ As a concrete example (see `<../studio/tests/model_increment.py>`), the followin
 is a wrapper that ignores experiment checkpoints and returns a model that increments inputs 
 by 1:
 
-    ::
-         import six 
+::
+     import six 
 
-         def create_model(modeldir):
-            def model(data):
-                retval = {}
-                for k, v in six.iteritems(data):
-                    retval[k] = v + 1 
-                return retval
+     def create_model(modeldir):
+        def model(data):
+            retval = {}
+            for k, v in six.iteritems(data):
+                retval[k] = v + 1 
+            return retval
 
-            return model       
-                
+        return model       
+            
 
 
 
 Wrappers play nicely with model pipelines provided by Studio.ML `<docs/model_pipelines.rst>`. For example, the following code is a wrapper
 that downloads the urls in multiple threads, and batched prediction:
 
-    ::
-        import glob
-        from studio import model_util
+::
+    import glob
+    from studio import model_util
 
-        def create_model(modeldir):
-                
-            # load latest keras model
-            hdf5_files = [
-            (p, os.path.getmtime(p))
-            for p in
-            glob.glob(modeldir + '/*.hdf*')]
+    def create_model(modeldir):
+            
+        # load latest keras model
+        hdf5_files = [
+        (p, os.path.getmtime(p))
+        for p in
+        glob.glob(modeldir + '/*.hdf*')]
+    
+        last_checkpoint = max(hdf5_files, key=lambda t: t[1])[0]
+        keras_model = keras.models.load_model(last_checkpoint)
         
-            last_checkpoint = max(hdf5_files, key=lambda t: t[1])[0]
-            keras_model = keras.models.load_model(last_checkpoint)
-            
-            # create model pipe
-            pipe = model_util.ModelPipe()
-            pipe.add(lambda url: urllib.urlopen(url).read(), num_workers=4, timeout=5)
-            pipe.add(lambda img: Image.open(BytesIO(img)))
-            pipe.add(model_util.resize_to_model_input(model))
-            pipe.add(model, num_workers=1, batch_size=32, batcher=np.vstack)
-            
-            return pipe
+        # create model pipe
+        pipe = model_util.ModelPipe()
+        pipe.add(lambda url: urllib.urlopen(url).read(), num_workers=4, timeout=5)
+        pipe.add(lambda img: Image.open(BytesIO(img)))
+        pipe.add(model_util.resize_to_model_input(model))
+        pipe.add(model, num_workers=1, batch_size=32, batcher=np.vstack)
+        
+        return pipe
 
 
 
