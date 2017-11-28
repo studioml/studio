@@ -27,7 +27,7 @@ install:
 script:
   - echo $GOOGLE_APPLICATION_CREDENTIALS
   - py.test -n 16 -v --durations=0 
-  - pycodestyle --show-source --exclude=.egg .
+  - pycodestyle --show-source --exclude=.eggs .
   - python setup.py sdist
 
 deploy:
