@@ -22,7 +22,7 @@ Basics
 The basic command for serving is 
 
 ::
-       studio serve <experiment_key> 
+    studio serve <experiment_key> 
 
 
 where `<experiment_key>` is a key of the experiment responsible for training models. 
