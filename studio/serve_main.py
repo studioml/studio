@@ -9,6 +9,7 @@ import logging
 import importlib
 import pickle
 import re
+import threading
 
 from flask import Flask, request
 from studio import fs_tracker
@@ -20,6 +21,9 @@ app = Flask(__name__)
 model = None
 logger = None
 
+killtimer = None
+killtimer_duration = None
+
 
 def get_logger():
     global logger
@@ -27,6 +31,28 @@ def get_logger():
         logger = logging.getLogger('studio-serve')
         logger.setLevel(logging.DEBUG)
     return logger
+
+
+def restart_killtimer(duration=None):
+    global killtimer
+    global killtimer_duration
+
+    def killtriger():
+        get_logger().info('Shutting down due to inactivity')
+        os._exit(0)
+
+    if killtimer:
+        killtimer.cancel()
+
+    if duration:
+        killtimer_duration = duration
+    else:
+        duration = killtimer_duration
+
+    get_logger().info('Initializing kill timer for {} s'
+                      .format(duration))
+    killtimer = threading.Timer(duration, killtriger)
+    killtimer.start()
 
 
 @app.route('/', methods=['POST'])
@@ -43,6 +69,8 @@ def inference():
     finally:
         get_logger().info('inference completed in {} s'
                           .format(time.time() - tic))
+
+        restart_killtimer()
 
 
 def main():
@@ -71,6 +99,11 @@ def main():
                            help='host name.',
                            default='0.0.0.0')
 
+    argparser.add_argument(
+        '--killafter',
+        help='Shut down after this many seconds of inactivity',
+        default=3600)
+
     options = argparser.parse_args(sys.argv[1:])
 
     global model
@@ -83,6 +116,7 @@ def main():
     else:
         model = auto_generate_model(modeldir)
 
+    restart_killtimer(int(options.killafter))
     app.run(host=options.host, port=options.port)
 
 

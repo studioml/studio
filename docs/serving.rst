@@ -105,4 +105,21 @@ that downloads the urls in multiple threads, and batched prediction:
         return pipe
 
 
+Command-line options
+--------------------
+
+  - `--wrapper` specifies a python script with `create_model` function that generates the model to be served
+     (see above)
+
+  - `--port` specifies port on which the model will be served. For cloud instances this port is 
+     automatically added into the firewall rules
+
+  - `--killafter` by default, the model serving shuts down after an hour of inactivity. Use this option to
+     modify inactive (no requests) time after which the server shuts down. 
+
+  - `--host` can be either `0.0.0.0` - serve the model to the world, or `losthost` - serve internally (model will only
+    be available from the same server)
+
+ 
+
 
