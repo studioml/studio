@@ -577,7 +577,6 @@ def submit_experiments(
         p.close()
         p.join()
 
-
     '''
     experiments = [add_experiment(e) for e in
                     zip([config] * num_experiments,
@@ -867,7 +866,7 @@ def add_hyperparam_experiments(
 
 
 def add_packages(list1, list2):
-    # This function dedups the package names which I think could be 
+    # This function dedups the package names which I think could be
     # functionally not desirable however rather than changing the behavior
     # instead we will do the dedup in a stable manner that prevents
     # package re-ordering
@@ -875,7 +874,7 @@ def add_packages(list1, list2):
     merged = []
     for k in list1 + list2:
         v = pkgs.pop(re.sub('==.+', '', k), None)
-        if v != None:
+        if v is not None:
             merged.append(v)
     return merged
 
