@@ -427,7 +427,9 @@ def main(args=sys.argv):
 def add_experiment(args):
     try:
         config, python_pkg, e = args
+
         e.pythonenv = add_packages(e.pythonenv, python_pkg)
+
         with model.get_db_provider(config) as db:
             db.add_experiment(e)
     except BaseException:
@@ -569,12 +571,12 @@ def submit_experiments(
     with closing(multiprocessing.Pool(n_workers, maxtasksperchild=20)) as p:
         experiments = p.imap_unordered(add_experiment,
                                        zip([config] * num_experiments,
-                                           [python_pkg] *
-                                           num_experiments,
+                                           [python_pkg] * num_experiments,
                                            experiments),
                                        chunksize=1)
         p.close()
         p.join()
+
 
     '''
     experiments = [add_experiment(e) for e in
@@ -865,8 +867,17 @@ def add_hyperparam_experiments(
 
 
 def add_packages(list1, list2):
-    pkg_dict = {re.sub('==.+', '', pkg): pkg for pkg in list1 + list2}
-    return [pkg for _, pkg in six.iteritems(pkg_dict)]
+    # This function dedups the package names which I think could be 
+    # functionally not desirable however rather than changing the behavior
+    # instead we will do the dedup in a stable manner that prevents
+    # package re-ordering
+    pkgs = {re.sub('==.+', '', pkg): pkg for pkg in list1 + list2}
+    merged = []
+    for k in list1 + list2:
+        v = pkgs.pop(re.sub('==.+', '', k), None)
+        if v != None:
+            merged.append(v)
+    return merged
 
 
 if __name__ == "__main__":
