@@ -353,7 +353,7 @@ class EC2WorkerManager(object):
             groupid = self._get_security_group(ports)
             launch_config['SecurityGroups'] = [groupid]
             if ssh_keypair is not None:
-                kwargs['KeyName'] = ssh_keypair
+                launch_config['KeyName'] = ssh_keypair
 
         response = self.asclient.create_launch_configuration(
             LaunchConfigurationName=launch_config_name, **launch_config)

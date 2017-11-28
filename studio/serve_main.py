@@ -8,6 +8,7 @@ import traceback
 import logging
 import importlib
 import pickle
+import re
 
 from flask import Flask, request
 from studio import fs_tracker
@@ -50,7 +51,7 @@ def main():
     )
 
     argparser.add_argument(
-        '--preprocessing', '-p',
+        '--wrapper', '-w',
         help='python script with function create_model ' +
              'that takes modeldir '
         '(that is, directory where experiment saves ' +
@@ -75,31 +76,33 @@ def main():
     global model
 
     modeldir = fs_tracker.get_artifact('modeldata')
-    if options.preprocessing:
-        prep_module_name = importlib.import_module(options.preprocessing)
-        model = prep_module_name.create_model(modeldir)
+    if options.wrapper:
+        module_name = re.sub('.py\Z', '', options.wrapper)
+        wrapper_module = importlib.import_module(module_name)
+        model = wrapper_module.create_model(modeldir)
     else:
         model = auto_generate_model(modeldir)
 
-    app.run(host=options.host)
+    app.run(host=options.host, port=options.port)
 
 
 def auto_generate_model(modeldir):
-
-    hdf5_files = [
-        (p, os.path.getmtime(p))
-        for p in
-        glob.glob(modeldir + '/*.hdf*') +
-        glob.glob(modeldir + '/*.h5')]
-    if any(hdf5_files):
-        # experiment type - keras
-        get_logger().info("Loading keras model (using 64 encoding and pickle)")
-        import keras
-        last_checkpoint = max(hdf5_files, key=lambda t: t[1])[0]
-        keras_model = keras.models.load_model(last_checkpoint)
-        print(keras_model)
-        keras_model.summary()
-        return wrap_keras_model(keras_model)
+    if modeldir is not None:
+        hdf5_files = [
+            (p, os.path.getmtime(p))
+            for p in
+            glob.glob(modeldir + '/*.hdf*') +
+            glob.glob(modeldir + '/*.h5')]
+        if any(hdf5_files):
+            # experiment type - keras
+            get_logger().info("Loading keras model " +
+                              "(using pickle serialization)")
+            import keras
+            last_checkpoint = max(hdf5_files, key=lambda t: t[1])[0]
+            keras_model = keras.models.load_model(last_checkpoint)
+            print(keras_model)
+            keras_model.summary()
+            return wrap_keras_model(keras_model)
 
     return lambda x: x
 
