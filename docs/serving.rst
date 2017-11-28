@@ -4,6 +4,7 @@ Serving models with Studio.ML
 
 Once the model is trained, it is a frequent task to make it available as a service.
 This is usually a tedious task because of two reasons: 
+
  - It requires certain DevOps knowledge, configuration
    of firewalls and ports on the instance etc. 
 
@@ -22,6 +23,7 @@ Basics
 The basic command for serving is 
 
 ::
+
     studio serve <experiment_key> 
 
 
@@ -34,11 +36,13 @@ By default (as of now, only Keras models are supported by default), it `studio s
 training checkpoint. Served model expects POST request with data being dictionary of the form 
 
 ::
+
     {key1: <pickled numpy array1>, key2: <pickled numpy array2>, ...}
 
 and returns the dictionary of the form
 
 ::
+
     {key1: <pickled inference result1, key2: <pickled inference result2>, ...}
 
 
@@ -57,6 +61,7 @@ is a wrapper that ignores experiment checkpoints and returns a model that increm
 by 1:
 
 ::
+
      import six 
 
      def create_model(modeldir):
@@ -75,6 +80,7 @@ Wrappers play nicely with model pipelines provided by Studio.ML `<docs/model_pip
 that downloads the urls in multiple threads, and batched prediction:
 
 ::
+
     import glob
     from studio import model_util
 
