@@ -155,7 +155,10 @@ def get_queue_directory():
         get_studio_home(),
         'queue')
     if not os.path.exists(queue_dir):
-        os.makedirs(queue_dir)
+        try:
+            os.makedirs(queue_dir)
+        except OSError:
+            pass
 
     return queue_dir
 
