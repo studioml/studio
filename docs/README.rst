@@ -41,7 +41,7 @@ Run your jobs:
 
     studio run train_mnist_keras.py
 
-You can see results of your job at http://127.0.0.1:5000. Run
+You can see results of your job at http://localhost:5000. Run
 ``studio {ui|run} --help`` for a full list of ui / runner options.
 WARNING: because studio tries to create a reproducible environment 
 for your experiment, if you run it in a large folder, it will take
@@ -73,20 +73,20 @@ preferred option if you want to keep your models and artifacts private.
 Further reading and cool features
 ---------------------------------
 
--  `Running experiments remotely <remote_worker.*>`__
+-  `Running experiments remotely <http://docs.studio.ml/en/latest/remote_worker.html>`__
    
-   -  `Custom Python environments for remote workers <customenv.rst>`__
+   -  `Custom Python environments for remote workers <http://docs.studio.ml/en/latest/customenv.html>`__
 
--  `Running experiments in the cloud <cloud>`__
+-  `Running experiments in the cloud <http://docs.studio.ml/en/latest/cloud.html>`__
 
-   -  `Google Cloud setup instructions <gcloud_setup.rst>`__
+   -  `Google Cloud setup instructions <http://docs.studio.ml/en/latest/glcloud_setup.html>`__
 
-   -  `Amazon EC2 setup instructions <ec2_setup.rst>`__
+   -  `Amazon EC2 setup instructions <http://docs.studio.ml/en/latest/ec2_setup.html>`__
 
--  `Artifact management <artifacts.rst>`__
--  `Hyperparameter search <hyperparams.rst>`__
--  `Pipelines for trained models <model_pipelines.rst>`__
--  `Containerized experiments <containers.rst>`__
+-  `Artifact management <http://docs.studio.ml/en/latest/artifacts.html>`__
+-  `Hyperparameter search <http://docs.studio.ml/en/latest/hyperparams.html>`__
+-  `Pipelines for trained models <http://docs.studio.ml/en/latest/model_pipelines.html>`__
+-  `Containerized experiments <http://docs.studio.ml/en/latest/containers.html>`__
 
 .. |Hex.pm| image:: https://img.shields.io/hexpm/l/plug.svg
    :target: https://github.com/studioml/studio/blob/master/LICENSE
