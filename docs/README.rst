@@ -41,8 +41,11 @@ Run your jobs:
 
     studio run train_mnist_keras.py
 
-You can see results of your job at http://127.0.0.1:5000. Run
-``studio {ui|run} --help`` for a full list of ui / runner options
+You can see results of your job at http://localhost:5000. Run
+``studio {ui|run} --help`` for a full list of ui / runner options.
+WARNING: because studio tries to create a reproducible environment 
+for your experiment, if you run it in a large folder, it will take
+a while to archive and upload the folder. 
 
 Installation
 ------------
@@ -53,37 +56,37 @@ pip install studioml from the master pypi repositry:
 
     pip install studioml
 
-Find more `details <docs/installation.rst>`__ on installation methods and the release process. 
+Find more `details <installation.rst>`__ on installation methods and the release process. 
 
 Authentication
 --------------
 
-Currently Studio supports 2 methods of authentication: `email / password <docs/authentication.rst#email--password-authentication>`__ and using a `Google account. <docs/authentication.rst#google-account-authentication>`__ To use studio runner and studio ui in guest
+Currently Studio supports 2 methods of authentication: `email / password <authentication.rst#email--password-authentication>`__ and using a `Google account. <authentication.rst#google-account-authentication>`__ To use studio runner and studio ui in guest
 mode, in studio/default\_config.yaml, uncomment "guest: true" under the
 database section.
 
 Alternatively, you can set up your own database and configure Studio to
-use it. See `setting up database <docs/setup_database.rst>`__. This is a
+use it. See `setting up database <setup_database.rst>`__. This is a
 preferred option if you want to keep your models and artifacts private.
 
 
 Further reading and cool features
 ---------------------------------
 
--  `Running experiments remotely <docs/remote_worker.rst>`__
+-  `Running experiments remotely <http://docs.studio.ml/en/latest/remote_worker.html>`__
    
-   -  `Custom Python environments for remote workers <docs/customenv.rst>`__
+   -  `Custom Python environments for remote workers <http://docs.studio.ml/en/latest/customenv.html>`__
 
--  `Running experiments in the cloud <docs/cloud.rst>`__
+-  `Running experiments in the cloud <http://docs.studio.ml/en/latest/cloud.html>`__
 
-   -  `Google Cloud setup instructions <docs/gcloud_setup.rst>`__
+   -  `Google Cloud setup instructions <http://docs.studio.ml/en/latest/glcloud_setup.html>`__
 
-   -  `Amazon EC2 setup instructions <docs/ec2_setup.rst>`__
+   -  `Amazon EC2 setup instructions <http://docs.studio.ml/en/latest/ec2_setup.html>`__
 
--  `Artifact management <docs/artifacts.rst>`__
--  `Hyperparameter search <docs/hyperparams.rst>`__
--  `Pipelines for trained models <docs/model_pipelines.rst>`__
--  `Containerized experiments <docs/containers.rst>`__
+-  `Artifact management <http://docs.studio.ml/en/latest/artifacts.html>`__
+-  `Hyperparameter search <http://docs.studio.ml/en/latest/hyperparams.html>`__
+-  `Pipelines for trained models <http://docs.studio.ml/en/latest/model_pipelines.html>`__
+-  `Containerized experiments <http://docs.studio.ml/en/latest/containers.html>`__
 
 .. |Hex.pm| image:: https://img.shields.io/hexpm/l/plug.svg
    :target: https://github.com/studioml/studio/blob/master/LICENSE
