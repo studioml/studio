@@ -7,6 +7,7 @@ import uuid
 import requests
 
 from studio import model
+from studio.local_queue import get_local_queue_lock
 
 
 @unittest.skipIf('GOOGLE_APPLICATION_CREDENTIALS' not in os.environ.keys(),
@@ -21,22 +22,23 @@ class ServingTest(unittest.TestCase):
         self.port = randint(5000, 9000)
         server_experimentid = 'test_serving_' + str(uuid.uuid4())
 
-        args = [
-            'studio', 'run',
-            '--force-git',
-            '--verbose=debug',
-            '--experiment=' + server_experimentid,
-            '--config=' + self.get_config_path(),
-            'studio::serve_main',
-            '--port=' + str(self.port),
-            '--host=localhost'
-        ]
+        with get_local_queue_lock():
+            args = [
+                'studio', 'run',
+                '--force-git',
+                '--verbose=debug',
+                '--experiment=' + server_experimentid,
+                '--config=' + self.get_config_path(),
+                'studio::serve_main',
+                '--port=' + str(self.port),
+                '--host=localhost'
+            ]
 
-        if wrapper:
-            args.append('--wrapper=' + wrapper)
+            if wrapper:
+                args.append('--wrapper=' + wrapper)
 
-        subprocess.Popen(args, cwd=os.path.dirname(__file__))
-        time.sleep(60)
+            subprocess.Popen(args, cwd=os.path.dirname(__file__))
+            time.sleep(60)
 
         try:
             retval = requests.post(
