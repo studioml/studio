@@ -41,6 +41,10 @@ case $1 in
     parse_command "run" $*
     ;;
 
+    serve)
+    parse_command "serve" $*
+    ;;
+
     runs)
     parse_command "runs" $*
     ;;

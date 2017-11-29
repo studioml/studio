@@ -47,7 +47,7 @@ print('no_epochs = {}'.format(no_epochs))
 model.compile(loss='categorical_crossentropy', optimizer=optimizers.SGD(lr=lr),
               metrics=['accuracy'])
 
-
+print("Saving checkpoints to {}".format(fs_tracker.get_model_directory()))
 checkpointer = ModelCheckpoint(
     fs_tracker.get_model_directory() +
     '/checkpoint.{epoch:02d}-{val_loss:.2f}.hdf')

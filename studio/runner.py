@@ -32,7 +32,7 @@ from . import fs_tracker
 logging.basicConfig()
 
 
-def main(args=sys.argv):
+def main(args=sys.argv[1:]):
     logger = logging.getLogger('studio-runner')
     parser = argparse.ArgumentParser(
         description='Studio runner. \
@@ -127,7 +127,7 @@ def main(args=sys.argv):
         default=None)
 
     parser.add_argument(
-        '--metric', '-m',
+        '--metric',
         help='Metric to show in the summary of the experiment, ' +
              'and to base hyperparameter search on. ' +
              'Refers a scalar value in tensorboard log ' +
@@ -220,13 +220,21 @@ def main(args=sys.argv):
         default=None
     )
 
+    parser.add_argument(
+        '--port',
+        help='Ports to open on a cloud instance',
+        default=[], action='append'
+    )
+
     # detect which argument is the script filename
     # and attribute all arguments past that index as related to the script
-    py_suffix_args = [i for i, arg in enumerate(args) if arg.endswith('.py')]
+    (runner_args, other_args) = parser.parse_known_args(args)
+    py_suffix_args = [i for i, arg in enumerate(args) if arg.endswith('.py')
+                      or '::' in arg]
+
     rerun = False
     if len(py_suffix_args) < 1:
         print('None of the arugments end with .py')
-        (runner_args, other_args) = parser.parse_known_args(args[1:])
         if len(other_args) == 0:
             print("Trying to run a container job")
             assert runner_args.container is not None
@@ -242,7 +250,7 @@ def main(args=sys.argv):
     else:
         script_index = py_suffix_args[0]
         exec_filename, other_args = args[script_index], args[script_index + 1:]
-        runner_args = parser.parse_args(args[1:script_index])
+        runner_args = parser.parse_args(args[:script_index])
 
     # TODO: Queue the job based on arguments and only then execute.
 
@@ -517,7 +525,8 @@ def spin_up_workers(
                 worker_manager.start_worker(
                     queue_name, resources_needed,
                     ssh_keypair=runner_args.ssh_keypair,
-                    timeout=runner_args.cloud_timeout)
+                    timeout=runner_args.cloud_timeout,
+                    ports=runner_args.port)
         else:
             assert runner_args.bid is not None
             if runner_args.num_workers:
@@ -534,7 +543,8 @@ def spin_up_workers(
                 start_workers=start_workers,
                 queue_upscaling=queue_upscaling,
                 ssh_keypair=runner_args.ssh_keypair,
-                timeout=runner_args.cloud_timeout)
+                timeout=runner_args.cloud_timeout,
+                ports=runner_args.port)
 
     elif queue_name == 'local':
         worker_args = ['studio-local-worker']

@@ -22,7 +22,7 @@ def read(fname):
 
 
 def local_scheme(version):
-    if version.distance > 0:
+    if version.distance and version.distance > 0:
         return '.post' + str(version.distance)
     else:
         return ''
@@ -108,6 +108,7 @@ setup(
             'studio/scripts/studio',
             'studio/scripts/studio-ui',
             'studio/scripts/studio-run',
+            'studio/scripts/studio-serve',
             'studio/scripts/studio-runs',
             'studio/scripts/studio-local-worker',
             'studio/scripts/studio-remote-worker',

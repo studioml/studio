@@ -1,7 +1,9 @@
 try:
     import boto3
+    import botocore
 except BaseException:
     boto3 = None
+    botocore = None
 
 import uuid
 import logging
@@ -11,6 +13,8 @@ import json
 import yaml
 import six
 import filelock
+import hashlib
+import pickle
 
 from . import git_util, util
 from .gpu_util import memstr2int
@@ -123,7 +127,8 @@ class EC2WorkerManager(object):
             resources_needed={},
             blocking=True,
             ssh_keypair=None,
-            timeout=300):
+            timeout=300,
+            ports=[]):
 
         imageid = self._get_image_id()
 
@@ -133,9 +138,6 @@ class EC2WorkerManager(object):
 
         startup_script = self._get_startup_script(
             resources_needed, queue_name, timeout=timeout)
-
-        if ssh_keypair is not None:
-            groupid = self._create_security_group(ssh_keypair)
 
         self.logger.info(
             'Starting EC2 instance of type {}'.format(instance_type))
@@ -161,14 +163,29 @@ class EC2WorkerManager(object):
                     }]
             }]
         }
-        if ssh_keypair:
-            kwargs['KeyName'] = ssh_keypair
+        if ssh_keypair is not None:
+            ports.append(22)  # ssh port
+        if any(ports):
+            groupid = self._get_security_group(ports)
             kwargs['SecurityGroupIds'] = [groupid]
+            if ssh_keypair is not None:
+                kwargs['KeyName'] = ssh_keypair
 
         response = self.client.run_instances(**kwargs)
+        instance_id = response['Instances'][0]['InstanceId']
         self.logger.info(
-            'Starting instance {}'.format(
-                response['Instances'][0]['InstanceId']))
+            'Starting instance {}'.format(instance_id))
+
+        if blocking:
+            while True:
+                response = self.client.describe_instances(
+                    InstanceIds=[instance_id]
+                )
+                instance_data = response['Reservations'][0]['Instances'][0]
+                ip_addr = instance_data.get('PublicIpAddress')
+                if ip_addr:
+                    print("ip address: {}".format(ip_addr))
+                    return
 
     def _select_instance_type(self, resources_needed):
         sorted_specs = sorted(_instance_specs.items(),
@@ -246,26 +263,46 @@ class EC2WorkerManager(object):
     def _generate_instance_name(self):
         return 'studioml_worker_' + str(uuid.uuid4())
 
-    def _create_security_group(self, ssh_keypair):
-        group_name = str(uuid.uuid4())
-
-        response = self.client.create_security_group(
-            GroupName=group_name,
-            Description='group to provide ssh access to studioml workers')
-        groupid = response['GroupId']
-
-        response = self.client.authorize_security_group_ingress(
-            GroupId=groupid,
-            GroupName=group_name,
-            IpPermissions=[{
-                'IpProtocol': 'tcp',
-                'FromPort': 22,
-                'ToPort': 22,
-                'IpRanges': [{
-                    'CidrIp': '0.0.0.0/0'
-                }]
-            }]
+    def _get_security_group(self, ports):
+        group_name = "studioml_{}".format(
+            hashlib.sha256(
+                pickle.dumps(sorted(ports))
+            ).hexdigest()
         )
+
+        try:
+            response = self.client.describe_security_groups(
+                GroupNames=[group_name]
+            )
+            groupid = response['SecurityGroups'][0]['GroupId']
+
+        except botocore.exceptions.ClientError:
+
+            response = self.client.create_security_group(
+                GroupName=group_name,
+                Description='opens ports {} in studioml workers'
+                            .format(",".join([str(p) for p in ports]))
+            )
+
+            groupid = response['GroupId']
+
+            ip_permissions = []
+            for port in ports:
+                ip_permissions.append({
+                    'IpProtocol': 'tcp',
+                    'FromPort': int(port),
+                    'ToPort': int(port),
+                    'IpRanges': [{
+                        'CidrIp': '0.0.0.0/0'
+                    }]
+                })
+
+            response = self.client.authorize_security_group_ingress(
+                GroupId=groupid,
+                GroupName=group_name,
+                IpPermissions=ip_permissions
+            )
+
         return groupid
 
     def start_spot_workers(
@@ -277,7 +314,8 @@ class EC2WorkerManager(object):
             queue_upscaling=True,
             start_workers=1,
             max_workers=100,
-            timeout=300):
+            timeout=300,
+            ports=[]):
 
         # TODO should be able to put bid price as None,
         # which means price of on-demand instance
@@ -310,9 +348,12 @@ class EC2WorkerManager(object):
         }
 
         if ssh_keypair is not None:
-            groupid = self._create_security_group(ssh_keypair)
+            ports.append(22)
+        if any(ports):
+            groupid = self._get_security_group(ports)
             launch_config['SecurityGroups'] = [groupid]
-            launch_config['KeyName'] = ssh_keypair
+            if ssh_keypair is not None:
+                launch_config['KeyName'] = ssh_keypair
 
         response = self.asclient.create_launch_configuration(
             LaunchConfigurationName=launch_config_name, **launch_config)

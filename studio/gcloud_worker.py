@@ -52,7 +52,8 @@ class GCloudWorkerManager(object):
             resources_needed={},
             blocking=False,
             ssh_keypair=None,
-            timeout=300):
+            timeout=300,
+            ports=[]):
 
         if ssh_keypair is not None:
             self.logger.warn('ssh keypairs are not supported ' +
@@ -89,7 +90,8 @@ class GCloudWorkerManager(object):
             queue_upscaling=True,
             start_workers=1,
             max_workers=100,
-            timeout=300):
+            timeout=300,
+            ports=[]):
 
         if resources_needed is None:
             resources_needed = {}

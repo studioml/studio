@@ -31,8 +31,19 @@ class Experiment(object):
                  max_duration=None):
 
         self.key = key
+        self.args = []
         self.filename = filename
-        self.args = args if args else []
+        if filename and '::' in filename:
+            self.filename = '-m'
+            module_name = filename.replace('::', '.')
+            if module_name.startswith('.'):
+                module_name = module_name[1:]
+
+            self.args.append(module_name)
+
+        if args:
+            self.args += args
+
         self.pythonenv = pythonenv
         self.project = project
         self.pythonver = pythonver if pythonver else sys.version_info[0]

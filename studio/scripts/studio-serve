@@ -1,0 +1,3 @@
+#!python
+from studio import serve
+serve.main()
