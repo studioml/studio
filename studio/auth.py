@@ -16,7 +16,8 @@ from .util import rand_string
 
 logging.basicConfig()
 
-TOKEN_DIR = os.path.expanduser('~/.studioml/keys')
+TOKEN_DIR = os.path.expanduser('~/.studioml/keys')a
+
 HOUR = 3600
 HALF_HOUR = 1800
 API_KEY_COOLDOWN = 900
@@ -25,6 +26,8 @@ MAX_NUM_RETRIES = 100
 
 
 _auth_singleton = None
+
+_grequest = google.auth.transport.requests.Request()
 
 
 def get_auth(
@@ -45,6 +48,48 @@ def get_auth(
 
     return _auth_singleton
 
+
+def get_and_verify_user(request):
+    if not request.headers or 'Authorization' not in request.headers.keys():
+        return None
+
+    auth_token = request.headers['Authorization'].split(' ')[-1]
+    if not auth_token or auth_token == 'null':
+        return None
+
+    claims = google.oauth2.id_token.verify_firebase_token(
+        auth_token, _grequest)
+
+    if not claims:
+        return None
+    else:
+        global _save_auth_cookie
+        if _save_auth_cookie and request.json and \
+                'refreshToken' in request.json.keys():
+            get_db().refresh_auth_token(
+                claims['email'],
+                request.json['refreshToken']
+            )
+
+        # get_db().register_user(claims['user_id'], claims['email'])
+
+        return claims['user_id']
+
+
+class GithubAuth(object):
+
+    def __init__(
+        self, 
+        blocking=True
+        verbose=logging.DEBUG
+    ):
+        self.logger = logging.getLogger(self.__class__.__name__)
+        self.logger.setLevel(verbose)
+        self.tokendir = os.path.expanduser('~/.studioml/github_keys')
+        
+        
+    
+        
 
 class FirebaseAuth(object):
     def __init__(

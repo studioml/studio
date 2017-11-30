@@ -28,7 +28,6 @@ _db_provider = None
 _config = model.get_config()
 
 _tensorboard_dirs = {}
-_grequest = google.auth.transport.requests.Request()
 _save_auth_cookie = False
 
 logger = None
@@ -441,33 +440,6 @@ def _process_artifacts(experiment):
             artifacts[tag] = art
 
     return artifacts
-
-
-def get_and_verify_user(request):
-    if not request.headers or 'Authorization' not in request.headers.keys():
-        return None
-
-    auth_token = request.headers['Authorization'].split(' ')[-1]
-    if not auth_token or auth_token == 'null':
-        return None
-
-    claims = google.oauth2.id_token.verify_firebase_token(
-        auth_token, _grequest)
-
-    if not claims:
-        return None
-    else:
-        global _save_auth_cookie
-        if _save_auth_cookie and request.json and \
-                'refreshToken' in request.json.keys():
-            get_db().refresh_auth_token(
-                claims['email'],
-                request.json['refreshToken']
-            )
-
-        get_db().register_user(claims['user_id'], claims['email'])
-
-        return claims['user_id']
 
 
 def get_db():
