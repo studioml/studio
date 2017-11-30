@@ -123,6 +123,8 @@ class GithubAuth(object):
         pass
 
     def _load_token(self):
+        import pdb
+        pdb.set_trace()
         tokendir_contents = os.listdir(self.tokendir)
         tokens = [
             f for f in tokendir_contents
