@@ -249,13 +249,17 @@ class HTTPProvider(object):
             key = experiment.key
 
         headers = self._get_headers()
-        request = requests.post(self.url + '/api/checkpoint_experiment',
-                                headers=headers,
-                                data=json.dumps({"key": key})
-                                )
 
-        self._raise_detailed_error(request)
-        artifacts = request.json()['artifacts']
+        def post_request():
+            request = requests.post(self.url + '/api/checkpoint_experiment',
+                                    headers=headers,
+                                    data=json.dumps({"key": key}))
+
+            self._raise_detailed_error(request)
+            artifacts = request.json()['artifacts']
+            return artifacts
+
+        artifacts = retry(post_request, sleep_time=10, logger=self.logger)
 
         self._update_artifacts(experiment, artifacts)
         experiment.time_last_checkpoint = time.time()
