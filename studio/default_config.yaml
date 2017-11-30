@@ -1,7 +1,12 @@
 database:
-    type: http
-    serverUrl: http://zoo.studio.ml
-    projectId: "studio-ed756"
+    #type: http
+    #serverUrl: http://zoo.studio.ml
+    #projectId: "studio-ed756"
+    type: gs
+    bucket: studioml-sentient-meta
+    projectId: "studio-sentient"
+    
+    
 
     authentication:
         #type: firebase
@@ -9,6 +14,10 @@ database:
         #authDomain: "studio-ed756.firebaseapp.com"
         type: github
             
+storage:
+    type: gcloud
+    bucket: studioml-sentient-artifacts
+
 
 
 queue: local

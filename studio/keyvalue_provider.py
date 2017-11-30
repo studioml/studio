@@ -49,7 +49,7 @@ class KeyValueProvider(object):
             compression=self.compression
         )
 
-        if self.auth and not self.auth.expired:
+        if self.auth and not self.auth.is_expired():
             self.register_user(None, self.auth.get_user_email())
 
         self.max_keys = db_config.get('max_keys', 100)

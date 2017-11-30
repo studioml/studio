@@ -6,6 +6,8 @@ import shutil
 import atexit
 import tempfile
 import logging
+import requests
+import re
 
 try:
     from apscheduler.schedulers.background import BackgroundScheduler
@@ -117,30 +119,34 @@ class GithubAuth(object):
         return self.token
 
     def get_user_email(self):
-        raise NotImplementedError
+        return self.userid
 
     def refresh_token(self, userid, refreshtoken):
         pass
 
+    def is_expired(self):
+        return False
+
     def _load_token(self):
-        import pdb
-        pdb.set_trace()
         tokendir_contents = os.listdir(self.tokendir)
         tokens = [
             f for f in tokendir_contents
-            if os.path.isfile(f) and f.endswith('.token')
+            if os.path.isfile(os.path.join(self.tokendir, f))
+            and f.endswith('.token')
         ]
 
         # TODO selection out of multiple token files
         token_file = tokens[0]
-        with open(os.path.join(self.token_dir, token_file)) as f:
-            self.token = f.read()
+        with open(os.path.join(self.tokendir, token_file)) as f:
+            token = f.read().strip()
 
-        self.userid = self._verify_token(self.token)
+        self.userid = self._verify_token(token)
         if self.userid != re.sub('.token\Z', '', token_file):
             raise ValueError(
                 'Token filename does not match github login'
             )
+
+        return token
 
     def _verify_token(self, token):
         response = requests.get(
@@ -151,7 +157,7 @@ class GithubAuth(object):
         if response.status_code != 200:
             return None
         else:
-            return response.json['login']
+            return response.json()['login']
 
 
 class FirebaseAuth(object):
@@ -292,6 +298,9 @@ class FirebaseAuth(object):
         # we could also use the get_account_info
         # print self.firebase.auth().get_account_info(self.get_token())
         return self.user['email']
+
+    def is_expired(self):
+        return self.expired
 
 
 def remove_all_keys():
