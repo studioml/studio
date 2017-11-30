@@ -8,6 +8,8 @@ import tempfile
 import logging
 import requests
 import re
+import uuid
+from builtins import input
 
 try:
     from apscheduler.schedulers.background import BackgroundScheduler
@@ -36,6 +38,17 @@ _auth_singleton = None
 _grequest = google.auth.transport.requests.Request()
 
 
+def get_auth_class(authtype):
+    if authtype.lower() == 'firebase':
+        return FirebaseAuth
+    elif authtype.lower() == 'github':
+        return GithubAuth
+    else:
+        raise ValueError(
+            'Unknown authentication type {}'
+            .format(config['type']))
+
+
 def get_auth(
         config,
         blocking=True,
@@ -43,52 +56,32 @@ def get_auth(
 
     global _auth_singleton
     if _auth_singleton is None:
-        if config['type'] == 'firebase':
-            _auth_singleton = FirebaseAuth(
-                config,
-                blocking=blocking,
-                verbose=verbose)
-        elif config['type'] == 'github':
-            _auth_singleton = GithubAuth(
-                config,
-                blocking=blocking,
-                verbose=verbose)
-
-        else:
-            raise ValueError(
-                'Unknown authentication type {}'
-                .format(config['type']))
-
+        _auth_singleton = get_auth_class(config['type'])(
+            config,
+            blocking=blocking,
+            verbose=verbose
+        )
     return _auth_singleton
 
 
-def get_and_verify_user(request):
+def get_and_verify_user(request, authconfig):
     if not request.headers or 'Authorization' not in request.headers.keys():
         return None
 
-    auth_token = request.headers['Authorization'].split(' ')[-1]
-    if not auth_token or auth_token == 'null':
+    token = request.headers['Authorization'].split(' ')[-1]
+    if not token or token == 'null':
         return None
 
-    claims = google.oauth2.id_token.verify_firebase_token(
-        auth_token, _grequest)
-
-    if not claims:
-        return None
+    auth = get_auth(authconfig, blocking=False)
+    
+    if request.json:
+        refresh_token = request.json.get['refreshToken']
     else:
-        global _save_auth_cookie
-        if _save_auth_cookie and request.json and \
-                'refreshToken' in request.json.keys():
-            get_db().refresh_auth_token(
-                claims['email'],
-                request.json['refreshToken']
-            )
+        refresh_token = None
 
-        # get_db().register_user(claims['user_id'], claims['email'])
+    return auth.verify_token(token, refresh_token)
 
-        return claims['user_id']
-
-
+    
 class GithubAuth(object):
 
     def __init__(
@@ -136,19 +129,33 @@ class GithubAuth(object):
         ]
 
         # TODO selection out of multiple token files
+        if not any(tokens):
+            return None
+
         token_file = tokens[0]
         with open(os.path.join(self.tokendir, token_file)) as f:
             token = f.read().strip()
 
-        self.userid = self._verify_token(token)
+        self.userid = self.verify_token(token)
         if self.userid != re.sub('.token\Z', '', token_file):
-            raise ValueError(
+            self.logger.error(
                 'Token filename does not match github login'
             )
+            return None
 
         return token
 
-    def _verify_token(self, token):
+    def _save_token(self):
+        if self.token is None:
+            return
+        
+        token_file = os.path.join(self.tokendir, self.userid + '.token')
+        with open(token_file, 'w') as f:
+            f.write(self.token)
+
+        
+
+    def verify_token(self, token):
         response = requests.get(
             'https://api.github.com/user',
             headers={"Authorization": "Bearer " + token}
@@ -159,6 +166,50 @@ class GithubAuth(object):
         else:
             return response.json()['login']
 
+    def _sign_in(self):
+        print (
+            '*** \n' + 
+            'Sign in with your GitHub username and password \n'+
+            'NOTE: studio.ml does NOT store GitHub passwords ' + 
+            ' or any other passwords for that matter. \n ' +
+            'Your ' +
+            'password will be used a single time to generate ' + 
+            'an authorization token that allows studio to '  
+            'verify your identity in the future.'
+        )
+
+        while True:       
+            self.userid = input('user id:')
+            password = getpass.getpass('password:')
+
+            
+            response = requests.post(
+                'https://api.github.com/authorizations',
+                json={
+                    'scopes': ['read:user'],
+                    'note': 'studioml authorization, ' + 
+                            'random = ' + str(uuid.uuid4())
+                },
+                auth=(self.userid, password),
+            )
+            
+            password = None
+
+            if response.status_code == 201:
+                self.token = response.json()['token']
+                self._save_token()
+                print('Successfully created token with name: ' + 
+                      response.json()['app']['name'])
+                return
+            
+            else:
+                print("GitHub login failure")
+                print(response.json())
+
+        
+            
+        
+    
 
 class FirebaseAuth(object):
     def __init__(
@@ -176,8 +227,8 @@ class FirebaseAuth(object):
         self.user = {}
         self.use_email_auth = config.get('use_email_auth', False)
         if self.use_email_auth:
-            self.email = config.get(email)
-            self.password = config.get(passwork)
+            self.email = config.get('email')
+            self.password = config.get('password')
             if not self.password or not self.email:
                 self.email = input(
                     'Firebase token is not found or expired! ' +
@@ -301,6 +352,20 @@ class FirebaseAuth(object):
 
     def is_expired(self):
         return self.expired
+
+    def verify_token(self, token, refresh_token=None):
+        claims = google.oauth2.id_token.verify_firebase_token(
+            token, _grequest)
+
+        if not claims:
+            return None
+        else:
+            if refresh_token:
+                self.refresh_token(claims['email'], refresh_token)
+
+            # get_db().register_user(claims['user_id'], claims['email'])
+
+            return claims['user_id']
 
 
 def remove_all_keys():
