@@ -1,9 +1,13 @@
 database:
     type: http
     serverUrl: http://zoo.studio.ml
-    apiKey: AIzaSyCLQbp5X2B4SWzBw-sz9rUnGHNSdMl0Yx8
-    authDomain: "studio-ed756.firebaseapp.com"
     projectId: "studio-ed756"
+
+    authentication:
+        type: firebase
+        apiKey: AIzaSyCLQbp5X2B4SWzBw-sz9rUnGHNSdMl0Yx8
+        authDomain: "studio-ed756.firebaseapp.com"
+            
 
 
 queue: local

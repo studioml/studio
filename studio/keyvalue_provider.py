@@ -37,11 +37,10 @@ class KeyValueProvider(object):
 
         self.auth = None
         if not guest and 'serviceAccount' not in db_config.keys():
-            self.auth = get_auth(self.app,
-                                 db_config.get("use_email_auth"),
-                                 db_config.get("email"),
-                                 db_config.get("password"),
-                                 blocking_auth)
+            self.auth = get_auth(
+                db_config['authentication'],
+                blocking_auth
+            )
 
         self.store = store if store else FirebaseArtifactStore(
             db_config,

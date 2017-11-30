@@ -33,11 +33,10 @@ class HTTPProvider(object):
         self.app = pyrebase.initialize_app(config)
         guest = config.get('guest')
         if not guest and 'serviceAccount' not in config.keys():
-            self.auth = get_auth(self.app,
-                                 config.get("use_email_auth"),
-                                 config.get("email"),
-                                 config.get("password"),
-                                 blocking_auth)
+            self.auth = get_auth(
+                config['authentication'],
+                blocking_auth
+            )
 
         self.compression = compression
         if self.compression is None:

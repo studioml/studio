@@ -12,9 +12,9 @@ import traceback
 import six
 
 import google.oauth2.id_token
-import google.auth.transport.requests
 
 from .experiment import experiment_from_dict
+from .auth import get_and_verify_user
 
 logging.basicConfig()
 

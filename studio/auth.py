@@ -12,11 +12,15 @@ try:
 except BaseException:
     BackgroundScheduler = None
 
+import google.auth.transport.requests
+import google.oauth2.id_token
+
 from .util import rand_string
+from . import pyrebase
 
 logging.basicConfig()
 
-TOKEN_DIR = os.path.expanduser('~/.studioml/keys')a
+TOKEN_DIR = os.path.expanduser('~/.studioml/keys')
 
 HOUR = 3600
 HALF_HOUR = 1800
@@ -31,20 +35,27 @@ _grequest = google.auth.transport.requests.Request()
 
 
 def get_auth(
-        firebase,
-        use_email_auth=False,
-        email=None,
-        password=None,
-        blocking=True):
+        config,
+        blocking=True,
+        verbose=logging.DEBUG):
 
     global _auth_singleton
     if _auth_singleton is None:
-        _auth_singleton = FirebaseAuth(
-            firebase,
-            use_email_auth,
-            email,
-            password,
-            blocking)
+        if config['type'] == 'firebase':
+            _auth_singleton = FirebaseAuth(
+                config,
+                blocking=blocking,
+                verbose=verbose)
+        elif config['type'] == 'github':
+            _auth_singleton = GithubAuth(
+                config,
+                blocking=blocking,
+                verbose=verbose)
+
+        else:
+            raise ValueError(
+                'Unknown authentication type {}'
+                .format(config['type']))
 
     return _auth_singleton
 
@@ -79,40 +90,87 @@ def get_and_verify_user(request):
 class GithubAuth(object):
 
     def __init__(
-        self, 
-        blocking=True
+        self,
+        config,
+        blocking=True,
         verbose=logging.DEBUG
     ):
         self.logger = logging.getLogger(self.__class__.__name__)
         self.logger.setLevel(verbose)
-        self.tokendir = os.path.expanduser('~/.studioml/github_keys')
-        
-        
-    
-        
+        self.tokendir = os.path.abspath(os.path.expanduser(
+            config.get('token_directory', '~/.studioml/github_keys'))
+        )
+
+        self.config = config
+
+        self.token = self._load_token()
+        if self.token is None and blocking:
+            self._sign_in()
+
+    def get_user_id(self):
+        return self.userid
+
+    def get_token(self):
+        if self.token is None:
+            self._load_token()
+
+        return self.token
+
+    def get_user_email(self):
+        raise NotImplementedError
+
+    def refresh_token(self, userid, refreshtoken):
+        pass
+
+    def _load_token(self):
+        tokendir_contents = os.listdir(self.tokendir)
+        tokens = [
+            f for f in tokendir_contents
+            if os.path.isfile(f) and f.endswith('.token')
+        ]
+
+        # TODO selection out of multiple token files
+        token_file = tokens[0]
+        with open(os.path.join(self.token_dir, token_file)) as f:
+            self.token = f.read()
+
+        self.userid = self._verify_token(self.token)
+        if self.userid != re.sub('.token\Z', '', token_file):
+            raise ValueError(
+                'Token filename does not match github login'
+            )
+
+    def _verify_token(self, token):
+        response = requests.get(
+            'https://api.github.com/user',
+            headers={"Authorization": "Bearer " + token}
+        )
+
+        if response.status_code != 200:
+            return None
+        else:
+            return response.json['login']
+
 
 class FirebaseAuth(object):
     def __init__(
             self,
-            firebase,
-            use_email_auth=False,
-            email=None,
-            password=None,
-            blocking=True):
+            config,
+            blocking=True,
+            verbose=logging.DEBUG):
         if not os.path.exists(TOKEN_DIR):
             os.makedirs(TOKEN_DIR)
 
         self.logger = logging.getLogger(self.__class__.__name__)
-        self.logger.setLevel(logging.DEBUG)
+        self.logger.setLevel(verbose)
 
-        self.firebase = firebase
+        self.firebase = pyrebase.initialize_app(config)
         self.user = {}
-        self.use_email_auth = use_email_auth
-        if use_email_auth:
-            if email and password:
-                self.email = email
-                self.password = password
-            else:
+        self.use_email_auth = config.get('use_email_auth', False)
+        if self.use_email_auth:
+            self.email = config.get(email)
+            self.password = config.get(passwork)
+            if not self.password or not self.email:
                 self.email = input(
                     'Firebase token is not found or expired! ' +
                     'You need to re-login. (Or re-run with ' +
