@@ -123,9 +123,9 @@ class LocalExecutor(object):
                 def checkpoint():
                     try:
                         db.checkpoint_experiment(experiment)
-                    except BaseException:
-                        pass
-            
+                    except BaseException as e:
+                        self.logger.info(e)
+
                 sched.add_job(
                     checkpoint,
                     'interval',
