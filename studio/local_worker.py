@@ -120,8 +120,14 @@ class LocalExecutor(object):
                             self.config['saveWorkspaceFrequency'])
                         .total_seconds() / 60)
 
+                def checkpoint():
+                    try:
+                        db.checkpoint_experiment(experiment)
+                    except BaseException:
+                        pass
+            
                 sched.add_job(
-                    lambda: db.checkpoint_experiment(experiment),
+                    checkpoint,
                     'interval',
                     minutes=minutes)
 
