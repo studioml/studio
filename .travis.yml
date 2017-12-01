@@ -26,7 +26,8 @@ install:
 
 script:
   - echo $GOOGLE_APPLICATION_CREDENTIALS
-  - py.test -v --durations=0 
+  #- py.test -v --durations=0 
+  - python -m unittest -q studio.completion_serivce.completion_service_test.CompletionServiceTest
   - pycodestyle --show-source --exclude=.eggs .
   - python setup.py sdist
 
