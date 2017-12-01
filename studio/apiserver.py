@@ -156,7 +156,7 @@ def get_experiment():
 @app.route('/api/get_user_experiments', methods=['POST'])
 def get_user_experiments():
     tic = time.time()
-    myuser_id = get_and_verify_user(request)
+    myuser_id = get_and_verify_user(request, get_auth_config())
     if request.json and 'user' in request.json.keys():
         user = request.json['user']
     else:
@@ -184,7 +184,7 @@ def get_user_experiments():
 @app.route('/api/get_all_experiments', methods=['POST'])
 def get_all_experiments():
     tic = time.time()
-    get_and_verify_user(request)
+    get_and_verify_user(request, get_auth_config())
 
     # TODO check is myuser_id is authorized to do that
 
@@ -209,7 +209,7 @@ def get_all_experiments():
 @app.route('/api/get_projects', methods=['POST'])
 def get_projects():
     tic = time.time()
-    get_and_verify_user(request)
+    get_and_verify_user(request, get_auth_config())
 
     # TODO check / filter access
 
@@ -230,7 +230,7 @@ def get_projects():
 @app.route('/api/get_users', methods=['POST'])
 def get_users():
     tic = time.time()
-    get_and_verify_user(request)
+    get_and_verify_user(request, get_auth_config())
 
     # TODO check / filter access
 
@@ -250,7 +250,7 @@ def get_users():
 @app.route('/api/get_project_experiments', methods=['POST'])
 def get_project_experiments():
     tic = time.time()
-    get_and_verify_user(request)
+    get_and_verify_user(request, get_auth_config())
 
     project = request.json.get('project')
     if not project:
@@ -278,7 +278,7 @@ def get_project_experiments():
 @app.route('/api/delete_experiment', methods=['POST'])
 def delete_experiment():
     tic = time.time()
-    userid = get_and_verify_user(request)
+    userid = get_and_verify_user(request, get_auth_config())
     try:
         key = request.json['key']
         if get_db().can_write_experiment(key, userid):
@@ -301,7 +301,7 @@ def delete_experiment():
 @app.route('/api/stop_experiment', methods=['POST'])
 def stop_experiment():
     tic = time.time()
-    userid = get_and_verify_user(request)
+    userid = get_and_verify_user(request, get_auth_config())
     try:
         key = request.json['key']
         if get_db().can_write_experiment(key, userid):
@@ -324,7 +324,7 @@ def stop_experiment():
 @app.route('/api/start_experiment', methods=['POST'])
 def start_experiment():
     tic = time.time()
-    userid = get_and_verify_user(request)
+    userid = get_and_verify_user(request, get_auth_config())
     try:
         key = request.json['key']
         if get_db().can_write_experiment(key, userid):
@@ -348,7 +348,7 @@ def start_experiment():
 @app.route('/api/finish_experiment', methods=['POST'])
 def finish_experiment():
     tic = time.time()
-    userid = get_and_verify_user(request)
+    userid = get_and_verify_user(request, get_auth_config())
     try:
         key = request.json['key']
         if get_db().can_write_experiment(key, userid):
@@ -371,7 +371,7 @@ def finish_experiment():
 @app.route('/api/add_experiment', methods=['POST'])
 def add_experiment():
     tic = time.time()
-    userid = get_and_verify_user(request)
+    userid = get_and_verify_user(request, get_auth_config())
 
     artifacts = {}
     try:
@@ -404,7 +404,7 @@ def add_experiment():
 @app.route('/api/checkpoint_experiment', methods=['POST'])
 def checkpoint_experiment():
     tic = time.time()
-    userid = get_and_verify_user(request)
+    userid = get_and_verify_user(request, get_auth_config())
 
     artifacts = {}
     try:
@@ -469,6 +469,14 @@ def getlogger():
 
     return logger
 
+def get_config():
+    global _config
+    if _config is None:
+        _config = model.get_config()
+    return _config
+
+def get_auth_config():
+    return get_config()['database']['authentication']
 
 def _render(page, **kwargs):
     tic = time.time()

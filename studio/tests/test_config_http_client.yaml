@@ -1,9 +1,11 @@
 database: 
     type: http
-    serverUrl: "https://studio-ed756.appspot.com"
-    apiKey: AIzaSyCLQbp5X2B4SWzBw-sz9rUnGHNSdMl0Yx8
-    authDomain: "studio-ed756.firebaseapp.com"
     guest: true
+    serverUrl: "https://studio-ed756.appspot.com"
+    authentication:
+        type: firebase
+        apiKey: AIzaSyCLQbp5X2B4SWzBw-sz9rUnGHNSdMl0Yx8
+        authDomain: "studio-ed756.firebaseapp.com"
 
 log:
     name: output.log
