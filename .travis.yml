@@ -18,7 +18,7 @@ env:
 install:
   - git fetch --unshallow
   # - pip install -e .
-  - pip install apscheduler --upgrade
+  - pip install apscheduler==3.3.0
   - pip install pycodestyle
   - pip install pytest_xdist
   # - pip install -r extra_test_requirements.txt
