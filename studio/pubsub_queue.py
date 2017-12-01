@@ -3,9 +3,10 @@ import os
 import json
 import time
 import google
+from google.gax.errors import RetryError
 
 from .model import parse_verbosity
-from .util import sixdecode
+from .util import sixdecode, retry
 
 logging.basicConfig()
 
@@ -134,7 +135,10 @@ class PubsubQueue(object):
 
     def acknowledge(self, ack_key):
         self.logger.debug("Message with key {} acknowledged".format(ack_key))
-        self.subclient.acknowledge(self.sub_name, [ack_key])
+        retry(lambda: self.subclient.acknowledge(self.sub_name, [ack_key]),
+              sleep_time=10,
+              logger=self.logger,
+              exception_class=RetryError)
 
     def delete(self):
         self.logger.debug("Deleting pubsub queue with topic" + self.topic_name)
