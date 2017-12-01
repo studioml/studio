@@ -6,11 +6,6 @@ from subprocess import call
 from setuptools.command.install import install
 from setuptools.command.develop import develop
 
-import sys
-import platform
-import ctypes
-import pip
-
 
 def read(fname):
     try:
