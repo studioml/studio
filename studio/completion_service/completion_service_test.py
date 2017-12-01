@@ -51,6 +51,7 @@ class CompletionServiceTest(unittest.TestCase):
 
         self.test_two_experiments_with_cs_args(
             config=config_path,
+            ssh_keypair='peterz-k1',
             cloud_timeout=100,
             cloud='ec2')
 

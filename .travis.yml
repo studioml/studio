@@ -28,7 +28,8 @@ install:
 script:
   - echo $GOOGLE_APPLICATION_CREDENTIALS
   #- py.test -v --durations=0 
-  - python -m unittest -q studio.completion_service.completion_service_test.CompletionServiceTest
+  #- python -m unittest -q studio.completion_service.completion_service_test.CompletionServiceTest
+  - python -c "from apscheduler.schedulers.background import BackgroundScheduler; bs = BackgroundScheduler(); print bs"
   - pycodestyle --show-source --exclude=.eggs .
   - python setup.py sdist
 
