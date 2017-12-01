@@ -2,6 +2,7 @@ import uuid
 import unittest
 import os
 import logging
+from timeout_decorator import timeout
 
 from .completion_service import CompletionService
 
