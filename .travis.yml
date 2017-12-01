@@ -18,7 +18,7 @@ env:
 install:
   - git fetch --unshallow
   # - pip install -e .
-  - pip install apscheduler==3.3.0
+  - pip install apscheduler
   - pip install pycodestyle
   - pip install pytest_xdist
   # - pip install -r extra_test_requirements.txt
@@ -28,6 +28,7 @@ install:
 
 script:
   - echo $GOOGLE_APPLICATION_CREDENTIALS
+  - env
   #- py.test -v --durations=0 
   #- python -m unittest -q studio.completion_service.completion_service_test.CompletionServiceTest
   - python -c "from apscheduler.schedulers.background import BackgroundScheduler; bs = BackgroundScheduler(); print bs"
