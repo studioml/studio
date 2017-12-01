@@ -11,8 +11,6 @@ import subprocess
 import traceback
 import six
 
-import google.oauth2.id_token
-
 from .experiment import experiment_from_dict
 from .auth import get_and_verify_user
 
@@ -469,14 +467,17 @@ def getlogger():
 
     return logger
 
+
 def get_config():
     global _config
     if _config is None:
         _config = model.get_config()
     return _config
 
+
 def get_auth_config():
     return get_config()['database']['authentication']
+
 
 def _render(page, **kwargs):
     tic = time.time()

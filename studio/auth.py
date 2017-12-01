@@ -73,7 +73,7 @@ def get_and_verify_user(request, authconfig):
         return None
 
     auth = get_auth(authconfig, blocking=False)
-    
+
     if request.json:
         refresh_token = request.json.get['refreshToken']
     else:
@@ -81,7 +81,7 @@ def get_and_verify_user(request, authconfig):
 
     return auth.verify_token(token, refresh_token)
 
-    
+
 class GithubAuth(object):
 
     def __init__(
@@ -148,12 +148,10 @@ class GithubAuth(object):
     def _save_token(self):
         if self.token is None:
             return
-        
+
         token_file = os.path.join(self.tokendir, self.userid + '.token')
         with open(token_file, 'w') as f:
             f.write(self.token)
-
-        
 
     def verify_token(self, token):
         response = requests.get(
@@ -168,48 +166,43 @@ class GithubAuth(object):
 
     def _sign_in(self):
         print (
-            '*** \n' + 
-            'Sign in with your GitHub username and password \n'+
-            'NOTE: studio.ml does NOT store GitHub passwords ' + 
+            '*** \n' +
+            'Sign in with your GitHub username and password \n' +
+            'NOTE: studio.ml does NOT store GitHub passwords ' +
             ' or any other passwords for that matter. \n ' +
             'Your ' +
-            'password will be used a single time to generate ' + 
-            'an authorization token that allows studio to '  
+            'password will be used a single time to generate ' +
+            'an authorization token that allows studio to '
             'verify your identity in the future.'
         )
 
-        while True:       
+        while True:
             self.userid = input('user id:')
             password = getpass.getpass('password:')
 
-            
             response = requests.post(
                 'https://api.github.com/authorizations',
                 json={
                     'scopes': ['read:user'],
-                    'note': 'studioml authorization, ' + 
+                    'note': 'studioml authorization, ' +
                             'random = ' + str(uuid.uuid4())
                 },
                 auth=(self.userid, password),
             )
-            
+
             password = None
 
             if response.status_code == 201:
                 self.token = response.json()['token']
                 self._save_token()
-                print('Successfully created token with name: ' + 
+                print('Successfully created token with name: ' +
                       response.json()['app']['name'])
                 return
-            
+
             else:
                 print("GitHub login failure")
                 print(response.json())
 
-        
-            
-        
-    
 
 class FirebaseAuth(object):
     def __init__(
