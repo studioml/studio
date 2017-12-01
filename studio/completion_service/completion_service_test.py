@@ -69,6 +69,7 @@ class CompletionServiceTest(unittest.TestCase):
             cloud_timeout=100,
             cloud='ec2spot')
 
+    @timeout(500, use_signals=False)
     def test_two_experiments_apiserver(self):
         mypath = os.path.dirname(os.path.realpath(__file__))
         config_path = os.path.join(

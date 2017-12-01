@@ -16,7 +16,7 @@ from . import model
 from .local_queue import LocalQueue
 from .gpu_util import get_available_gpus, get_gpu_mapping, get_gpus_summary
 from .experiment import Experiment
-from .util import sixdecode, str2duration
+from .util import sixdecode, str2duration, retry
 
 logging.basicConfig()
 logging.getLogger('apscheduler.scheduler').setLevel(logging.ERROR)
@@ -267,7 +267,17 @@ def worker_loop(queue, parsed_args,
 
         with model.get_db_provider(config) as db:
             # experiment = experiment_from_dict(data_dict['experiment'])
-            experiment = db.get_experiment(experiment_key)
+            def try_get_experiment():
+                experiment = db.get_experiment(experiment_key)
+                if experiment is None:
+                    raise ValueError(
+                        'experiment is not found - indicates storage failure')
+                return experiment
+
+            experiment = retry(
+                try_get_experiment,
+                sleep_time=10,
+                logger=logger)
 
             if config.get('experimentLifetime') and \
                 int(str2duration(config['experimentLifetime'])
