@@ -175,6 +175,11 @@ class TartifactStore(object):
 
                 download_file_from_qualified(
                     remote_path, local_path, self.logger)
+            
+            self.logger.debug('Downloaded file {} from external source {}'
+                              .format(local_path, remote_path))
+            return local_path
+
 
         if local_path is None:
             if 'local' in artifact.keys() and \
@@ -218,7 +223,7 @@ class TartifactStore(object):
 
         def finish_download():
             try:
-                self._download_file(key, tar_filename, bucket)
+                self._download_file(key, tar_filename)
             except BaseException as e:
                 self.logger.debug(e)
 
