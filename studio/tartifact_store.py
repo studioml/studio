@@ -78,12 +78,17 @@ class TartifactStore(object):
         if local_path is None:
             local_path = artifact['local']
 
+        if local_path is None or not os.path.exists(local_path):
+            if artifact.get('qualified'):
+                return hashlib.sha256(artifact.get('qualified')).hexdigest()
+            elif artifact.get('url'):
+                return hashlib.sha256(artifact.get('url')).hexdigest()
+                
         key = artifact.get('key')
-        if os.path.exists(local_path):
-            tar_filename = self._tartifact(local_path, key)
-            retval = util.sha256_checksum(tar_filename)
-            os.remove(tar_filename)
-            return retval
+        tar_filename = self._tartifact(local_path, key)
+        retval = util.sha256_checksum(tar_filename)
+        os.remove(tar_filename)
+        return retval
 
     def put_artifact(
             self,
@@ -139,6 +144,7 @@ class TartifactStore(object):
             background=False):
 
         key = artifact.get('key')
+        bucket = artifact.get('bucket')
 
         if key is None:
             assert not artifact['mutable']
@@ -212,7 +218,7 @@ class TartifactStore(object):
 
         def finish_download():
             try:
-                self._download_file(key, tar_filename)
+                self._download_file(key, tar_filename, bucket)
             except BaseException as e:
                 self.logger.debug(e)
 
