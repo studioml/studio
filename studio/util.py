@@ -265,8 +265,13 @@ def download_file_from_qualified(qualified, local_path, logger=None):
     assert qualified.startswith('s3://') or \
         qualified.startswith('gs://')
 
-    bucket = qualified.split('/')[2]
-    key = '/'.join(qualified.split('/')[3:])
+    qualified_split = qualified.split('/')
+    if qualified_split[2].endswith('.com'):
+        bucket = qualified_split[3]
+        key = '/'.join(qualified_split[4:])
+    else:
+        bucket = qualified_split[4]
+        key = '/'.join(qualified_split[5:])
 
     if logger is not None:
         logger.debug(('Downloading file from bucket {} ' +
