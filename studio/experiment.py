@@ -10,6 +10,7 @@ except ImportError:
     pip = None
 
 from . import fs_tracker
+from .util import shquote
 
 
 class Experiment(object):
@@ -33,6 +34,7 @@ class Experiment(object):
         self.key = key
         self.filename = filename
         self.args = args if args else []
+        self.args = [shquote(a) for a in self.args]
         self.pythonenv = pythonenv
         self.project = project
         self.pythonver = pythonver if pythonver else sys.version_info[0]

@@ -369,6 +369,13 @@ def sixdecode(s):
 
     raise TypeError("Unknown type of " + str(s))
 
+def shquote(s):
+    try: 
+        import pipes as P
+    except ImportError:
+        import shlex as P
+   
+    return P.quote(s)
 
 duration_regex = re.compile(
     r'((?P<hours>-?\d+?)h)?((?P<minutes>-?\d+?)m)?((?P<seconds>-?\d+?)s)?')
