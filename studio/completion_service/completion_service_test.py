@@ -190,7 +190,7 @@ class CompletionServiceTest(unittest.TestCase):
 
         files['url'] = _file_url
 
-        self._run_test(
+        self._run_test_files(
             files=files,
             n_experiments=2,
             config=config_path,
