@@ -276,8 +276,8 @@ def download_file_from_qualified(qualified, local_path, logger=None):
         bucket = qualified_split[3]
         key = '/'.join(qualified_split[4:])
     else:
-        bucket = qualified_split[4]
-        key = '/'.join(qualified_split[5:])
+        bucket = qualified_split[2]
+        key = '/'.join(qualified_split[3:])
 
     if logger is not None:
         logger.debug(('Downloading file from bucket {} ' +
