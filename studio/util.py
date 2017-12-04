@@ -43,11 +43,13 @@ def remove_backspaces(line):
 def sha256_checksum(filename, block_size=65536):
     return filehash(filename, block_size, hashobj=hashlib.sha256())
 
+
 def filehash(filename, block_size=65536, hashobj=hashlib.sha256()):
     with open(filename, 'rb') as f:
         for block in iter(lambda: f.read(block_size), b''):
             hashobj.update(block)
     return hashobj.hexdigest()
+
 
 def rand_string(length):
     return "".join([random.choice(string.ascii_letters + string.digits)

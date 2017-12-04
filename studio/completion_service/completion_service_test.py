@@ -8,18 +8,24 @@ import tempfile
 
 from .completion_service import CompletionService
 
-from studio.util import has_aws_credentials, filehash, download_file, rand_string
+from studio.util import has_aws_credentials, filehash, 
+from studio.util import download_file, rand_string
 from studio.local_queue import get_local_queue_lock
 
 
 logging.basicConfig()
 
+_file_url = 'https://s3.amazonaws.com/ml-enn/deepbilevel_datafiles/' + \
+            'mightyai_combined_vocab/mightyai_miscfiles.tar.gz'
+
+_file_s3 = 's3://ml-enn/deepbilevel_datafiles/' + \ 
+           'mightyai_combined_vocab/mightyai_miscfiles.tar.gz'
 
 class CompletionServiceTest(unittest.TestCase):
 
-    def _run_test(self, 
+    def _run_test(self,
                   args=None,
-                  files={}, 
+                  files={},
                   jobfile=None,
                   expected_results=None,
                   **csargs):
@@ -28,10 +34,11 @@ class CompletionServiceTest(unittest.TestCase):
             return
 
         mypath = os.path.dirname(os.path.realpath(__file__))
-        jobfile = os.path.join(mypath, jobfile or 'completion_service_testfunc.py')
+        jobfile = os.path.join(
+            mypath, jobfile or 'completion_service_testfunc.py')
 
         args = args or [0, 1]
-        
+
         expected_results = expected_results or args
         submission_indices = {}
         n_experiments = len(args)
@@ -49,14 +56,13 @@ class CompletionServiceTest(unittest.TestCase):
                     expected_results[submission_indices[result[0]]]
                 )
 
-
-    def _run_test_files(self, 
+    def _run_test_files(self,
                         files,
                         n_experiments=2,
                         **csargs):
 
-
-        expected_results = [(i, self._get_file_hashes(files)) for i in range(n_experiments)]
+        expected_results = [(i, self._get_file_hashes(files))
+                            for i in range(n_experiments)]
         args = range(n_experiments)
         self._run_test(
             args=args,
@@ -66,21 +72,19 @@ class CompletionServiceTest(unittest.TestCase):
             **csargs
         )
 
- 
-    
     def _get_file_hashes(self, files):
         retval = {}
-        for k,v in six.iteritems(files):
+        for k, v in six.iteritems(files):
             if '://' in v:
-                tmpfilename = os.path.join(tempfile.gettempdir(), rand_string(10))
+                tmpfilename = os.path.join(
+                    tempfile.gettempdir(), rand_string(10))
                 download_file(v, tmpfilename)
                 retval[k] = filehash(tmpfilename, hashobj=hashlib.md5())
                 os.remove(tmpfilename)
             else:
                 retval[k] = filehash(v, hashobj=hashlib.md5())
-        
-        return retval     
-       
+
+        return retval
 
     @unittest.skipIf(not has_aws_credentials(),
                      'AWS credentials needed for this test')
@@ -108,11 +112,11 @@ class CompletionServiceTest(unittest.TestCase):
             'test_config_http_client.yaml')
 
         files_in_workspace = os.listdir(mypath)
-        files = {f: os.path.join(mypath, f) for f in files_in_workspace if 
-                    os.path.isfile(os.path.join(mypath,f))}
+        files = {f: os.path.join(mypath, f) for f in files_in_workspace if
+                 os.path.isfile(os.path.join(mypath, f))}
 
-        files['url'] = 'https://s3.amazonaws.com/ml-enn/deepbilevel_datafiles/mightyai_combined_vocab/mightyai_miscfiles.tar.gz'
-        files['s3'] = 's3://ml-enn/deepbilevel_datafiles/mightyai_combined_vocab/mightyai_miscfiles.tar.gz'
+        files['url'] = _file_url
+        files['s3'] = _file_s3
 
         self._run_test_files(
             files=files,
@@ -121,7 +125,6 @@ class CompletionServiceTest(unittest.TestCase):
             cloud_timeout=100,
             cloud='ec2spot',
         )
-            
 
     def test_two_experiments_apiserver(self):
         mypath = os.path.dirname(os.path.realpath(__file__))
@@ -132,14 +135,17 @@ class CompletionServiceTest(unittest.TestCase):
             'test_config_http_client.yaml')
 
         files_in_workspace = os.listdir(mypath)
-        files = {f: os.path.join(mypath, f) for f in files_in_workspace if 
-                    os.path.isfile(os.path.join(mypath,f))}
+        files = {f: os.path.join(mypath, f) for f in files_in_workspace if
+                 os.path.isfile(os.path.join(mypath, f))}
 
-        files['url'] = 'https://s3.amazonaws.com/ml-enn/deepbilevel_datafiles/mightyai_combined_vocab/mightyai_miscfiles.tar.gz'
-        files['s3'] = 's3://ml-enn/deepbilevel_datafiles/mightyai_combined_vocab/mightyai_miscfiles.tar.gz'
+        files['url'] = _file_url
+        files['s3'] = _file_s3
 
         with get_local_queue_lock():
-            self._run_test_files(n_experiments=2, files=files, config=config_path)
+            self._run_test_files(
+                n_experiments=2,
+                files=files,
+                config=config_path)
 
     @unittest.skipIf(
         'GOOGLE_APPLICATION_CREDENTIALS' not in os.environ.keys(),
@@ -154,18 +160,16 @@ class CompletionServiceTest(unittest.TestCase):
             'test_config_http_client.yaml')
 
         files_in_workspace = os.listdir(mypath)
-        files = {f: os.path.join(mypath, f) for f in files_in_workspace if 
-                    os.path.isfile(os.path.join(mypath,f))}
+        files = {f: os.path.join(mypath, f) for f in files_in_workspace if
+                 os.path.isfile(os.path.join(mypath, f))}
 
-        files['url'] = 'https://s3.amazonaws.com/ml-enn/deepbilevel_datafiles/mightyai_combined_vocab/mightyai_miscfiles.tar.gz'
-        files['s3'] = 's3://ml-enn/deepbilevel_datafiles/mightyai_combined_vocab/mightyai_miscfiles.tar.gz'
-
+        files['url'] = _file_url
+    
         self._run_test_files(
             files=files,
             n_experiments=2,
             config=config_path,
             cloud='gcloud')
-
 
     @unittest.skipIf(
         'GOOGLE_APPLICATION_CREDENTIALS' not in os.environ.keys(),
@@ -180,11 +184,10 @@ class CompletionServiceTest(unittest.TestCase):
             'test_config.yaml')
 
         files_in_workspace = os.listdir(mypath)
-        files = {f: os.path.join(mypath, f) for f in files_in_workspace if 
-                    os.path.isfile(os.path.join(mypath,f))}
+        files = {f: os.path.join(mypath, f) for f in files_in_workspace if
+                 os.path.isfile(os.path.join(mypath, f))}
 
-        files['url'] = 'https://s3.amazonaws.com/ml-enn/deepbilevel_datafiles/mightyai_combined_vocab/mightyai_miscfiles.tar.gz'
-        files['s3'] = 's3://ml-enn/deepbilevel_datafiles/mightyai_combined_vocab/mightyai_miscfiles.tar.gz'
+        files['url'] = _file_url
 
         self._run_test(
             files=files,
