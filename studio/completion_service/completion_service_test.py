@@ -119,7 +119,9 @@ class CompletionServiceTest(unittest.TestCase):
             n_experiments=2,
             config=config_path,
             cloud_timeout=100,
-            cloud='ec2spot')
+            cloud='ec2spot',
+        )
+            
 
     def test_two_experiments_apiserver(self):
         mypath = os.path.dirname(os.path.realpath(__file__))
@@ -186,7 +188,7 @@ class CompletionServiceTest(unittest.TestCase):
 
         self._run_test(
             files=files,
-            n_experiments=n_experiments,
+            n_experiments=2,
             config=config_path,
             cloud='gcloud')
 
