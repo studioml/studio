@@ -68,6 +68,12 @@ fi
 cd studio
 git pull
 git checkout $branch
+
+if [[ "{use_gpus}" -eq 1 ]]; then
+        sudo python -m pip install tensorflow tensorflow-gpu --upgrade
+        sudo python3 -m pip install tensorflow tensorflow-gpu --upgrade
+fi
+    
 sudo python -m pip install -e . --upgrade
 sudo python3 -m pip install -e . --upgrade
 
