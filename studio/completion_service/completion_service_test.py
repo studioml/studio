@@ -8,7 +8,7 @@ import tempfile
 
 from .completion_service import CompletionService
 
-from studio.util import has_aws_credentials, filehash, 
+from studio.util import has_aws_credentials, filehash
 from studio.util import download_file, rand_string
 from studio.local_queue import get_local_queue_lock
 
@@ -18,8 +18,9 @@ logging.basicConfig()
 _file_url = 'https://s3.amazonaws.com/ml-enn/deepbilevel_datafiles/' + \
             'mightyai_combined_vocab/mightyai_miscfiles.tar.gz'
 
-_file_s3 = 's3://ml-enn/deepbilevel_datafiles/' + \ 
+_file_s3 = 's3://ml-enn/deepbilevel_datafiles/' + \
            'mightyai_combined_vocab/mightyai_miscfiles.tar.gz'
+
 
 class CompletionServiceTest(unittest.TestCase):
 
@@ -164,7 +165,7 @@ class CompletionServiceTest(unittest.TestCase):
                  os.path.isfile(os.path.join(mypath, f))}
 
         files['url'] = _file_url
-    
+
         self._run_test_files(
             files=files,
             n_experiments=2,
