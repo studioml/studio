@@ -43,8 +43,6 @@ if [ ! -d "studio" ]; then
         sudo dpkg -i $cudnn5
         sudo dpkg -i $cudnn6
 
-        sudo python -m pip install tensorflow tensorflow-gpu --upgrade
-        sudo python3 -m pip install tensorflow tensorflow-gpu --upgrade
         # sudo python  -m pip install tf-nightly tf-nightly-gpu --upgrade
         # sudo python3 -m pip install tf-nightly tf-nightly-gpu --upgrade
     else
@@ -65,6 +63,12 @@ fi
 cd studio
 git pull
 git checkout $branch
+
+if [[ "{use_gpus}" -eq 1 ]]; then
+        sudo python -m pip install tensorflow tensorflow-gpu --upgrade
+        sudo python3 -m pip install tensorflow tensorflow-gpu --upgrade
+fi
+    
 sudo python -m pip install -e . --upgrade
 sudo python3 -m pip install -e . --upgrade
 
