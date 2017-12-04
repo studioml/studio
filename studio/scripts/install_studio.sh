@@ -28,14 +28,19 @@ if [ ! -d "studio" ]; then
     if [[ "{use_gpus}" -eq 1 ]]; then
         cudnn5="libcudnn5_5.1.10-1_cuda8.0_amd64.deb"
         cudnn6="libcudnn6_6.0.21-1_cuda8.0_amd64.deb"
-        cuda_base="https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1604/x86_64/"
-        cuda_ver="cuda-repo-ubuntu1604_8.0.61-1_amd64.deb"
+        
+        cuda_url="https://developer.nvidia.com/compute/cuda/8.0/Prod2/local_installers/cuda_8.0.61_375.26_linux-run"
+        cuda_patch_url="https://developer.nvidia.com/compute/cuda/8.0/Prod2/patches/2/cuda_8.0.61.2_linux-run"
 
         # install cuda
-        wget $cuda_base/$cuda_ver
-        sudo dpkg -i $cuda_ver
-        sudo apt -y update
-        sudo apt install -y "cuda-8.0"
+        wget $cuda_url
+        wget $cuda_patch_url
+        #udo dpkg -i $cuda_ver
+        #sudo apt -y update
+        #sudo apt install -y "cuda-8.0"
+        sh ./cuda_8.0.61_375.26_linux-run --silent
+        sh ./cuda_8.0.61.2_linux-run --silent
+        
 
         # install cudnn
         wget $code_url_base/$cudnn5
