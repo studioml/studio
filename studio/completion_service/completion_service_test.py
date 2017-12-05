@@ -170,7 +170,7 @@ class CompletionServiceTest(unittest.TestCase):
             files=files,
             n_experiments=2,
             config=config_path,
-            cloud='gcloud')
+            cloud='gcspot')
 
     @unittest.skipIf(
         'GOOGLE_APPLICATION_CREDENTIALS' not in os.environ.keys(),
@@ -182,7 +182,7 @@ class CompletionServiceTest(unittest.TestCase):
             mypath,
             '..',
             'tests',
-            'test_config.yaml')
+            'test_config_http_client.yaml')
 
         files_in_workspace = os.listdir(mypath)
         files = {f: os.path.join(mypath, f) for f in files_in_workspace if

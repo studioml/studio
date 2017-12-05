@@ -10,7 +10,7 @@ from .firebase_artifact_store import FirebaseArtifactStore
 from .auth import get_auth
 from .experiment import experiment_from_dict
 from .tartifact_store import get_immutable_artifact_key
-from .util import timeit
+from .util import timeit, retry
 
 logging.basicConfig()
 
@@ -136,7 +136,9 @@ class KeyValueProvider(object):
                       experiment.key + "/owner",
                       userid)
 
-        self.checkpoint_experiment(experiment, blocking=True)
+        retry(lambda: self.checkpoint_experiment(experiment, blocking=True), 
+              sleep_time=10,
+              logger=self.logger)
         self.logger.info("Added experiment " + experiment.key)
 
     def start_experiment(self, experiment):
