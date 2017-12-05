@@ -86,7 +86,7 @@ cd studio
 git pull
 git checkout $branch
 
-apoptosis() {
+apoptosis() {{
     while :
         do
             date
@@ -95,7 +95,7 @@ apoptosis() {
             sleep 90
         done
 
-}
+}}
 
 if [[ "{use_gpus}" -eq 1 ]]; then
         export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/cuda-8.0/lib64
