@@ -86,10 +86,22 @@ cd studio
 git pull
 git checkout $branch
 
+apoptosis() {
+    while :
+        do
+            date
+            shutdown +1
+            (nvidia-smi; shutdown -c; echo "nvidia-smi functional, preventing shutdown")&
+            sleep 90
+        done
+
+}
+
 if [[ "{use_gpus}" -eq 1 ]]; then
         export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/cuda-8.0/lib64
         python -m pip install tensorflow tensorflow-gpu --upgrade
         python3 -m pip install tensorflow tensorflow-gpu --upgrade
+        (apoptosis > autoterminate.log)&
 fi
     
 sudo python -m pip install -e . --upgrade
