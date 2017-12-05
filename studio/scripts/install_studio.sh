@@ -48,8 +48,11 @@ if [ ! -d "studio" ]; then
         #udo dpkg -i $cuda_ver
         #sudo apt -y update
         #sudo apt install -y "cuda-8.0"
-        sh ./cuda_8.0.61_375.26_linux-run --silent
-        sh ./cuda_8.0.61.2_linux-run --silent
+        sh ./cuda_8.0.61_375.26_linux-run --silent --toolkit
+        sh ./cuda_8.0.61.2_linux-run --silent --accept-eula
+
+        export PATH=$PATH:/usr/local/cuda-8.0/bin
+        export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/cuda-8.0/lib64
     
         # wget $cuda_base/$cuda_ver
         # sudo dpkg -i $cuda_ver

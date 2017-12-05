@@ -1,6 +1,6 @@
 ubuntu16.04:
-    us-east-1: ami-da05a4a0  # Vanilla ubuntu 16.04
-    # us-east-1: ami-427b1c38   # studio.ml enabled
+    # us-east-1: ami-da05a4a0  # Vanilla ubuntu 16.04
+    us-east-1: ami-03543279   # studio.ml enabled
 
     us-east-2: ami-336b4456
     us-west-1:  ami-1c1d217c
