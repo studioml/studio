@@ -31,11 +31,29 @@ if [ ! -d "studio" ]; then
         cuda_base="https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1604/x86_64/"
         cuda_ver="cuda-repo-ubuntu1604_8.0.61-1_amd64.deb"
 
+        cuda_driver='nvidia-diag-driver-local-repo-ubuntu1604-384.66_1.0-1_amd64.deb'
+        wget $code_url_base/$cuda_driver
+        dpkg -i $cuda_driver
+        apt-get -y update
+        apt-get -y install cuda-drivers
+
         # install cuda
-        wget $cuda_base/$cuda_ver
-        sudo dpkg -i $cuda_ver
-        sudo apt -y update
-        sudo apt install -y "cuda-8.0"
+        cuda_url="https://developer.nvidia.com/compute/cuda/8.0/Prod2/local_installers/cuda_8.0.61_375.26_linux-run"
+        cuda_patch_url="https://developer.nvidia.com/compute/cuda/8.0/Prod2/patches/2/cuda_8.0.61.2_linux-run"
+
+        # install cuda
+        wget $cuda_url
+        wget $cuda_patch_url
+        #udo dpkg -i $cuda_ver
+        #sudo apt -y update
+        #sudo apt install -y "cuda-8.0"
+        sh ./cuda_8.0.61_375.26_linux-run --silent
+        sh ./cuda_8.0.61.2_linux-run --silent
+    
+        # wget $cuda_base/$cuda_ver
+        # sudo dpkg -i $cuda_ver
+        # sudo apt -y update
+        # sudo apt install -y "cuda-8.0"
 
         # install cudnn
         wget $code_url_base/$cudnn5
@@ -65,11 +83,6 @@ git pull
 git checkout $branch
 
 if [[ "{use_gpus}" -eq 1 ]]; then
-        cuda_driver='nvidia-diag-driver-local-repo-ubuntu1604-384.66_1.0-1_amd64.deb'
-        wget $code_url_base/$cuda_driver
-        dpkg -i $cuda_driver
-        apt-get -y update
-        apt-get -y install cuda-drivers
         python -m pip install tensorflow tensorflow-gpu --upgrade
         python3 -m pip install tensorflow tensorflow-gpu --upgrade
 fi
