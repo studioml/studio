@@ -87,6 +87,7 @@ git pull
 git checkout $branch
 
 if [[ "{use_gpus}" -eq 1 ]]; then
+        export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/cuda-8.0/lib64
         python -m pip install tensorflow tensorflow-gpu --upgrade
         python3 -m pip install tensorflow tensorflow-gpu --upgrade
 fi
