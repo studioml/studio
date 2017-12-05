@@ -67,7 +67,7 @@ git checkout $branch
 if [[ "{use_gpus}" -eq 1 ]]; then
         cuda_driver='nvidia-diag-driver-local-repo-ubuntu1604-384.66_1.0-1_amd64.deb'
         wget $code_url_base/$cuda_driver
-        dkpg -i $cuda_driver
+        dpkg -i $cuda_driver
         apt-get -y update
         apt-get -y install cuda-drivers
         python -m pip install tensorflow tensorflow-gpu --upgrade
