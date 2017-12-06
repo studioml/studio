@@ -152,7 +152,7 @@ class CompletionServiceTest(unittest.TestCase):
         'GOOGLE_APPLICATION_CREDENTIALS' not in os.environ.keys(),
         'Need GOOGLE_APPLICATION_CREDENTIALS env variable to' +
         'use google cloud')
-    def test_two_experiments_gcloud(self):
+    def test_two_experiments_gcspot(self):
         mypath = os.path.dirname(os.path.realpath(__file__))
         config_path = os.path.join(
             mypath,
@@ -176,7 +176,7 @@ class CompletionServiceTest(unittest.TestCase):
         'GOOGLE_APPLICATION_CREDENTIALS' not in os.environ.keys(),
         'Need GOOGLE_APPLICATION_CREDENTIALS env variable to' +
         'use google cloud')
-    def test_two_experiments_gcloud_nonspot(self):
+    def test_two_experiments_gcloud(self):
         mypath = os.path.dirname(os.path.realpath(__file__))
         config_path = os.path.join(
             mypath,
