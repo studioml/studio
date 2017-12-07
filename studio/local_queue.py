@@ -6,6 +6,9 @@ import time
 import logging
 import filelock
 
+logging.basicConfig()
+logging.getLogger('filelock').setLevel(logging.INFO)
+
 _local_queue_lock = filelock.FileLock(
     os.path.expanduser('~/.studioml/local_queue.lock')
 )
