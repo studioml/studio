@@ -41,11 +41,14 @@ def remove_backspaces(line):
 
 
 def sha256_checksum(filename, block_size=65536):
-    sha256 = hashlib.sha256()
+    return filehash(filename, block_size, hashobj=hashlib.sha256())
+
+
+def filehash(filename, block_size=65536, hashobj=hashlib.sha256()):
     with open(filename, 'rb') as f:
         for block in iter(lambda: f.read(block_size), b''):
-            sha256.update(block)
-    return sha256.hexdigest()
+            hashobj.update(block)
+    return hashobj.hexdigest()
 
 
 def rand_string(length):
@@ -223,6 +226,9 @@ class Progbar(object):
 
 
 def download_file(url, local_path, logger=None):
+    if url.startswith('s3://') or url.startswith('gs://'):
+        return download_file_from_qualified(url, local_path, logger)
+
     response = requests.get(
         url,
         stream=True)
@@ -265,8 +271,13 @@ def download_file_from_qualified(qualified, local_path, logger=None):
     assert qualified.startswith('s3://') or \
         qualified.startswith('gs://')
 
-    bucket = qualified.split('/')[2]
-    key = '/'.join(qualified.split('/')[3:])
+    qualified_split = qualified.split('/')
+    if qualified_split[2].endswith('.com'):
+        bucket = qualified_split[3]
+        key = '/'.join(qualified_split[4:])
+    else:
+        bucket = qualified_split[2]
+        key = '/'.join(qualified_split[3:])
 
     if logger is not None:
         logger.debug(('Downloading file from bucket {} ' +
@@ -363,6 +374,15 @@ def sixdecode(s):
         return s.decode('utf8')
 
     raise TypeError("Unknown type of " + str(s))
+
+
+def shquote(s):
+    try:
+        import pipes as P
+    except ImportError:
+        import shlex as P
+
+    return P.quote(s)
 
 
 duration_regex = re.compile(

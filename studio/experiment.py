@@ -10,6 +10,7 @@ except ImportError:
     pip = None
 
 from . import fs_tracker
+from .util import shquote
 
 
 class Experiment(object):
@@ -33,6 +34,7 @@ class Experiment(object):
         self.key = key
         self.args = []
         self.filename = filename
+
         if filename and '::' in filename:
             self.filename = '-m'
             module_name = filename.replace('::', '.')
@@ -43,6 +45,8 @@ class Experiment(object):
 
         if args:
             self.args += args
+
+        self.args = [shquote(a) for a in self.args]
 
         self.pythonenv = pythonenv
         self.project = project
