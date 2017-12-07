@@ -52,8 +52,9 @@ class S3ArtifactStore(TartifactStore):
     def _upload_file(self, key, local_path):
         self.client.upload_file(local_path, self.bucket, key)
 
-    def _download_file(self, key, local_path):
-        self.client.download_file(self.bucket, key, local_path)
+    def _download_file(self, key, local_path, bucket=None):
+        bucket = bucket or self.bucket
+        self.client.download_file(bucket, key, local_path)
 
     def _delete_file(self, key):
         self.client.delete_object(Bucket=self.bucket, Key=key)

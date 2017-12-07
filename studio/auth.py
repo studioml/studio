@@ -192,4 +192,7 @@ class FirebaseAuth(object):
 def remove_all_keys():
     keypath = os.path.join(os.path.expanduser('~'), '.studioml', 'keys')
     if os.path.exists(keypath):
-        shutil.rmtree(keypath)
+        try:
+            shutil.rmtree(keypath)
+        except OSError:
+            pass

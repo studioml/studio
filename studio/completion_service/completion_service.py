@@ -101,9 +101,7 @@ class CompletionService:
         self.project_name = "completion_service_" + experimentId
 
         self.resources_needed = DEFAULT_RESOURCES_NEEDED
-        for key in self.resources_needed:
-            if key in resources_needed:
-                self.resources_needed[key] = resources_needed[key]
+        self.resources_needed.update(resources_needed)
 
         self.wm = runner.get_worker_manager(
             self.config, self.cloud)

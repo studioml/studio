@@ -53,7 +53,7 @@ class GCloudArtifactStore(TartifactStore):
     def _upload_file(self, key, local_path):
         self._get_bucket_obj().blob(key).upload_from_filename(local_path)
 
-    def _download_file(self, key, local_path):
+    def _download_file(self, key, local_path, bucket=None):
         self._get_bucket_obj().get_blob(key).download_to_filename(local_path)
 
     def _delete_file(self, key):
