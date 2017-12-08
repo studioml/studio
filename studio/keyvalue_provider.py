@@ -115,8 +115,8 @@ class KeyValueProvider(object):
                     ).group(0)
 
                 key = re.search('(?<=' + bucket + '/).+\Z', qualified).group(0)
-                art['bucket'] = bucket
-                art['key'] = key
+                # art['bucket'] = bucket
+                # art['key'] = key
 
         userid = userid if userid else self._get_userid()
         experiment.owner = userid

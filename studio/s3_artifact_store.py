@@ -20,9 +20,6 @@ class S3ArtifactStore(TartifactStore):
                  verbose=10,
                  measure_timestamp_diff=False,
                  compression=None):
-        self.logger = logging.getLogger('S3ArtifactStore')
-        self.logger.setLevel(verbose)
-
         self.client = boto3.client(
             's3',
             aws_access_key_id=config.get('aws_access_key'),
@@ -49,13 +46,15 @@ class S3ArtifactStore(TartifactStore):
 
         super(S3ArtifactStore, self).__init__(
             measure_timestamp_diff,
-            compression=compression)
+            compression=compression,
+            verbose=verbose)
 
     def _upload_file(self, key, local_path):
         self.client.upload_file(local_path, self.bucket, key)
 
-    def _download_file(self, key, local_path):
-        self.client.download_file(self.bucket, key, local_path)
+    def _download_file(self, key, local_path, bucket=None):
+        bucket = bucket or self.bucket
+        self.client.download_file(bucket, key, local_path)
 
     def _delete_file(self, key):
         self.client.delete_object(Bucket=self.bucket, Key=key)

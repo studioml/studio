@@ -26,7 +26,7 @@ install:
 
 script:
   - echo $GOOGLE_APPLICATION_CREDENTIALS
-  - py.test -n 16 -v --durations=0 
+  - py.test -v -n 16 --durations=0 
   - pycodestyle --show-source --exclude=.eggs .
   - python setup.py sdist
 
@@ -39,4 +39,4 @@ deploy:
   # skip_cleanup: true
   on:
     # tags: true
-    branch: development
+    branch: master

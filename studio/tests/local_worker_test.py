@@ -24,6 +24,7 @@ logging.basicConfig()
 
 class LocalWorkerTest(unittest.TestCase):
 
+    @timeout(500, use_signals=False)
     def test_runner_local(self):
         with get_local_queue_lock():
             with stubtest_worker(
@@ -37,6 +38,7 @@ class LocalWorkerTest(unittest.TestCase):
             ):
                 pass
 
+    @timeout(500, use_signals=False)
     def test_args_conflict(self):
         with get_local_queue_lock():
             with stubtest_worker(
@@ -50,6 +52,7 @@ class LocalWorkerTest(unittest.TestCase):
             ):
                 pass
 
+    @timeout(500, use_signals=False)
     def test_local_hyperparam(self):
         with get_local_queue_lock():
             with stubtest_worker(
@@ -75,6 +78,7 @@ class LocalWorkerTest(unittest.TestCase):
             ):
                 pass
 
+    @timeout(500, use_signals=False)
     def test_local_worker_ce(self):
         tmpfile = os.path.join(tempfile.gettempdir(),
                                'tmpfile' +
@@ -124,6 +128,7 @@ class LocalWorkerTest(unittest.TestCase):
 
                 db.delete_experiment(experiment_name)
 
+    @timeout(500, use_signals=False)
     def test_local_worker_co(self):
         tmpfile = os.path.join(tempfile.gettempdir(),
                                'tmpfile' +
@@ -145,6 +150,7 @@ class LocalWorkerTest(unittest.TestCase):
             ):
                 pass
 
+    @timeout(500, use_signals=False)
     def test_local_worker_co_url(self):
         expected_str = 'Zabil zaryad ya v pushku tugo'
         url = 'https://storage.googleapis.com/studio-ed756.appspot.com/' + \
@@ -165,6 +171,7 @@ class LocalWorkerTest(unittest.TestCase):
     @unittest.skipIf(
         not has_aws_credentials(),
         'AWS credentials not found, cannot download s3://-like links')
+    @timeout(500, use_signals=False)
     def test_local_worker_co_s3(self):
         expected_str = 'No4 ulica fonar apteka, bessmyslennyj i tusklyj svet'
         s3loc = 's3://studioml-artifacts/tests/download_test/download_test.txt'
@@ -183,6 +190,7 @@ class LocalWorkerTest(unittest.TestCase):
 
     @unittest.skipIf(keras is None,
                      'keras is required for this test')
+    @timeout(500, use_signals=False)
     def test_save_get_model(self):
         experiment_name = 'test_save_get_model' + str(uuid.uuid4())
         with get_local_queue_lock():
@@ -312,8 +320,8 @@ class LocalWorkerTest(unittest.TestCase):
                                       '--verbose=debug',
                                       '--lifetime=-10m',
                                       'stop_experiment.py'],
-                                     # stdout=subprocess.PIPE,
-                                     # stderr=subprocess.STDOUT,
+                                     stdout=subprocess.PIPE,
+                                     stderr=subprocess.STDOUT,
                                      cwd=my_path)
 
                 pout, _ = p.communicate()
@@ -335,7 +343,8 @@ def stubtest_worker(
         queue=LocalQueue(),
         wait_for_experiment=True,
         delete_when_done=True,
-        test_output=True):
+        test_output=True,
+        test_workspace=True):
 
     my_path = os.path.dirname(os.path.realpath(__file__))
     config_name = os.path.join(my_path, config_name)
@@ -379,7 +388,6 @@ def stubtest_worker(
         experiment = db.get_experiment(experiment_name)
         if wait_for_experiment:
             while not experiment or not experiment.status == 'finished':
-                time.sleep(1)
                 experiment = db.get_experiment(experiment_name)
 
         if test_output:
@@ -389,7 +397,8 @@ def stubtest_worker(
                 split_data = data.strip().split('\n')
                 testclass.assertEquals(split_data[-1], expected_output)
 
-        check_workspace(testclass, db, experiment_name)
+        if test_workspace:
+            check_workspace(testclass, db, experiment_name)
 
         if delete_when_done:
             retry(lambda: db.delete_experiment(experiment_name), sleep_time=10)

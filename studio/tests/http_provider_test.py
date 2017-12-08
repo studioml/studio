@@ -7,7 +7,6 @@ import tempfile
 import uuid
 
 from studio import model
-from studio.util import has_aws_credentials
 from model_test import get_test_experiment
 
 
