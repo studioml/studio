@@ -1,4 +1,3 @@
-import os
 from setuptools_scm import get_version
 
 from . import fs_tracker

@@ -54,7 +54,7 @@ class FirebaseArtifactStore(TartifactStore):
                                "raised an exception: {}")
                               .format(local_file_path, key, err))
 
-    def _download_file(self, key, local_file_path):
+    def _download_file(self, key, local_file_path, bucket=None):
         self.logger.debug("Downloading file at key {} to local path {}..."
                           .format(key, local_file_path))
         try:

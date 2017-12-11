@@ -86,7 +86,7 @@ class EC2WorkerTest(unittest.TestCase):
         with stubtest_worker(
             self,
             experiment_name=experiment_name,
-            runner_args=['--cloud=ec2', '--force-git',
+            runner_args=['--cloud=ec2', '--force-git', '--gpus=1',
                          '--cloud-timeout=120'],
             config_name='test_config_http_client.yaml',
             test_script='tf_hello_world.py',
