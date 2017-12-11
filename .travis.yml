@@ -23,10 +23,14 @@ install:
   # - pip install -r extra_test_requirements.txt
 
   - 'if [ -n "$GOOGLE_CREDENTIALS_ENCODED" ]; then echo "$GOOGLE_CREDENTIALS_ENCODED" | base64 --decode > ./credentials.json && export GOOGLE_APPLICATION_CREDENTIALS=$(pwd)/credentials.json; fi'
+  - 'if [ -n "$GOOGLE_CREDENTIALS_DS_ENCODED" ]; then echo "$GOOGLE_CREDENTIALS_DS_ENCODED" | base64 --decode > ./credentials_ds.json && export GOOGLE_APPLICATION_CREDENTIALS_DS=$(pwd)/credentials_ds.json; fi'
 
 script:
-  - echo $GOOGLE_APPLICATION_CREDENTIALS
-  - py.test -n 16 -v --durations=0 
+  - echo GOOGLE_APPLICATION_CREDENTIALS=$GOOGLE_APPLICATION_CREDENTIALS
+  - echo GOOGLE_APPLICATION_CREDENTIALS_DS=$GOOGLE_APPLICATION_CREDENTIALS_DS
+
+  # - py.test -n 16 -v --durations=0 
+  - py.test -v studio/completion_service/completion_service_test.py::CompletionServiceTest::test_two_experiments_datacenter
   - pycodestyle --show-source --exclude=.eggs .
   - python setup.py sdist
 

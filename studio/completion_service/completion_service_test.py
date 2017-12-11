@@ -95,6 +95,29 @@ class CompletionServiceTest(unittest.TestCase):
             config=config_path,
             cloud='gcloud')
 
+    @unittest.skipIf(
+        'GOOGLE_APPLICATION_CREDENTIALS_DS' not in os.environ.keys(),
+        'Need GOOGLE_APPLICATION_CREDENTIALS_DS env variable to' +
+        'use google cloud')
+    def test_two_experiments_datacenter(self):
+        oldcred = os.environ.get('GOOGLE_APPLICATION_CREDENTIALS')
+        os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = os.environ['GOOGLE_APPLICATION_CREDENTIALS_DS']
+        mypath = os.path.dirname(os.path.realpath(__file__))
+        queue_name = 'test_queue_' + str(uuid.uuid4())
+        config_path = os.path.join(
+            mypath,
+            '..',
+            'tests',
+            'test_config_datacenter.yaml')
+
+        self.test_two_experiments_with_cs_args(
+            config=config_path,
+            queue=queue_name, 
+            shutdown_del_queue=True
+        )
+        if oldcred:
+           os.environ['GOOGLE_APPLICATION_CREDENTIALS_DS'] = oldcred
+
     @unittest.skip('TODO peterz scale down or fix')
     # @unittest.skipIf(not has_aws_credentials(),
     #                 'AWS credentials needed for this test')
