@@ -2,6 +2,7 @@ database:
     type: http
     serverUrl: https://studio-sentient.appspot.com
     projectId: studio-sentient
+    compression: None
     guest: true
 
 log:

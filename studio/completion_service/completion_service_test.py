@@ -173,12 +173,12 @@ class CompletionServiceTest(unittest.TestCase):
             cloud='gcspot')
 
     @unittest.skipIf(
-        'GOOGLE_APPLICATION_CREDENTIALS_DS' not in os.environ.keys(),
-        'Need GOOGLE_APPLICATION_CREDENTIALS_DS env variable to' +
+        'GOOGLE_APPLICATION_CREDENTIALS_DC' not in os.environ.keys(),
+        'Need GOOGLE_APPLICATION_CREDENTIALS_DC env variable to' +
         'use google cloud')
     def test_two_experiments_datacenter(self):
         oldcred = os.environ.get('GOOGLE_APPLICATION_CREDENTIALS')
-        os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = os.environ['GOOGLE_APPLICATION_CREDENTIALS_DS']
+        os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = os.environ['GOOGLE_APPLICATION_CREDENTIALS_DC']
         mypath = os.path.dirname(os.path.realpath(__file__))
         queue_name = 'test_queue_' + str(uuid.uuid4())
         config_path = os.path.join(
@@ -194,13 +194,14 @@ class CompletionServiceTest(unittest.TestCase):
         files['url'] = _file_url
         files['s3'] = _file_s3
 
-        self.test_two_experiments_with_cs_args(
+        self._run_test_files(
+            files=files,
             config=config_path,
             queue=queue_name, 
             shutdown_del_queue=True
         )
         if oldcred:
-           os.environ['GOOGLE_APPLICATION_CREDENTIALS_DS'] = oldcred
+           os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = oldcred
 
     @unittest.skipIf(
         'GOOGLE_APPLICATION_CREDENTIALS' not in os.environ.keys(),
