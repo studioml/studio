@@ -15,7 +15,8 @@ import gzip
 from apscheduler.schedulers.background import BackgroundScheduler
 
 from .util import rsync_cp
-from . import fs_tracker, runner, model
+from . import fs_tracker, model
+from .runner import main as runner_main
 
 import logging
 
@@ -54,7 +55,7 @@ class StudioMagics(Magics):
 
         script = script_stub.format(script=script_text)
 
-        experiment_key = str(time.time()) + "_jupyter_" + str(uuid.uuid4())
+        experiment_key = str(int(time.time())) + "_jupyter_" + str(uuid.uuid4())
 
         print('Running studio with experiment key ' + experiment_key)
         config = model.get_config()
@@ -76,7 +77,11 @@ class StudioMagics(Magics):
         with gzip.open(ns_path, 'wb') as f:
             f.write(pickle.dumps(pickleable_ns))
 
-        runner_args = line.split(' ')
+        if any(line): 
+            runner_args = line.strip().split(' ')
+        else:
+            runner_args = []
+
         runner_args.append('--capture={}:_ns'.format(ns_path))
         runner_args.append('--capture-once=.:workspace')
         runner_args.append('--force-git')
@@ -84,7 +89,8 @@ class StudioMagics(Magics):
 
         notebook_cwd = os.getcwd()
         os.chdir(workspace_new)
-        runner.main(runner_args + ['_script.py'])
+        print(runner_args + ['_script.py'])
+        runner_main(runner_args + ['_script.py'])
         os.chdir(notebook_cwd)
 
         #p = subprocess.Popen(['studio', 'run'] +
