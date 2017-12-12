@@ -187,6 +187,13 @@ class CompletionServiceTest(unittest.TestCase):
             'tests',
             'test_config_datacenter.yaml')
 
+        files_in_workspace = os.listdir(mypath)
+        files = {f: os.path.join(mypath, f) for f in files_in_workspace if
+                 os.path.isfile(os.path.join(mypath, f))}
+
+        files['url'] = _file_url
+        files['s3'] = _file_s3
+
         self.test_two_experiments_with_cs_args(
             config=config_path,
             queue=queue_name, 
