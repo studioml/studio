@@ -7,6 +7,9 @@ import json
 import psutil
 import time
 import six
+from pygtail import Pygtail
+import threading
+import time
 
 
 from apscheduler.schedulers.background import BackgroundScheduler
@@ -111,7 +114,19 @@ class LocalExecutor(object):
                     cwd=cwd
                 )
                 # simple hack to show what's in the log file
-                ptail = subprocess.Popen(["tail", "-f", log_path])
+                # ptail = subprocess.Popen(["tail", "-f", log_path])
+
+                logtail = Pygtail(log_path)
+                def tail_func():
+                    while logtail:
+                        for line in logtail:
+                            print(line)
+                            
+                        time.sleep(0.1)
+        
+                                                           
+                tail_thread = threading.Thread(target=tail_func)
+                tail_thread.start()
 
                 minutes = 0
                 if self.config.get('saveWorkspaceFrequency'):
@@ -166,7 +181,7 @@ class LocalExecutor(object):
                 finally:
                     save_metrics(metrics_path)
                     sched.shutdown()
-                    ptail.kill()
+                    logtail = None
                     db.checkpoint_experiment(experiment)
                     db.finish_experiment(experiment)
 
@@ -260,8 +275,7 @@ def worker_loop(queue, parsed_args,
 
         logger.setLevel(verbose)
 
-        logger.debug('Received experiment {} with config {} from the queue'.
-                     format(experiment_key, config))
+        logger.debug('Received message: \n{}'.format(data_dict))
 
         executor = LocalExecutor(parsed_args)
 

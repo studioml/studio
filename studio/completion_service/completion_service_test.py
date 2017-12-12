@@ -133,7 +133,7 @@ class CompletionServiceTest(unittest.TestCase):
             mypath,
             '..',
             'tests',
-            'test_config_http_client.yaml')
+            'test_config_datacenter.yaml')
 
         files_in_workspace = os.listdir(mypath)
         files = {f: os.path.join(mypath, f) for f in files_in_workspace if
