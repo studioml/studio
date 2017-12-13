@@ -9,8 +9,6 @@ import time
 import six
 from pygtail import Pygtail
 import threading
-import time
-
 
 from apscheduler.schedulers.background import BackgroundScheduler
 
@@ -117,14 +115,14 @@ class LocalExecutor(object):
                 # ptail = subprocess.Popen(["tail", "-f", log_path])
 
                 logtail = Pygtail(log_path)
+
                 def tail_func():
                     while logtail:
                         for line in logtail:
                             print(line)
-                            
+
                         time.sleep(0.1)
-        
-                                                           
+
                 tail_thread = threading.Thread(target=tail_func)
                 tail_thread.start()
 

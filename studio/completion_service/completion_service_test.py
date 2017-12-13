@@ -178,7 +178,9 @@ class CompletionServiceTest(unittest.TestCase):
         'use google cloud')
     def test_two_experiments_datacenter(self):
         oldcred = os.environ.get('GOOGLE_APPLICATION_CREDENTIALS')
-        os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = os.environ['GOOGLE_APPLICATION_CREDENTIALS_DC']
+        os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = \
+            os.environ['GOOGLE_APPLICATION_CREDENTIALS_DC']
+
         mypath = os.path.dirname(os.path.realpath(__file__))
         queue_name = 'test_queue_' + str(uuid.uuid4())
         config_path = os.path.join(
@@ -197,11 +199,11 @@ class CompletionServiceTest(unittest.TestCase):
         self._run_test_files(
             files=files,
             config=config_path,
-            queue=queue_name, 
+            queue=queue_name,
             shutdown_del_queue=True
         )
         if oldcred:
-           os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = oldcred
+            os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = oldcred
 
     @unittest.skipIf(
         'GOOGLE_APPLICATION_CREDENTIALS' not in os.environ.keys(),
