@@ -27,3 +27,7 @@ env:
     AWS_SECRET_ACCESS_KEY: $AWS_SECRET_ACCESS_KEY
     AWS_DEFAULT_REGION: us-west-2
 
+
+
+healthcheck: python -c "import tensorflow"
+
