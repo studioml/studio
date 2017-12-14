@@ -106,6 +106,10 @@ fi
     
 apt-get -y install python3-tk python-tk
 
+
+python -m pip install http://download.pytorch.org/whl/cu80/torch-0.3.0.post4-cp27-cp27mu-linux_x86_64.whl 
+python -m pip install http://download.pytorch.org/whl/cu80/torch-0.3.0.post4-cp35-cp35m-linux_x86_64.whl 
+
 sudo python -m pip install -e . --upgrade
 sudo python3 -m pip install -e . --upgrade
 

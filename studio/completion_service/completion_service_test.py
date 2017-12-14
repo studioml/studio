@@ -15,11 +15,10 @@ from studio.local_queue import get_local_queue_lock
 
 logging.basicConfig()
 
-_file_url = 'https://s3.amazonaws.com/ml-enn/deepbilevel_datafiles/' + \
+_file_url = 'https://s3-us-west-2.amazonaws.com/ml-enn/deepbilevel_datafiles/' + \
             'mightyai_combined_vocab/mightyai_miscfiles.tar.gz'
 
-_file_s3 = 's3://ml-enn/deepbilevel_datafiles/' + \
-           'mightyai_combined_vocab/mightyai_miscfiles.tar.gz'
+_file_s3 = 's3://studioml-test/t.txt'
 
 
 class CompletionServiceTest(unittest.TestCase):
