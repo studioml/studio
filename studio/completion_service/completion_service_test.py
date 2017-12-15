@@ -18,7 +18,7 @@ logging.basicConfig()
 _file_url = 'https://s3-us-west-2.amazonaws.com/ml-enn/deepbilevel_datafiles/' + \
             'mightyai_combined_vocab/mightyai_miscfiles.tar.gz'
 
-_file_s3 = 's3://studioml-test/t.txt'
+_file_s3 = 's3://s3-us-west-2.amazonaws.com/studioml-test/t.txt'
 
 
 class CompletionServiceTest(unittest.TestCase):
