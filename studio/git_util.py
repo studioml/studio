@@ -49,7 +49,7 @@ def get_repo_url(path='.', remove_user=True):
         cwd=path)
 
     stdout, _ = p.communicate()
-    if p.returncode == 0:
+    if p.returncode != 0:
         return None
 
     url = stdout.strip()
