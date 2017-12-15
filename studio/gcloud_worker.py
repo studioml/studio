@@ -165,24 +165,18 @@ class GCloudWorkerManager(object):
         with open(self.install_studio_script) as f:
             install_studio_script = f.read()
 
-        startup_script = startup_script.replace(
-            "{install_studio}", install_studio_script)
-
-        startup_script = startup_script.replace(
-            "{studioml_branch}", self.branch)
-
-        startup_script = startup_script.replace(
-            "{repo_url}", self.repo_url)
-
-        startup_script = startup_script.replace(
-            "{log_bucket}", self.log_bucket)
-
-        if resources_needed.get('gpus') > 0:
-            startup_script = startup_script.replace('{use_gpus}', '1')
-
         startup_script = insert_user_startup_script(
             self.user_startup_script,
             startup_script, self.logger)
+
+
+        startup_script = startup_script.replace('{install_studio}', install_studio_script)
+        startup_script = startup_script.format(
+            studioml_branch=self.branch,
+            repo_url=self.repo_url,
+            log_bucket=self.log_bucket,
+            use_gpus=resources_needed.get('gpus',0)
+        )
 
         self.logger.info('Startup script:')
         self.logger.info(startup_script)
