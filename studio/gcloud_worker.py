@@ -169,13 +169,13 @@ class GCloudWorkerManager(object):
             self.user_startup_script,
             startup_script, self.logger)
 
-
-        startup_script = startup_script.replace('{install_studio}', install_studio_script)
+        startup_script = startup_script.replace(
+            '{install_studio}', install_studio_script)
         startup_script = startup_script.format(
             studioml_branch=self.branch,
             repo_url=self.repo_url,
             log_bucket=self.log_bucket,
-            use_gpus=resources_needed.get('gpus',0)
+            use_gpus=resources_needed.get('gpus', 0)
         )
 
         self.logger.info('Startup script:')

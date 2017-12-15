@@ -28,7 +28,7 @@ if [ ! -d "studio" ]; then
     nvidia-smi
     nvidia_smi_error=$?
 
-    if [ "{use_gpus}" -eq 1 ] && [ "$nvidia_smi_error" -eq 0 ]; then
+    if [ "{use_gpus}" -eq 1 ] && [ "$nvidia_smi_error" -ne 0 ]; then
         cudnn5="libcudnn5_5.1.10-1_cuda8.0_amd64.deb"
         cudnn6="libcudnn6_6.0.21-1_cuda8.0_amd64.deb"
         cuda_base="https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1604/x86_64/"

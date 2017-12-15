@@ -21,7 +21,7 @@ class GCloudWorkerTest(unittest.TestCase):
         project = 'studio-ed756'
         return GCloudWorkerManager(project)
 
-    @timeout(600, use_signals=False)
+    # @timeout(600, use_signals=False)
     def test_worker(self):
         experiment_name = 'test_gcloud_worker_' + str(uuid.uuid4())
         with stubtest_worker(
@@ -87,7 +87,7 @@ class EC2WorkerTest(unittest.TestCase):
             self,
             experiment_name=experiment_name,
             runner_args=['--cloud=ec2', '--force-git', '--gpus=1',
-                         '--cloud-timeout=120'],
+                         '--cloud-timeout=120', '--ssh-keypair=peterz-k1'],
             config_name='test_config_http_client.yaml',
             test_script='tf_hello_world.py',
             script_args=['arg0'],
