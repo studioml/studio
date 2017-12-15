@@ -25,6 +25,6 @@ cloud:
 resources_needed:
     cpus: 2
     ram:  3g
-    hdd:  10g
+    hdd:  60g
     gpus: 0
 
