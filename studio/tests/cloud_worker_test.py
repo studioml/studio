@@ -10,6 +10,8 @@ from timeout_decorator import timeout
 from studio.util import has_aws_credentials
 
 
+CLOUD_TEST_TIMEOUT=700
+
 @unittest.skipIf(
     'GOOGLE_APPLICATION_CREDENTIALS' not in os.environ.keys(),
     'GOOGLE_APPLICATION_CREDENTIALS environment ' +
@@ -21,7 +23,7 @@ class GCloudWorkerTest(unittest.TestCase):
         project = 'studio-ed756'
         return GCloudWorkerManager(project)
 
-    # @timeout(600, use_signals=False)
+    # @timeout(CLOUD_TEST_TIMEOUT, use_signals=False)
     def test_worker(self):
         experiment_name = 'test_gcloud_worker_' + str(uuid.uuid4())
         with stubtest_worker(
@@ -36,7 +38,7 @@ class GCloudWorkerTest(unittest.TestCase):
         ):
             pass
 
-    @timeout(600, use_signals=False)
+    @timeout(CLOUD_TEST_TIMEOUT, use_signals=False)
     def test_worker_spot(self):
         experiment_name = 'test_gcloud_spot_worker_' + str(uuid.uuid4())
         with stubtest_worker(
@@ -51,7 +53,7 @@ class GCloudWorkerTest(unittest.TestCase):
         ):
             pass
 
-    @timeout(600, use_signals=False)
+    @timeout(CLOUD_TEST_TIMEOUT, use_signals=False)
     def test_worker_spot_container(self):
         experiment_name = 'test_gcloud_spot_simg_' + str(uuid.uuid4())
         with stubtest_worker(
@@ -80,7 +82,7 @@ class EC2WorkerTest(unittest.TestCase):
     def get_worker_manager(self):
         return EC2WorkerManager()
 
-    @timeout(600, use_signals=False)
+    @timeout(CLOUD_TEST_TIMEOUT, use_signals=False)
     def test_worker(self):
         experiment_name = 'test_ec2_worker_' + str(uuid.uuid4())
         with stubtest_worker(
@@ -95,7 +97,7 @@ class EC2WorkerTest(unittest.TestCase):
         ):
             pass
 
-    @timeout(600, use_signals=False)
+    @timeout(CLOUD_TEST_TIMEOUT, use_signals=False)
     def test_worker_spot(self):
         experiment_name = 'test_ec2_worker_' + str(uuid.uuid4())
         stubtest_worker(
@@ -120,7 +122,7 @@ class EC2WorkerTest(unittest.TestCase):
         expected_prices = {'c4.large': 0.1, 'p2.xlarge': 0.9}
         self.assertEquals(prices, expected_prices)
 
-    @timeout(600, use_signals=False)
+    @timeout(CLOUD_TEST_TIMEOUT, use_signals=False)
     def test_worker_spot_container(self):
         experiment_name = 'test_gcloud_spot_simg_' + str(uuid.uuid4())
         with stubtest_worker(
