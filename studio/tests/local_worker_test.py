@@ -24,7 +24,7 @@ logging.basicConfig()
 
 class LocalWorkerTest(unittest.TestCase):
 
-    @skip("Limit number of locally running tests")
+    @unittest.skip("Limit number of locally running tests")
     @timeout(500, use_signals=False)
     def test_runner_local(self):
         with get_local_queue_lock():
