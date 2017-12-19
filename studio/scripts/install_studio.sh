@@ -21,9 +21,12 @@ if [ ! -d "studio" ]; then
     cd singularity
     ./autogen.sh
     ./configure --prefix=/usr/local --sysconfdir=/etc
-    make
-    make install
+    time (make && make install)
     cd ..
+
+    time apt-get -y install python3-tk python-tk
+    time python -m pip install http://download.pytorch.org/whl/cu80/torch-0.3.0.post4-cp27-cp27mu-linux_x86_64.whl 
+    time python3 -m pip install http://download.pytorch.org/whl/cu80/torch-0.3.0.post4-cp35-cp35m-linux_x86_64.whl 
 
     nvidia-smi
     nvidia_smi_error=$?
@@ -102,19 +105,11 @@ apoptosis() {{
 
 if [[ "{use_gpus}" -eq 1 ]]; then
         export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/cuda-8.0/lib64
-        python -m pip install tensorflow tensorflow-gpu --upgrade
-        python3 -m pip install tensorflow tensorflow-gpu --upgrade
-        (apoptosis > autoterminate.log)&
+        # (apoptosis > autoterminate.log)&
 fi
     
-apt-get -y install python3-tk python-tk
-
-
-python -m pip install http://download.pytorch.org/whl/cu80/torch-0.3.0.post4-cp27-cp27mu-linux_x86_64.whl 
-python -m pip install http://download.pytorch.org/whl/cu80/torch-0.3.0.post4-cp35-cp35m-linux_x86_64.whl 
-
-sudo python -m pip install -e . --upgrade
-sudo python3 -m pip install -e . --upgrade
+time python -m pip install -e . --upgrade
+time python3 -m pip install -e . --upgrade
 
 
 

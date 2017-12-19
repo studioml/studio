@@ -14,8 +14,6 @@ import numpy as np
 import requests
 import six
 
-from tensorflow.core.util import event_pb2
-
 import boto3
 
 DAY = 86400
@@ -57,6 +55,7 @@ def rand_string(length):
 
 
 def event_reader(fileobj):
+    from tensorflow.core.util import event_pb2
 
     if isinstance(fileobj, str):
         fileobj = open(fileobj, 'rb')

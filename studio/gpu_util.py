@@ -1,6 +1,5 @@
 import os
 import subprocess
-import tensorflow as tf
 import xml.etree.ElementTree as ET
 
 from .util import sixdecode
@@ -48,28 +47,7 @@ def get_gpus_summary():
 
 def get_gpu_mapping():
     no_gpus = len(_get_gpu_info())
-    gpu_mapping = {}
-    for i in range(0, no_gpus):
-
-        loadp = subprocess.Popen([
-            'python', '-c',
-            ("from studio import gpu_util as gu \n" +
-             "import os\n" +
-             "os.environ['CUDA_VISIBLE_DEVICES']='{}'\n" +
-             "gu._load_gpu()\n" +
-             "print('******')\n"
-             "print(gu._find_my_gpus()[0])").format(i)],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT)
-
-        pstdout, _ = loadp.communicate()
-        if loadp.returncode != 0:
-            return {str(i): i for i in range(0, no_gpus)}
-
-        gpu_minor_number = sixdecode(pstdout).split('\n')[-2]
-        gpu_mapping[gpu_minor_number] = i
-
-    return gpu_mapping
+    return {i:i for i in range(no_gpus)}
 
 
 def _find_my_gpus(prop='minor_number'):
@@ -79,10 +57,6 @@ def _find_my_gpus(prop='minor_number'):
         g.find('processes').findall('process_info')]]
 
     return my_gpus
-
-
-def _load_gpu():
-    tf.Session()
 
 
 def memstr2int(string):

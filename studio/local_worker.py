@@ -212,6 +212,7 @@ def allocate_gpus(gpus_needed, config=None):
     mapped_gpus = [str(gpu_mapping[g])
                    for g in available_gpus]
 
+    os.environ['CUDA_DEVICE_ORDER'] = 'PCI_BUS_ID'
     if len(mapped_gpus) >= gpus_needed:
         os.environ['CUDA_VISIBLE_DEVICES'] = ','.join(
             mapped_gpus[:gpus_needed])
