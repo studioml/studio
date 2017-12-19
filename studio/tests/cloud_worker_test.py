@@ -82,14 +82,14 @@ class EC2WorkerTest(unittest.TestCase):
     def get_worker_manager(self):
         return EC2WorkerManager()
 
-    # @timeout(CLOUD_TEST_TIMEOUT, use_signals=False)
+    @timeout(CLOUD_TEST_TIMEOUT, use_signals=False)
     def test_worker(self):
         experiment_name = 'test_ec2_worker_' + str(uuid.uuid4())
         with stubtest_worker(
             self,
             experiment_name=experiment_name,
             runner_args=['--cloud=ec2', '--force-git', '--gpus=1',
-                         '--cloud-timeout=120', '--ssh-keypair=peterz-k1'],
+                         '--cloud-timeout=120'],
             config_name='test_config_http_client.yaml',
             test_script='tf_hello_world.py',
             script_args=['arg0'],
