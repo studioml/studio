@@ -47,7 +47,7 @@ def get_gpus_summary():
 
 def get_gpu_mapping():
     no_gpus = len(_get_gpu_info())
-    return {i:i for i in range(no_gpus)}
+    return {str(i):i for i in range(no_gpus)}
 
 
 def _find_my_gpus(prop='minor_number'):
