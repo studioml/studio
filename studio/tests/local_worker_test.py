@@ -21,7 +21,8 @@ from studio.util import has_aws_credentials, sixdecode, retry
 
 logging.basicConfig()
 
-TEST_TIMEOUT=600
+TEST_TIMEOUT = 600
+
 
 class LocalWorkerTest(unittest.TestCase):
 

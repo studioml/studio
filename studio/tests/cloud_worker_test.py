@@ -10,7 +10,8 @@ from timeout_decorator import timeout
 from studio.util import has_aws_credentials
 
 
-CLOUD_TEST_TIMEOUT=700
+CLOUD_TEST_TIMEOUT = 700
+
 
 @unittest.skipIf(
     'GOOGLE_APPLICATION_CREDENTIALS' not in os.environ.keys(),
