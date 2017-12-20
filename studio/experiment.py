@@ -61,7 +61,7 @@ class Experiment(object):
         self.artifacts = {
             'workspace': {
                 'local': workspace_path,
-                'mutable': True
+                'mutable': False
             },
             'modeldir': {
                 'local': model_dir,
