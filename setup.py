@@ -70,7 +70,7 @@ with open('requirements.txt') as f:
     # python modules but be selective about whether the GPU version is used
     # or the default CPU version.  Not doing this will result in the CPU
     # version taking precedence in many cases.
-    
+
 with open('test_requirements.txt') as f:
     test_required = f.read().splitlines()
 
