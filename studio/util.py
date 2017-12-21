@@ -286,7 +286,7 @@ def download_file_from_qualified(qualified, local_path, logger=None):
 
     if qualified.startswith('s3://'):
         if qualified.endswith('/'):
-            _s3_download_dir(bucket, key, local_path)
+            _s3_download_dir(bucket, key, local_path, logger=logger)
         else:
             boto3.client('s3').download_file(bucket, key, local_path)
     else:
