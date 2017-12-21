@@ -287,14 +287,14 @@ def download_file_from_qualified(qualified, local_path, logger=None):
     if qualified.startswith('s3://'):
 
         if qualified.endswith('/'):
-            subprocess.Popen(
-                [
-                    'aws', 's3', 'cp', '--recursive',
-                    "s3://{}/{}".format(bucket, key),
-                    local_path
-                ]
-            ).communicate()
-        #    _s3_download_dir(bucket, key, local_path, logger=logger)
+            # subprocess.Popen(
+            #    [
+            #        'aws', 's3', 'cp', '--recursive',
+            #        "s3://{}/{}".format(bucket, key),
+            #        local_path
+            #    ]
+            # ).communicate()
+            _s3_download_dir(bucket, key, local_path, logger=logger)
         else:
             boto3.client('s3').download_file(bucket, key, local_path)
     else:
@@ -311,7 +311,11 @@ def _s3_download_dir(bucket, dist, local, logger=None):
             Prefix=dist):
         if result.get('CommonPrefixes') is not None:
             for subdir in result.get('CommonPrefixes'):
-                _s3_download_dir(bucket, subdir.get('Prefix'), local)
+                _s3_download_dir(
+                    bucket,
+                    subdir.get('Prefix'),
+                    os.path.join(local, subdir.get('Prefix'))
+                )
 
         if result.get('Contents') is not None:
             for file in result.get('Contents'):
@@ -328,7 +332,11 @@ def _s3_download_dir(bucket, dist, local, logger=None):
 
                 try:
                     key = file.get('Key')
-                    local_path = os.path.join(local, file.get('Key'))
+                    local_path = os.path.join(
+                        local,
+                        re.sub('^' + dist, '', file.get('Key'))
+                    )
+
                     if logger:
                         logger.debug(
                             'Downloading {}/{} to {}'
