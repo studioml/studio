@@ -285,10 +285,14 @@ def download_file_from_qualified(qualified, local_path, logger=None):
                      .format(bucket, key, local_path))
 
     if qualified.startswith('s3://'):
-        if qualified.endswith('/'):
-            _s3_download_dir(bucket, key, local_path, logger=logger)
-        else:
-            boto3.client('s3').download_file(bucket, key, local_path)
+        subprocess.Popen(
+            ['aws', 's3', 'cp', '--recursive', qualified, local_path]
+        ).communicate()
+
+        # if qualified.endswith('/'):
+        #    _s3_download_dir(bucket, key, local_path, logger=logger)
+        # else:
+        #    boto3.client('s3').download_file(bucket, key, local_path)
     else:
         raise NotImplementedError
 

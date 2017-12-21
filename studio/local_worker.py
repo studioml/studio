@@ -92,7 +92,7 @@ class LocalExecutor(object):
                         if not art['mutable'] and os.path.exists(local_path):
                             os.symlink(
                                 art['local'],
-                                os.path.join(cwd, '..', tag)
+                                os.path.join(os.path.dirname(cwd), tag)
                             )
 
                     if experiment.filename is not None:
