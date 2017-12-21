@@ -341,10 +341,18 @@ def worker_loop(queue, parsed_args,
                         if fetch_artifacts or 'local' not in art.keys():
                             logger.info('Fetching artifact ' + tag)
                             if tag == 'workspace':
-                                art['local'] = db.get_artifact(
-                                    art, only_newer=False)
+                                art['local'] = retry(lambda: db.get_artifact(
+                                    art,
+                                    only_newer=False),
+                                    sleep_time=10,
+                                    logger=logger)
                             else:
-                                art['local'] = db.get_artifact(art)
+                                art['local'] = retry(
+                                    lambda: db.get_artifact(art),
+                                    sleep_time=10,
+                                    logger=logger
+                                )
+
                     executor.run(experiment)
                 finally:
                     sched.shutdown()
