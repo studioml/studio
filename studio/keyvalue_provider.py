@@ -208,7 +208,7 @@ class KeyValueProvider(object):
                      'experiments/' + experiment_key)
         if experiment is not None:
             for tag, art in six.iteritems(experiment.artifacts):
-                if art.get('key') is not None:
+                if art.get('key') is not None and art['mutable']:
                     self.logger.debug(
                         ('Deleting artifact {} from the store, ' +
                          'artifact key {}').format(tag, art['key']))
