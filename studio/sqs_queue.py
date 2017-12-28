@@ -7,6 +7,7 @@ except BaseException:
     boto3 = None
 
 from .model import parse_verbosity
+from .util import retry
 
 logging.basicConfig()
 
@@ -109,15 +110,19 @@ class SQSQueue(object):
             return (retval['Body'], retval['ReceiptHandle'])
 
     def acknowledge(self, ack_id):
-        self._client.delete_message(
+        retry(lambda: self._client.delete_message(
             QueueUrl=self._queue_url,
-            ReceiptHandle=ack_id)
+            ReceiptHandle=ack_id),
+
+            sleep_time=10, logger=self.logger)
 
     def hold(self, ack_id, minutes):
-        self._client.change_message_visibility(
+        retry(lambda: self._client.change_message_visibility(
             QueueUrl=self._queue_url,
             ReceiptHandle=ack_id,
-            VisibilityTimeout=int(minutes * 60))
+            VisibilityTimeout=int(minutes * 60)),
+
+            sleep_time=10, logger=self.logger)
 
     def delete(self):
         self._client.delete_queue(QueueUrl=self._queue_url)

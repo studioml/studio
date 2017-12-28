@@ -70,16 +70,6 @@ with open('requirements.txt') as f:
     # python modules but be selective about whether the GPU version is used
     # or the default CPU version.  Not doing this will result in the CPU
     # version taking precedence in many cases.
-    tensorflow = 'tensorflow'
-    '''
-    package_set = {p._key for p in
-                   pip.pip.get_installed_distributions(local_only=True)}
-
-    if 'tf-nightly' in package_set or 'tf-nightly-gpu' in package_set:
-        tensorflow = 'tf-nightly'
-    '''
-    required.append(tensorflow)
-
 
 with open('test_requirements.txt') as f:
     test_required = f.read().splitlines()

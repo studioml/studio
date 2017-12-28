@@ -14,9 +14,8 @@ import numpy as np
 import requests
 import six
 
-from tensorflow.core.util import event_pb2
-
 import boto3
+from botocore.exceptions import ClientError
 
 DAY = 86400
 HOUR = 3600
@@ -57,6 +56,7 @@ def rand_string(length):
 
 
 def event_reader(fileobj):
+    from tensorflow.core.util import event_pb2
 
     if isinstance(fileobj, str):
         fileobj = open(fileobj, 'rb')
@@ -285,9 +285,68 @@ def download_file_from_qualified(qualified, local_path, logger=None):
                      .format(bucket, key, local_path))
 
     if qualified.startswith('s3://'):
-        boto3.client('s3').download_file(bucket, key, local_path)
+
+        if qualified.endswith('/'):
+            # subprocess.Popen(
+            #    [
+            #        'aws', 's3', 'cp', '--recursive',
+            #        "s3://{}/{}".format(bucket, key),
+            #        local_path
+            #    ]
+            # ).communicate()
+            _s3_download_dir(bucket, key, local_path, logger=logger)
+        else:
+            boto3.client('s3').download_file(bucket, key, local_path)
     else:
         raise NotImplementedError
+
+
+def _s3_download_dir(bucket, dist, local, logger=None):
+    client = boto3.client('s3')
+
+    paginator = client.get_paginator('list_objects')
+    for result in paginator.paginate(
+            Bucket=bucket,
+            Delimiter='/',
+            Prefix=dist):
+        if result.get('CommonPrefixes') is not None:
+            for subdir in result.get('CommonPrefixes'):
+                _s3_download_dir(
+                    bucket,
+                    subdir.get('Prefix'),
+                    os.path.join(local, subdir.get('Prefix'))
+                )
+
+        if result.get('Contents') is not None:
+            for file in result.get('Contents'):
+                if not os.path.exists(
+                    os.path.dirname(
+                        local +
+                        os.sep +
+                        file.get('Key'))):
+                    os.makedirs(
+                        os.path.dirname(
+                            local +
+                            os.sep +
+                            file.get('Key')))
+
+                try:
+                    key = file.get('Key')
+                    local_path = os.path.join(
+                        local,
+                        re.sub('^' + dist, '', file.get('Key'))
+                    )
+
+                    if logger:
+                        logger.debug(
+                            'Downloading {}/{} to {}'
+                            .format(bucket, key, local_path))
+
+                    client.download_file(bucket, key, local_path)
+                except ClientError as e:
+                    if logger:
+                        logger.debug(
+                            'Download failed with exception {}'.format(e))
 
 
 def has_aws_credentials():

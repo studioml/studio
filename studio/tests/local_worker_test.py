@@ -21,10 +21,13 @@ from studio.util import has_aws_credentials, sixdecode, retry
 
 logging.basicConfig()
 
+TEST_TIMEOUT = 600
+
 
 class LocalWorkerTest(unittest.TestCase):
 
-    @timeout(500, use_signals=False)
+    @unittest.skip("Limit number of locally running tests")
+    @timeout(TEST_TIMEOUT, use_signals=False)
     def test_runner_local(self):
         with get_local_queue_lock():
             with stubtest_worker(
@@ -38,7 +41,7 @@ class LocalWorkerTest(unittest.TestCase):
             ):
                 pass
 
-    @timeout(500, use_signals=False)
+    @timeout(TEST_TIMEOUT, use_signals=False)
     def test_args_conflict(self):
         with get_local_queue_lock():
             with stubtest_worker(
@@ -52,7 +55,7 @@ class LocalWorkerTest(unittest.TestCase):
             ):
                 pass
 
-    @timeout(500, use_signals=False)
+    @timeout(TEST_TIMEOUT, use_signals=False)
     def test_local_hyperparam(self):
         with get_local_queue_lock():
             with stubtest_worker(
@@ -78,7 +81,7 @@ class LocalWorkerTest(unittest.TestCase):
             ):
                 pass
 
-    @timeout(500, use_signals=False)
+    @timeout(TEST_TIMEOUT, use_signals=False)
     def test_local_worker_ce(self):
         tmpfile = os.path.join(tempfile.gettempdir(),
                                'tmpfile' +
@@ -128,7 +131,7 @@ class LocalWorkerTest(unittest.TestCase):
 
                 db.delete_experiment(experiment_name)
 
-    @timeout(500, use_signals=False)
+    @timeout(TEST_TIMEOUT, use_signals=False)
     def test_local_worker_co(self):
         tmpfile = os.path.join(tempfile.gettempdir(),
                                'tmpfile' +
@@ -150,7 +153,7 @@ class LocalWorkerTest(unittest.TestCase):
             ):
                 pass
 
-    @timeout(500, use_signals=False)
+    @timeout(TEST_TIMEOUT, use_signals=False)
     def test_local_worker_co_url(self):
         expected_str = 'Zabil zaryad ya v pushku tugo'
         url = 'https://storage.googleapis.com/studio-ed756.appspot.com/' + \
@@ -171,7 +174,7 @@ class LocalWorkerTest(unittest.TestCase):
     @unittest.skipIf(
         not has_aws_credentials(),
         'AWS credentials not found, cannot download s3://-like links')
-    @timeout(500, use_signals=False)
+    @timeout(TEST_TIMEOUT, use_signals=False)
     def test_local_worker_co_s3(self):
         expected_str = 'No4 ulica fonar apteka, bessmyslennyj i tusklyj svet'
         s3loc = 's3://studioml-artifacts/tests/download_test/download_test.txt'
@@ -190,7 +193,7 @@ class LocalWorkerTest(unittest.TestCase):
 
     @unittest.skipIf(keras is None,
                      'keras is required for this test')
-    @timeout(500, use_signals=False)
+    @timeout(TEST_TIMEOUT, use_signals=False)
     def test_save_get_model(self):
         experiment_name = 'test_save_get_model' + str(uuid.uuid4())
         with get_local_queue_lock():
@@ -217,7 +220,7 @@ class LocalWorkerTest(unittest.TestCase):
 
                 db.delete_experiment(experiment)
 
-    @timeout(500, use_signals=False)
+    @timeout(TEST_TIMEOUT, use_signals=False)
     def test_stop_experiment(self):
         my_path = os.path.dirname(os.path.realpath(__file__))
 
@@ -262,7 +265,7 @@ class LocalWorkerTest(unittest.TestCase):
 
             db.delete_experiment(key)
 
-    @timeout(500, use_signals=False)
+    @timeout(TEST_TIMEOUT, use_signals=False)
     def test_experiment_maxduration(self):
         my_path = os.path.dirname(os.path.realpath(__file__))
 
@@ -296,7 +299,7 @@ class LocalWorkerTest(unittest.TestCase):
 
             db.delete_experiment(key)
 
-    @timeout(500, use_signals=False)
+    @timeout(TEST_TIMEOUT, use_signals=False)
     def test_experiment_lifetime(self):
         my_path = os.path.dirname(os.path.realpath(__file__))
 

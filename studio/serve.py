@@ -46,7 +46,7 @@ def main():
         serve_args.append('--port=' + str(options.port))
 
     serve_args.append('--host=' + options.host)
-    serve_args.append('--killafter=' + options.killafter)
+    serve_args.append('--killafter=' + str(options.killafter))
 
     total_args = runner_args + serve_args
     runner.main(total_args)

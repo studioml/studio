@@ -15,11 +15,11 @@ from studio.local_queue import get_local_queue_lock
 
 logging.basicConfig()
 
-_file_url = 'https://s3.amazonaws.com/ml-enn/deepbilevel_datafiles/' + \
+_file_url = 'https://s3-us-west-2.amazonaws.com/ml-enn/' + \
+            'deepbilevel_datafiles/' + \
             'mightyai_combined_vocab/mightyai_miscfiles.tar.gz'
 
-_file_s3 = 's3://ml-enn/deepbilevel_datafiles/' + \
-           'mightyai_combined_vocab/mightyai_miscfiles.tar.gz'
+_file_s3 = 's3://s3-us-west-2.amazonaws.com/studioml-test/t.txt'
 
 
 class CompletionServiceTest(unittest.TestCase):
@@ -133,7 +133,7 @@ class CompletionServiceTest(unittest.TestCase):
             mypath,
             '..',
             'tests',
-            'test_config_http_client.yaml')
+            'test_config_datacenter.yaml')
 
         files_in_workspace = os.listdir(mypath)
         files = {f: os.path.join(mypath, f) for f in files_in_workspace if
@@ -171,6 +171,39 @@ class CompletionServiceTest(unittest.TestCase):
             n_experiments=2,
             config=config_path,
             cloud='gcspot')
+
+    @unittest.skipIf(
+        'GOOGLE_APPLICATION_CREDENTIALS_DC' not in os.environ.keys(),
+        'Need GOOGLE_APPLICATION_CREDENTIALS_DC env variable to' +
+        'use google cloud')
+    def test_two_experiments_datacenter(self):
+        oldcred = os.environ.get('GOOGLE_APPLICATION_CREDENTIALS')
+        os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = \
+            os.environ['GOOGLE_APPLICATION_CREDENTIALS_DC']
+
+        mypath = os.path.dirname(os.path.realpath(__file__))
+        queue_name = 'test_queue_' + str(uuid.uuid4())
+        config_path = os.path.join(
+            mypath,
+            '..',
+            'tests',
+            'test_config_datacenter.yaml')
+
+        files_in_workspace = os.listdir(mypath)
+        files = {f: os.path.join(mypath, f) for f in files_in_workspace if
+                 os.path.isfile(os.path.join(mypath, f))}
+
+        files['url'] = _file_url
+        files['s3'] = _file_s3
+
+        self._run_test_files(
+            files=files,
+            config=config_path,
+            queue=queue_name,
+            shutdown_del_queue=True
+        )
+        if oldcred:
+            os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = oldcred
 
     @unittest.skipIf(
         'GOOGLE_APPLICATION_CREDENTIALS' not in os.environ.keys(),

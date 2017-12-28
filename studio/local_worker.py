@@ -7,7 +7,8 @@ import json
 import psutil
 import time
 import six
-
+from pygtail import Pygtail
+import threading
 
 from apscheduler.schedulers.background import BackgroundScheduler
 
@@ -57,6 +58,8 @@ class LocalExecutor(object):
                     if v is not None:
                         env[str(k)] = str(v)
 
+            # env['PYTHONUNBUFFERED'] = 'TRUE'
+
             fs_tracker.setup_experiment(env, experiment, clean=True)
             log_path = fs_tracker.get_artifact_cache('output', experiment.key)
 
@@ -89,7 +92,7 @@ class LocalExecutor(object):
                         if not art['mutable'] and os.path.exists(local_path):
                             os.symlink(
                                 art['local'],
-                                os.path.join(cwd, '..', tag)
+                                os.path.join(os.path.dirname(cwd), tag)
                             )
 
                     if experiment.filename is not None:
@@ -111,7 +114,19 @@ class LocalExecutor(object):
                     cwd=cwd
                 )
                 # simple hack to show what's in the log file
-                ptail = subprocess.Popen(["tail", "-f", log_path])
+                # ptail = subprocess.Popen(["tail", "-f", log_path])
+
+                logtail = Pygtail(log_path)
+
+                def tail_func():
+                    while logtail:
+                        for line in logtail:
+                            print(line)
+
+                        time.sleep(0.1)
+
+                tail_thread = threading.Thread(target=tail_func)
+                tail_thread.start()
 
                 minutes = 0
                 if self.config.get('saveWorkspaceFrequency'):
@@ -166,7 +181,7 @@ class LocalExecutor(object):
                 finally:
                     save_metrics(metrics_path)
                     sched.shutdown()
-                    ptail.kill()
+                    logtail = None
                     db.checkpoint_experiment(experiment)
                     db.finish_experiment(experiment)
 
@@ -199,6 +214,7 @@ def allocate_gpus(gpus_needed, config=None):
     mapped_gpus = [str(gpu_mapping[g])
                    for g in available_gpus]
 
+    os.environ['CUDA_DEVICE_ORDER'] = 'PCI_BUS_ID'
     if len(mapped_gpus) >= gpus_needed:
         os.environ['CUDA_VISIBLE_DEVICES'] = ','.join(
             mapped_gpus[:gpus_needed])
@@ -260,8 +276,7 @@ def worker_loop(queue, parsed_args,
 
         logger.setLevel(verbose)
 
-        logger.debug('Received experiment {} with config {} from the queue'.
-                     format(experiment_key, config))
+        logger.debug('Received message: \n{}'.format(data_dict))
 
         executor = LocalExecutor(parsed_args)
 
@@ -326,10 +341,18 @@ def worker_loop(queue, parsed_args,
                         if fetch_artifacts or 'local' not in art.keys():
                             logger.info('Fetching artifact ' + tag)
                             if tag == 'workspace':
-                                art['local'] = db.get_artifact(
-                                    art, only_newer=False)
+                                art['local'] = retry(lambda: db.get_artifact(
+                                    art,
+                                    only_newer=False),
+                                    sleep_time=10,
+                                    logger=logger)
                             else:
-                                art['local'] = db.get_artifact(art)
+                                art['local'] = retry(
+                                    lambda: db.get_artifact(art),
+                                    sleep_time=10,
+                                    logger=logger
+                                )
+
                     executor.run(experiment)
                 finally:
                     sched.shutdown()

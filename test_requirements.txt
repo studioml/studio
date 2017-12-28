@@ -1,3 +1,4 @@
-nose
-pep8
+pycodestyle
+pytest_xdist
+tensorflow
 keras
