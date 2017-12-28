@@ -6,7 +6,6 @@ import uuid
 import subprocess
 import time
 from timeout_decorator import timeout
-import logs
 import traceback
 import numpy as np
 

@@ -1,8 +1,8 @@
 import unittest
 import numpy as np
-import logs
 
 from studio.hyperparameter import HyperparameterParser, Hyperparameter
+from studio import logs
 
 
 class RunnerArgs(object):

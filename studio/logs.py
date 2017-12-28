@@ -9,6 +9,7 @@ logging.basicConfig(
     level=DEBUG,
     datefmt='%Y-%m-%d %H:%M:%S')
 
+
 def getLogger(name):
     return logging.getLogger(name)
 
