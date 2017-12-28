@@ -127,7 +127,6 @@ def create_experiment(
         str(int(time.time())) + "_" + str(uuid.uuid4())
 
     packages = []
-    freeze_output = [p for p in pip.operations.freeze.freeze()]
     for pkg in pip.operations.freeze.freeze():
 
         if pkg.startswith('-e git+'):
@@ -135,16 +134,16 @@ def create_experiment(
             packages.append(pkg)
         elif '==' in pkg:
             # pypi package
-            key = re.search(r'^.*?(?=\=\=)', pkg).group(0)
-            version = re.search(r'(?<=\=\=).*\Z', pkg).group(0)
+            pkey = re.search(r'^.*?(?=\=\=)', pkg).group(0)
+            pversion = re.search(r'(?<=\=\=).*\Z', pkg).group(0)
 
             if resources_needed is not None and \
                     int(resources_needed.get('gpus')) > 0:
-                if (key == 'tensorflow' or key == 'tf-nightly'):
-                    key = key + '-gpu'
+                if (pkey == 'tensorflow' or key == 'tf-nightly'):
+                    pkey = pkey + '-gpu'
 
             # TODO add installation logic for torch
-            packages.append(key + '==' + version)
+            packages.append(pkey + '==' + pversion)
 
     return Experiment(
         key=key,
