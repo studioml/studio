@@ -1,7 +1,6 @@
 import os
 import subprocess
 import uuid
-import logs
 import pickle
 import tempfile
 import re
