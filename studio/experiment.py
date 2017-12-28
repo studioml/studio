@@ -1,4 +1,5 @@
 import os
+import re
 import glob
 import uuid
 import sys
@@ -126,22 +127,24 @@ def create_experiment(
         str(int(time.time())) + "_" + str(uuid.uuid4())
 
     packages = []
+    freeze_output = [p for p in pip.operations.freeze.freeze()]
+    for pkg in pip.operations.freeze.freeze():
 
-    for i, pkg in enumerate(
-            pip.pip.get_installed_distributions(local_only=True)):
-        if pkg._key == 'studioml':
-            continue
+        if pkg.startswith('-e git+'):
+            # git package
+            packages.append(pkg)
+        elif '==' in pkg:
+            # pypi package
+            key = re.search(r'^.*?(?=\=\=)', pkg).group(0)
+            version = re.search(r'(?<=\=\=).*\Z', pkg).group(0)
 
-        if resources_needed is not None and \
-           int(resources_needed.get('gpus')) > 0 and \
-           (pkg._key == 'tensorflow' or pkg._key == 'tf-nightly'):
-            packages.insert(0, pkg._key + '-gpu==' + pkg._version)
-            packages.insert(0, pkg._key + '==' + pkg._version)
+            if resources_needed is not None and \
+                    int(resources_needed.get('gpus')) > 0:
+                if (key == 'tensorflow' or key == 'tf-nightly'):
+                    key = key + '-gpu'
 
-        elif pkg._key == 'tensorflow-gpu' or pkg._key == 'tf-nightly-gpu':
-            packages.insert(0, pkg._key[:-4] + '==' + pkg._version)
-        else:
-            packages.append(pkg._key + '==' + pkg._version)
+            # TODO add installation logic for torch
+            packages.append(key + '==' + version)
 
     return Experiment(
         key=key,
