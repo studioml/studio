@@ -11,8 +11,7 @@ import threading
 
 from apscheduler.schedulers.background import BackgroundScheduler
 
-from . import fs_tracker
-from . import model
+from . import fs_tracker, model, logs
 from .local_queue import LocalQueue
 from .gpu_util import get_available_gpus, get_gpu_mapping, get_gpus_summary
 from .experiment import Experiment
