@@ -3,7 +3,6 @@ from . import fs_tracker, logs
 import uuid
 import glob
 import time
-import logs
 import filelock
 
 logs.getLogger('filelock').setLevel(logs.INFO)
