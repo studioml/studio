@@ -246,7 +246,7 @@ class CompletionService:
             artifacts[tag]['mutable'] = False
 
         with open(args_file, 'wb') as f:
-            f.write(pickle.dumps(args))
+            f.write(pickle.dumps(args, protocol=2))
 
         experiment = create_experiment(
             'completion_service_client.py',

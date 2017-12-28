@@ -77,7 +77,7 @@ def main():
 
     logger.debug('Saving retval')
     with open(retval_path, 'wb') as f:
-        f.write(pickle.dumps(retval))
+        f.write(pickle.dumps(retval, protocol=2))
     logger.debug('Done')
 
 
