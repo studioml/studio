@@ -68,7 +68,7 @@ class FirebaseAuth(object):
                 self.email = email
                 self.password = password
             else:
-                self.email = input(
+                self.email = raw_input(
                     'Firebase token is not found or expired! ' +
                     'You need to re-login. (Or re-run with ' +
                     'studio/studio-runner ' +

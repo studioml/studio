@@ -1,4 +1,5 @@
 import json
+import logging
 from .keyvalue_provider import KeyValueProvider
 from .s3_artifact_store import S3ArtifactStore
 
@@ -6,14 +7,6 @@ from .s3_artifact_store import S3ArtifactStore
 class S3Provider(KeyValueProvider):
 
     def __init__(self, config, blocking_auth=True, verbose=10, store=None):
-        super(
-            S3Provider,
-            self).__init__(
-            config,
-            blocking_auth,
-            verbose,
-            store)
-
         self.config = config
         self.bucket = config.get('bucket', 'studioml-meta')
 
@@ -26,12 +19,22 @@ class S3Provider(KeyValueProvider):
             store)
 
     def _get(self, key, shallow=False):
-        response = self.meta_store.client.get_object(
-            Bucket=self.bucket,
-            Key=key)
+        try:
+            response = self.meta_store.client.get_object(
+                Bucket=self.bucket,
+                Key=key)
+        except self.meta_store.client.exceptions.NoSuchKey as e:
+            logging.error("Failed to retrieve key %s from %s", key, self.bucket)
+            return None
 
         if response['ResponseMetadata']['HTTPStatusCode'] == 200:
-            return json.loads(response['Body'].read())
+            content = response['Body'].read()
+            try:
+                return json.loads(content)
+            except:
+                logging.error("Failed to decode JSON (%s/%s): %s",
+                    self.bucket, key, content)
+                return None
 
         elif response['ResponseMetadata']['HTTPStatusCode'] == 404:
             return None
