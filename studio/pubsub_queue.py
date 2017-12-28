@@ -1,4 +1,3 @@
-import logging
 import os
 import json
 import time
@@ -7,8 +6,7 @@ from google.gax.errors import RetryError
 
 from .model import parse_verbosity
 from .util import sixdecode, retry
-
-logging.basicConfig()
+from . import logging
 
 
 class PubsubQueue(object):

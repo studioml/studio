@@ -5,7 +5,7 @@ try:
 except ImportError:
     keras = None
 
-import logging
+from . import logging
 
 from PIL import Image
 
@@ -18,8 +18,6 @@ from threading import Thread
 import numpy as np
 import itertools
 import six
-
-logging.basicConfig()
 
 
 class BufferedPipe:

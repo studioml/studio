@@ -1,12 +1,11 @@
 import os
-from . import fs_tracker
+from . import fs_tracker, logging
 import uuid
 import glob
 import time
 import logging
 import filelock
 
-logging.basicConfig()
 logging.getLogger('filelock').setLevel(logging.INFO)
 
 _local_queue_lock = filelock.FileLock(

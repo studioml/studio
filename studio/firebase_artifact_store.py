@@ -1,14 +1,12 @@
-import logging
 import time
 import calendar
 import certifi
 import json
 
 from . import pyrebase
+from . import logging
 from .auth import get_auth
 from .tartifact_store import TartifactStore
-
-logging.basicConfig()
 
 
 class FirebaseArtifactStore(TartifactStore):

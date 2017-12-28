@@ -1,6 +1,5 @@
 import sys
 import argparse
-import logging
 import json
 import re
 import os
@@ -27,9 +26,7 @@ from . import auth
 from . import git_util
 from . import local_worker
 from . import fs_tracker
-
-
-logging.basicConfig()
+from . import logging
 
 
 def main(args=sys.argv[1:]):

@@ -1,8 +1,6 @@
-import logging
-
 from .tartifact_store import TartifactStore
 from .util import download_file, upload_file
-logging.basicConfig()
+from . import logging
 
 
 class HTTPArtifactStore(TartifactStore):

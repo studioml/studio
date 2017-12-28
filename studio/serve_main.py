@@ -5,14 +5,13 @@ import time
 import json
 import glob
 import traceback
-import logging
 import importlib
 import pickle
 import re
 import threading
 
 from flask import Flask, request
-from studio import fs_tracker
+from . import fs_tracker, logging
 from .model_util import ModelPipe
 
 logging.basicConfig()

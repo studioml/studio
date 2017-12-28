@@ -1,4 +1,3 @@
-import logging
 import time
 
 try:
@@ -8,8 +7,7 @@ except BaseException:
 
 from .model import parse_verbosity
 from .util import retry
-
-logging.basicConfig()
+from . import logging
 
 
 class SQSQueue(object):

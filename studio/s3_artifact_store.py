@@ -1,4 +1,3 @@
-import logging
 import calendar
 
 try:
@@ -12,7 +11,7 @@ except ImportError:
     boto3 = None
 
 from .tartifact_store import TartifactStore
-logging.basicConfig()
+from . import logging
 
 
 class S3ArtifactStore(TartifactStore):

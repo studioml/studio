@@ -4,14 +4,11 @@ import six
 import time
 import re
 
-from . import pyrebase
+from . import pyrebase, logging
 from .auth import get_auth
 from .http_artifact_store import HTTPArtifactStore
 from .experiment import experiment_from_dict
 from .util import retry
-
-import logging
-logging.basicConfig()
 
 
 class HTTPProvider(object):

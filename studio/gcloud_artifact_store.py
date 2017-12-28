@@ -1,8 +1,8 @@
-import logging
 import time
 import calendar
 
 from .tartifact_store import TartifactStore
+from . import logging
 
 logging.basicConfig()
 

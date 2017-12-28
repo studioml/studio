@@ -4,7 +4,6 @@ from flask import Flask, render_template, request, redirect
 from . import model
 import argparse
 import yaml
-import logging
 import json
 import socket
 import subprocess
@@ -15,8 +14,7 @@ import google.oauth2.id_token
 import google.auth.transport.requests
 
 from .experiment import experiment_from_dict
-
-logging.basicConfig()
+from . import logging
 
 app = Flask(__name__)
 

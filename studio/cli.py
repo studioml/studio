@@ -1,10 +1,10 @@
-import logging
 import argparse
 import sys
 import time
 from terminaltables import AsciiTable
 
-from studio import model
+from . import model
+from . import logging
 
 logging.basicConfig()
 

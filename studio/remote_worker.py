@@ -1,13 +1,10 @@
 import sys
-import logging
+import argparse
 
-from . import model
+from . import model, logging
 from .local_worker import worker_loop
 from .pubsub_queue import PubsubQueue
 from .sqs_queue import SQSQueue
-
-import argparse
-logging.basicConfig()
 
 
 def main(args=sys.argv):

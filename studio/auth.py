@@ -5,7 +5,6 @@ import json
 import shutil
 import atexit
 import tempfile
-import logging
 
 try:
     from apscheduler.schedulers.background import BackgroundScheduler
@@ -13,8 +12,8 @@ except BaseException:
     BackgroundScheduler = None
 
 from .util import rand_string
+from . import logging
 
-logging.basicConfig()
 
 TOKEN_DIR = os.path.expanduser('~/.studioml/keys')
 HOUR = 3600

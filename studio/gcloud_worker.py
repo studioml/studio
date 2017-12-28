@@ -4,11 +4,10 @@ import time
 
 import googleapiclient.discovery
 import uuid
-import logging
 import math
 import json
 
-from . import git_util
+from . import git_util, logging
 from .gpu_util import memstr2int
 from .cloud_worker_util import insert_user_startup_script
 

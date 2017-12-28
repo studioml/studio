@@ -9,7 +9,6 @@ except ImportError:
     pip = None
 
 import yaml
-import logging
 import six
 
 from .artifact_store import get_artifact_store
@@ -17,8 +16,7 @@ from .http_provider import HTTPProvider
 from .firebase_provider import FirebaseProvider
 from .s3_provider import S3Provider
 from .gs_provider import GSProvider
-
-logging.basicConfig()
+from . import logging
 
 
 def get_config(config_file=None):
