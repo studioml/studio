@@ -139,7 +139,7 @@ class CompletionServiceTest(unittest.TestCase):
         files['url'] = _file_url
 
         if has_aws_credentials():
-          files['s3'] = _file_s3
+            files['s3'] = _file_s3
 
         with get_local_queue_lock():
             self._run_test_files(
