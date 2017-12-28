@@ -137,7 +137,9 @@ class CompletionServiceTest(unittest.TestCase):
                  os.path.isfile(os.path.join(mypath, f))}
 
         files['url'] = _file_url
-        files['s3'] = _file_s3
+
+        if has_aws_credentials():
+          files['s3'] = _file_s3
 
         with get_local_queue_lock():
             self._run_test_files(
