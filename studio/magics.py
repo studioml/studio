@@ -18,7 +18,7 @@ from .util import rsync_cp
 from . import fs_tracker, model
 from .runner import main as runner_main
 
-import logs
+from . import logs
 
 
 @magics_class

@@ -2,7 +2,6 @@ import os
 import sys
 import subprocess
 import argparse
-import logs
 import json
 import psutil
 import time
