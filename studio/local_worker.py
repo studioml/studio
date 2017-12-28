@@ -2,7 +2,7 @@ import os
 import sys
 import subprocess
 import argparse
-import logging
+import logs
 import json
 import psutil
 import time
@@ -19,12 +19,11 @@ from .gpu_util import get_available_gpus, get_gpu_mapping, get_gpus_summary
 from .experiment import Experiment
 from .util import sixdecode, str2duration, retry
 
-logging.basicConfig()
-logging.getLogger('apscheduler.scheduler').setLevel(logging.ERROR)
+logs.getLogger('apscheduler.scheduler').setLevel(logs.ERROR)
 
 
 class LocalExecutor(object):
-    """Runs job while capturing environment and logging results.
+    """Runs job while capturing environment and logs results.
     """
 
     def __init__(self, args):
@@ -33,7 +32,7 @@ class LocalExecutor(object):
         if args.guest:
             self.config['database']['guest'] = True
 
-        self.logger = logging.getLogger('LocalExecutor')
+        self.logger = logs.getLogger('LocalExecutor')
         self.logger.setLevel(model.parse_verbosity(self.config.get('verbose')))
         self.logger.debug("Config: ")
         self.logger.debug(self.config)
@@ -187,7 +186,7 @@ class LocalExecutor(object):
 
 
 def allocate_resources(experiment, config=None, verbose=10):
-    logger = logging.getLogger('allocate_resources')
+    logger = logs.getLogger('allocate_resources')
     logger.setLevel(verbose)
     logger.info('Allocating resources {} for experiment {}'
                 .format(experiment.resources_needed, experiment.key))
@@ -253,7 +252,7 @@ def worker_loop(queue, parsed_args,
 
     fetch_artifacts = True
 
-    logger = logging.getLogger('worker_loop')
+    logger = logs.getLogger('worker_loop')
 
     hold_period = 4
     while True:

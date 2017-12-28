@@ -2,14 +2,12 @@ import importlib
 import shutil
 import pickle
 import os
-import logging
 import sys
 import six
 
-from studio import fs_tracker, model
+from studio import fs_tracker, model, logs
 
-logging.basicConfig()
-logger = logging.getLogger('completion_service_client')
+logger = logs.getLogger('completion_service_client')
 try:
     logger.setLevel(model.parse_verbosity(sys.argv[1]))
 except BaseException:
@@ -17,7 +15,7 @@ except BaseException:
 
 
 def main():
-    logger.setLevel(logging.DEBUG)
+    logger.setLevel(logs.DEBUG)
     logger.debug('copying and importing client module')
     logger.debug('getting file mappings')
 

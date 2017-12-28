@@ -1,7 +1,6 @@
 import uuid
 import unittest
 import os
-import logging
 import hashlib
 import six
 import tempfile
@@ -12,8 +11,6 @@ from studio.util import has_aws_credentials, filehash
 from studio.util import download_file, rand_string
 from studio.local_queue import get_local_queue_lock
 
-
-logging.basicConfig()
 
 _file_url = 'https://s3-us-west-2.amazonaws.com/ml-enn/' + \
             'deepbilevel_datafiles/' + \

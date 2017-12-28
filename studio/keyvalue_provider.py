@@ -4,7 +4,7 @@ import six
 import re
 from threading import Thread
 
-from . import util, git_util, pyrebase, logging
+from . import util, git_util, pyrebase, logs
 from .firebase_artifact_store import FirebaseArtifactStore
 from .auth import get_auth
 from .experiment import experiment_from_dict
@@ -25,7 +25,7 @@ class KeyValueProvider(object):
         guest = db_config.get('guest')
 
         self.app = pyrebase.initialize_app(db_config)
-        self.logger = logging.getLogger(self.__class__.__name__)
+        self.logger = logs.getLogger(self.__class__.__name__)
         self.logger.setLevel(verbose)
 
         self.compression = compression

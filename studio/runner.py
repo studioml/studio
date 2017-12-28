@@ -26,11 +26,11 @@ from . import auth
 from . import git_util
 from . import local_worker
 from . import fs_tracker
-from . import logging
+from . import logs
 
 
 def main(args=sys.argv[1:]):
-    logger = logging.getLogger('studio-runner')
+    logger = logs.getLogger('studio-runner')
     parser = argparse.ArgumentParser(
         description='Studio runner. \
                      Usage: studio run <runner_arguments> \
@@ -448,7 +448,7 @@ def get_worker_manager(config, cloud=None, verbose=10):
         return None
 
     assert cloud in ['gcloud', 'gcspot', 'ec2', 'ec2spot']
-    logger = logging.getLogger('runner.get_worker_manager')
+    logger = logs.getLogger('runner.get_worker_manager')
     logger.setLevel(verbose)
 
     auth_cookie = None if config['database'].get('guest') \

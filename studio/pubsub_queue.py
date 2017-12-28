@@ -6,7 +6,7 @@ from google.gax.errors import RetryError
 
 from .model import parse_verbosity
 from .util import sixdecode, retry
-from . import logging
+from . import logs
 
 
 class PubsubQueue(object):
@@ -18,7 +18,7 @@ class PubsubQueue(object):
             credentials = json.loads(f.read())
 
         project_name = credentials['project_id']
-        self.logger = logging.getLogger(self.__class__.__name__)
+        self.logger = logs.getLogger(self.__class__.__name__)
         if verbose is not None:
             self.logger.setLevel(parse_verbosity(verbose))
 

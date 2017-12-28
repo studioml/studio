@@ -1,18 +1,16 @@
 import os
 import subprocess
 import uuid
-import logging
+import logs
 import pickle
 import tempfile
 import re
 import six
 import time
 
-from studio import runner, model, fs_tracker
+from studio import runner, model, fs_tracker, logs
 from studio.util import rsync_cp
 from studio.experiment import create_experiment
-
-logging.basicConfig()
 
 
 '''
@@ -25,7 +23,7 @@ class CompletionServiceManager:
         self.config = config
         self.resources_needed = resources_needed
         self.wm = runner.get_worker_manager(config, cloud)
-        self.logger = logging.getLogger(self.__class__.__name__)
+        self.logger = logs.getLogger(self.__class__.__name__)
         verbose = model.parse_verbosity(self.config['verbose'])
         self.logger.setLevel(verbose)
 
@@ -109,7 +107,7 @@ class CompletionService:
         self.wm = runner.get_worker_manager(
             self.config, self.cloud)
 
-        self.logger = logging.getLogger(self.__class__.__name__)
+        self.logger = logs.getLogger(self.__class__.__name__)
         self.verbose_level = model.parse_verbosity(self.config['verbose'])
         self.logger.setLevel(self.verbose_level)
 

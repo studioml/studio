@@ -14,7 +14,7 @@ import google.oauth2.id_token
 import google.auth.transport.requests
 
 from .experiment import experiment_from_dict
-from . import logging
+from . import logs
 
 app = Flask(__name__)
 
@@ -490,7 +490,7 @@ def get_allow_tensorboard():
 def getlogger():
     global logger
     if logger is None:
-        logger = logging.getLogger('studio_server')
+        logger = logs.getLogger('studio_server')
         logger.setLevel(10)
 
     return logger

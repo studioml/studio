@@ -4,7 +4,7 @@ import six
 import time
 import re
 
-from . import pyrebase, logging
+from . import pyrebase, logs
 from .auth import get_auth
 from .http_artifact_store import HTTPArtifactStore
 from .experiment import experiment_from_dict
@@ -23,7 +23,7 @@ class HTTPProvider(object):
         # TODO: implement connection
         self.url = config.get('serverUrl')
         self.verbose = verbose
-        self.logger = logging.getLogger('HTTPProvider')
+        self.logger = logs.getLogger('HTTPProvider')
         self.logger.setLevel(self.verbose)
 
         self.auth = None

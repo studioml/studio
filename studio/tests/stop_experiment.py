@@ -1,8 +1,8 @@
 import time
-import logging
+import logs
 
-logging.basicConfig()
-logger = logging.getLogger('helloworld')
+logs.basicConfig()
+logger = logs.getLogger('helloworld')
 logger.setLevel(10)
 
 i = 0

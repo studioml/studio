@@ -1,7 +1,6 @@
 import os
 import uuid
 
-import logging
 import time
 import tempfile
 import re
@@ -16,19 +15,17 @@ except ImportError:
 
 import hashlib
 
-from . import fs_tracker
+from . import fs_tracker, logs
 from . import util
 from .util import download_file, download_file_from_qualified, retry
 from .util import compression_to_extension, compression_to_taropt, timeit
 from .util import sixdecode
 
-logging.basicConfig()
-
 
 class TartifactStore(object):
 
     def __init__(self, measure_timestamp_diff=False, compression=None,
-                 verbose=logging.DEBUG):
+                 verbose=logs.DEBUG):
         if measure_timestamp_diff:
             try:
                 self.timestamp_shift = self._measure_timestamp_diff()
@@ -39,7 +36,7 @@ class TartifactStore(object):
 
         self.compression = compression
 
-        self.logger = logging.getLogger(self.__class__.__name__)
+        self.logger = logs.getLogger(self.__class__.__name__)
         self.logger.setLevel(verbose)
 
     def _measure_timestamp_diff(self):

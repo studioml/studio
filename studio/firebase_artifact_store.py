@@ -4,7 +4,7 @@ import certifi
 import json
 
 from . import pyrebase
-from . import logging
+from . import logs
 from .auth import get_auth
 from .tartifact_store import TartifactStore
 
@@ -32,7 +32,7 @@ class FirebaseArtifactStore(TartifactStore):
                                  db_config.get("password"),
                                  blocking_auth)
 
-        self.logger = logging.getLogger('FirebaseArtifactStore')
+        self.logger = logs.getLogger('FirebaseArtifactStore')
         self.logger.setLevel(verbose)
         super(FirebaseArtifactStore, self).__init__(
             measure_timestamp_diff,

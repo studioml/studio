@@ -6,7 +6,7 @@ import uuid
 import subprocess
 import time
 from timeout_decorator import timeout
-import logging
+import logs
 import traceback
 import numpy as np
 
@@ -15,11 +15,9 @@ try:
 except BaseException:
     keras = None
 
-from studio import model
+from studio import model, logs
 from studio.local_queue import LocalQueue, get_local_queue_lock
 from studio.util import has_aws_credentials, sixdecode, retry
-
-logging.basicConfig()
 
 TEST_TIMEOUT = 600
 
@@ -224,7 +222,7 @@ class LocalWorkerTest(unittest.TestCase):
     def test_stop_experiment(self):
         my_path = os.path.dirname(os.path.realpath(__file__))
 
-        logger = logging.getLogger('test_stop_experiment')
+        logger = logs.getLogger('test_stop_experiment')
         logger.setLevel(10)
 
         config_name = os.path.join(my_path, 'test_config_http_client.yaml')
@@ -269,7 +267,7 @@ class LocalWorkerTest(unittest.TestCase):
     def test_experiment_maxduration(self):
         my_path = os.path.dirname(os.path.realpath(__file__))
 
-        logger = logging.getLogger('test_experiment_maxduration')
+        logger = logs.getLogger('test_experiment_maxduration')
         logger.setLevel(10)
 
         config_name = os.path.join(my_path, 'test_config_http_client.yaml')
@@ -303,7 +301,7 @@ class LocalWorkerTest(unittest.TestCase):
     def test_experiment_lifetime(self):
         my_path = os.path.dirname(os.path.realpath(__file__))
 
-        logger = logging.getLogger('test_experiment_lifetime')
+        logger = logs.getLogger('test_experiment_lifetime')
         logger.setLevel(10)
 
         config_name = os.path.join(my_path, 'test_config_http_client.yaml')
@@ -351,7 +349,7 @@ def stubtest_worker(
 
     my_path = os.path.dirname(os.path.realpath(__file__))
     config_name = os.path.join(my_path, config_name)
-    logger = logging.getLogger('stubtest_worker')
+    logger = logs.getLogger('stubtest_worker')
     logger.setLevel(10)
 
     queue.clean()

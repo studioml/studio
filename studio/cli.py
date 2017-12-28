@@ -4,9 +4,7 @@ import time
 from terminaltables import AsciiTable
 
 from . import model
-from . import logging
-
-logging.basicConfig()
+from . import logs
 
 _my_logger = None
 
@@ -122,7 +120,7 @@ def _kill(args, cli_args):
 def get_logger():
     global _my_logger
     if not _my_logger:
-        _my_logger = logging.getLogger('studio-runs')
+        _my_logger = logs.getLogger('studio-runs')
     return _my_logger
 
 

@@ -11,7 +11,7 @@ except ImportError:
     boto3 = None
 
 from .tartifact_store import TartifactStore
-from . import logging
+from . import logs
 
 
 class S3ArtifactStore(TartifactStore):

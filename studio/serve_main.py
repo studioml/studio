@@ -11,10 +11,8 @@ import re
 import threading
 
 from flask import Flask, request
-from . import fs_tracker, logging
+from . import fs_tracker, logs
 from .model_util import ModelPipe
-
-logging.basicConfig()
 
 app = Flask(__name__)
 model = None
@@ -27,8 +25,8 @@ killtimer_duration = None
 def get_logger():
     global logger
     if not logger:
-        logger = logging.getLogger('studio-serve')
-        logger.setLevel(logging.DEBUG)
+        logger = logs.getLogger('studio-serve')
+        logger.setLevel(logs.DEBUG)
     return logger
 
 
