@@ -192,7 +192,7 @@ class CompletionServiceTest(unittest.TestCase):
         files = {f: os.path.join(mypath, f) for f in files_in_workspace if
                  os.path.isfile(os.path.join(mypath, f))}
 
-        files['url'] = _file_url
+        # files['url'] = _file_url
         files['s3'] = _file_s3
 
         self._run_test_files(
