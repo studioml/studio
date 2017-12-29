@@ -9,6 +9,8 @@ import requests
 import re
 import uuid
 
+from builtins import input
+
 try:
     from apscheduler.schedulers.background import BackgroundScheduler
 except BaseException:
@@ -50,7 +52,7 @@ def get_auth_class(authtype):
 def get_auth(
         config,
         blocking=True,
-        verbose=logging.DEBUG):
+        verbose=logs.DEBUG):
 
     global _auth_singleton
     if _auth_singleton is None:
@@ -79,21 +81,23 @@ def get_and_verify_user(request, authconfig):
 
     return auth.verify_token(token, refresh_token)
 
-
 class GithubAuth(object):
 
     def __init__(
         self,
         config,
         blocking=True,
-        verbose=logging.DEBUG
+        verbose=logs.DEBUG
     ):
-        self.logger = logging.getLogger(self.__class__.__name__)
+        self.logger = logs.getLogger(self.__class__.__name__)
         self.logger.setLevel(verbose)
         self.tokendir = os.path.abspath(os.path.expanduser(
             config.get('token_directory', '~/.studioml/github_keys'))
         )
 
+        if not os.path.exists(self.tokendir):
+          os.makedirs(self.tokendir)
+    
         self.config = config
 
         self.token = self._load_token()
@@ -207,7 +211,7 @@ class FirebaseAuth(object):
             self,
             config,
             blocking=True,
-            verbose=logging.DEBUG):
+            verbose=logs.DEBUG):
         if not os.path.exists(TOKEN_DIR):
             os.makedirs(TOKEN_DIR)
 

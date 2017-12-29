@@ -3,11 +3,9 @@ database:
     #serverUrl: http://zoo.studio.ml
     #projectId: "studio-ed756"
     type: gs
-    bucket: studioml-sentient-meta
-    projectId: "studio-sentient"
+    bucket: studioml-meta
+    projectId: "studio-ed756"
     
-    
-
     authentication:
         #type: firebase
         #apiKey: AIzaSyCLQbp5X2B4SWzBw-sz9rUnGHNSdMl0Yx8
@@ -16,7 +14,7 @@ database:
             
 storage:
     type: gcloud
-    bucket: studioml-sentient-artifacts
+    bucket: studio-ed756.appspot.com
 
 
 
