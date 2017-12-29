@@ -4,14 +4,11 @@ import six
 import time
 import re
 
-from . import pyrebase
+from . import pyrebase, logs
 from .auth import get_auth
 from .http_artifact_store import HTTPArtifactStore
 from .experiment import experiment_from_dict
 from .util import retry
-
-import logging
-logging.basicConfig()
 
 
 class HTTPProvider(object):
@@ -26,7 +23,7 @@ class HTTPProvider(object):
         # TODO: implement connection
         self.url = config.get('serverUrl')
         self.verbose = verbose
-        self.logger = logging.getLogger('HTTPProvider')
+        self.logger = logs.getLogger('HTTPProvider')
         self.logger.setLevel(self.verbose)
 
         self.auth = None
@@ -136,12 +133,17 @@ class HTTPProvider(object):
             key = experiment.key
 
         headers = self._get_headers()
-        request = requests.post(self.url + '/api/start_experiment',
-                                headers=headers,
-                                data=json.dumps({"key": key})
-                                )
-        self._raise_detailed_error(request)
-        experiment.time_started = time.time()
+
+        def post_request():
+            request = requests.post(self.url + '/api/start_experiment',
+                                    headers=headers,
+                                    data=json.dumps({"key": key})
+                                    )
+            self._raise_detailed_error(request)
+        retry(post_request, sleep_time=10, logger=self.logger)
+
+        if not isinstance(experiment, six.string_types):
+            experiment.time_started = time.time()
 
     def stop_experiment(self, experiment):
         if isinstance(experiment, six.string_types):
@@ -150,11 +152,15 @@ class HTTPProvider(object):
             key = experiment.key
 
         headers = self._get_headers()
-        request = requests.post(self.url + '/api/stop_experiment',
-                                headers=headers,
-                                data=json.dumps({"key": key})
-                                )
-        self._raise_detailed_error(request)
+
+        def post_request():
+            request = requests.post(self.url + '/api/stop_experiment',
+                                    headers=headers,
+                                    data=json.dumps({"key": key})
+                                    )
+            self._raise_detailed_error(request)
+
+        retry(post_request, sleep_time=10, logger=self.logger)
 
     def finish_experiment(self, experiment):
         if isinstance(experiment, six.string_types):
@@ -163,12 +169,17 @@ class HTTPProvider(object):
             key = experiment.key
 
         headers = self._get_headers()
-        request = requests.post(self.url + '/api/finish_experiment',
-                                headers=headers,
-                                data=json.dumps({"key": key})
-                                )
-        self._raise_detailed_error(request)
-        experiment.time_finished = time.time()
+
+        def post_request():
+            request = requests.post(self.url + '/api/finish_experiment',
+                                    headers=headers,
+                                    data=json.dumps({"key": key})
+                                    )
+            self._raise_detailed_error(request)
+
+        retry(post_request, sleep_time=10, logger=self.logger)
+        if not isinstance(experiment, six.string_types):
+            experiment.time_finished = time.time()
 
     def get_user_experiments(self, user=None, blocking=True):
         headers = self._get_headers()
@@ -226,8 +237,8 @@ class HTTPProvider(object):
         return HTTPArtifactStore(
             artifact.get('url'),
             timestamp=time.time(),
-            verbose=self.verbose) \
-            .get_artifact(artifact, local_path=local_path)
+            verbose=self.verbose
+        ).get_artifact(artifact, local_path=local_path)
 
     def get_users(self):
         headers = self._get_headers()
@@ -248,13 +259,17 @@ class HTTPProvider(object):
             key = experiment.key
 
         headers = self._get_headers()
-        request = requests.post(self.url + '/api/checkpoint_experiment',
-                                headers=headers,
-                                data=json.dumps({"key": key})
-                                )
 
-        self._raise_detailed_error(request)
-        artifacts = request.json()['artifacts']
+        def post_request():
+            request = requests.post(self.url + '/api/checkpoint_experiment',
+                                    headers=headers,
+                                    data=json.dumps({"key": key}))
+
+            self._raise_detailed_error(request)
+            artifacts = request.json()['artifacts']
+            return artifacts
+
+        artifacts = retry(post_request, sleep_time=10, logger=self.logger)
 
         self._update_artifacts(experiment, artifacts)
         experiment.time_last_checkpoint = time.time()

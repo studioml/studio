@@ -4,7 +4,6 @@ from flask import Flask, render_template, request, redirect
 from . import model
 import argparse
 import yaml
-import logging
 import json
 import socket
 import subprocess
@@ -13,8 +12,7 @@ import six
 
 from .experiment import experiment_from_dict
 from .auth import get_and_verify_user
-
-logging.basicConfig()
+from . import logs
 
 app = Flask(__name__)
 
@@ -462,7 +460,7 @@ def get_allow_tensorboard():
 def getlogger():
     global logger
     if logger is None:
-        logger = logging.getLogger('studio_server')
+        logger = logs.getLogger('studio_server')
         logger.setLevel(10)
 
     return logger

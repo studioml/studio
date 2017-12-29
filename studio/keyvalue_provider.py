@@ -1,18 +1,15 @@
-import logging
 import time
 import os
 import six
 import re
 from threading import Thread
 
-from . import util, git_util, pyrebase
+from . import util, git_util, pyrebase, logs
 from .firebase_artifact_store import FirebaseArtifactStore
 from .auth import get_auth
 from .experiment import experiment_from_dict
 from .tartifact_store import get_immutable_artifact_key
-from .util import timeit
-
-logging.basicConfig()
+from .util import timeit, retry
 
 
 class KeyValueProvider(object):
@@ -28,7 +25,7 @@ class KeyValueProvider(object):
         guest = db_config.get('guest')
 
         self.app = pyrebase.initialize_app(db_config)
-        self.logger = logging.getLogger(self.__class__.__name__)
+        self.logger = logs.getLogger(self.__class__.__name__)
         self.logger.setLevel(verbose)
 
         self.compression = compression
@@ -114,8 +111,8 @@ class KeyValueProvider(object):
                     ).group(0)
 
                 key = re.search('(?<=' + bucket + '/).+\Z', qualified).group(0)
-                art['bucket'] = bucket
-                art['key'] = key
+                # art['bucket'] = bucket
+                # art['key'] = key
 
         userid = userid if userid else self._get_userid()
         experiment.owner = userid
@@ -135,7 +132,9 @@ class KeyValueProvider(object):
                       experiment.key + "/owner",
                       userid)
 
-        self.checkpoint_experiment(experiment, blocking=True)
+        retry(lambda: self.checkpoint_experiment(experiment, blocking=True),
+              sleep_time=10,
+              logger=self.logger)
         self.logger.info("Added experiment " + experiment.key)
 
     def start_experiment(self, experiment):
@@ -205,7 +204,7 @@ class KeyValueProvider(object):
                      'experiments/' + experiment_key)
         if experiment is not None:
             for tag, art in six.iteritems(experiment.artifacts):
-                if art.get('key') is not None:
+                if art.get('key') is not None and art['mutable']:
                     self.logger.debug(
                         ('Deleting artifact {} from the store, ' +
                          'artifact key {}').format(tag, art['key']))

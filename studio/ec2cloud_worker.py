@@ -6,7 +6,6 @@ except BaseException:
     botocore = None
 
 import uuid
-import logging
 import os
 import base64
 import json
@@ -16,11 +15,9 @@ import filelock
 import hashlib
 import pickle
 
-from . import git_util, util
+from . import git_util, util, logs
 from .gpu_util import memstr2int
 from .cloud_worker_util import insert_user_startup_script
-
-logging.basicConfig()
 
 # list of instance types sorted by price
 _instance_specs = {
@@ -86,7 +83,7 @@ class EC2WorkerManager(object):
 
         self.region = self.client._client_config.region_name
 
-        self.logger = logging.getLogger('EC2WorkerManager')
+        self.logger = logs.getLogger('EC2WorkerManager')
         self.logger.setLevel(verbose)
         self.auth_cookie = auth_cookie
 

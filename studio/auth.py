@@ -5,11 +5,9 @@ import json
 import shutil
 import atexit
 import tempfile
-import logging
 import requests
 import re
 import uuid
-from builtins import input
 
 try:
     from apscheduler.schedulers.background import BackgroundScheduler
@@ -21,8 +19,8 @@ import google.oauth2.id_token
 
 from .util import rand_string
 from . import pyrebase
+from . import logs
 
-logging.basicConfig()
 
 TOKEN_DIR = os.path.expanduser('~/.studioml/keys')
 
@@ -213,8 +211,8 @@ class FirebaseAuth(object):
         if not os.path.exists(TOKEN_DIR):
             os.makedirs(TOKEN_DIR)
 
-        self.logger = logging.getLogger(self.__class__.__name__)
-        self.logger.setLevel(verbose)
+        self.logger = logs.getLogger(self.__class__.__name__)
+        self.logger.setLevel(logs.DEBUG)
 
         self.firebase = pyrebase.initialize_app(config)
         self.user = {}
@@ -364,4 +362,7 @@ class FirebaseAuth(object):
 def remove_all_keys():
     keypath = os.path.join(os.path.expanduser('~'), '.studioml', 'keys')
     if os.path.exists(keypath):
-        shutil.rmtree(keypath)
+        try:
+            shutil.rmtree(keypath)
+        except OSError:
+            pass

@@ -1,4 +1,5 @@
 import os
+import re
 import glob
 import uuid
 import sys
@@ -10,6 +11,7 @@ except ImportError:
     pip = None
 
 from . import fs_tracker
+from .util import shquote
 
 
 class Experiment(object):
@@ -33,6 +35,7 @@ class Experiment(object):
         self.key = key
         self.args = []
         self.filename = filename
+
         if filename and '::' in filename:
             self.filename = '-m'
             module_name = filename.replace('::', '.')
@@ -43,6 +46,8 @@ class Experiment(object):
 
         if args:
             self.args += args
+
+        self.args = [shquote(a) for a in self.args]
 
         self.pythonenv = pythonenv
         self.project = project
@@ -57,7 +62,7 @@ class Experiment(object):
         self.artifacts = {
             'workspace': {
                 'local': workspace_path,
-                'mutable': True
+                'mutable': False
             },
             'modeldir': {
                 'local': model_dir,
@@ -122,22 +127,23 @@ def create_experiment(
         str(int(time.time())) + "_" + str(uuid.uuid4())
 
     packages = []
+    for pkg in pip.operations.freeze.freeze():
 
-    for i, pkg in enumerate(
-            pip.pip.get_installed_distributions(local_only=True)):
-        if pkg._key == 'studioml':
-            continue
+        if pkg.startswith('-e git+'):
+            # git package
+            packages.append(pkg)
+        elif '==' in pkg:
+            # pypi package
+            pkey = re.search(r'^.*?(?=\=\=)', pkg).group(0)
+            pversion = re.search(r'(?<=\=\=).*\Z', pkg).group(0)
 
-        if resources_needed is not None and \
-           int(resources_needed.get('gpus')) > 0 and \
-           (pkg._key == 'tensorflow' or pkg._key == 'tf-nightly'):
-            packages.insert(0, pkg._key + '-gpu==' + pkg._version)
-            packages.insert(0, pkg._key + '==' + pkg._version)
+            if resources_needed is not None and \
+                    int(resources_needed.get('gpus')) > 0:
+                if (pkey == 'tensorflow' or key == 'tf-nightly'):
+                    pkey = pkey + '-gpu'
 
-        elif pkg._key == 'tensorflow-gpu' or pkg._key == 'tf-nightly-gpu':
-            packages.insert(0, pkg._key[:-4] + '==' + pkg._version)
-        else:
-            packages.append(pkg._key + '==' + pkg._version)
+            # TODO add installation logic for torch
+            packages.append(pkey + '==' + pversion)
 
     return Experiment(
         key=key,

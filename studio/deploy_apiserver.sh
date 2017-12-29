@@ -38,6 +38,8 @@ if [ "$1" = "gae" ]; then
     rm -rf lib
     # pip install -t lib -r ../requirements.txt
     pip install -t lib ../
+    pip install -t lib -r ../extra_server_requirements.txt
+
     rm lib/tensorflow/python/_pywrap_tensorflow_internal.so
     echo "" >  lib/tensorflow/__init__.py
 

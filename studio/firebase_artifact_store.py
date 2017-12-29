@@ -1,14 +1,12 @@
-import logging
 import time
 import calendar
 import certifi
 import json
 
 from . import pyrebase
+from . import logs
 from .auth import get_auth
 from .tartifact_store import TartifactStore
-
-logging.basicConfig()
 
 
 class FirebaseArtifactStore(TartifactStore):
@@ -34,7 +32,7 @@ class FirebaseArtifactStore(TartifactStore):
                 verbose=verbose
             )
 
-        self.logger = logging.getLogger('FirebaseArtifactStore')
+        self.logger = logs.getLogger('FirebaseArtifactStore')
         self.logger.setLevel(verbose)
         super(FirebaseArtifactStore, self).__init__(
             measure_timestamp_diff,
@@ -54,7 +52,7 @@ class FirebaseArtifactStore(TartifactStore):
                                "raised an exception: {}")
                               .format(local_file_path, key, err))
 
-    def _download_file(self, key, local_file_path):
+    def _download_file(self, key, local_file_path, bucket=None):
         self.logger.debug("Downloading file at key {} to local path {}..."
                           .format(key, local_file_path))
         try:

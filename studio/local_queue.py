@@ -1,10 +1,11 @@
 import os
-from . import fs_tracker
+from . import fs_tracker, logs
 import uuid
 import glob
 import time
-import logging
 import filelock
+
+logs.getLogger('filelock').setLevel(logs.INFO)
 
 _local_queue_lock = filelock.FileLock(
     os.path.expanduser('~/.studioml/local_queue.lock')
@@ -17,7 +18,7 @@ class LocalQueue:
             self.path = fs_tracker.get_queue_directory()
         else:
             self.path = path
-        self.logger = logging.getLogger(self.__class__.__name__)
+        self.logger = logs.getLogger(self.__class__.__name__)
         self.logger.setLevel(verbose)
 
     def has_next(self):

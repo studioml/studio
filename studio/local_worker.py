@@ -2,28 +2,26 @@ import os
 import sys
 import subprocess
 import argparse
-import logging
 import json
 import psutil
 import time
 import six
-
+from pygtail import Pygtail
+import threading
 
 from apscheduler.schedulers.background import BackgroundScheduler
 
-from . import fs_tracker
-from . import model
+from . import fs_tracker, model, logs
 from .local_queue import LocalQueue
 from .gpu_util import get_available_gpus, get_gpu_mapping, get_gpus_summary
 from .experiment import Experiment
-from .util import sixdecode, str2duration
+from .util import sixdecode, str2duration, retry
 
-logging.basicConfig()
-logging.getLogger('apscheduler.scheduler').setLevel(logging.ERROR)
+logs.getLogger('apscheduler.scheduler').setLevel(logs.ERROR)
 
 
 class LocalExecutor(object):
-    """Runs job while capturing environment and logging results.
+    """Runs job while capturing environment and logs results.
     """
 
     def __init__(self, args):
@@ -32,7 +30,7 @@ class LocalExecutor(object):
         if args.guest:
             self.config['database']['guest'] = True
 
-        self.logger = logging.getLogger('LocalExecutor')
+        self.logger = logs.getLogger('LocalExecutor')
         self.logger.setLevel(model.parse_verbosity(self.config.get('verbose')))
         self.logger.debug("Config: ")
         self.logger.debug(self.config)
@@ -56,6 +54,8 @@ class LocalExecutor(object):
                 for k, v in six.iteritems(self.config['env']):
                     if v is not None:
                         env[str(k)] = str(v)
+
+            # env['PYTHONUNBUFFERED'] = 'TRUE'
 
             fs_tracker.setup_experiment(env, experiment, clean=True)
             log_path = fs_tracker.get_artifact_cache('output', experiment.key)
@@ -89,7 +89,7 @@ class LocalExecutor(object):
                         if not art['mutable'] and os.path.exists(local_path):
                             os.symlink(
                                 art['local'],
-                                os.path.join(cwd, '..', tag)
+                                os.path.join(os.path.dirname(cwd), tag)
                             )
 
                     if experiment.filename is not None:
@@ -111,7 +111,19 @@ class LocalExecutor(object):
                     cwd=cwd
                 )
                 # simple hack to show what's in the log file
-                ptail = subprocess.Popen(["tail", "-f", log_path])
+                # ptail = subprocess.Popen(["tail", "-f", log_path])
+
+                logtail = Pygtail(log_path)
+
+                def tail_func():
+                    while logtail:
+                        for line in logtail:
+                            print(line)
+
+                        time.sleep(0.1)
+
+                tail_thread = threading.Thread(target=tail_func)
+                tail_thread.start()
 
                 minutes = 0
                 if self.config.get('saveWorkspaceFrequency'):
@@ -120,8 +132,14 @@ class LocalExecutor(object):
                             self.config['saveWorkspaceFrequency'])
                         .total_seconds() / 60)
 
+                def checkpoint():
+                    try:
+                        db.checkpoint_experiment(experiment)
+                    except BaseException as e:
+                        self.logger.info(e)
+
                 sched.add_job(
-                    lambda: db.checkpoint_experiment(experiment),
+                    checkpoint,
                     'interval',
                     minutes=minutes)
 
@@ -160,13 +178,13 @@ class LocalExecutor(object):
                 finally:
                     save_metrics(metrics_path)
                     sched.shutdown()
-                    ptail.kill()
+                    logtail = None
                     db.checkpoint_experiment(experiment)
                     db.finish_experiment(experiment)
 
 
 def allocate_resources(experiment, config=None, verbose=10):
-    logger = logging.getLogger('allocate_resources')
+    logger = logs.getLogger('allocate_resources')
     logger.setLevel(verbose)
     logger.info('Allocating resources {} for experiment {}'
                 .format(experiment.resources_needed, experiment.key))
@@ -193,6 +211,7 @@ def allocate_gpus(gpus_needed, config=None):
     mapped_gpus = [str(gpu_mapping[g])
                    for g in available_gpus]
 
+    os.environ['CUDA_DEVICE_ORDER'] = 'PCI_BUS_ID'
     if len(mapped_gpus) >= gpus_needed:
         os.environ['CUDA_VISIBLE_DEVICES'] = ','.join(
             mapped_gpus[:gpus_needed])
@@ -231,7 +250,7 @@ def worker_loop(queue, parsed_args,
 
     fetch_artifacts = True
 
-    logger = logging.getLogger('worker_loop')
+    logger = logs.getLogger('worker_loop')
 
     hold_period = 4
     while True:
@@ -254,14 +273,23 @@ def worker_loop(queue, parsed_args,
 
         logger.setLevel(verbose)
 
-        logger.debug('Received experiment {} with config {} from the queue'.
-                     format(experiment_key, config))
+        logger.debug('Received message: \n{}'.format(data_dict))
 
         executor = LocalExecutor(parsed_args)
 
         with model.get_db_provider(config) as db:
             # experiment = experiment_from_dict(data_dict['experiment'])
-            experiment = db.get_experiment(experiment_key)
+            def try_get_experiment():
+                experiment = db.get_experiment(experiment_key)
+                if experiment is None:
+                    raise ValueError(
+                        'experiment is not found - indicates storage failure')
+                return experiment
+
+            experiment = retry(
+                try_get_experiment,
+                sleep_time=10,
+                logger=logger)
 
             if config.get('experimentLifetime') and \
                 int(str2duration(config['experimentLifetime'])
@@ -310,10 +338,18 @@ def worker_loop(queue, parsed_args,
                         if fetch_artifacts or 'local' not in art.keys():
                             logger.info('Fetching artifact ' + tag)
                             if tag == 'workspace':
-                                art['local'] = db.get_artifact(
-                                    art, only_newer=False)
+                                art['local'] = retry(lambda: db.get_artifact(
+                                    art,
+                                    only_newer=False),
+                                    sleep_time=10,
+                                    logger=logger)
                             else:
-                                art['local'] = db.get_artifact(art)
+                                art['local'] = retry(
+                                    lambda: db.get_artifact(art),
+                                    sleep_time=10,
+                                    logger=logger
+                                )
+
                     executor.run(experiment)
                 finally:
                     sched.shutdown()

@@ -1,6 +1,5 @@
 import sys
 import argparse
-import logging
 import json
 import re
 import os
@@ -27,13 +26,11 @@ from . import auth
 from . import git_util
 from . import local_worker
 from . import fs_tracker
-
-
-logging.basicConfig()
+from . import logs
 
 
 def main(args=sys.argv[1:]):
-    logger = logging.getLogger('studio-runner')
+    logger = logs.getLogger('studio-runner')
     parser = argparse.ArgumentParser(
         description='Studio runner. \
                      Usage: studio run <runner_arguments> \
@@ -451,7 +448,7 @@ def get_worker_manager(config, cloud=None, verbose=10):
         return None
 
     assert cloud in ['gcloud', 'gcspot', 'ec2', 'ec2spot']
-    logger = logging.getLogger('runner.get_worker_manager')
+    logger = logs.getLogger('runner.get_worker_manager')
     logger.setLevel(verbose)
 
     auth_cookie = None if config['database'].get('guest') \
@@ -578,6 +575,7 @@ def submit_experiments(
     start_time = time.time()
     n_workers = min(multiprocessing.cpu_count() * 2, num_experiments)
 
+    '''
     with closing(multiprocessing.Pool(n_workers, maxtasksperchild=20)) as p:
         experiments = p.imap_unordered(add_experiment,
                                        zip([config] * num_experiments,
@@ -589,11 +587,10 @@ def submit_experiments(
 
     '''
     experiments = [add_experiment(e) for e in
-                    zip([config] * num_experiments,
-                        [python_pkg] *
-                        num_experiments,
-                        experiments)]
-    '''
+                   zip([config] * num_experiments,
+                       [python_pkg] *
+                       num_experiments,
+                       experiments)]
 
     logger.info("Added %s experiments in %s seconds" %
                 (num_experiments, int(time.time() - start_time)))
