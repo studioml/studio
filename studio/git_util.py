@@ -49,7 +49,8 @@ def get_repo_url(path='.', remove_user=True):
         cwd=path)
 
     stdout, _ = p.communicate()
-    assert p.returncode == 0, "git returned non-zero return code"
+    if p.returncode != 0:
+        return None
 
     url = stdout.strip()
     if remove_user:
@@ -65,7 +66,8 @@ def get_branch(path='.'):
         cwd=path)
 
     stdout, _ = p.communicate()
-    assert p.returncode == 0, "git returned non-zero return code"
+    if p.returncode == 0:
+        return None
 
     return stdout.strip().decode('utf8')
 

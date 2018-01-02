@@ -1,4 +1,3 @@
-import logging
 import time
 
 try:
@@ -8,8 +7,7 @@ except BaseException:
 
 from .model import parse_verbosity
 from .util import retry
-
-logging.basicConfig()
+from . import logs
 
 
 class SQSQueue(object):
@@ -23,7 +21,7 @@ class SQSQueue(object):
             QueueName=name)
 
         self._queue_url = create_q_response['QueueUrl']
-        self.logger = logging.getLogger('SQSQueue')
+        self.logger = logs.getLogger('SQSQueue')
         if verbose is not None:
             self.logger.setLevel(parse_verbosity(verbose))
         self._name = name

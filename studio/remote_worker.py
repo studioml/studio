@@ -1,17 +1,14 @@
 import sys
-import logging
+import argparse
 
-from . import model
+from . import model, logs
 from .local_worker import worker_loop
 from .pubsub_queue import PubsubQueue
 from .sqs_queue import SQSQueue
 
-import argparse
-logging.basicConfig()
-
 
 def main(args=sys.argv):
-    logger = logging.getLogger('studio-remote-worker')
+    logger = logs.getLogger('studio-remote-worker')
     parser = argparse.ArgumentParser(
         description='Studio remote worker. \
                      Usage: studio-remote-worker \

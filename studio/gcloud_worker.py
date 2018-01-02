@@ -4,15 +4,12 @@ import time
 
 import googleapiclient.discovery
 import uuid
-import logging
 import math
 import json
 
-from . import git_util
+from . import git_util, logs
 from .gpu_util import memstr2int
 from .cloud_worker_util import insert_user_startup_script
-
-logging.basicConfig()
 
 
 class GCloudWorkerManager(object):
@@ -35,7 +32,7 @@ class GCloudWorkerManager(object):
 
         self.zone = zone
         self.projectid = credentials_dict['project_id']
-        self.logger = logging.getLogger("GCloudWorkerManager")
+        self.logger = logs.getLogger("GCloudWorkerManager")
         self.logger.setLevel(verbose)
         self.auth_cookie = auth_cookie
         self.user_startup_script = user_startup_script
@@ -52,7 +49,8 @@ class GCloudWorkerManager(object):
             resources_needed={},
             blocking=False,
             ssh_keypair=None,
-            timeout=300):
+            timeout=300,
+            ports=[]):
 
         if ssh_keypair is not None:
             self.logger.warn('ssh keypairs are not supported ' +
@@ -89,7 +87,8 @@ class GCloudWorkerManager(object):
             queue_upscaling=True,
             start_workers=1,
             max_workers=100,
-            timeout=300):
+            timeout=300,
+            ports=[]):
 
         if resources_needed is None:
             resources_needed = {}
@@ -163,24 +162,18 @@ class GCloudWorkerManager(object):
         with open(self.install_studio_script) as f:
             install_studio_script = f.read()
 
-        startup_script = startup_script.replace(
-            "{install_studio}", install_studio_script)
-
-        startup_script = startup_script.replace(
-            "{studioml_branch}", self.branch)
-
-        startup_script = startup_script.replace(
-            "{repo_url}", self.repo_url)
-
-        startup_script = startup_script.replace(
-            "{log_bucket}", self.log_bucket)
-
-        if resources_needed.get('gpus') > 0:
-            startup_script = startup_script.replace('{use_gpus}', '1')
-
         startup_script = insert_user_startup_script(
             self.user_startup_script,
             startup_script, self.logger)
+
+        startup_script = startup_script.replace(
+            '{install_studio}', install_studio_script)
+        startup_script = startup_script.format(
+            studioml_branch=self.branch,
+            repo_url=self.repo_url,
+            log_bucket=self.log_bucket,
+            use_gpus=resources_needed.get('gpus', 0)
+        )
 
         self.logger.info('Startup script:')
         self.logger.info(startup_script)
@@ -219,7 +212,7 @@ class GCloudWorkerManager(object):
                 ]
             }],
 
-            # Allow the instance to access cloud storage and logging.
+            # Allow the instance to access cloud storage and logs.
             'serviceAccounts': [{
                 'email': 'default',
                 'scopes': [

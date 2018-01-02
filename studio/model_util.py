@@ -5,7 +5,7 @@ try:
 except ImportError:
     keras = None
 
-import logging
+from . import logs
 
 from PIL import Image
 
@@ -18,8 +18,6 @@ from threading import Thread
 import numpy as np
 import itertools
 import six
-
-logging.basicConfig()
 
 
 class BufferedPipe:
@@ -51,7 +49,7 @@ class BufferedPipe:
         self.q_in = q_in
         self.q_size = max(min_q_size, 2 * num_workers)
 
-        self.logger = logging.getLogger('BufferedPipe')
+        self.logger = logs.getLogger('BufferedPipe')
         self.logger.setLevel(10)
         self.timeout = timeout
         self.worker_frame = Thread

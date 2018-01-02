@@ -5,7 +5,6 @@ import json
 import shutil
 import atexit
 import tempfile
-import logging
 
 try:
     from apscheduler.schedulers.background import BackgroundScheduler
@@ -13,8 +12,8 @@ except BaseException:
     BackgroundScheduler = None
 
 from .util import rand_string
+from . import logs
 
-logging.basicConfig()
 
 TOKEN_DIR = os.path.expanduser('~/.studioml/keys')
 HOUR = 3600
@@ -57,8 +56,8 @@ class FirebaseAuth(object):
         if not os.path.exists(TOKEN_DIR):
             os.makedirs(TOKEN_DIR)
 
-        self.logger = logging.getLogger(self.__class__.__name__)
-        self.logger.setLevel(logging.DEBUG)
+        self.logger = logs.getLogger(self.__class__.__name__)
+        self.logger.setLevel(logs.DEBUG)
 
         self.firebase = firebase
         self.user = {}

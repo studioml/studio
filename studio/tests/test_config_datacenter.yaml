@@ -1,0 +1,33 @@
+database: 
+    type: http
+    serverUrl: https://studio-sentient.appspot.com
+    projectId: studio-sentient
+    compression: None
+    guest: true
+
+log:
+    name: output.log
+
+saveWorkspaceFrequency: 1m #how often is workspace being saved (minutes)
+saveMetricsFrequency: 1m
+
+verbose: debug
+cloud:
+    gcloud:
+        zone: us-east1-c
+
+resources_needed:
+    cpus: 2
+    ram:  3g
+    hdd:  10g
+    gpus: 0
+
+env: 
+    AWS_ACCESS_KEY_ID: $AWS_ACCESS_KEY_ID
+    AWS_SECRET_ACCESS_KEY: $AWS_SECRET_ACCESS_KEY
+    AWS_DEFAULT_REGION: us-west-2
+
+
+
+healthcheck: python -c "import tensorflow"
+

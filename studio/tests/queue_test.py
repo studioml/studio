@@ -2,15 +2,13 @@ import unittest
 import uuid
 import os
 import time
-import logging
 
 from studio.pubsub_queue import PubsubQueue
 from studio.sqs_queue import SQSQueue
 from studio.local_queue import LocalQueue, get_local_queue_lock
 
 from studio.util import has_aws_credentials
-
-logging.basicConfig()
+from studio import logs
 
 
 class DummyContextManager(object):
@@ -88,7 +86,7 @@ class DistributedQueueTest(QueueTest):
         self.assertTrue(q.dequeue() is None)
 
     def test_two_receivers(self):
-        logger = logging.getLogger('test_two_receivers')
+        logger = logs.getLogger('test_two_receivers')
         logger.setLevel(10)
         q1 = self.get_queue()
         q1.clean()

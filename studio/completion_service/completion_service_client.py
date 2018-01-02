@@ -2,14 +2,12 @@ import importlib
 import shutil
 import pickle
 import os
-import logging
 import sys
 import six
 
-from studio import fs_tracker, model
+from studio import fs_tracker, model, logs
 
-logging.basicConfig()
-logger = logging.getLogger('completion_service_client')
+logger = logs.getLogger('completion_service_client')
 try:
     logger.setLevel(model.parse_verbosity(sys.argv[1]))
 except BaseException:
@@ -17,7 +15,7 @@ except BaseException:
 
 
 def main():
-    logger.setLevel(logging.DEBUG)
+    logger.setLevel(logs.DEBUG)
     logger.debug('copying and importing client module')
     logger.debug('getting file mappings')
 
@@ -26,7 +24,7 @@ def main():
     logger.debug("Artifacts = {}".format(artifacts))
 
     for tag, path in six.iteritems(artifacts):
-        if tag not in {'workspace', 'modeldir', 'tb'}:
+        if tag not in {'workspace', 'modeldir', 'tb', '_runner'}:
             if os.path.isfile(path):
                 files[tag] = path
             elif os.path.isdir(path):
@@ -79,7 +77,7 @@ def main():
 
     logger.debug('Saving retval')
     with open(retval_path, 'wb') as f:
-        f.write(pickle.dumps(retval))
+        f.write(pickle.dumps(retval, protocol=2))
     logger.debug('Done')
 
 

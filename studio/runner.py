@@ -1,6 +1,5 @@
 import sys
 import argparse
-import logging
 import json
 import re
 import os
@@ -27,13 +26,11 @@ from . import auth
 from . import git_util
 from . import local_worker
 from . import fs_tracker
+from . import logs
 
 
-logging.basicConfig()
-
-
-def main(args=sys.argv):
-    logger = logging.getLogger('studio-runner')
+def main(args=sys.argv[1:]):
+    logger = logs.getLogger('studio-runner')
     parser = argparse.ArgumentParser(
         description='Studio runner. \
                      Usage: studio run <runner_arguments> \
@@ -127,7 +124,7 @@ def main(args=sys.argv):
         default=None)
 
     parser.add_argument(
-        '--metric', '-m',
+        '--metric',
         help='Metric to show in the summary of the experiment, ' +
              'and to base hyperparameter search on. ' +
              'Refers a scalar value in tensorboard log ' +
@@ -220,13 +217,21 @@ def main(args=sys.argv):
         default=None
     )
 
+    parser.add_argument(
+        '--port',
+        help='Ports to open on a cloud instance',
+        default=[], action='append'
+    )
+
     # detect which argument is the script filename
     # and attribute all arguments past that index as related to the script
-    py_suffix_args = [i for i, arg in enumerate(args) if arg.endswith('.py')]
+    (runner_args, other_args) = parser.parse_known_args(args)
+    py_suffix_args = [i for i, arg in enumerate(args) if arg.endswith('.py')
+                      or '::' in arg]
+
     rerun = False
     if len(py_suffix_args) < 1:
         print('None of the arugments end with .py')
-        (runner_args, other_args) = parser.parse_known_args(args[1:])
         if len(other_args) == 0:
             print("Trying to run a container job")
             assert runner_args.container is not None
@@ -242,7 +247,7 @@ def main(args=sys.argv):
     else:
         script_index = py_suffix_args[0]
         exec_filename, other_args = args[script_index], args[script_index + 1:]
-        runner_args = parser.parse_args(args[1:script_index])
+        runner_args = parser.parse_args(args[:script_index])
 
     # TODO: Queue the job based on arguments and only then execute.
 
@@ -427,7 +432,9 @@ def main(args=sys.argv):
 def add_experiment(args):
     try:
         config, python_pkg, e = args
+
         e.pythonenv = add_packages(e.pythonenv, python_pkg)
+
         with model.get_db_provider(config) as db:
             db.add_experiment(e)
     except BaseException:
@@ -441,7 +448,7 @@ def get_worker_manager(config, cloud=None, verbose=10):
         return None
 
     assert cloud in ['gcloud', 'gcspot', 'ec2', 'ec2spot']
-    logger = logging.getLogger('runner.get_worker_manager')
+    logger = logs.getLogger('runner.get_worker_manager')
     logger.setLevel(verbose)
 
     auth_cookie = None if config['database'].get('guest') \
@@ -515,7 +522,8 @@ def spin_up_workers(
                 worker_manager.start_worker(
                     queue_name, resources_needed,
                     ssh_keypair=runner_args.ssh_keypair,
-                    timeout=runner_args.cloud_timeout)
+                    timeout=runner_args.cloud_timeout,
+                    ports=runner_args.port)
         else:
             assert runner_args.bid is not None
             if runner_args.num_workers:
@@ -532,7 +540,8 @@ def spin_up_workers(
                 start_workers=start_workers,
                 queue_upscaling=queue_upscaling,
                 ssh_keypair=runner_args.ssh_keypair,
-                timeout=runner_args.cloud_timeout)
+                timeout=runner_args.cloud_timeout,
+                ports=runner_args.port)
 
     elif queue_name == 'local':
         worker_args = ['studio-local-worker']
@@ -566,11 +575,11 @@ def submit_experiments(
     start_time = time.time()
     n_workers = min(multiprocessing.cpu_count() * 2, num_experiments)
 
+    '''
     with closing(multiprocessing.Pool(n_workers, maxtasksperchild=20)) as p:
         experiments = p.imap_unordered(add_experiment,
                                        zip([config] * num_experiments,
-                                           [python_pkg] *
-                                           num_experiments,
+                                           [python_pkg] * num_experiments,
                                            experiments),
                                        chunksize=1)
         p.close()
@@ -578,11 +587,10 @@ def submit_experiments(
 
     '''
     experiments = [add_experiment(e) for e in
-                    zip([config] * num_experiments,
-                        [python_pkg] *
-                        num_experiments,
-                        experiments)]
-    '''
+                   zip([config] * num_experiments,
+                       [python_pkg] *
+                       num_experiments,
+                       experiments)]
 
     logger.info("Added %s experiments in %s seconds" %
                 (num_experiments, int(time.time() - start_time)))
@@ -865,8 +873,17 @@ def add_hyperparam_experiments(
 
 
 def add_packages(list1, list2):
-    pkg_dict = {re.sub('==.+', '', pkg): pkg for pkg in list1 + list2}
-    return [pkg for _, pkg in six.iteritems(pkg_dict)]
+    # This function dedups the package names which I think could be
+    # functionally not desirable however rather than changing the behavior
+    # instead we will do the dedup in a stable manner that prevents
+    # package re-ordering
+    pkgs = {re.sub('==.+', '', pkg): pkg for pkg in list1 + list2}
+    merged = []
+    for k in list1 + list2:
+        v = pkgs.pop(re.sub('==.+', '', k), None)
+        if v is not None:
+            merged.append(v)
+    return merged
 
 
 if __name__ == "__main__":

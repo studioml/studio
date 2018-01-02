@@ -1,10 +1,8 @@
-import logging
 import time
 import calendar
 
 from .tartifact_store import TartifactStore
-
-logging.basicConfig()
+from . import logs
 
 
 class GCloudArtifactStore(TartifactStore):
@@ -13,7 +11,7 @@ class GCloudArtifactStore(TartifactStore):
                  compression=None,
                  verbose=10):
 
-        self.logger = logging.getLogger('GCloudArtifactStore')
+        self.logger = logs.getLogger('GCloudArtifactStore')
         self.logger.setLevel(verbose)
 
         self.config = config

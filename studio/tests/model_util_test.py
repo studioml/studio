@@ -12,7 +12,7 @@ try:
     from keras.datasets import mnist
     from keras.utils import to_categorical
 
-except BaseException:
+except ImportError:
     keras = None
 
 from timeout_decorator import timeout
@@ -193,7 +193,8 @@ class ModelPipeTest(unittest.TestCase):
         self.assertEquals(expected_list, output_list)
 
 
-@unittest.skip("Keras does not play nicely with parallel tests")
+@unittest.skipIf(keras is None,
+                 "These tests require keras")
 class KerasModelPipeTest(unittest.TestCase):
     def test_model_pipe_keras(self):
         model = Sequential()

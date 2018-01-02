@@ -1,17 +1,15 @@
-import logging
-
 from .tartifact_store import TartifactStore
 from .util import download_file, upload_file
-logging.basicConfig()
+from . import logs
 
 
 class HTTPArtifactStore(TartifactStore):
     def __init__(self, url,
                  timestamp=None,
                  compression=None,
-                 verbose=logging.DEBUG):
+                 verbose=logs.DEBUG):
 
-        self.logger = logging.getLogger(self.__class__.__name__)
+        self.logger = logs.getLogger(self.__class__.__name__)
         self.logger.setLevel(verbose)
 
         self.url = url

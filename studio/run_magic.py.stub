@@ -1,10 +1,12 @@
 import __main__ as _M
 import pickle
 import six
+import gzip
+
 from studio import fs_tracker
 
-with open(fs_tracker.get_artifact('_ns')) as f:
-    _M.__dict__.update(pickle.loads(f.read()))
+with gzip.open(fs_tracker.get_artifact('_ns'), 'rb') as f:
+    _M.__dict__.update(pickle.load(f))
 
 {script}   
 

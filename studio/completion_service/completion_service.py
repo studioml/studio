@@ -1,18 +1,15 @@
 import os
 import subprocess
 import uuid
-import logging
 import pickle
 import tempfile
 import re
 import six
 import time
 
-from studio import runner, model, fs_tracker
+from studio import runner, model, fs_tracker, logs
 from studio.util import rsync_cp
 from studio.experiment import create_experiment
-
-logging.basicConfig()
 
 
 '''
@@ -25,7 +22,7 @@ class CompletionServiceManager:
         self.config = config
         self.resources_needed = resources_needed
         self.wm = runner.get_worker_manager(config, cloud)
-        self.logger = logging.getLogger(self.__class__.__name__)
+        self.logger = logs.getLogger(self.__class__.__name__)
         verbose = model.parse_verbosity(self.config['verbose'])
         self.logger.setLevel(verbose)
 
@@ -101,12 +98,15 @@ class CompletionService:
         self.project_name = "completion_service_" + experimentId
 
         self.resources_needed = DEFAULT_RESOURCES_NEEDED
+        if self.config.get('resources_needed'):
+            self.resources_needed.update(self.config.get('resources_needed'))
+
         self.resources_needed.update(resources_needed)
 
         self.wm = runner.get_worker_manager(
             self.config, self.cloud)
 
-        self.logger = logging.getLogger(self.__class__.__name__)
+        self.logger = logs.getLogger(self.__class__.__name__)
         self.verbose_level = model.parse_verbosity(self.config['verbose'])
         self.logger.setLevel(self.verbose_level)
 
@@ -246,7 +246,7 @@ class CompletionService:
             artifacts[tag]['mutable'] = False
 
         with open(args_file, 'wb') as f:
-            f.write(pickle.dumps(args))
+            f.write(pickle.dumps(args, protocol=2))
 
         experiment = create_experiment(
             'completion_service_client.py',

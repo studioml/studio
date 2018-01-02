@@ -11,13 +11,14 @@ import subprocess
 import uuid
 import os
 import time
+import gzip
 from apscheduler.schedulers.background import BackgroundScheduler
 
 from .util import rsync_cp
-from . import fs_tracker
-from . import model
+from . import fs_tracker, model
+from .runner import main as runner_main
 
-import logging
+from . import logs
 
 
 @magics_class
@@ -54,7 +55,8 @@ class StudioMagics(Magics):
 
         script = script_stub.format(script=script_text)
 
-        experiment_key = str(uuid.uuid4())
+        experiment_key = str(int(time.time())) + \
+            "_jupyter_" + str(uuid.uuid4())
 
         print('Running studio with experiment key ' + experiment_key)
         config = model.get_config()
@@ -73,34 +75,24 @@ class StudioMagics(Magics):
 
         ns_path = fs_tracker.get_artifact_cache('_ns', experiment_key)
 
-        with open(ns_path, 'w') as f:
+        with gzip.open(ns_path, 'wb') as f:
             f.write(pickle.dumps(pickleable_ns))
 
-        runner_args = line.split(' ')
+        if any(line):
+            runner_args = line.strip().split(' ')
+        else:
+            runner_args = []
+
         runner_args.append('--capture={}:_ns'.format(ns_path))
+        runner_args.append('--capture-once=.:workspace')
         runner_args.append('--force-git')
         runner_args.append('--experiment=' + experiment_key)
-        p = subprocess.Popen(['studio', 'run'] +
-                             runner_args +
-                             ['_script.py'],
-                             stdout=subprocess.PIPE,
-                             stderr=subprocess.STDOUT,
-                             cwd=workspace_new,
-                             close_fds=True)
 
-        sched = BackgroundScheduler()
-        sched.start()
-        logging.getLogger('apscheduler.scheduler').setLevel(60)
-
-        def studiotail_func():
-            try:
-                data = p.stdout.read()
-                if data and data != '':
-                    print(data)
-            except BaseException:
-                pass
-
-        sched.add_job(studiotail_func, 'interval', seconds=1, max_instances=1)
+        notebook_cwd = os.getcwd()
+        os.chdir(workspace_new)
+        print(runner_args + ['_script.py'])
+        runner_main(runner_args + ['_script.py'])
+        os.chdir(notebook_cwd)
 
         with model.get_db_provider() as db:
             while True:
@@ -116,12 +108,6 @@ class StudioMagics(Magics):
             new_ns = pickle.loads(f.read())
 
         self.shell.user_ns.update(new_ns)
-
-        studiorun_out, _ = p.communicate()
-        if p.returncode != 0:
-            print('studio-run returned code ' + str(p.returncode))
-
-        sched.shutdown()
 
 
 ip = get_ipython()

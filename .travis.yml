@@ -18,15 +18,17 @@ env:
 install:
   - git fetch --unshallow
   - pip install -e .
-  - pip install pycodestyle
-  - pip install pytest_xdist
-  # - pip install -r extra_test_requirements.txt
+  - pip install -r test_requirements.txt
 
   - 'if [ -n "$GOOGLE_CREDENTIALS_ENCODED" ]; then echo "$GOOGLE_CREDENTIALS_ENCODED" | base64 --decode > ./credentials.json && export GOOGLE_APPLICATION_CREDENTIALS=$(pwd)/credentials.json; fi'
+  - 'if [ -n "$GOOGLE_CREDENTIALS_DS_ENCODED" ]; then echo "$GOOGLE_CREDENTIALS_DS_ENCODED" | base64 --decode > ./credentials_ds.json && export GOOGLE_APPLICATION_CREDENTIALS_DC=$(pwd)/credentials_ds.json; fi'
 
 script:
-  - echo $GOOGLE_APPLICATION_CREDENTIALS
-  - py.test -v -n 16 --durations=0 
+  - echo GOOGLE_APPLICATION_CREDENTIALS=$GOOGLE_APPLICATION_CREDENTIALS
+  - echo GOOGLE_APPLICATION_CREDENTIALS_DC=$GOOGLE_APPLICATION_CREDENTIALS_DC
+
+  - py.test -n 16 -v --durations=0 
+  # - py.test -v -n 3 studio/tests/cloud_worker_test.py::GCloudWorkerTest
   - pycodestyle --show-source --exclude=.eggs .
   - python setup.py sdist
 

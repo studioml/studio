@@ -21,55 +21,61 @@ if [ ! -d "studio" ]; then
     cd singularity
     ./autogen.sh
     ./configure --prefix=/usr/local --sysconfdir=/etc
-    make
-    make install
+    time (make && make install)
     cd ..
 
-    #if [[ "{use_gpus}" -eq 1 ]]; then
-    #    cudnn5="libcudnn5_5.1.10-1_cuda8.0_amd64.deb"
-    #    cudnn6="libcudnn6_6.0.21-1_cuda8.0_amd64.deb"
-    #    cuda_base="https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1604/x86_64/"
-    #    cuda_ver="cuda-repo-ubuntu1604_8.0.61-1_amd64.deb"
+    time apt-get -y install python3-tk python-tk
+    time python -m pip install http://download.pytorch.org/whl/cu80/torch-0.3.0.post4-cp27-cp27mu-linux_x86_64.whl 
+    time python3 -m pip install http://download.pytorch.org/whl/cu80/torch-0.3.0.post4-cp35-cp35m-linux_x86_64.whl 
 
-    #    cuda_driver='nvidia-diag-driver-local-repo-ubuntu1604-384.66_1.0-1_amd64.deb'
-    #    wget $code_url_base/$cuda_driver
-    #    dpkg -i $cuda_driver
-    #    apt-key add /var/nvidia-diag-driver-local-repo-384.66/7fa2af80.pub
-    #    apt-get -y update
-    #    apt-get -y install cuda-drivers
+    nvidia-smi
+    nvidia_smi_error=$?
 
-    #    # install cuda
-    #    cuda_url="https://developer.nvidia.com/compute/cuda/8.0/Prod2/local_installers/cuda_8.0.61_375.26_linux-run"
-    #    cuda_patch_url="https://developer.nvidia.com/compute/cuda/8.0/Prod2/patches/2/cuda_8.0.61.2_linux-run"
+    if [ "{use_gpus}" -eq 1 ] && [ "$nvidia_smi_error" -ne 0 ]; then
+        cudnn5="libcudnn5_5.1.10-1_cuda8.0_amd64.deb"
+        cudnn6="libcudnn6_6.0.21-1_cuda8.0_amd64.deb"
+        cuda_base="https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1604/x86_64/"
+        cuda_ver="cuda-repo-ubuntu1604_8.0.61-1_amd64.deb"
+
+        cuda_driver='nvidia-diag-driver-local-repo-ubuntu1604-384.66_1.0-1_amd64.deb'
+        wget $code_url_base/$cuda_driver
+        dpkg -i $cuda_driver
+        apt-key add /var/nvidia-diag-driver-local-repo-384.66/7fa2af80.pub
+        apt-get -y update
+        apt-get -y install cuda-drivers
 
         # install cuda
-    #    wget $cuda_url
-    #    wget $cuda_patch_url
-    #    #udo dpkg -i $cuda_ver
-    #    #sudo apt -y update
-    #    #sudo apt install -y "cuda-8.0"
-    #    sh ./cuda_8.0.61_375.26_linux-run --silent --toolkit
-    #    sh ./cuda_8.0.61.2_linux-run --silent --accept-eula
+        cuda_url="https://developer.nvidia.com/compute/cuda/8.0/Prod2/local_installers/cuda_8.0.61_375.26_linux-run"
+        cuda_patch_url="https://developer.nvidia.com/compute/cuda/8.0/Prod2/patches/2/cuda_8.0.61.2_linux-run"
 
-    #    export PATH=$PATH:/usr/local/cuda-8.0/bin
-    #    export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/cuda-8.0/lib64
+        # install cuda
+        wget $cuda_url
+        wget $cuda_patch_url
+        #udo dpkg -i $cuda_ver
+        #sudo apt -y update
+        #sudo apt install -y "cuda-8.0"
+        sh ./cuda_8.0.61_375.26_linux-run --silent --toolkit
+        sh ./cuda_8.0.61.2_linux-run --silent --accept-eula
+
+        export PATH=$PATH:/usr/local/cuda-8.0/bin
+        export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/cuda-8.0/lib64
     
-    #    # wget $cuda_base/$cuda_ver
-    #    # sudo dpkg -i $cuda_ver
-    #    # sudo apt -y update
-    #    # sudo apt install -y "cuda-8.0"
+        # wget $cuda_base/$cuda_ver
+        # sudo dpkg -i $cuda_ver
+        # sudo apt -y update
+        # sudo apt install -y "cuda-8.0"
 
-    #    # install cudnn
-    #    wget $code_url_base/$cudnn5
-    #    wget $code_url_base/$cudnn6
-    #    sudo dpkg -i $cudnn5
-    #    sudo dpkg -i $cudnn6
-    #
-    #    # sudo python  -m pip install tf-nightly tf-nightly-gpu --upgrade
-    #    # sudo python3 -m pip install tf-nightly tf-nightly-gpu --upgrade
-    #else
-    #    sudo apt install -y default-jre
-    #fi
+        # install cudnn
+        wget $code_url_base/$cudnn5
+        wget $code_url_base/$cudnn6
+        sudo dpkg -i $cudnn5
+        sudo dpkg -i $cudnn6
+    
+        # sudo python  -m pip install tf-nightly tf-nightly-gpu --upgrade
+        # sudo python3 -m pip install tf-nightly tf-nightly-gpu --upgrade
+    else
+        sudo apt install -y default-jre
+    fi
 fi
 
 #if [[ "{use_gpus}" -ne 1 ]]; then
@@ -99,15 +105,11 @@ apoptosis() {{
 
 if [[ "{use_gpus}" -eq 1 ]]; then
         export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/cuda-8.0/lib64
-        python -m pip install tensorflow tensorflow-gpu --upgrade
-        python3 -m pip install tensorflow tensorflow-gpu --upgrade
-        (apoptosis > autoterminate.log)&
+        # (apoptosis > autoterminate.log)&
 fi
     
-apt-get -y install python3-tk python-tk
-
-sudo python -m pip install -e . --upgrade
-sudo python3 -m pip install -e . --upgrade
+time python -m pip install -e . --upgrade
+time python3 -m pip install -e . --upgrade
 
 
 
