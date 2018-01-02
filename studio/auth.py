@@ -59,14 +59,14 @@ def get_auth(
     global _auth_singleton
     if _auth_singleton is None:
         auth_class = get_auth_class(config['type'])
-        if auth_class: 
-          _auth_singleton = auth_class(
-              config,
-              blocking=blocking,
-              verbose=verbose
-          )
-        else: 
-          return None
+        if auth_class:
+            _auth_singleton = auth_class(
+                config,
+                blocking=blocking,
+                verbose=verbose
+            )
+        else:
+            return None
     return _auth_singleton
 
 
@@ -87,6 +87,7 @@ def get_and_verify_user(request, authconfig):
 
     return auth.verify_token(token, refresh_token)
 
+
 class GithubAuth(object):
 
     def __init__(
@@ -102,8 +103,8 @@ class GithubAuth(object):
         )
 
         if not os.path.exists(self.tokendir):
-          os.makedirs(self.tokendir)
-    
+            os.makedirs(self.tokendir)
+
         self.config = config
 
         self.token = self._load_token()

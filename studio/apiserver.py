@@ -428,31 +428,31 @@ def checkpoint_experiment():
 
 @app.route('/api/exchange_github_code')
 def exchange_github_code():
-  tic = time.time()
-  code = request.args.get('code')
-  
-  getlogger().debug('Code = ' + code)
+    tic = time.time()
+    code = request.args.get('code')
 
-  response = requests.post(
-    'https://github.com/login/oauth/access_token',
-    json={
-        'client_id': os.environ.get('STUDIO_GITHUB_ID'),
-        'client_secret': os.environ.get('STUDIO_GITHUB_SECRET'),
-        'code': code,
-        'accept': 'json'
-    })
+    getlogger().debug('Code = ' + code)
 
-  if response.status_code != 200:
-    abort(response.status_code)  
-  else:
-    getlogger().info(response.content)
-    
-    toc = time.time()
-    getlogger().info('Processed exchange_github_code in {} s'
-                     .format(toc - tic))
-    
-    return response.content
-  
+    response = requests.post(
+        'https://github.com/login/oauth/access_token',
+        json={
+            'client_id': os.environ.get('STUDIO_GITHUB_ID'),
+            'client_secret': os.environ.get('STUDIO_GITHUB_SECRET'),
+            'code': code,
+            'accept': 'json'
+        })
+
+    if response.status_code != 200:
+        abort(response.status_code)
+    else:
+        getlogger().info(response.content)
+
+        toc = time.time()
+        getlogger().info('Processed exchange_github_code in {} s'
+                         .format(toc - tic))
+
+        return response.content
+
 
 def _process_artifacts(experiment):
     artifacts = {}
@@ -510,7 +510,7 @@ def get_auth_config():
 def _render(page, **kwargs):
     tic = time.time()
     token = get_auth(get_config()).get_token() if _save_auth_cookie else None
-   
+
     retval = render_template(
         page,
         api_key=get_db().app.api_key,
@@ -518,7 +518,7 @@ def _render(page, **kwargs):
         send_refresh_token="true",
         allow_tensorboard=get_allow_tensorboard(),
         github_client_id=os.environ.get('STUDIO_GITHUB_ID'),
-        auth_token = token,
+        auth_token=token,
         **kwargs
     )
     toc = time.time()
