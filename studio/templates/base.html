@@ -5,29 +5,13 @@
       <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
       <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
       <link href="https://cdnjs.cloudflare.com/ajax/libs/datatables/1.10.12/css/dataTables.bootstrap.min.css" rel="stylesheet"/>
-      <!--link type="text/css" href="firebaseui.css" rel="stylesheet"/-->
       <link href="https://cdn.datatables.net/select/1.2.2/css/select.dataTables.css" rel="stylesheet"/> <div class="container">
 
         
-
-      <script src="https://www.gstatic.com/firebasejs/3.2.1/firebase.js"></script>
-      <script src="https://www.gstatic.com/firebasejs/3.1.0/firebase-app.js"></script>
-      <script src="https://www.gstatic.com/firebasejs/3.1.0/firebase-auth.js"></script>
-      <script src="https://www.gstatic.com/firebasejs/ui/live/0.5/firebase-ui-auth.js"></script>    
-
       <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
       <script src="https://cdnjs.cloudflare.com/ajax/libs/datatables/1.10.12/js/jquery.dataTables.min.js"></script>
       <script src="https://cdnjs.cloudflare.com/ajax/libs/datatables/1.10.12/js/dataTables.bootstrap.min.js"></script>
       <script src="https://cdn.datatables.net/select/1.2.2/js/dataTables.select.js"></script>
-
-      <style>
-        .firebaseui-idp-icon {
-          display: inline-block;
-          height: 18px;
-          vertical-align: middle;
-          width: 18px;
-        }
-      </style>
 
       {% block head %}
       {% endblock %}
@@ -51,17 +35,12 @@
               <li><a href="/projects">Projects</a></li>
               <li><a href="/users">Users</a></li>
               <li><a href="/all">All</a></li>
-              <li><a href="" id="sign-in-button" hidden>Sign in</a>
-              <li><a href="" id="sign-out-button" hidden>Sign out</a>
+              <li><a href="" id="sign-in-button" hidden onclick=login()>Sign in</a>
+              <li><a href="" id="sign-out-button" hidden onclick=logout()>Sign out</a>
             </ul>
           </div>
         </div>
       </nav>
-
-    <div id="sign-in-container" hidden>
-        <h3>Sign in to view your experiments</h3>
-        <div id="firebaseui-auth-container"></div>
-    </div>
 
     <div id="logged-in">     	 
 
@@ -248,114 +227,92 @@
     
     
     <script>
-        function authWidget(afterAuthCallback) {
-            var config = {
-                apiKey: "{{ api_key }}",
-                authDomain: "{{ project_id }}.firebaseapp.com",
-                //databaseURL: "https://{{ project_id }}.firebaseio.com",
-                //storageBucket: "{{ project_id }}.appspot.com",
-            };
-
-            authWidget.userIdToken = null;
-            authWidget.userRefreshToken = null;
-
-            // Firebase log-in
-            function configureFirebaseLogin() {
-
-                firebase.initializeApp(config);
-
-                // [START onAuthStateChanged]
-                firebase.auth().onAuthStateChanged(function(user) {
-                if (user) {
-                    $('#sign-in-container').hide();
-                    $('#sign-in-button').hide()
-                    user.getToken().then(function(idToken) {
-                        authWidget.userIdToken = idToken;
-
-                        {% if send_refresh_token %}
-                            authWidget.userRefreshToken = user.refreshToken;
-                        {% endif %}
-
-                        if (afterAuthCallback) {
-                            afterAuthCallback()
-                        }
-                        
-                        var name = user.displayName ? user.displayName : user.email;
-                        $('#sign-out-button').html('Sign out of ' + name)
-                        $('#sign-out-button').show();
-
-                    });
-
-                    } else {
-                        $('#sign-out-button').hide();
-                        $('#sign-in-button').show();
         
-                        if (afterAuthCallback) {
-                            authWidget.userIdToken = null;
-                            authWidget.userRefreshToken = null;
-                            afterAuthCallback()
-                        }
-                    }
-                    hideSignIn();
-                // [END onAuthStateChanged]
-                });
+        function signInWithGithub() {
+          clientId = '{{ github_client_id }}'
+          state = Math.random().toString(36)
+          window.sessionStorage.setItem('githubAuthState', state)
+
+          returnUrl = window.location.href
+          redirect = 'https://github.com/login/oauth/authorize?'
+          redirect += 'client_id=' + clientId 
+          redirect += '&redirect_uri=' + returnUrl
+          redirect += '&scope=read:user'
+          redirect += '&state=' + state
+          
+          console.log('redirecting to github')
+          console.log(redirect)
+          // window.open(redirect)
+          window.location = redirect
+          
+        } 
+
+        function logout() {
+          window.localStorage.removeItem('authToken')
+          window.sessionStorage.removeItem('githubAuthState')
+          routeLogin()
+        }
+
+        function routeLogin() {
+          var state = window.sessionStorage.getItem('githubAuthState')
+          var token = window.localStorage.getItem('authToken')
+          console.log('token = ' + token)
+          console.log('state = ' + state)
+          if (state != null) {
+            console.log('State is not empty, continuing logging in')
+            login()
+          } else if (token) {
+            console.log('Logged in')
+            $.get('https://api.github.com/user?access_token=' + token, 
+              (data) => {
+                username = data.login
+                $('#sign-in-button').hide()
+                $('#sign-out-button').show()
+                $('#sign-out-button').html('Log out of ' + username)
+              })
+          } else {
+            console.log('Logged out')
+            $('#sign-in-button').show()
+            $('#sign-out-button').hide()
+          }
+        }
+
+        function login() {
+          var token = window.localStorage.getItem('authToken')
+          if (token == null) {
+            state = window.sessionStorage.getItem('githubAuthState')
+            console.log('State = ' + state)
+            if (state) {
+              window.sessionStorage.removeItem('githubAuthState')
+              var url_string = window.location.href
+              var url = new URL(url_string);
+              var returned_state = url.searchParams.get("state");
+              var code = url.searchParams.get("code")
+              console.log('url_string = ' + url_string)
+              console.log('Returned state = ' + returned_state)
+              if (state == returned_state) {
+                $.get('/api/exchange_github_code?code=' + code, data => {
+                  console.log(data)
+                  matches = data.match('(?<=access_token=)[0-9a-f]*(?=\&)')
+                  token = matches[0]
+                  window.localStorage.setItem('authToken', token)
+                  window.location = url_string.match('.*(?=\\?)')[0]
+                  // routeLogin()
+                })
+              } else {
+                console.log('saved state ' + state + ' does not match returned state ' + returned_state )
+              }
+            } else {
+              console.log('Signing in with github')
+              signInWithGithub()
             }
-            configureFirebaseLogin();
-            configureFirebaseLoginWidget();
-        }
-
-        function configureFirebaseLoginWidget() {
-            var uiConfig = {
-                'signInSuccessUrl': '/',
-                'signInOptions': [
-                    // Leave the lines as is for the providers you want to offer your users.
-                    firebase.auth.GoogleAuthProvider.PROVIDER_ID,
-                    // firebase.auth.FacebookAuthProvider.PROVIDER_ID,
-                    // firebase.auth.TwitterAuthProvider.PROVIDER_ID,
-                    // firebase.auth.GithubAuthProvider.PROVIDER_ID,
-                    // firebase.auth.EmailAuthProvider.PROVIDER_ID
-                 ],
-                 // Terms of service url
-                 //`'tosUrl': '<your-tos-url>',
-             };
-
-             var ui = new firebaseui.auth.AuthUI(firebase.auth());
-             ui.start('#firebaseui-auth-container', uiConfig);
-        }
-
-        function showSignIn() {
-            $('#logged-in').hide()
-            $('.firebaseui-idp-text-long').html('')
-            $('.firebaseui-idp-text-short').html(' Sign in with google ')
-            $('#sign-in-container').show();
+          } else {
+            routeLogin()
+          }
         }
         
-        function hideSignIn() {
-            $('#logged-in').show()
-            $('#sign-in-container').hide();
-        }
-
-        // Sign out a user
-        $('#sign-out-button').click(function(event) {
-            event.preventDefault();
-
-            firebase.auth().signOut().then(function() {
-                console.log("Sign out successful");
-            }, function(error) {
-                console.log(error);
-            });
-        });
-
-        $('#sign-in-button').click(function(event) {
-            event.preventDefault(); 
-            showSignIn()   
-        });
-
-
-        
-
-
-
+        console.log('window location = ' + window.location.href)
+        login()
 
     </script>
 
@@ -390,10 +347,7 @@
         }
 
         function data_ajax(apiMethod, data={}) {
-            if ( authWidget.userRefreshToken != null ) {
-                data["refreshToken"] = authWidget.userRefreshToken
-            }
-
+            token = window.localStorage.getItem('authToken')
             console.log('Sending POST request to ' + apiMethod + ' with data')
             console.log(data)
 
@@ -401,7 +355,7 @@
                 '/api/' + apiMethod,
                 {
                     headers: {
-                        "Authorization": "Bearer " + authWidget.userIdToken
+                        "Authorization": "Bearer " + token
                     },
                     method: 'POST',
                     data: JSON.stringify(data),

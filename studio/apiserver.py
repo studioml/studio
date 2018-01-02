@@ -1,6 +1,6 @@
 import time
 import sys
-from flask import Flask, render_template, request, redirect
+from flask import Flask, render_template, request, redirect, abort
 from . import model
 import argparse
 import yaml
@@ -9,6 +9,8 @@ import socket
 import subprocess
 import traceback
 import six
+import os
+import requests
 
 from .experiment import experiment_from_dict
 from .auth import get_and_verify_user
@@ -424,6 +426,34 @@ def checkpoint_experiment():
     return json.dumps({'status': status, 'artifacts': artifacts})
 
 
+@app.route('/api/exchange_github_code')
+def exchange_github_code():
+  tic = time.time()
+  code = request.args.get('code')
+  
+  getlogger().debug('Code = ' + code)
+
+  response = requests.post(
+    'https://github.com/login/oauth/access_token',
+    json={
+        'client_id': os.environ.get('STUDIO_GITHUB_ID'),
+        'client_secret': os.environ.get('STUDIO_GITHUB_SECRET'),
+        'code': code,
+        'accept': 'json'
+    })
+
+  if response.status_code != 200:
+    abort(response.status_code)  
+  else:
+    getlogger().info(response.content)
+    
+    toc = time.time()
+    getlogger().info('Processed exchange_github_code in {} s'
+                     .format(toc - tic))
+    
+    return response.content
+  
+
 def _process_artifacts(experiment):
     artifacts = {}
     for tag, art in six.iteritems(experiment.artifacts):
@@ -485,6 +515,7 @@ def _render(page, **kwargs):
         project_id=_config['database']['projectId'],
         send_refresh_token="true",
         allow_tensorboard=get_allow_tensorboard(),
+        github_client_id=os.environ.get('STUDIO_GITHUB_ID'),
         **kwargs
     )
     toc = time.time()
