@@ -13,7 +13,7 @@ import os
 import requests
 
 from .experiment import experiment_from_dict
-from .auth import get_and_verify_user
+from .auth import get_and_verify_user, get_auth
 from . import logs
 
 app = Flask(__name__)
@@ -509,6 +509,8 @@ def get_auth_config():
 
 def _render(page, **kwargs):
     tic = time.time()
+    token = get_auth(get_config()).get_token() if _save_auth_cookie else None
+   
     retval = render_template(
         page,
         api_key=get_db().app.api_key,
@@ -516,6 +518,7 @@ def _render(page, **kwargs):
         send_refresh_token="true",
         allow_tensorboard=get_allow_tensorboard(),
         github_client_id=os.environ.get('STUDIO_GITHUB_ID'),
+        auth_token = token,
         **kwargs
     )
     toc = time.time()
@@ -565,7 +568,7 @@ def main(args=sys.argv[1:]):
     global _config
     global _db_provider
     _config = config
-    _db_provider = model.get_db_provider(_config, blocking_auth=False)
+    _db_provider = model.get_db_provider(_config)
 
     getlogger().setLevel(model.parse_verbosity(config.get('verbose')))
 

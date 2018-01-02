@@ -35,8 +35,8 @@
               <li><a href="/projects">Projects</a></li>
               <li><a href="/users">Users</a></li>
               <li><a href="/all">All</a></li>
-              <li><a href="" id="sign-in-button" hidden onclick=login()>Sign in</a>
-              <li><a href="" id="sign-out-button" hidden onclick=logout()>Sign out</a>
+              <li><a href="" id="sign-in-button" hidden onclick=login()>Sign in</a></li>
+              <li><a href="" id="sign-out-button" hidden onclick=logout()>Sign out</a></li>
             </ul>
           </div>
         </div>
@@ -233,7 +233,7 @@
           state = Math.random().toString(36)
           window.sessionStorage.setItem('githubAuthState', state)
 
-          returnUrl = window.location.href
+          returnUrl  = window.location.href.match('[^\?]*')[0]
           redirect = 'https://github.com/login/oauth/authorize?'
           redirect += 'client_id=' + clientId 
           redirect += '&redirect_uri=' + returnUrl
@@ -311,8 +311,23 @@
           }
         }
         
-        console.log('window location = ' + window.location.href)
+      {% if auth_token %}
+        window.localStorage.setItem('authToken', '{{ auth_token }}')
+      {% endif %}
+
+
+      $("#sign-in-button").click( event => {
         login()
+        event.preventDefault()
+      })
+
+      $("#sign-out-button").click(  event => {
+        console.log(event)
+        logout()
+        event.preventDefault()
+      })
+
+      $(routeLogin)
 
     </script>
 

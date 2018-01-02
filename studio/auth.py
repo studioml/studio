@@ -43,6 +43,8 @@ def get_auth_class(authtype):
         return FirebaseAuth
     elif authtype.lower() == 'github':
         return GithubAuth
+    elif authtype.lower() == 'none':
+        return None
     else:
         raise ValueError(
             'Unknown authentication type {}'
@@ -56,11 +58,15 @@ def get_auth(
 
     global _auth_singleton
     if _auth_singleton is None:
-        _auth_singleton = get_auth_class(config['type'])(
-            config,
-            blocking=blocking,
-            verbose=verbose
-        )
+        auth_class = get_auth_class(config['type'])
+        if auth_class: 
+          _auth_singleton = auth_class(
+              config,
+              blocking=blocking,
+              verbose=verbose
+          )
+        else: 
+          return None
     return _auth_singleton
 
 
@@ -75,7 +81,7 @@ def get_and_verify_user(request, authconfig):
     auth = get_auth(authconfig, blocking=False)
 
     if request.json:
-        refresh_token = request.json.get['refreshToken']
+        refresh_token = request.json.get('refreshToken')
     else:
         refresh_token = None
 
@@ -155,7 +161,7 @@ class GithubAuth(object):
         with open(token_file, 'w') as f:
             f.write(self.token)
 
-    def verify_token(self, token):
+    def verify_token(self, token, refresh_token=None):
         response = requests.get(
             'https://api.github.com/user',
             headers={"Authorization": "Bearer " + token}
