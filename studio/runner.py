@@ -22,11 +22,11 @@ from .util import rand_string, Progbar, rsync_cp
 from .experiment import create_experiment
 
 from . import model
-from . import auth
 from . import git_util
 from . import local_worker
 from . import fs_tracker
 from . import logs
+from .auth import get_auth
 
 
 def main(args=sys.argv[1:]):
