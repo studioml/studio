@@ -45,7 +45,14 @@ if [ "$1" = "gae" ]; then
     rm -rf lib
     # pip install -t lib -r ../requirements.txt
     pip install -t lib ../
-    pip install -t lib -r ../extra_server_requirements.txt
+    # pip install -t lib -r ../extra_server_requirements.txt
+
+    # patch library files where necessary
+    for patch in $(find patches -name "*.patch"); do
+        filename=${patch#patches/}
+        filename=${filename%.patch}
+        patch lib/$filename $patch
+    done
 
     rm lib/tensorflow/python/_pywrap_tensorflow_internal.so
     echo "" >  lib/tensorflow/__init__.py
@@ -65,4 +72,4 @@ else if [ "$1" = "local" ]; then
 fi
 
 # rm -f $creds
-rm -rf lib
+# rm -rf lib

@@ -48,7 +48,7 @@ def get_auth_class(authtype):
     else:
         raise ValueError(
             'Unknown authentication type {}'
-            .format(config['type']))
+            .format(authtype))
 
 
 def get_auth(
