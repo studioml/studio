@@ -244,9 +244,9 @@ class FirebaseAuth(object):
                 self.password = getpass.getpass('password:')
 
         self.expired = True
+        self.token_file = os.path.join(TOKEN_DIR, self.firebase.api_key)
         self._update_user()
 
-        self.token_file = os.path.join(TOKEN_DIR, self.firebase.api_key)
 
         if self.expired and blocking:
             print('Authentication required! Either specify ' +
