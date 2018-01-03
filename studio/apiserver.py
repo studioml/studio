@@ -11,6 +11,7 @@ import traceback
 import six
 import os
 import requests
+from requests.exceptions import ChunkedEncodingError
 
 from .experiment import experiment_from_dict
 from .auth import get_and_verify_user, get_auth
@@ -433,13 +434,17 @@ def exchange_github_code():
 
     getlogger().debug('Code = ' + code)
 
-    response = requests.post(
-        'https://github.com/login/oauth/access_token',
-        json={
-            'client_id': os.environ.get('STUDIO_GITHUB_ID'),
-            'client_secret': os.environ.get('STUDIO_GITHUB_SECRET'),
-            'code': code,
-        })
+    try:
+      response = requests.post(
+          'https://github.com/login/oauth/access_token',
+          json={
+              'client_id': os.environ.get('STUDIO_GITHUB_ID'),
+              'client_secret': os.environ.get('STUDIO_GITHUB_SECRET'),
+              'code': code,
+          })
+    except ChunkedEncodingError as e:
+      getlogger().info(e.__dict__)
+      raise e
 
     if response.status_code != 200:
         abort(response.status_code)
