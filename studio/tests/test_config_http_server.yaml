@@ -2,9 +2,7 @@ database:
     type: gs
     bucket: "studioml-meta"
     authentication:
-        type: firebase
-        authDomain: "studio-ed756.firebaseapp.com"
-        apiKey: AIzaSyCLQbp5X2B4SWzBw-sz9rUnGHNSdMl0Yx8
+        type: none
 
 storage:
     type: gcloud
