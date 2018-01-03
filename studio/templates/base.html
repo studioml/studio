@@ -280,16 +280,17 @@
         function login() {
           var token = window.localStorage.getItem('authToken')
           if (token == null) {
-            state = window.sessionStorage.getItem('githubAuthState')
+            var state = window.sessionStorage.getItem('githubAuthState')
             console.log('State = ' + state)
-            if (state) {
+            var url_string = window.location.href
+            var url = new URL(url_string);
+            var returned_state = url.searchParams.get("state");
+            var code = url.searchParams.get("code")
+            console.log('url_string = ' + url_string)
+            console.log('Returned state = ' + returned_state)
+
+            if (state && returned_state) {
               window.sessionStorage.removeItem('githubAuthState')
-              var url_string = window.location.href
-              var url = new URL(url_string);
-              var returned_state = url.searchParams.get("state");
-              var code = url.searchParams.get("code")
-              console.log('url_string = ' + url_string)
-              console.log('Returned state = ' + returned_state)
               if (state == returned_state) {
                 $.get('/api/exchange_github_code?code=' + code, data => {
                   console.log(data)

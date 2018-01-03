@@ -27,12 +27,19 @@ if [ "$1" = "gae" ]; then
     mv default_config.yaml default_config.yaml.orig
     cp $config default_config.yaml
     cp app.yaml app.yaml.old
+    echo "env_variables:" >> app.yaml
+
     if [ -n "$AWS_ACCESS_KEY_ID" ]; then
         echo "exporting AWS env variables to app.yaml"
-        echo "env_variables:" >> app.yaml
         echo "  AWS_ACCESS_KEY_ID: $AWS_ACCESS_KEY_ID" >> app.yaml
         echo "  AWS_SECRET_ACCESS_KEY: $AWS_SECRET_ACCESS_KEY" >> app.yaml
         echo "  AWS_DEFAULT_REGION: $AWS_DEFAULT_REGION" >> app.yaml
+    fi
+
+    if [ -n "$STUDIO_GITHUB_ID" ]; then
+        echo "exporting github secret env variables to app.yaml"
+        echo "  STUDIO_GITHUB_ID: $STUDIO_GITHUB_ID" >> app.yaml
+        echo "  STUDIO_GITHUB_SECRET: $STUDIO_GITHUB_SECRET" >> app.yaml
     fi
 
     rm -rf lib

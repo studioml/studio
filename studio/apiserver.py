@@ -439,7 +439,6 @@ def exchange_github_code():
             'client_id': os.environ.get('STUDIO_GITHUB_ID'),
             'client_secret': os.environ.get('STUDIO_GITHUB_SECRET'),
             'code': code,
-            'accept': 'json'
         })
 
     if response.status_code != 200:
@@ -514,7 +513,7 @@ def _render(page, **kwargs):
     retval = render_template(
         page,
         api_key=get_db().app.api_key,
-        project_id=_config['database']['projectId'],
+        project_id=_config['database'].get('project_id'),
         send_refresh_token="true",
         allow_tensorboard=get_allow_tensorboard(),
         github_client_id=os.environ.get('STUDIO_GITHUB_ID'),

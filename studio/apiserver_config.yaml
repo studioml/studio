@@ -1,13 +1,10 @@
 database:
     type: gs
-    apiKey: AIzaSyCLQbp5X2B4SWzBw-sz9rUnGHNSdMl0Yx8
-    authDomain: "studio-ed756.firebaseapp.com"
-    bucket: "studioml-meta"
+    bucket: "studioml-meta" 
+    projectId: "studio-ed756"
 
-    guest: true
-    use_email_auth: false
-    projectId: studio-ed756
-
+    authentication:
+      type: none
 
 storage:
     type: gcloud
