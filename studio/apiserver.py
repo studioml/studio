@@ -435,16 +435,16 @@ def exchange_github_code():
     getlogger().debug('Code = ' + code)
 
     try:
-      response = requests.post(
-          'https://github.com/login/oauth/access_token',
-          json={
-              'client_id': os.environ.get('STUDIO_GITHUB_ID'),
-              'client_secret': os.environ.get('STUDIO_GITHUB_SECRET'),
-              'code': code,
-          })
+        response = requests.post(
+            'https://github.com/login/oauth/access_token',
+            json={
+                'client_id': os.environ.get('STUDIO_GITHUB_ID'),
+                'client_secret': os.environ.get('STUDIO_GITHUB_SECRET'),
+                'code': code,
+            })
     except ChunkedEncodingError as e:
-      getlogger().info(e.__dict__)
-      raise e
+        getlogger().info(e.__dict__)
+        raise e
 
     if response.status_code != 200:
         abort(response.status_code)

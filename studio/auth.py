@@ -99,7 +99,7 @@ class GithubAuth(object):
         self.logger = logs.getLogger(self.__class__.__name__)
         self.logger.setLevel(verbose)
         self.tokendir = os.path.abspath(os.path.expanduser(
-            config.get('token_directory', '~/.studioml/github_keys'))
+            config.get('token_directory', TOKEN_DIR))
         )
 
         if not os.path.exists(self.tokendir):
@@ -107,7 +107,7 @@ class GithubAuth(object):
 
         self.config = config
 
-        self.token = self._load_token()
+        self.token = self._load_token()[0]
         if self.token is None and blocking:
             self._sign_in()
 
@@ -116,7 +116,7 @@ class GithubAuth(object):
 
     def get_token(self):
         if self.token is None:
-            self._load_token()
+            self.token = self._load_token()[0]
 
         return self.token
 
@@ -134,25 +134,28 @@ class GithubAuth(object):
         tokens = [
             f for f in tokendir_contents
             if os.path.isfile(os.path.join(self.tokendir, f))
-            and f.endswith('.token')
+            and f.endswith('.githubtoken')
         ]
 
         # TODO selection out of multiple token files
         if not any(tokens):
             return None
 
-        token_file = tokens[0]
-        with open(os.path.join(self.tokendir, token_file)) as f:
+        token_file = os.path.join(self.tokendir, tokens[0])
+        with open(token_file) as f:
             token = f.read().strip()
 
         self.userid = self.verify_token(token)
-        if self.userid != re.sub('.token\Z', '', token_file):
+        if self.userid != re.sub('.githubtoken\Z', '', token_file):
             self.logger.error(
                 'Token filename does not match github login'
             )
             return None
 
-        return token
+        return token, token_file
+
+    def get_token_file(self):
+        return self._load_token[1]
 
     def _save_token(self):
         if self.token is None:
@@ -243,6 +246,8 @@ class FirebaseAuth(object):
         self.expired = True
         self._update_user()
 
+        self.token_file = os.path.join(TOKEN_DIR, self.firebase.api_key)
+
         if self.expired and blocking:
             print('Authentication required! Either specify ' +
                   'use_email_auth in config file, or run '
@@ -259,8 +264,7 @@ class FirebaseAuth(object):
         atexit.register(self.sched.shutdown)
 
     def _update_user(self):
-        api_key = os.path.join(TOKEN_DIR, self.firebase.api_key)
-        if not os.path.exists(api_key):
+        if not os.path.exists(self.token_file):
                 # refresh tokens don't expire, hence we can
                 # use them forever once obtained
                 # or (time.time() - os.path.getmtime(api_key)) > HOUR:
@@ -277,7 +281,7 @@ class FirebaseAuth(object):
                 if user is not None or counter >= MAX_NUM_RETRIES:
                     break
                 try:
-                    with open(api_key) as f:
+                    with open(self.token_file) as f:
                         user = json.loads(f.read())
                 except BaseException as e:
                     self.logger.info(e)
@@ -311,7 +315,6 @@ class FirebaseAuth(object):
         self.user['email'] = self.email
 
     def refresh_token(self, email, refresh_token):
-        api_key = os.path.join(TOKEN_DIR, self.firebase.api_key)
         self.user = self.firebase.auth().refresh(refresh_token)
         self.user['email'] = email
         self.user['expiration'] = time.time() + API_KEY_COOLDOWN
@@ -329,12 +332,15 @@ class FirebaseAuth(object):
             f.flush()
             os.fsync(f.fileno())
             f.close()
-        os.rename(tmp_api_key, api_key)
+        os.rename(tmp_api_key, self.token_file)
 
     def get_token(self):
         if self.expired:
             return None
         return self.user['idToken']
+
+    def get_token_file(self):
+        return self.token_file
 
     def get_user_id(self):
         if self.expired:

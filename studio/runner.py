@@ -451,11 +451,8 @@ def get_worker_manager(config, cloud=None, verbose=10):
     logger = logs.getLogger('runner.get_worker_manager')
     logger.setLevel(verbose)
 
-    auth_cookie = None if config['database'].get('guest') \
-        else os.path.join(
-        auth.TOKEN_DIR,
-        config['database']['apiKey']
-    )
+    auth = get_auth(config['database']['authentication'])
+    auth_cookie = auth.get_token_file() if auth else None
 
     branch = config['cloud'].get('branch')
 
