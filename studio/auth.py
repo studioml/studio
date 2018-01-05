@@ -247,7 +247,6 @@ class FirebaseAuth(object):
         self.token_file = os.path.join(TOKEN_DIR, self.firebase.api_key)
         self._update_user()
 
-
         if self.expired and blocking:
             print('Authentication required! Either specify ' +
                   'use_email_auth in config file, or run '
