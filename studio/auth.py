@@ -177,7 +177,7 @@ class GithubAuth(object):
             return response.json()['login']
 
     def _sign_in(self):
-        print (
+        print(
             '*** \n' +
             'Sign in with your GitHub username and password \n' +
             'NOTE: studio.ml does NOT store GitHub passwords ' +
