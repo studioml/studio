@@ -55,7 +55,7 @@ class LocalExecutor(object):
                     if v is not None:
                         env[str(k)] = str(v)
 
-            # env['PYTHONUNBUFFERED'] = 'TRUE'
+            env['PYTHONUNBUFFERED'] = 'TRUE'
 
             fs_tracker.setup_experiment(env, experiment, clean=True)
             log_path = fs_tracker.get_artifact_cache('output', experiment.key)

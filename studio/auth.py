@@ -223,7 +223,10 @@ class FirebaseAuth(object):
             blocking=True,
             verbose=logs.DEBUG):
         if not os.path.exists(TOKEN_DIR):
-            os.makedirs(TOKEN_DIR)
+            try:
+                os.makedirs(TOKEN_DIR)
+            except OSError:
+                pass
 
         self.logger = logs.getLogger(self.__class__.__name__)
         self.logger.setLevel(logs.DEBUG)
