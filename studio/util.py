@@ -368,6 +368,7 @@ def retry(f,
                         ('Exception {} is caught, ' +
                          'sleeping {}s and retrying (attempt {} of {})')
                         .format(e, sleep_time, tried, no_retries))
+                tried += 1
                 time.sleep(sleep_time)
             else:
                 raise e
