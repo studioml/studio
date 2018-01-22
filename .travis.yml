@@ -27,9 +27,8 @@ script:
   - echo GOOGLE_APPLICATION_CREDENTIALS=$GOOGLE_APPLICATION_CREDENTIALS
   - echo GOOGLE_APPLICATION_CREDENTIALS_DC=$GOOGLE_APPLICATION_CREDENTIALS_DC
 
-  - py.test -n 16 -v --durations=0 
-  # - py.test -v -n 3 studio/tests/cloud_worker_test.py::GCloudWorkerTest
-  # - py.test -v -n 16 studio/tests/local_worker_test.py::LocalWorkerTest
+  # - py.test -n 16 -v --durations=0 
+  - python -m unittest -q http_provider_test.HTTPProviderTest.test_add_get_experiment
   - pycodestyle --show-source --exclude=.eggs .
   - python setup.py sdist
 
