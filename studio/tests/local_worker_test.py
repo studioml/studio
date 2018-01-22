@@ -376,13 +376,13 @@ def stubtest_worker(
         logger.debug("studio run output: \n" + sixdecode(pout))
 
     db = model.get_db_provider(model.get_config(config_name))
-    experiments = [e for e in db.get_user_experiments()
-                   if e.startswith(experiment_name)]
+    # experiments = [e for e in db.get_user_experiments()
+    #               if e.startswith(experiment_name)]
 
-    assert len(experiments) == 1, "actually {} number of experiments".format(
-        len(experiments))
+    # assert len(experiments) == 1, "actually {} number of experiments".format(
+    #    len(experiments))
 
-    experiment_name = experiments[0]
+    # experiment_name = experiments[0]
 
     try:
         experiment = db.get_experiment(experiment_name)
@@ -417,9 +417,10 @@ def check_workspace(testclass, db, key):
 
     tmpdir = os.path.join(tempfile.gettempdir(), str(uuid.uuid4()))
     os.mkdir(tmpdir)
-    artifact = db.get_experiment(key).artifacts['workspace']
-    localpath = db.get_artifact(artifact,
-                                tmpdir, only_newer=False)
+    experiment = retry(lambda: db.get_experiment(key), sleep_time=5)
+    artifact = experiment.artifacts['workspace']
+    localpath = retry(lambda: db.get_artifact(artifact,
+                                tmpdir, only_newer=False), sleep_time=5)
 
     for _, _, files in os.walk(localpath, topdown=False):
         for filename in files:
