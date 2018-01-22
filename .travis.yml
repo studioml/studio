@@ -28,7 +28,7 @@ script:
   - echo GOOGLE_APPLICATION_CREDENTIALS_DC=$GOOGLE_APPLICATION_CREDENTIALS_DC
 
   # - py.test -n 16 -v --durations=0 
-  - python -m unittest -q http_provider_test.HTTPProviderTest.test_add_get_experiment
+  - cd studio/tests && python -m unittest -q http_provider_test.HTTPProviderTest.test_add_get_experiment
   - pycodestyle --show-source --exclude=.eggs .
   - python setup.py sdist
 
