@@ -310,6 +310,7 @@ def main(args=sys.argv[1:]):
                 queue_name=runner_args.queue,
                 cloud=runner_args.cloud)
 
+
             spin_up_workers(
                 runner_args,
                 config,
@@ -588,6 +589,9 @@ def submit_experiments(
                        [python_pkg] *
                        num_experiments,
                        experiments)]
+
+    for experiment in experiments:
+        print("studio run: submitted experiment " + experiment.key)
 
     logger.info("Added %s experiments in %s seconds" %
                 (num_experiments, int(time.time() - start_time)))

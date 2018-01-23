@@ -158,22 +158,26 @@ def create_experiment(
 
 
 def experiment_from_dict(data, info={}):
-    return Experiment(
-        key=data['key'],
-        filename=data['filename'],
-        args=data.get('args'),
-        pythonenv=data['pythonenv'],
-        project=data.get('project'),
-        status=data['status'],
-        artifacts=data.get('artifacts'),
-        resources_needed=data.get('resources_needed'),
-        time_added=data['time_added'],
-        time_started=data.get('time_started'),
-        time_last_checkpoint=data.get('time_last_checkpoint'),
-        time_finished=data.get('time_finished'),
-        info=info if any(info) else data.get('info'),
-        git=data.get('git'),
-        metric=data.get('metric'),
-        pythonver=data.get('pythonver'),
-        max_duration=data.get('max_duration')
-    )
+    try:
+        return Experiment(
+            key=data['key'],
+            filename=data['filename'],
+            args=data.get('args'),
+            pythonenv=data['pythonenv'],
+            project=data.get('project'),
+            status=data['status'],
+            artifacts=data.get('artifacts'),
+            resources_needed=data.get('resources_needed'),
+            time_added=data['time_added'],
+            time_started=data.get('time_started'),
+            time_last_checkpoint=data.get('time_last_checkpoint'),
+            time_finished=data.get('time_finished'),
+            info=info if any(info) else data.get('info'),
+            git=data.get('git'),
+            metric=data.get('metric'),
+            pythonver=data.get('pythonver'),
+            max_duration=data.get('max_duration')
+        )
+    except KeyError as e:
+        self.logger.error(data)
+        raise e

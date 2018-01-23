@@ -102,7 +102,9 @@ class LocalWorkerTest(unittest.TestCase):
             expected_output=random_str1,
             delete_when_done=False
         ) as db:
+            pass
 
+        
             tmppath = os.path.join(
                 tempfile.gettempdir(), str(
                     uuid.uuid4()))
@@ -110,11 +112,13 @@ class LocalWorkerTest(unittest.TestCase):
             db.get_artifact(
                 db.get_experiment(experiment_name).artifacts['f'],
                 tmppath)
-
+        
             with open(tmppath, 'r') as f:
                 self.assertTrue(f.read() == random_str2)
             os.remove(tmppath)
 
+        
+        '''
         with stubtest_worker(
             self,
             experiment_name='test_local_worker_e' + str(uuid.uuid4()),
@@ -126,7 +130,8 @@ class LocalWorkerTest(unittest.TestCase):
         ) as db:
 
             db.delete_experiment(experiment_name)
-
+        '''
+        
     @timeout(TEST_TIMEOUT, use_signals=False)
     def test_local_worker_co(self):
         tmpfile = os.path.join(tempfile.gettempdir(),
@@ -149,7 +154,7 @@ class LocalWorkerTest(unittest.TestCase):
         ):
             pass
     
-    '''
+    
     @timeout(TEST_TIMEOUT, use_signals=False)
     def test_local_worker_co_url(self):
         expected_str = 'Zabil zaryad ya v pushku tugo'
@@ -188,6 +193,7 @@ class LocalWorkerTest(unittest.TestCase):
         ):
             pass
 
+    '''
     @unittest.skipIf(keras is None,
                      'keras is required for this test')
     @timeout(TEST_TIMEOUT, use_signals=False)
@@ -359,6 +365,7 @@ def stubtest_worker(
         except Exception:
             pass
 
+    os.environ['PYTHONUNBUFFERED'] = 'True'
     p = subprocess.Popen(['studio', 'run'] + runner_args +
                          ['--config=' + config_name,
                           '--verbose=debug',

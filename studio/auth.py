@@ -79,6 +79,8 @@ def get_and_verify_user(request, authconfig):
         return None
 
     auth = get_auth(authconfig, blocking=False)
+    if not auth:
+        return None
 
     if request.json:
         refresh_token = request.json.get('refreshToken')

@@ -120,8 +120,10 @@ class HTTPProvider(object):
                                     )
 
             self._raise_detailed_error(request)
-            return experiment_from_dict(request.json()['experiment'])
+            data = request.json()['experiment']
+            return experiment_from_dict(data)
         except BaseException as e:
+            self.logger.info('error getting experiment {}'.format(key))
             self.logger.info(e)
             return None
 

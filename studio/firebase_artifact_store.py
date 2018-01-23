@@ -36,7 +36,8 @@ class FirebaseArtifactStore(TartifactStore):
         self.logger.setLevel(verbose)
         super(FirebaseArtifactStore, self).__init__(
             measure_timestamp_diff,
-            compression=compression)
+            compression=compression,
+            verbose=verbose)
 
     def _upload_file(self, key, local_file_path):
         try:
