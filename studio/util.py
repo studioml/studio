@@ -13,6 +13,7 @@ import os
 import numpy as np
 import requests
 import six
+import filelock
 
 import boto3
 from botocore.exceptions import ClientError
@@ -85,31 +86,30 @@ def event_reader(fileobj):
 
 
 def rsync_cp(source, dest, ignore_arg='', logger=None):
-    '''
-    if os.path.exists(dest):
-        try:
-           shutil.rmtree(dest) if os.path.isdir(dest) else os.remove(dest)
-        except OSError:
-            pass
-    '''
+     with filelock.FileLock(dest + '.lock'):
+        if os.path.exists(dest):
+            try:
+               shutil.rmtree(dest) if os.path.isdir(dest) else os.remove(dest)
+            except OSError:
+                pass
+        
+        os.makedirs(dest)
 
-    os.makedirs(dest)
+        if ignore_arg != '':
+            source += "/"
+            tool = 'rsync'
+            args = [tool, ignore_arg, '-aHAXE', source, dest]
+        else:
+            os.rmdir(dest)
+            tool = 'cp'
+            args = [tool, '-pR', source, dest]
 
-    if ignore_arg != '':
-        source += "/"
-        tool = 'rsync'
-        args = [tool, ignore_arg, '-aHAXE', source, dest]
-    else:
-        os.rmdir(dest)
-        tool = 'cp'
-        args = [tool, '-pR', source, dest]
-
-    pcp = subprocess.Popen(args, stdout=subprocess.PIPE,
-                           stderr=subprocess.STDOUT)
-    cpout, _ = pcp.communicate()
-    if pcp.returncode != 0 and logger is not None:
-        logger.info('%s returned non-zero exit code. Output:' % tool)
-        logger.info(cpout)
+        pcp = subprocess.Popen(args, stdout=subprocess.PIPE,
+                               stderr=subprocess.STDOUT)
+        cpout, _ = pcp.communicate()
+        if pcp.returncode != 0 and logger is not None:
+            logger.info('%s returned non-zero exit code. Output:' % tool)
+            logger.info(cpout)
 
 
 class Progbar(object):
