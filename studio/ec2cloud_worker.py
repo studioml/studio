@@ -312,7 +312,8 @@ class EC2WorkerManager(object):
             start_workers=1,
             max_workers=100,
             timeout=300,
-            ports=[]):
+            ports=[],
+            autoscaling_group_name=None):
 
         # TODO should be able to put bid price as None,
         # which means price of on-demand instance
@@ -320,7 +321,8 @@ class EC2WorkerManager(object):
 
         instance_type = self._select_instance_type(resources_needed)
 
-        asg_name = "studioml-" + str(uuid.uuid4())
+        asg_name = "studioml_autoscaling_" + queue_name or \
+                   autoscaling_group_name
         launch_config_name = asg_name + "_launch_config"
 
         startup_script = self._get_startup_script(
