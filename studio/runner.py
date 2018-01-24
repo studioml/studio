@@ -310,7 +310,6 @@ def main(args=sys.argv[1:]):
                 queue_name=runner_args.queue,
                 cloud=runner_args.cloud)
 
-
             spin_up_workers(
                 runner_args,
                 config,

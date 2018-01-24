@@ -49,8 +49,7 @@ class LocalWorkerTest(unittest.TestCase):
             expected_output='Experiment key = aaa'
         ):
             pass
-    
-      
+
     @timeout(TEST_TIMEOUT, use_signals=False)
     def test_local_hyperparam(self):
         with stubtest_worker(
@@ -62,8 +61,7 @@ class LocalWorkerTest(unittest.TestCase):
             expected_output='0.3'
         ):
             pass
-        
-       
+
         with stubtest_worker(
             self,
             experiment_name='test_local_hyperparam' + str(uuid.uuid4()),
@@ -110,16 +108,14 @@ class LocalWorkerTest(unittest.TestCase):
         ) as db:
             pass
 
-    
         tmppath = db.get_artifact(
             db.get_experiment(experiment_name).artifacts['f']
         )
-    
+
         with open(tmppath, 'r') as f:
             self.assertTrue(f.read() == random_str2)
         os.remove(tmppath)
 
-    
         with stubtest_worker(
             self,
             experiment_name='test_local_worker_e' + str(uuid.uuid4()),
@@ -131,8 +127,7 @@ class LocalWorkerTest(unittest.TestCase):
         ) as db:
 
             db.delete_experiment(experiment_name)
-        
-    
+
     @timeout(TEST_TIMEOUT, use_signals=False)
     def test_local_worker_co(self):
         tmpfile = os.path.join(tempfile.gettempdir(),
@@ -154,8 +149,7 @@ class LocalWorkerTest(unittest.TestCase):
             expected_output=random_str
         ):
             pass
-    
-    
+
     @timeout(TEST_TIMEOUT, use_signals=False)
     def test_local_worker_co_url(self):
         expected_str = 'Zabil zaryad ya v pushku tugo'
@@ -223,7 +217,6 @@ class LocalWorkerTest(unittest.TestCase):
 
             db.delete_experiment(experiment)
 
-    
     @timeout(TEST_TIMEOUT, use_signals=False)
     def test_stop_experiment(self):
         my_path = os.path.dirname(os.path.realpath(__file__))
@@ -335,6 +328,7 @@ class LocalWorkerTest(unittest.TestCase):
 
             db.delete_experiment(key)
 
+
 def stubtest_worker(
         testclass,
         experiment_name,
@@ -379,8 +373,8 @@ def stubtest_worker(
     if pout:
         logger.debug("studio run output: \n" + sixdecode(pout))
         splitpout = sixdecode(pout).split('\n')
-        experiments = [line.split(' ')[-1] for line 
-                        in splitpout if line.startswith('studio run: submitted experiment')]
+        experiments = [line.split(' ')[-1] for line
+                       in splitpout if line.startswith('studio run: submitted experiment')]
         logger.debug("added experiments: {}".format(experiments))
 
     db = model.get_db_provider(model.get_config(config_name))
@@ -415,15 +409,18 @@ def stubtest_worker(
         raise e
 
 
-
 def check_workspace(testclass, db, key):
 
     tmpdir = os.path.join(tempfile.gettempdir(), str(uuid.uuid4()))
     os.mkdir(tmpdir)
     experiment = retry(lambda: db.get_experiment(key), sleep_time=5)
     artifact = experiment.artifacts['workspace']
-    localpath = retry(lambda: db.get_artifact(artifact,
-                                tmpdir, only_newer=False), sleep_time=5)
+    localpath = retry(
+        lambda: db.get_artifact(
+            artifact,
+            tmpdir,
+            only_newer=False),
+        sleep_time=5)
 
     for _, _, files in os.walk(localpath, topdown=False):
         for filename in files:
