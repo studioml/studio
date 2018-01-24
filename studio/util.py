@@ -104,8 +104,8 @@ def rsync_cp(source, dest, ignore_arg='', logger=None):
 
         tool = 'cp'
         args = [
-            tool, 
-            '-pR', 
+            tool,
+            '-pR',
             source,
             dest
         ]
