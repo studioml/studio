@@ -54,10 +54,10 @@ class LocalQueue:
             with open(first_file, 'r') as f:
                 data = f.read()
 
+            self.acknowledge(first_file)
             if not acknowledge:
                 return data, first_file
             else:
-                self.acknowledge(first_file)
                 return data
 
     def enqueue(self, data):
