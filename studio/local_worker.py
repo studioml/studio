@@ -412,7 +412,7 @@ def save_metrics(path):
     disk_free = psutil.disk_usage('/').free
     timestamp = time.time()
     with open(path, 'a') as f:
-        entry = 'time: {} CPU: {} RAM (av): disk: {} {} \n' \
+        entry = 'time: {} CPU: {} RAM (av): {} disk: {} {} \n' \
                 .format(
                     timestamp,
                     cpu_load,
