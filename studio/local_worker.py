@@ -408,14 +408,16 @@ def wait_for_messages(queue, timeout, logger=None):
 
 def save_metrics(path):
     cpu_load = psutil.cpu_percent()
-    cpu_mem = psutil.virtual_memory().used
+    cpu_mem = psutil.virtual_memory().available
+    disk_free = psutil.disk_usage('/').free
     timestamp = time.time()
     with open(path, 'a') as f:
-        entry = 'time: {} CPU: {} mem: {} {} \n' \
+        entry = 'time: {} CPU: {} RAM (av): disk: {} {} \n' \
                 .format(
                     timestamp,
                     cpu_load,
                     cpu_mem,
+                    disk_free,
                     get_gpus_summary())
 
         f.write(entry)
