@@ -312,7 +312,8 @@ class EC2WorkerManager(object):
             start_workers=1,
             max_workers=100,
             timeout=300,
-            ports=[]):
+            ports=[],
+            autoscaling_group_name=None):
 
         # TODO should be able to put bid price as None,
         # which means price of on-demand instance
@@ -320,8 +321,8 @@ class EC2WorkerManager(object):
 
         instance_type = self._select_instance_type(resources_needed)
 
-        asg_name = "studioml-" + str(uuid.uuid4())
-        launch_config_name = asg_name + "_launch_config"
+        asg_name = "studioml_autoscaling_" + queue_name or \
+                   autoscaling_group_name
 
         startup_script = self._get_startup_script(
             resources_needed, queue_name, asg_name, timeout=timeout)
@@ -344,6 +345,11 @@ class EC2WorkerManager(object):
             "SpotPrice": bid_price,
         }
 
+        launch_config_name = 'studioml_launch_config_' + \
+            hashlib.sha256(
+                json.dumps(launch_config, sort_keys=True)
+            ).hexdigest()
+
         if ssh_keypair is not None:
             ports.append(22)
         if any(ports):
@@ -352,14 +358,17 @@ class EC2WorkerManager(object):
             if ssh_keypair is not None:
                 launch_config['KeyName'] = ssh_keypair
 
-        response = self.asclient.create_launch_configuration(
-            LaunchConfigurationName=launch_config_name, **launch_config)
-
-        self.logger.debug(
-            "create_launch_configuration response:\n {}".format(response))
+        try:
+            response = self.asclient.create_launch_configuration(
+                LaunchConfigurationName=launch_config_name, **launch_config)
+            self.logger.debug(
+                "create_launch_configuration response:\n {}".format(response))
+        except self.asclient.exceptions.AlreadyExistsFault:
+            self.logger.debug('Launch config {} already exists'
+                              .format(launch_config_name))
 
         asg_config = {
-            "LaunchConfigurationName": asg_name + '_launch_config',
+            "LaunchConfigurationName": launch_config_name,
             "MinSize": 0,
             "MaxSize": max_workers,
             "DesiredCapacity": int(start_workers),
@@ -372,8 +381,12 @@ class EC2WorkerManager(object):
 
         self.logger.debug("Creating auto-scaling group " + asg_name)
 
-        response = self.asclient.create_auto_scaling_group(
-            AutoScalingGroupName=asg_name, **asg_config)
+        try:
+            response = self.asclient.create_auto_scaling_group(
+                AutoScalingGroupName=asg_name, **asg_config)
+        except self.asclient.exceptions.AlreadyExistsFault:
+            logger.debug('Autoscaling group {} already exists'
+                         .format(asg_name))
 
         if queue_upscaling:
             scaleup_policy_response = self.asclient.put_scaling_policy(
