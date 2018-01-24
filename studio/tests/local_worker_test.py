@@ -373,8 +373,8 @@ def stubtest_worker(
     if pout:
         logger.debug("studio run output: \n" + sixdecode(pout))
         splitpout = sixdecode(pout).split('\n')
-        experiments = [line.split(' ')[-1] for line
-                       in splitpout if line.startswith('studio run: submitted experiment')]
+        experiments = [line.split(' ')[-1] for line in splitpout
+                       if line.startswith('studio run: submitted experiment')]
         logger.debug("added experiments: {}".format(experiments))
 
     db = model.get_db_provider(model.get_config(config_name))
