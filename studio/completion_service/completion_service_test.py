@@ -9,8 +9,6 @@ from .completion_service import CompletionService
 
 from studio.util import has_aws_credentials, filehash
 from studio.util import download_file, rand_string
-from studio.local_queue import get_local_queue_lock
-
 
 _file_url = 'https://s3-us-west-2.amazonaws.com/ml-enn/' + \
             'deepbilevel_datafiles/' + \
@@ -130,7 +128,7 @@ class CompletionServiceTest(unittest.TestCase):
             mypath,
             '..',
             'tests',
-            'test_config_datacenter.yaml')
+            'test_config_http_client.yaml')
 
         files_in_workspace = os.listdir(mypath)
         files = {f: os.path.join(mypath, f) for f in files_in_workspace if
@@ -141,11 +139,10 @@ class CompletionServiceTest(unittest.TestCase):
         if has_aws_credentials():
             files['s3'] = _file_s3
 
-        with get_local_queue_lock():
-            self._run_test_files(
-                n_experiments=2,
-                files=files,
-                config=config_path)
+        self._run_test_files(
+            n_experiments=2,
+            files=files,
+            config=config_path)
 
     @unittest.skipIf(
         'GOOGLE_APPLICATION_CREDENTIALS' not in os.environ.keys(),
