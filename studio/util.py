@@ -85,8 +85,14 @@ def event_reader(fileobj):
 
 
 def rsync_cp(source, dest, ignore_arg='', logger=None):
+    '''
     if os.path.exists(dest):
-        shutil.rmtree(dest) if os.path.isdir(dest) else os.remove(dest)
+        try:
+           shutil.rmtree(dest) if os.path.isdir(dest) else os.remove(dest)
+        except OSError:
+            pass
+    '''
+
     os.makedirs(dest)
 
     if ignore_arg != '':
