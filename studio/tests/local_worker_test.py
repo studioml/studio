@@ -391,6 +391,7 @@ def stubtest_worker(
                       'r') as f:
                 data = f.read()
                 split_data = data.strip().split('\n')
+                print(data)
                 testclass.assertEquals(split_data[-1], expected_output)
 
         if test_workspace:

@@ -97,11 +97,16 @@ def rsync_cp(source, dest, ignore_arg='', logger=None):
         tool = 'rsync'
         args = [tool, ignore_arg, '-aHAXE', source, dest]
     else:
+        try:
+            os.rmdir(dest)
+        except OSError:
+            pass
+
         tool = 'cp'
         args = [
             tool, 
             '-pR', 
-            source + '/' if os.path.isdir(source) else source, 
+            source,
             dest
         ]
 
