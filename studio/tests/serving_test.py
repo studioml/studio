@@ -8,6 +8,7 @@ import requests
 
 from studio import model
 
+
 @unittest.skipIf('GOOGLE_APPLICATION_CREDENTIALS' not in os.environ.keys(),
                  "GOOGLE_APPLICATION_CREDENTIALS is missing, needed for " +
                  "server to communicate with storage")

@@ -86,13 +86,13 @@ def event_reader(fileobj):
 
 
 def rsync_cp(source, dest, ignore_arg='', logger=None):
-     with filelock.FileLock(dest + '.lock'):
+    with filelock.FileLock(dest + '.lock'):
         if os.path.exists(dest):
             try:
-               shutil.rmtree(dest) if os.path.isdir(dest) else os.remove(dest)
+                shutil.rmtree(dest) if os.path.isdir(dest) else os.remove(dest)
             except OSError:
                 pass
-        
+
         os.makedirs(dest)
 
         if ignore_arg != '':

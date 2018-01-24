@@ -321,7 +321,8 @@ class EC2WorkerManager(object):
 
         instance_type = self._select_instance_type(resources_needed)
 
-        asg_name = "studioml_autoscaling_" + queue_name or autoscaling_group_name
+        asg_name = "studioml_autoscaling_" + queue_name or \
+                   autoscaling_group_name
         launch_config_name = asg_name + "_launch_config"
 
         startup_script = self._get_startup_script(
