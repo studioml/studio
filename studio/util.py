@@ -85,18 +85,30 @@ def event_reader(fileobj):
 
 
 def rsync_cp(source, dest, ignore_arg='', logger=None):
-    if os.path.exists(dest):
-        shutil.rmtree(dest) if os.path.isdir(dest) else os.remove(dest)
-    os.makedirs(dest)
+    try:
+        if os.path.exists(dest):
+            shutil.rmtree(dest) if os.path.isdir(dest) else os.remove(dest)
+        os.makedirs(dest)
+    except OSError:
+        pass
 
     if ignore_arg != '':
         source += "/"
         tool = 'rsync'
         args = [tool, ignore_arg, '-aHAXE', source, dest]
     else:
-        os.rmdir(dest)
+        try:
+            os.rmdir(dest)
+        except OSError:
+            pass
+
         tool = 'cp'
-        args = [tool, '-pR', source, dest]
+        args = [
+            tool,
+            '-pR',
+            source,
+            dest
+        ]
 
     pcp = subprocess.Popen(args, stdout=subprocess.PIPE,
                            stderr=subprocess.STDOUT)
@@ -356,22 +368,16 @@ def has_aws_credentials():
 def retry(f,
           no_retries=5, sleep_time=1,
           exception_class=BaseException, logger=None):
-
-    tried = 0
-    while True:
+    for i in range(no_retries):
         try:
             return f()
         except exception_class as e:
-            if tried < no_retries:
-                if logger:
-                    logger.info(
-                        ('Exception {} is caught, ' +
-                         'sleeping {}s and retrying (attempt {} of {})')
-                        .format(e, sleep_time, tried, no_retries))
-                tried += 1
-                time.sleep(sleep_time)
-            else:
-                raise e
+            if logger:
+                logger.info(
+                    ('Exception {} is caught, ' +
+                     'sleeping {}s and retrying (attempt {} of {})')
+                    .format(e, sleep_time, i, no_retries))
+            time.sleep(sleep_time)
 
 
 def compression_to_extension(compression):
