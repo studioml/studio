@@ -42,3 +42,4 @@ deploy:
   on:
     # tags: true
     branch: master
+    repo: studioml/studio
