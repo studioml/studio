@@ -78,35 +78,3 @@ model.fit(
     epochs=no_epochs,
     callbacks=[checkpointer, tbcallback],
     batch_size=batch_size)
-
-
-class_labels = [
-    'tshirt/top',
-    'trouser',
-    'pullover',
-    'dress',
-    'coat',
-    'sandal',
-    'shirt',
-    'sneaker',
-    'bag',
-    'ankle boot'
-]
-
-pipe = model_util.ModelPipe()
-pipe.add(
-    lambda url: urllib.urlopen(url).read(), num_workers=2, timeout=5)
-pipe.add(lambda img: Image.open(BytesIO(img)))
-pipe.add(model_util.resize_to_model_input(model))
-pipe.add(lambda x: 1 - x)
-pipe.add(model, num_workers=1, batch_size=32, batcher=np.vstack)
-pipe.add(lambda x: np.argmax(x, axis=1))
-pipe.add(lambda x: [class_labels[int(x)]])
-
-url_pants = 'https://asda.scene7.com/is/image/Asda/5054622127954_A'
-url_boot = 'https://images-na.ssl-images-amazon.com/' + \
-           'images/I/714sb6gwMpL._UL1500_.jpg'
-
-url_broken = 'https://asda.scene7.com/is/image/Asda/5054622127954_B'
-output = pipe({'pants': url_pants, 'boot': url_boot, 'broken': url_broken})
-print(output)
