@@ -14,13 +14,12 @@ env:
 #
 #before_install:
 #    - 'if [ -n "$GOOGLE_CREDENTIALS_ENCODED" ]; then docker pull peterzhokhoff/studioml; fi'
-install:
-    - git fetch --unshallow
 
 jobs:
   include:
     - stage: test
       script:
+        - git fetch --unshallow
         - 'if [ -n "$GOOGLE_CREDENTIALS_ENCODED" ]; then echo "$GOOGLE_CREDENTIALS_ENCODED" | base64 --decode > ./credentials.json && export GOOGLE_APPLICATION_CREDENTIALS=$(pwd)/credentials.json; fi'
         - 'if [ -n "$GOOGLE_CREDENTIALS_DS_ENCODED" ]; then echo "$GOOGLE_CREDENTIALS_DS_ENCODED" | base64 --decode > ./credentials_ds.json && export GOOGLE_APPLICATION_CREDENTIALS_DC=$(pwd)/credentials_ds.json; fi'
         - pip install -e .
@@ -35,6 +34,7 @@ jobs:
     - stage: deploy
       python: 2.7
       script: 
+        - git fetch --unshallow
         - python setup.py sdist
 
       provider: pypi
