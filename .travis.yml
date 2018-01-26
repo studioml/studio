@@ -43,3 +43,5 @@ deploy:
     # tags: true
     branch: master
     repo: studioml/studio
+    condition: $TRAVIS_PYTHON_VERSION == "2.7"
+    condition: $TRAVIS_EVENT_TYPE == "push"
