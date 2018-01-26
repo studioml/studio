@@ -347,7 +347,7 @@ class EC2WorkerManager(object):
 
         launch_config_name = 'studioml_launch_config_' + \
             hashlib.sha256(
-                json.dumps(launch_config, sort_keys=True)
+                json.dumps(launch_config, sort_keys=True).encode('utf-8')
             ).hexdigest()
 
         if ssh_keypair is not None:
