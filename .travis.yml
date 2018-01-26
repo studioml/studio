@@ -1,9 +1,6 @@
 dist: trusty
 
 language: python
-python:
-  - "2.7"
-  - "3.6"
 
 env:
   fast_finish: true
@@ -18,6 +15,9 @@ env:
 jobs:
   include:
     - stage: test
+       python:
+        - "2.7"
+        - "3.6"
       script:
         - git fetch --unshallow
         - 'if [ -n "$GOOGLE_CREDENTIALS_ENCODED" ]; then echo "$GOOGLE_CREDENTIALS_ENCODED" | base64 --decode > ./credentials.json && export GOOGLE_APPLICATION_CREDENTIALS=$(pwd)/credentials.json; fi'
