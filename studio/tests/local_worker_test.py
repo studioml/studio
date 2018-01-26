@@ -32,7 +32,7 @@ class LocalWorkerTest(unittest.TestCase):
             test_script='tf_hello_world.py',
             runner_args=[],
             script_args=['arg0'],
-            expected_output='[ 2.  6.]'
+            expected_output='[ 2.0 6.0 ]'
         ):
             pass
 
