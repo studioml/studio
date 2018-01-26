@@ -346,6 +346,11 @@ class EC2WorkerManager(object):
             "SpotPrice": bid_price,
         }
 
+        launch_config_name = 'studioml_launch_config_' + \
+            hashlib.sha256(
+                json.dumps(launch_config, sort_keys=True)
+            ).hexdigest()
+
         if ssh_keypair is not None:
             ports.append(22)
         if any(ports):
@@ -354,14 +359,17 @@ class EC2WorkerManager(object):
             if ssh_keypair is not None:
                 launch_config['KeyName'] = ssh_keypair
 
-        response = self.asclient.create_launch_configuration(
-            LaunchConfigurationName=launch_config_name, **launch_config)
-
-        self.logger.debug(
-            "create_launch_configuration response:\n {}".format(response))
+        try:
+            response = self.asclient.create_launch_configuration(
+                LaunchConfigurationName=launch_config_name, **launch_config)
+            self.logger.debug(
+                "create_launch_configuration response:\n {}".format(response))
+        except self.asclient.exceptions.AlreadyExistsFault:
+            self.logger.debug('Launch config {} already exists'
+                              .format(launch_config_name))
 
         asg_config = {
-            "LaunchConfigurationName": asg_name + '_launch_config',
+            "LaunchConfigurationName": launch_config_name,
             "MinSize": 0,
             "MaxSize": max_workers,
             "DesiredCapacity": int(start_workers),
@@ -374,8 +382,12 @@ class EC2WorkerManager(object):
 
         self.logger.debug("Creating auto-scaling group " + asg_name)
 
-        response = self.asclient.create_auto_scaling_group(
-            AutoScalingGroupName=asg_name, **asg_config)
+        try:
+            response = self.asclient.create_auto_scaling_group(
+                AutoScalingGroupName=asg_name, **asg_config)
+        except self.asclient.exceptions.AlreadyExistsFault:
+            logger.debug('Autoscaling group {} already exists'
+                         .format(asg_name))
 
         if queue_upscaling:
             scaleup_policy_response = self.asclient.put_scaling_policy(

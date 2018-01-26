@@ -26,6 +26,7 @@ class LocalWorkerTest(unittest.TestCase):
 
     @timeout(TEST_TIMEOUT, use_signals=False)
     def test_runner_local(self):
+<<<<<<< HEAD
         with stubtest_worker(
             self,
             experiment_name='test_runner_local_' + str(uuid.uuid4()),
@@ -36,6 +37,19 @@ class LocalWorkerTest(unittest.TestCase):
             expected_output='[ 2.  6.]'
         ):
             pass
+=======
+        with get_local_queue_lock():
+            with stubtest_worker(
+                self,
+                experiment_name='test_runner_local_' + str(uuid.uuid4()),
+                runner_args=['--verbose=debug'],
+                config_name='test_config_http_client.yaml',
+                test_script='tf_hello_world.py',
+                script_args=['arg0'],
+                expected_output='[ 2.0 6.0 ]'
+            ):
+                pass
+>>>>>>> 445fbede335bfe09e7cebb7ea7165a1597942757
 
     @timeout(TEST_TIMEOUT, use_signals=False)
     def test_args_conflict(self):

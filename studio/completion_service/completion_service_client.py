@@ -24,7 +24,7 @@ def main():
     logger.debug("Artifacts = {}".format(artifacts))
 
     for tag, path in six.iteritems(artifacts):
-        if tag not in {'workspace', 'modeldir', 'tb'}:
+        if tag not in {'workspace', 'modeldir', 'tb', '_runner'}:
             if os.path.isfile(path):
                 files[tag] = path
             elif os.path.isdir(path):

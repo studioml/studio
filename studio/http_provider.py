@@ -65,7 +65,12 @@ class HTTPProvider(object):
             self._raise_detailed_error(request)
             return request
 
-        request = retry(post_request, sleep_time=10, logger=self.logger)
+        request = retry(
+            post_request,
+            no_retries=10,
+            sleep_time=10,
+            logger=self.logger)
+
         artifacts = request.json()['artifacts']
 
         self._update_artifacts(experiment, artifacts)
