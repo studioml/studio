@@ -29,8 +29,6 @@ script:
 
 jobs:
   include:
-    - stage: test
-   
     - stage: deploy
       python: 2.7
       script: 
