@@ -42,3 +42,4 @@ deploy:
   on:
     # tags: true
     branch: master
+    condition: $TRAVIS_EVENT_TYPE != cron
