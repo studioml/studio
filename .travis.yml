@@ -1,6 +1,9 @@
 dist: trusty
 
 language: python
+python:
+    - "2.7"
+    - "3.6"
 
 env:
   fast_finish: true
@@ -11,26 +14,23 @@ env:
 #
 #before_install:
 #    - 'if [ -n "$GOOGLE_CREDENTIALS_ENCODED" ]; then docker pull peterzhokhoff/studioml; fi'
+script:
+    - git fetch --unshallow
+    - 'if [ -n "$GOOGLE_CREDENTIALS_ENCODED" ]; then echo "$GOOGLE_CREDENTIALS_ENCODED" | base64 --decode > ./credentials.json && export GOOGLE_APPLICATION_CREDENTIALS=$(pwd)/credentials.json; fi'
+    - 'if [ -n "$GOOGLE_CREDENTIALS_DS_ENCODED" ]; then echo "$GOOGLE_CREDENTIALS_DS_ENCODED" | base64 --decode > ./credentials_ds.json && export GOOGLE_APPLICATION_CREDENTIALS_DC=$(pwd)/credentials_ds.json; fi'
+    - pip install -e .
+    - pip install -r test_requirements.txt
+
+    - echo GOOGLE_APPLICATION_CREDENTIALS=$GOOGLE_APPLICATION_CREDENTIALS
+    - echo GOOGLE_APPLICATION_CREDENTIALS_DC=$GOOGLE_APPLICATION_CREDENTIALS_DC
+
+    # - py.test -n 16 -v --durations=0 
+    - pycodestyle --show-source --exclude=.eggs .
 
 jobs:
   include:
     - stage: test
-      python:
-        - "2.7"
-        - "3.6"
-      script:
-        - git fetch --unshallow
-        - 'if [ -n "$GOOGLE_CREDENTIALS_ENCODED" ]; then echo "$GOOGLE_CREDENTIALS_ENCODED" | base64 --decode > ./credentials.json && export GOOGLE_APPLICATION_CREDENTIALS=$(pwd)/credentials.json; fi'
-        - 'if [ -n "$GOOGLE_CREDENTIALS_DS_ENCODED" ]; then echo "$GOOGLE_CREDENTIALS_DS_ENCODED" | base64 --decode > ./credentials_ds.json && export GOOGLE_APPLICATION_CREDENTIALS_DC=$(pwd)/credentials_ds.json; fi'
-        - pip install -e .
-        - pip install -r test_requirements.txt
-
-        - echo GOOGLE_APPLICATION_CREDENTIALS=$GOOGLE_APPLICATION_CREDENTIALS
-        - echo GOOGLE_APPLICATION_CREDENTIALS_DC=$GOOGLE_APPLICATION_CREDENTIALS_DC
-
-        - py.test -n 16 -v --durations=0 
-        - pycodestyle --show-source --exclude=.eggs .
-
+   
     - stage: deploy
       python: 2.7
       script: 
