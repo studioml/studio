@@ -42,4 +42,5 @@ deploy:
   on:
     # tags: true
     branch: master
-    condition: $TRAVIS_EVENT_TYPE != cron
+    condition: $TRAVIS_EVENT_TYPE == push
+    condition: $TRAVIS_PYTHON_VERSION == '2.7'
