@@ -15,7 +15,7 @@ env:
 jobs:
   include:
     - stage: test
-       python:
+      python:
         - "2.7"
         - "3.6"
       script:
