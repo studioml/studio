@@ -23,7 +23,6 @@ TEST_TIMEOUT = 600
 
 class LocalWorkerTest(unittest.TestCase):
 
-    @unittest.skip("Limit number of locally running tests")
     @timeout(TEST_TIMEOUT, use_signals=False)
     def test_runner_local(self):
         with get_local_queue_lock():
@@ -34,7 +33,7 @@ class LocalWorkerTest(unittest.TestCase):
                 config_name='test_config_http_client.yaml',
                 test_script='tf_hello_world.py',
                 script_args=['arg0'],
-                expected_output='[ 2.  6.]'
+                expected_output='[ 2.0 6.0 ]'
             ):
                 pass
 
