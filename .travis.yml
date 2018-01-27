@@ -25,7 +25,7 @@ script:
     - echo GOOGLE_APPLICATION_CREDENTIALS=$GOOGLE_APPLICATION_CREDENTIALS
     - echo GOOGLE_APPLICATION_CREDENTIALS_DC=$GOOGLE_APPLICATION_CREDENTIALS_DC
 
-    - py.test -v --durations=0 
+    - py.test -v -n 16 --durations=0 
     - pycodestyle --show-source --exclude=.eggs .
 
 jobs:
