@@ -17,7 +17,7 @@ _file_url = 'https://s3-us-west-2.amazonaws.com/ml-enn/' + \
 
 _file_s3 = 's3://s3-us-west-2.amazonaws.com/studioml-test/t.txt'
 
-LOCAL_TEST_TIMEOUT = 400
+LOCAL_TEST_TIMEOUT = 600
 CLOUD_TEST_TIMEOUT = 800
 
 
