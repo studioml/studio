@@ -88,7 +88,7 @@ class CompletionServiceTest(unittest.TestCase):
 
     @unittest.skipIf(not has_aws_credentials(),
                      'AWS credentials needed for this test')
-    @timeout(CLOUD_TEST_TIMEOUT)
+    @timeout(CLOUD_TEST_TIMEOUT, use_signals=False)
     def test_two_experiments_ec2(self):
         mypath = os.path.dirname(os.path.realpath(__file__))
         config_path = os.path.join(
@@ -104,7 +104,7 @@ class CompletionServiceTest(unittest.TestCase):
 
     @unittest.skipIf(not has_aws_credentials(),
                      'AWS credentials needed for this test')
-    @timeout(CLOUD_TEST_TIMEOUT)
+    @timeout(CLOUD_TEST_TIMEOUT, use_signals=False)
     def test_two_experiments_ec2spot(self):
         mypath = os.path.dirname(os.path.realpath(__file__))
         config_path = os.path.join(
@@ -128,7 +128,7 @@ class CompletionServiceTest(unittest.TestCase):
             cloud='ec2spot',
         )
 
-    @timeout(LOCAL_TEST_TIMEOUT)
+    @timeout(LOCAL_TEST_TIMEOUT, use_signals=False)
     def test_two_experiments_apiserver(self):
         mypath = os.path.dirname(os.path.realpath(__file__))
         config_path = os.path.join(
@@ -155,7 +155,7 @@ class CompletionServiceTest(unittest.TestCase):
         'GOOGLE_APPLICATION_CREDENTIALS' not in os.environ.keys(),
         'Need GOOGLE_APPLICATION_CREDENTIALS env variable to' +
         'use google cloud')
-    @timeout(CLOUD_TEST_TIMEOUT)
+    @timeout(CLOUD_TEST_TIMEOUT, use_signals=False)
     def test_two_experiments_gcspot(self):
         mypath = os.path.dirname(os.path.realpath(__file__))
         config_path = os.path.join(
@@ -180,7 +180,7 @@ class CompletionServiceTest(unittest.TestCase):
         'GOOGLE_APPLICATION_CREDENTIALS_DC' not in os.environ.keys(),
         'Need GOOGLE_APPLICATION_CREDENTIALS_DC env variable to' +
         'use google cloud')
-    @timeout(CLOUD_TEST_TIMEOUT)
+    @timeout(CLOUD_TEST_TIMEOUT, use_signals=False)
     def test_two_experiments_datacenter(self):
         oldcred = os.environ.get('GOOGLE_APPLICATION_CREDENTIALS')
         os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = \
@@ -214,7 +214,7 @@ class CompletionServiceTest(unittest.TestCase):
         'GOOGLE_APPLICATION_CREDENTIALS' not in os.environ.keys(),
         'Need GOOGLE_APPLICATION_CREDENTIALS env variable to' +
         'use google cloud')
-    @timeout(CLOUD_TEST_TIMEOUT)
+    @timeout(CLOUD_TEST_TIMEOUT, use_signals=False)
     def test_two_experiments_gcloud(self):
         mypath = os.path.dirname(os.path.realpath(__file__))
         config_path = os.path.join(
