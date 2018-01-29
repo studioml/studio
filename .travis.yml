@@ -2,8 +2,8 @@ dist: trusty
 
 language: python
 python:
-  - "2.7"
-  - "3.6"
+    - "2.7"
+    - "3.6"
 
 env:
   fast_finish: true
@@ -15,33 +15,35 @@ env:
 #before_install:
 #    - 'if [ -n "$GOOGLE_CREDENTIALS_ENCODED" ]; then docker pull peterzhokhoff/studioml; fi'
 
-install:
-  - git fetch --unshallow
-  - pip install -e .
-  - pip install -r test_requirements.txt
-
-  - 'if [ -n "$GOOGLE_CREDENTIALS_ENCODED" ]; then echo "$GOOGLE_CREDENTIALS_ENCODED" | base64 --decode > ./credentials.json && export GOOGLE_APPLICATION_CREDENTIALS=$(pwd)/credentials.json; fi'
-  - 'if [ -n "$GOOGLE_CREDENTIALS_DS_ENCODED" ]; then echo "$GOOGLE_CREDENTIALS_DS_ENCODED" | base64 --decode > ./credentials_ds.json && export GOOGLE_APPLICATION_CREDENTIALS_DC=$(pwd)/credentials_ds.json; fi'
-
 script:
-  - echo GOOGLE_APPLICATION_CREDENTIALS=$GOOGLE_APPLICATION_CREDENTIALS
-  - echo GOOGLE_APPLICATION_CREDENTIALS_DC=$GOOGLE_APPLICATION_CREDENTIALS_DC
+    - git fetch --unshallow
+    - 'if [ -n "$GOOGLE_CREDENTIALS_ENCODED" ]; then echo "$GOOGLE_CREDENTIALS_ENCODED" | base64 --decode > ./credentials.json && export GOOGLE_APPLICATION_CREDENTIALS=$(pwd)/credentials.json; fi'
+    - 'if [ -n "$GOOGLE_CREDENTIALS_DS_ENCODED" ]; then echo "$GOOGLE_CREDENTIALS_DS_ENCODED" | base64 --decode > ./credentials_ds.json && export GOOGLE_APPLICATION_CREDENTIALS_DC=$(pwd)/credentials_ds.json; fi'
+    - pip install -e .
+    - pip install -r test_requirements.txt
 
-  - py.test -n 16 -v --durations=0 
-  # - py.test -v -n 3 studio/tests/cloud_worker_test.py::GCloudWorkerTest
-  - pycodestyle --show-source --exclude=.eggs .
-  - python setup.py sdist
+    - echo GOOGLE_APPLICATION_CREDENTIALS=$GOOGLE_APPLICATION_CREDENTIALS
+    - echo GOOGLE_APPLICATION_CREDENTIALS_DC=$GOOGLE_APPLICATION_CREDENTIALS_DC
 
-deploy:
-  provider: pypi
-  distributions: "sdist"
-  user: pzhokhov
-  password:
-    secure: "FkfIvyF3PReaXOuCNSeqlg9SAiocc8WxCzlbqnfssG6JxsIBWNuoOPtgKtiYmMO+LBXnzpZ8CkTjoHT2oWWBD8r92QNmdIOze1MPs5xQmGxu12TEc5dEgMUnvenV3vkOZGC/hhwbio16Dqfd8PlHYBRkduvvqrvRD1xJPsggx9tgZwZ+Vvv0h51/BpOIMxm0xV3qu1U5A3BIvyzTUucvCAPbmHeZj+tWtiTq3OEwpc812PsCNkFNEOIBUkwafu1VE15tFcud/pZyFYwEK8/z35CJDGY4oVKWZyoC5/Gp9w658ps6MnjWP36Y1GNj4wpQPL2ftvGzRfXvfZ/FcSi4mreon24YPYFlY76ezLibWq8m2/ZBlQQwchFi48nGoalDJ7a92hyVkrRr1UP87+fbrZW8u4l/2HiKYKgotAixnoKKVOaWcmhraLve+kLE5F6e0lwmwCOHQwO9Cz4PECiZtxf8ePdDj+Dr9RLI3rKehRATpL+kXkR4WzKXPJAfDiPS6WiOz/melZJIttQcFZpOUVCs79yKWj8E95atbEy0jFaGn1PR+lFHqFYsg8TTe9Q9L/qMc+ECzBzQ4ryClCKDMYylCqbfDpOmCtHZw0a79IKmSyyvNbjnFMhAcn+GHFp+O46iF7Zxb1fAmp45AZ48bG/FCVqp66EXr590Fy1gjh0="
-  # skip_cleanup: true
-  on:
-    # tags: true
-    branch: master
-    repo: studioml/studio
-    condition: $TRAVIS_PYTHON_VERSION == "2.7"
-    condition: $TRAVIS_EVENT_TYPE == "push"
+    - py.test -v -n 16 --durations=0 
+    - pycodestyle --show-source --exclude=.eggs .
+
+jobs:
+  include:
+    - stage: deploy
+      python: 2.7
+      script: 
+        - git fetch --unshallow
+        - python setup.py sdist
+
+      provider: pypi
+      distributions: "sdist"
+      user: pzhokhov
+      password:
+        secure: "FkfIvyF3PReaXOuCNSeqlg9SAiocc8WxCzlbqnfssG6JxsIBWNuoOPtgKtiYmMO+LBXnzpZ8CkTjoHT2oWWBD8r92QNmdIOze1MPs5xQmGxu12TEc5dEgMUnvenV3vkOZGC/hhwbio16Dqfd8PlHYBRkduvvqrvRD1xJPsggx9tgZwZ+Vvv0h51/BpOIMxm0xV3qu1U5A3BIvyzTUucvCAPbmHeZj+tWtiTq3OEwpc812PsCNkFNEOIBUkwafu1VE15tFcud/pZyFYwEK8/z35CJDGY4oVKWZyoC5/Gp9w658ps6MnjWP36Y1GNj4wpQPL2ftvGzRfXvfZ/FcSi4mreon24YPYFlY76ezLibWq8m2/ZBlQQwchFi48nGoalDJ7a92hyVkrRr1UP87+fbrZW8u4l/2HiKYKgotAixnoKKVOaWcmhraLve+kLE5F6e0lwmwCOHQwO9Cz4PECiZtxf8ePdDj+Dr9RLI3rKehRATpL+kXkR4WzKXPJAfDiPS6WiOz/melZJIttQcFZpOUVCs79yKWj8E95atbEy0jFaGn1PR+lFHqFYsg8TTe9Q9L/qMc+ECzBzQ4ryClCKDMYylCqbfDpOmCtHZw0a79IKmSyyvNbjnFMhAcn+GHFp+O46iF7Zxb1fAmp45AZ48bG/FCVqp66EXr590Fy1gjh0="
+      # skip_cleanup: true
+      on:
+        # tags: true
+        branch: master
+        repo: studioml/studio
+        condition: $TRAVIS_EVENT_TYPE == "push"
