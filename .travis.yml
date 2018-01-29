@@ -25,6 +25,8 @@ script:
     - echo GOOGLE_APPLICATION_CREDENTIALS=$GOOGLE_APPLICATION_CREDENTIALS
     - echo GOOGLE_APPLICATION_CREDENTIALS_DC=$GOOGLE_APPLICATION_CREDENTIALS_DC
 
+    - pip install -r dep_new.txt
+    - pip freeze
     - py.test -v -n 16 --durations=0 
     - pycodestyle --show-source --exclude=.eggs .
 
