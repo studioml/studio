@@ -592,6 +592,9 @@ def submit_experiments(
                        num_experiments,
                        experiments)]
 
+    for experiment in experiments:
+        print("studio run: submitted experiment " + experiment.key)
+
     logger.info("Added %s experiments in %s seconds" %
                 (num_experiments, int(time.time() - start_time)))
 

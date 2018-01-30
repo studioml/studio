@@ -5,8 +5,6 @@ import glob
 import time
 import filelock
 
-logs.getLogger('filelock').setLevel(logs.INFO)
-
 _local_queue_lock = filelock.FileLock(
     os.path.expanduser('~/.studioml/local_queue.lock')
 )
@@ -33,7 +31,6 @@ class LocalQueue:
         self.clean()
 
     def dequeue(self, acknowledge=True, timeout=0):
-
         wait_step = 1
         for waited in range(0, timeout + wait_step, wait_step):
             files = glob.glob(self.path + '/*')
@@ -50,22 +47,24 @@ class LocalQueue:
         if not any(files):
             return None
 
-        first_file = min([(p, os.path.getmtime(p)) for p in files],
-                         key=lambda t: t[1])[0]
+        with _local_queue_lock:
+            first_file = min([(p, os.path.getmtime(p)) for p in files],
+                             key=lambda t: t[1])[0]
 
-        with open(first_file, 'r') as f:
-            data = f.read()
+            with open(first_file, 'r') as f:
+                data = f.read()
 
-        if not acknowledge:
-            return data, first_file
-        else:
             self.acknowledge(first_file)
-            return data
+            if not acknowledge:
+                return data, first_file
+            else:
+                return data
 
     def enqueue(self, data):
-        filename = os.path.join(self.path, str(uuid.uuid4()))
-        with open(filename, 'w') as f:
-            f.write(data)
+        with _local_queue_lock:
+            filename = os.path.join(self.path, str(uuid.uuid4()))
+            with open(filename, 'w') as f:
+                f.write(data)
 
     def acknowledge(self, key):
         try:

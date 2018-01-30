@@ -85,18 +85,30 @@ def event_reader(fileobj):
 
 
 def rsync_cp(source, dest, ignore_arg='', logger=None):
-    if os.path.exists(dest):
-        shutil.rmtree(dest) if os.path.isdir(dest) else os.remove(dest)
-    os.makedirs(dest)
+    try:
+        if os.path.exists(dest):
+            shutil.rmtree(dest) if os.path.isdir(dest) else os.remove(dest)
+        os.makedirs(dest)
+    except OSError:
+        pass
 
     if ignore_arg != '':
         source += "/"
         tool = 'rsync'
         args = [tool, ignore_arg, '-aHAXE', source, dest]
     else:
-        os.rmdir(dest)
+        try:
+            os.rmdir(dest)
+        except OSError:
+            pass
+
         tool = 'cp'
-        args = [tool, '-pR', source, dest]
+        args = [
+            tool,
+            '-pR',
+            source,
+            dest
+        ]
 
     pcp = subprocess.Popen(args, stdout=subprocess.PIPE,
                            stderr=subprocess.STDOUT)

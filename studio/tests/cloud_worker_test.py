@@ -10,7 +10,7 @@ from timeout_decorator import timeout
 from studio.util import has_aws_credentials
 
 
-CLOUD_TEST_TIMEOUT = 700
+CLOUD_TEST_TIMEOUT = 900
 
 
 @unittest.skipIf(
@@ -35,7 +35,7 @@ class GCloudWorkerTest(unittest.TestCase):
             config_name='test_config_http_client.yaml',
             test_script='tf_hello_world.py',
             script_args=['arg0'],
-            expected_output='[ 2.  6.]',
+            expected_output='[ 2.0 6.0 ]',
         ):
             pass
 
@@ -50,7 +50,7 @@ class GCloudWorkerTest(unittest.TestCase):
             config_name='test_config_http_client.yaml',
             test_script='tf_hello_world.py',
             script_args=['arg0'],
-            expected_output='[ 2.  6.]',
+            expected_output='[ 2.0 6.0 ]',
         ):
             pass
 
@@ -94,7 +94,7 @@ class EC2WorkerTest(unittest.TestCase):
             config_name='test_config_http_client.yaml',
             test_script='tf_hello_world.py',
             script_args=['arg0'],
-            expected_output='[ 2.  6.]',
+            expected_output='[ 2.0 6.0 ]',
         ):
             pass
 
@@ -113,7 +113,7 @@ class EC2WorkerTest(unittest.TestCase):
             config_name='test_config_http_client.yaml',
             test_script='tf_hello_world.py',
             script_args=['arg0'],
-            expected_output='[ 2.  6.]',
+            expected_output='[ 2.0 6.0 ]',
         )
 
     def test_get_ondemand_prices(self):

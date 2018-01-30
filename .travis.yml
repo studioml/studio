@@ -8,24 +8,15 @@ python:
 env:
   fast_finish: true
 
-#sudo: required
-#services: 
-#    - docker
-#
-#before_install:
-#    - 'if [ -n "$GOOGLE_CREDENTIALS_ENCODED" ]; then docker pull peterzhokhoff/studioml; fi'
-
 script:
     - git fetch --unshallow
     - 'if [ -n "$GOOGLE_CREDENTIALS_ENCODED" ]; then echo "$GOOGLE_CREDENTIALS_ENCODED" | base64 --decode > ./credentials.json && export GOOGLE_APPLICATION_CREDENTIALS=$(pwd)/credentials.json; fi'
-    - 'if [ -n "$GOOGLE_CREDENTIALS_DS_ENCODED" ]; then echo "$GOOGLE_CREDENTIALS_DS_ENCODED" | base64 --decode > ./credentials_ds.json && export GOOGLE_APPLICATION_CREDENTIALS_DC=$(pwd)/credentials_ds.json; fi'
+    # - 'if [ -n "$GOOGLE_CREDENTIALS_DS_ENCODED" ]; then echo "$GOOGLE_CREDENTIALS_DS_ENCODED" | base64 --decode > ./credentials_ds.json && export GOOGLE_APPLICATION_CREDENTIALS_DC=$(pwd)/credentials_ds.json; fi'
     - pip install -e .
     - pip install -r test_requirements.txt
 
     - echo GOOGLE_APPLICATION_CREDENTIALS=$GOOGLE_APPLICATION_CREDENTIALS
     - echo GOOGLE_APPLICATION_CREDENTIALS_DC=$GOOGLE_APPLICATION_CREDENTIALS_DC
-    
-    - pip install -r dep_ok_sorted.txt
     - pip freeze
     - py.test -n 16 -v --durations=0 
     - pycodestyle --show-source --exclude=.eggs .

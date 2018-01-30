@@ -4,19 +4,21 @@ import os
 import hashlib
 import six
 import tempfile
+from timeout_decorator import timeout
 
 from .completion_service import CompletionService
 
 from studio.util import has_aws_credentials, filehash
 from studio.util import download_file, rand_string
-from studio.local_queue import get_local_queue_lock
-
 
 _file_url = 'https://s3-us-west-2.amazonaws.com/ml-enn/' + \
             'deepbilevel_datafiles/' + \
             'mightyai_combined_vocab/mightyai_miscfiles.tar.gz'
 
 _file_s3 = 's3://s3-us-west-2.amazonaws.com/studioml-test/t.txt'
+
+LOCAL_TEST_TIMEOUT = 600
+CLOUD_TEST_TIMEOUT = 800
 
 
 class CompletionServiceTest(unittest.TestCase):
@@ -86,6 +88,7 @@ class CompletionServiceTest(unittest.TestCase):
 
     @unittest.skipIf(not has_aws_credentials(),
                      'AWS credentials needed for this test')
+    @timeout(CLOUD_TEST_TIMEOUT, use_signals=False)
     def test_two_experiments_ec2(self):
         mypath = os.path.dirname(os.path.realpath(__file__))
         config_path = os.path.join(
@@ -101,6 +104,7 @@ class CompletionServiceTest(unittest.TestCase):
 
     @unittest.skipIf(not has_aws_credentials(),
                      'AWS credentials needed for this test')
+    @timeout(CLOUD_TEST_TIMEOUT, use_signals=False)
     def test_two_experiments_ec2spot(self):
         mypath = os.path.dirname(os.path.realpath(__file__))
         config_path = os.path.join(
@@ -124,13 +128,15 @@ class CompletionServiceTest(unittest.TestCase):
             cloud='ec2spot',
         )
 
+    @unittest.skip('TODO peterz fix in parallel mode')
+    @timeout(LOCAL_TEST_TIMEOUT, use_signals=False)
     def test_two_experiments_apiserver(self):
         mypath = os.path.dirname(os.path.realpath(__file__))
         config_path = os.path.join(
             mypath,
             '..',
             'tests',
-            'test_config_datacenter.yaml')
+            'test_config_http_client.yaml')
 
         files_in_workspace = os.listdir(mypath)
         files = {f: os.path.join(mypath, f) for f in files_in_workspace if
@@ -141,16 +147,16 @@ class CompletionServiceTest(unittest.TestCase):
         if has_aws_credentials():
             files['s3'] = _file_s3
 
-        with get_local_queue_lock():
-            self._run_test_files(
-                n_experiments=2,
-                files=files,
-                config=config_path)
+        self._run_test_files(
+            n_experiments=2,
+            files=files,
+            config=config_path)
 
     @unittest.skipIf(
         'GOOGLE_APPLICATION_CREDENTIALS' not in os.environ.keys(),
         'Need GOOGLE_APPLICATION_CREDENTIALS env variable to' +
         'use google cloud')
+    @timeout(CLOUD_TEST_TIMEOUT, use_signals=False)
     def test_two_experiments_gcspot(self):
         mypath = os.path.dirname(os.path.realpath(__file__))
         config_path = os.path.join(
@@ -175,6 +181,7 @@ class CompletionServiceTest(unittest.TestCase):
         'GOOGLE_APPLICATION_CREDENTIALS_DC' not in os.environ.keys(),
         'Need GOOGLE_APPLICATION_CREDENTIALS_DC env variable to' +
         'use google cloud')
+    @timeout(CLOUD_TEST_TIMEOUT, use_signals=False)
     def test_two_experiments_datacenter(self):
         oldcred = os.environ.get('GOOGLE_APPLICATION_CREDENTIALS')
         os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = \
@@ -208,6 +215,7 @@ class CompletionServiceTest(unittest.TestCase):
         'GOOGLE_APPLICATION_CREDENTIALS' not in os.environ.keys(),
         'Need GOOGLE_APPLICATION_CREDENTIALS env variable to' +
         'use google cloud')
+    @timeout(CLOUD_TEST_TIMEOUT, use_signals=False)
     def test_two_experiments_gcloud(self):
         mypath = os.path.dirname(os.path.realpath(__file__))
         config_path = os.path.join(
