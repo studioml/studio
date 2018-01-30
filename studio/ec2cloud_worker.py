@@ -389,12 +389,23 @@ class EC2WorkerManager(object):
                               .format(asg_name))
 
         if queue_upscaling:
+            max_steps = 20
+            stepsize = - (- max_workers // max_steps)
+
+            step_adjustments = [{
+                'MetricIntervalLowerBound': i,
+                'MetricIntervalUpperBound': i + stepsize,
+                'ScalingAdjustment': i
+            } for i in range(0, max_workers, stepsize)]
+
+            del step_adjustments[-1]['MetricIntervalUpperBound']
+
             scaleup_policy_response = self.asclient.put_scaling_policy(
                 AutoScalingGroupName=asg_name,
                 PolicyName=asg_name + "_scaleup",
+                PolicyType='StepScaling',
                 AdjustmentType="ChangeInCapacity",
-                ScalingAdjustment=1,
-                Cooldown=0
+                StepAdjustments=step_adjustments
             )
 
             self.cwclient.put_metric_alarm(
