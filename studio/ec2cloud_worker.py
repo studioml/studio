@@ -399,7 +399,7 @@ class EC2WorkerManager(object):
             } for i in range(0, max_workers, stepsize)]
 
             del step_adjustments[-1]['MetricIntervalUpperBound']
-            
+
             scaleup_policy_response = self.asclient.put_scaling_policy(
                 AutoScalingGroupName=asg_name,
                 PolicyName=asg_name + "_scaleup",
