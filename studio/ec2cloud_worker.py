@@ -348,7 +348,7 @@ class EC2WorkerManager(object):
 
         launch_config_name = 'studioml_launch_config_' + \
             hashlib.sha256(
-                json.dumps(launch_config, sort_keys=True)
+                json.dumps(launch_config, sort_keys=True).encode('utf-8')
             ).hexdigest()
 
         if ssh_keypair is not None:
@@ -386,16 +386,27 @@ class EC2WorkerManager(object):
             response = self.asclient.create_auto_scaling_group(
                 AutoScalingGroupName=asg_name, **asg_config)
         except self.asclient.exceptions.AlreadyExistsFault:
-            logger.debug('Autoscaling group {} already exists'
-                         .format(asg_name))
+            self.logger.debug('Autoscaling group {} already exists'
+                              .format(asg_name))
 
         if queue_upscaling:
+            max_steps = 20
+            stepsize = - (- max_workers // max_steps)
+
+            step_adjustments = [{
+                'MetricIntervalLowerBound': i,
+                'MetricIntervalUpperBound': i + stepsize,
+                'ScalingAdjustment': i
+            } for i in range(0, max_workers, stepsize)]
+
+            del step_adjustments[-1]['MetricIntervalUpperBound']
+
             scaleup_policy_response = self.asclient.put_scaling_policy(
                 AutoScalingGroupName=asg_name,
                 PolicyName=asg_name + "_scaleup",
+                PolicyType='StepScaling',
                 AdjustmentType="ChangeInCapacity",
-                ScalingAdjustment=1,
-                Cooldown=0
+                StepAdjustments=step_adjustments
             )
 
             self.cwclient.put_metric_alarm(
