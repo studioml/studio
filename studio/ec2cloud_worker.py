@@ -386,7 +386,7 @@ class EC2WorkerManager(object):
                 AutoScalingGroupName=asg_name, **asg_config)
         except self.asclient.exceptions.AlreadyExistsFault:
             self.logger.debug('Autoscaling group {} already exists'
-                         .format(asg_name))
+                              .format(asg_name))
 
         if queue_upscaling:
             scaleup_policy_response = self.asclient.put_scaling_policy(

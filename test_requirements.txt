@@ -1,4 +1,4 @@
 pycodestyle
 pytest_xdist
-tensorflow
+tensorflow<=1.4.1
 keras
