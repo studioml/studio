@@ -39,17 +39,18 @@ _grequest = google.auth.transport.requests.Request()
 
 
 def get_auth_class(authtype):
-    if authtype.lower() == 'firebase':
+    if authtype is None:
+        return None
+    elif authtype.lower() == 'none':
+        return None
+    elif authtype.lower() == 'firebase':
         return FirebaseAuth
     elif authtype.lower() == 'github':
         return GithubAuth
-    elif authtype.lower() == 'none':
-        return None
     else:
         raise ValueError(
             'Unknown authentication type {}'
             .format(authtype))
-
 
 def get_auth(
         config,
@@ -74,7 +75,7 @@ def get_auth(
     return _auth_singleton
 
 
-def get_and_verify_user(request, authconfig):
+def get_and_verify_user(request, authtype):
     if not request.headers or 'Authorization' not in request.headers.keys():
         return None
 
@@ -82,8 +83,8 @@ def get_and_verify_user(request, authconfig):
     if not token or token == 'null':
         return None
 
-    auth = get_auth(authconfig, blocking=False)
-    if not auth:
+    authclass = get_auth_class(authtype)
+    if not authclass:
         return None
 
     if request.json:
@@ -91,7 +92,7 @@ def get_and_verify_user(request, authconfig):
     else:
         refresh_token = None
 
-    return auth.verify_token(token, refresh_token)
+    return authclass.verify_token(token, refresh_token)
 
 
 class GithubAuth(object):
@@ -175,17 +176,6 @@ class GithubAuth(object):
         with open(token_file, 'w') as f:
             f.write(self.token)
 
-    def verify_token(self, token, refresh_token=None):
-        response = requests.get(
-            'https://api.github.com/user',
-            headers={"Authorization": "Bearer " + token}
-        )
-
-        if response.status_code != 200:
-            return None
-        else:
-            return response.json()['login']
-
     def _sign_in(self):
         print(
             '*** \n' +
@@ -224,6 +214,18 @@ class GithubAuth(object):
             else:
                 print("GitHub login failure")
                 print(response.json())
+
+    @staticmethod
+    def verify_token(token, refresh_token=None):
+        response = requests.get(
+            'https://api.github.com/user',
+            headers={"Authorization": "Bearer " + token}
+        )
+
+        if response.status_code != 200:
+            return None
+        else:
+            return response.json()['login']
 
 
 class FirebaseAuth(object):
@@ -373,7 +375,8 @@ class FirebaseAuth(object):
     def is_expired(self):
         return self.expired
 
-    def verify_token(self, token, refresh_token=None):
+    @staticmethod
+    def verify_token(token, refresh_token=None):
         claims = google.oauth2.id_token.verify_firebase_token(
             token, _grequest)
 
