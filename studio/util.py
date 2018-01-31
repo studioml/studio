@@ -372,6 +372,9 @@ def retry(f,
         try:
             return f()
         except exception_class as e:
+            if i == no_retries - 1:
+                raise e
+
             if logger:
                 logger.info(
                     ('Exception {} is caught, ' +
