@@ -1,10 +1,12 @@
 database: 
     type: gs
     bucket: "studioml-meta"
-    authentication:
-        type: none
+    authentication: none
 
 storage:
     type: gcloud
     bucket: "studioml-artifacts"
+
+server:
+    authentication: github
 
