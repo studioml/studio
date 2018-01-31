@@ -52,6 +52,7 @@ def get_auth_class(authtype):
             'Unknown authentication type {}'
             .format(authtype))
 
+
 def get_auth(
         config,
         blocking=True,
@@ -109,7 +110,7 @@ class GithubAuth(object):
         if isinstance(config, dict):
             self.config = config
         else:
-            self.config = {'type':config}
+            self.config = {'type': config}
 
         self.tokendir = os.path.abspath(os.path.expanduser(
             self.config.get('token_directory', TOKEN_DIR))
