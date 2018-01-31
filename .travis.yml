@@ -18,7 +18,8 @@ script:
     - echo GOOGLE_APPLICATION_CREDENTIALS=$GOOGLE_APPLICATION_CREDENTIALS
     - echo GOOGLE_APPLICATION_CREDENTIALS_DC=$GOOGLE_APPLICATION_CREDENTIALS_DC
     - pip freeze
-    - py.test -n 16 -v --durations=0 
+    - cat studio/tests/test_config_http_server.yaml
+    - py.test -n 16 -v --durations=0 studio/tests/http_provider_test.py
     - pycodestyle --show-source --exclude=.eggs .
 
 jobs:
