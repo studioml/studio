@@ -58,7 +58,11 @@ def get_auth(
 
     global _auth_singleton
     if _auth_singleton is None:
-        auth_class = get_auth_class(config['type'])
+        if isinstance(config, dict):
+            auth_class = get_auth_class(config['type'])
+        else:
+            auth_class = get_auth_class(config)
+
         if auth_class:
             _auth_singleton = auth_class(
                 config,
@@ -100,14 +104,18 @@ class GithubAuth(object):
     ):
         self.logger = logs.getLogger(self.__class__.__name__)
         self.logger.setLevel(verbose)
+
+        if isinstance(config, dict):
+            self.config = config
+        else:
+            self.config = {'type':config}
+
         self.tokendir = os.path.abspath(os.path.expanduser(
-            config.get('token_directory', TOKEN_DIR))
+            self.config.get('token_directory', TOKEN_DIR))
         )
 
         if not os.path.exists(self.tokendir):
             os.makedirs(self.tokendir)
-
-        self.config = config
 
         self.token = self._load_token()[0]
         if self.token is None and blocking:
@@ -141,18 +149,18 @@ class GithubAuth(object):
 
         # TODO selection out of multiple token files
         if not any(tokens):
-            return None
+            return None, None
 
         token_file = os.path.join(self.tokendir, tokens[0])
         with open(token_file) as f:
             token = f.read().strip()
 
         self.userid = self.verify_token(token)
-        if self.userid != re.sub('.githubtoken\Z', '', token_file):
+        if self.userid != re.sub('.githubtoken\Z', '', tokens[0]):
             self.logger.error(
                 'Token filename does not match github login'
             )
-            return None
+            return None, None
 
         return token, token_file
 
@@ -163,7 +171,7 @@ class GithubAuth(object):
         if self.token is None:
             return
 
-        token_file = os.path.join(self.tokendir, self.userid + '.token')
+        token_file = os.path.join(self.tokendir, self.userid + '.githubtoken')
         with open(token_file, 'w') as f:
             f.write(self.token)
 

@@ -508,12 +508,12 @@ def get_config():
 
 
 def get_auth_config():
-    return get_config()['database']['authentication']
+    return get_config()['server']['authentication']
 
 
 def _render(page, **kwargs):
     tic = time.time()
-    token = get_auth(get_config()).get_token() if _save_auth_cookie else None
+    token = get_auth(get_auth_config()).get_token() if _save_auth_cookie else None
 
     retval = render_template(
         page,

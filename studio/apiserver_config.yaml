@@ -3,8 +3,10 @@ database:
     bucket: "studioml-meta" 
     projectId: "studio-ed756"
 
-    authentication:
-      type: none
+    authentication: none
+
+server:
+    authentication: github
 
 storage:
     type: gcloud
