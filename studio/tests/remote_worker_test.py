@@ -11,7 +11,7 @@ from local_worker_test import stubtest_worker
 from timeout_decorator import timeout
 
 
-#@unittest.skip('testing requires docker')
+@unittest.skip('testing requires docker')
 class RemoteWorkerTest(unittest.TestCase):
     _multiprocess_shared_ = True
 
@@ -35,8 +35,8 @@ class RemoteWorkerTest(unittest.TestCase):
              '--no-cache',
              '--timeout=30',
              '--image=peterzhokhoff/studioml'],
-            # stdout=subprocess.PIPE,
-            # stderr=subprocess.STDOUT
+             stdout=subprocess.PIPE,
+             stderr=subprocess.STDOUT
         )
 
         stubtest_worker(
@@ -201,8 +201,9 @@ class RemoteWorkerTest(unittest.TestCase):
                 'studio-add-credentials',
                 '--tag=' + image,
                 '--base-image=peterzhokhoff/studioml'],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT)
+            # stdout=subprocess.PIPE,
+            # stderr=subprocess.STDOUT
+        )
 
         addcredsout, _ = addcredsp.communicate()
         if addcredsout:
@@ -223,8 +224,9 @@ class RemoteWorkerTest(unittest.TestCase):
              '--single-run',
              '--timeout=30',
              '--image=' + image],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT)
+            # stdout=subprocess.PIPE,
+            # stderr=subprocess.STDOUT
+        )
 
         stubtest_worker(
             self,
