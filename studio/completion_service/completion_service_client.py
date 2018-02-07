@@ -15,7 +15,6 @@ except BaseException:
 
 
 def main():
-    logger.setLevel(logs.DEBUG)
     logger.debug('copying and importing client module')
     logger.debug('getting file mappings')
 
