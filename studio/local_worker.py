@@ -16,6 +16,7 @@ from .local_queue import LocalQueue
 from .gpu_util import get_available_gpus, get_gpu_mapping, get_gpus_summary
 from .experiment import Experiment
 from .util import sixdecode, str2duration, retry
+from .model import parse_verbosity
 
 logs.getLogger('apscheduler.scheduler').setLevel(logs.ERROR)
 
@@ -234,10 +235,14 @@ def main(args=sys.argv):
     parser.add_argument(
         '--timeout',
         default=0, type=int)
+    parser.add_argument(
+        '--verbose',
+        default='error')
 
     parsed_args, script_args = parser.parse_known_args(args)
+    verbose = parse_verbosity(parsed_args.verbose)
 
-    queue = LocalQueue()
+    queue = LocalQueue(verbose=verbose)
     # queue = glob.glob(fs_tracker.get_queue_directory() + "/*")
     # wait_for_messages(queue, parsed_args.timeout)
     worker_loop(queue, parsed_args, timeout=parsed_args.timeout)
