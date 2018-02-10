@@ -182,6 +182,7 @@ class LocalExecutor(object):
                     logtail = None
                     db.checkpoint_experiment(experiment)
                     db.finish_experiment(experiment)
+                    return p.returncode
 
 
 def allocate_resources(experiment, config=None, verbose=10):
@@ -245,7 +246,8 @@ def main(args=sys.argv):
     queue = LocalQueue(verbose=verbose)
     # queue = glob.glob(fs_tracker.get_queue_directory() + "/*")
     # wait_for_messages(queue, parsed_args.timeout)
-    worker_loop(queue, parsed_args, timeout=parsed_args.timeout)
+    returncode = worker_loop(queue, parsed_args, timeout=parsed_args.timeout)
+    sys.exit(returncode)
 
 
 def worker_loop(queue, parsed_args,
@@ -258,6 +260,7 @@ def worker_loop(queue, parsed_args,
     logger = logs.getLogger('worker_loop')
 
     hold_period = 4
+    retval = 0
     while True:
         msg = queue.dequeue(acknowledge=False, timeout=timeout)
         if not msg:
@@ -355,14 +358,16 @@ def worker_loop(queue, parsed_args,
                                     logger=logger
                                 )
 
-                    executor.run(experiment)
+                    returncode = executor.run(experiment)
+                    if returncode != 0:
+                        retval = returncode
                 finally:
                     sched.shutdown()
                     queue.acknowledge(ack_key)
 
                 if single_experiment:
                     logger.info('single_experiment is True, quitting')
-                    return
+                    return retval
             else:
                 logger.info('Cannot run experiment ' + experiment.key +
                             ' due lack of resources. Will retry')
