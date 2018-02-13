@@ -380,6 +380,7 @@ def worker_loop(queue, parsed_args,
     logger.info("Queue in {} is empty, quitting"
                 .format(fs_tracker.get_queue_directory()))
 
+    return retval
 
 def pip_install_packages(packages, python='python', logger=None):
     pipp = subprocess.Popen(
