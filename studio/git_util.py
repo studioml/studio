@@ -80,7 +80,8 @@ def get_commit(path='.'):
         cwd=path)
 
     stdout, _ = p.communicate()
-    assert p.returncode == 0, "git returned non-zero return code"
+    if p.returncode != 0:
+        return None
 
     return stdout.strip().decode('utf8')
 

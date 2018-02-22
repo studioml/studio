@@ -43,6 +43,7 @@ if [ ! -d "studio" ]; then
         apt-key add /var/nvidia-diag-driver-local-repo-384.66/7fa2af80.pub
         apt-get -y update
         apt-get -y install cuda-drivers
+        apt-get -y install unzip
 
         # install cuda
         cuda_url="https://developer.nvidia.com/compute/cuda/8.0/Prod2/local_installers/cuda_8.0.61_375.26_linux-run"

@@ -555,7 +555,8 @@ def spin_up_workers(
         # logger.info('worker args: {}'.format(worker_args))
         if not runner_args.num_workers or int(runner_args.num_workers) == 1:
             if 'STUDIOML_DUMMY_MODE' not in os.environ:
-                local_worker.main(worker_args)
+                retval = local_worker.main(worker_args)
+                sys.exit(retval)
         else:
             raise NotImplementedError("Multiple local workers are not " +
                                       "implemented yet")
