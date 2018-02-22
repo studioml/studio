@@ -46,7 +46,7 @@ class RemoteWorkerTest(unittest.TestCase):
             config_name='test_config_http_client.yaml',
             test_script='tf_hello_world.py',
             script_args=['arg0'],
-            expected_output='[ 2.  6.]',
+            expected_output='[ 2.0 6.0 ]',
             queue=PubsubQueue(queue_name))
 
         workerout, _ = pw.communicate()
@@ -201,8 +201,9 @@ class RemoteWorkerTest(unittest.TestCase):
                 'studio-add-credentials',
                 '--tag=' + image,
                 '--base-image=peterzhokhoff/studioml'],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT)
+            # stdout=subprocess.PIPE,
+            # stderr=subprocess.STDOUT
+        )
 
         addcredsout, _ = addcredsp.communicate()
         if addcredsout:
@@ -223,8 +224,9 @@ class RemoteWorkerTest(unittest.TestCase):
              '--single-run',
              '--timeout=30',
              '--image=' + image],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT)
+            # stdout=subprocess.PIPE,
+            # stderr=subprocess.STDOUT
+        )
 
         stubtest_worker(
             self,
@@ -233,7 +235,7 @@ class RemoteWorkerTest(unittest.TestCase):
             config_name='test_config_http_client.yaml',
             test_script='tf_hello_world.py',
             script_args=['arg0'],
-            expected_output='[ 2.  6.]',
+            expected_output='[ 2.0 6.0 ]',
             queue=PubsubQueue(queue_name))
 
         workerout, _ = pw.communicate()
