@@ -13,9 +13,9 @@ from . import logs
 class SQSQueue(object):
 
     def __init__(self, name, verbose=10, receive_timeout=300,
-                 retry_time=10, region_name='us-east-1'):
+                 retry_time=10):
         assert boto3 is not None
-        self._client = boto3.client('sqs', region_name=region_name)
+        self._client = boto3.client('sqs')
 
         create_q_response = self._client.create_queue(
             QueueName=name)
