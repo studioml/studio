@@ -729,7 +729,8 @@ def parse_artifacts(art_list, mutable):
                 'artifacts specfied by url can only be immutable'
             retval[tag] = {
                 'url': path,
-                'mutable': False
+                'mutable': False,
+                'unpack': False
             }
         elif s3_schema.match(entry) or \
                 gcs_schema.match(entry) or \
@@ -740,12 +741,14 @@ def parse_artifacts(art_list, mutable):
                 'artifacts specfied by url can only be immutable'
             retval[tag] = {
                 'qualified': path,
-                'mutable': False
+                'mutable': False,
+                'unpack': False
             }
         else:
             retval[tag] = {
                 'local': os.path.expanduser(path),
-                'mutable': mutable
+                'mutable': mutable,
+                'unpack': True
             }
             if not mutable:
                 assert os.path.exists(retval[tag]['local'])

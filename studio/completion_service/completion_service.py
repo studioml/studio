@@ -214,19 +214,23 @@ class CompletionService:
 
         artifacts = {
             'retval': {
-                'mutable': True
+                'mutable': True,
+                'unpack': True
             },
             'clientscript': {
                 'mutable': False,
-                'local': clientCodeFile
+                'local': clientCodeFile,
+                'unpack': True
             },
             'args': {
                 'mutable': False,
-                'local': args_file
+                'local': args_file,
+                'unpack': True
             },
             'workspace': {
                 'mutable': False,
-                'local': workspace_new
+                'local': workspace_new,
+                'unpack': True
             }
         }
 
@@ -238,11 +242,15 @@ class CompletionService:
 
             if url_schema.match(name):
                 artifacts[tag]['url'] = name
+                artifacts[tag]['unpack'] = False
             elif s3_schema.match(name) or gcs_schema.match(name):
                 artifacts[tag]['qualified'] = name
+                artifacts[tag]['unpack'] = False
             else:
                 artifacts[tag]['local'] = os.path.abspath(
                     os.path.expanduser(name))
+                artifacts[tag]['unpack'] = True
+
             artifacts[tag]['mutable'] = False
 
         with open(args_file, 'wb') as f:
