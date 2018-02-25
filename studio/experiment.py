@@ -62,23 +62,28 @@ class Experiment(object):
         self.artifacts = {
             'workspace': {
                 'local': workspace_path,
-                'mutable': False
+                'mutable': False,
+                'unpack': True
             },
             'modeldir': {
                 'local': model_dir,
-                'mutable': True
+                'mutable': True,
+                'unpack': True
             },
             'output': {
                 'local': fs_tracker.get_artifact_cache('output', key),
-                'mutable': True
+                'mutable': True,
+                'unpack': True
             },
             'tb': {
                 'local': fs_tracker.get_tensorboard_dir(key),
-                'mutable': True
+                'mutable': True,
+                'unpack': True
             },
             '_metrics': {
                 'local': fs_tracker.get_artifact_cache('_metrics', key),
-                'mutable': True
+                'mutable': True,
+                'unpack': True
             }
         }
         if artifacts is not None:
