@@ -229,7 +229,7 @@ class CompletionService:
             },
             'workspace': {
                 'mutable': False,
-                'local': workspace_new
+                'local': workspace_new,
                 'unpack': True
             }
         }
