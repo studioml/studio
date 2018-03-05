@@ -363,4 +363,4 @@ class CompletionService:
 
             artifacts[tag]['mutable'] = False
 
-            return artifacts
+        return artifacts
