@@ -33,9 +33,7 @@ class CompletionServiceTest(unittest.TestCase):
         if not(any(csargs)):
             return
 
-        mypath = os.path.dirname(os.path.realpath(__file__))
-        jobfile = os.path.join(
-            mypath, jobfile or 'completion_service_testfunc.py')
+        jobfile = self.get_jobfile(jobfile or 'completion_service_testfunc.py')
 
         args = args or [0, 1]
 
@@ -72,6 +70,34 @@ class CompletionServiceTest(unittest.TestCase):
             **csargs
         )
 
+    def _run_test_myfiles(self,
+                          n_experiments=2,
+                          **csargs):
+
+        mypath = os.path.dirname(os.path.realpath(__file__))
+
+        files_in_workspace = os.listdir(mypath)
+        files = {f: os.path.join(mypath, f) for f in files_in_workspace if
+                 os.path.isfile(os.path.join(mypath, f))}
+
+        files['url'] = _file_url
+
+        if has_aws_credentials():
+            files['s3'] = _file_s3
+
+        expected_results = [
+            (i, self._get_file_hashes(files)) for i in range(n_experiments)
+        ]
+
+        args = range(n_experiments)
+        self._run_test(
+            args=args,
+            files=files,
+            jobfile='completion_service_testfunc_files.py',
+            expected_results=expected_results,
+            **csargs
+        )
+
     def _get_file_hashes(self, files):
         retval = {}
         for k, v in six.iteritems(files):
@@ -90,15 +116,8 @@ class CompletionServiceTest(unittest.TestCase):
                      'AWS credentials needed for this test')
     @timeout(CLOUD_TEST_TIMEOUT, use_signals=False)
     def test_two_experiments_ec2(self):
-        mypath = os.path.dirname(os.path.realpath(__file__))
-        config_path = os.path.join(
-            mypath,
-            '..',
-            'tests',
-            'test_config_http_client.yaml')
-
         self._run_test(
-            config=config_path,
+            config=self.get_config_path(),
             cloud_timeout=100,
             cloud='ec2')
 
@@ -106,50 +125,19 @@ class CompletionServiceTest(unittest.TestCase):
                      'AWS credentials needed for this test')
     @timeout(CLOUD_TEST_TIMEOUT, use_signals=False)
     def test_two_experiments_ec2spot(self):
-        mypath = os.path.dirname(os.path.realpath(__file__))
-        config_path = os.path.join(
-            mypath,
-            '..',
-            'tests',
-            'test_config_http_client.yaml')
-
-        files_in_workspace = os.listdir(mypath)
-        files = {f: os.path.join(mypath, f) for f in files_in_workspace if
-                 os.path.isfile(os.path.join(mypath, f))}
-
-        files['url'] = _file_url
-        files['s3'] = _file_s3
-
-        self._run_test_files(
-            files=files,
+        self._run_test_myfiles(
             n_experiments=2,
-            config=config_path,
+            config=self.get_config_path(),
             cloud_timeout=100,
             cloud='ec2spot',
         )
 
     @timeout(LOCAL_TEST_TIMEOUT, use_signals=False)
     def test_two_experiments_apiserver(self):
-        mypath = os.path.dirname(os.path.realpath(__file__))
-        config_path = os.path.join(
-            mypath,
-            '..',
-            'tests',
-            'test_config_http_client.yaml')
-
-        files_in_workspace = os.listdir(mypath)
-        files = {f: os.path.join(mypath, f) for f in files_in_workspace if
-                 os.path.isfile(os.path.join(mypath, f))}
-
-        files['url'] = _file_url
-
-        if has_aws_credentials():
-            files['s3'] = _file_s3
-
-        self._run_test_files(
+        self._run_test_myfiles(
             n_experiments=2,
-            files=files,
-            config=config_path)
+            config=self.get_config_path()
+        )
 
     @unittest.skipIf(
         'GOOGLE_APPLICATION_CREDENTIALS' not in os.environ.keys(),
@@ -157,23 +145,9 @@ class CompletionServiceTest(unittest.TestCase):
         'use google cloud')
     @timeout(CLOUD_TEST_TIMEOUT, use_signals=False)
     def test_two_experiments_gcspot(self):
-        mypath = os.path.dirname(os.path.realpath(__file__))
-        config_path = os.path.join(
-            mypath,
-            '..',
-            'tests',
-            'test_config_http_client.yaml')
-
-        files_in_workspace = os.listdir(mypath)
-        files = {f: os.path.join(mypath, f) for f in files_in_workspace if
-                 os.path.isfile(os.path.join(mypath, f))}
-
-        files['url'] = _file_url
-
-        self._run_test_files(
-            files=files,
+        self._run_test_myfiles(
             n_experiments=2,
-            config=config_path,
+            config=self.get_config_path(),
             cloud='gcspot')
 
     @unittest.skipIf(
@@ -186,24 +160,10 @@ class CompletionServiceTest(unittest.TestCase):
         os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = \
             os.environ['GOOGLE_APPLICATION_CREDENTIALS_DC']
 
-        mypath = os.path.dirname(os.path.realpath(__file__))
         queue_name = 'test_queue_' + str(uuid.uuid4())
-        config_path = os.path.join(
-            mypath,
-            '..',
-            'tests',
-            'test_config_datacenter.yaml')
 
-        files_in_workspace = os.listdir(mypath)
-        files = {f: os.path.join(mypath, f) for f in files_in_workspace if
-                 os.path.isfile(os.path.join(mypath, f))}
-
-        # files['url'] = _file_url
-        files['s3'] = _file_s3
-
-        self._run_test_files(
-            files=files,
-            config=config_path,
+        self._run_test_myfiles(
+            config=self.get_config_path('test_config_datacenter.yaml'),
             queue=queue_name,
             shutdown_del_queue=True
         )
@@ -216,6 +176,35 @@ class CompletionServiceTest(unittest.TestCase):
         'use google cloud')
     @timeout(CLOUD_TEST_TIMEOUT, use_signals=False)
     def test_two_experiments_gcloud(self):
+        self._run_test_myfiles(
+            n_experiments=2,
+            config=self.get_config_path(),
+            cloud='gcloud')
+
+    @timeout(LOCAL_TEST_TIMEOUT, use_signals=False)
+    def test_studiolink(self):
+
+        experiment_id = str(uuid.uuid4())
+        arg1 = str(uuid.uuid4())
+
+        jobfile = self.get_jobfile('completion_service_testfunc_saveload.py')
+        with CompletionService(experiment_id,
+                               config=self.get_config_path()) as cs:
+            key1 = cs.submitTask(jobfile, arg1)
+            ret_key1, result1 = cs.getResults()
+            self.assertEquals(key1, ret_key1)
+            self.assertEquals(result1, arg1)
+
+            files = {
+                'model': 'studio://{}/modeldir'.format(key1)
+            }
+
+            key2 = cs.submitTaskWithFiles(jobfile, None, files=files)
+            ret_key2, result2 = cs.getResults()
+            self.assertEquals(key2, ret_key2)
+            self.assertEquals(result2, arg1)
+
+    def get_config_path(self, config_name='test_config_http_client.yaml'):
         mypath = os.path.dirname(os.path.realpath(__file__))
         config_path = os.path.join(
             mypath,
@@ -223,17 +212,14 @@ class CompletionServiceTest(unittest.TestCase):
             'tests',
             'test_config_http_client.yaml')
 
-        files_in_workspace = os.listdir(mypath)
-        files = {f: os.path.join(mypath, f) for f in files_in_workspace if
-                 os.path.isfile(os.path.join(mypath, f))}
+        return config_path
 
-        files['url'] = _file_url
+    def get_jobfile(self, filename='completion_service_testfunc.py'):
+        mypath = os.path.dirname(os.path.realpath(__file__))
+        jobfile = os.path.join(
+            mypath, filename)
 
-        self._run_test_files(
-            files=files,
-            n_experiments=2,
-            config=config_path,
-            cloud='gcloud')
+        return jobfile
 
 
 if __name__ == '__main__':
