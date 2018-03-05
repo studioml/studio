@@ -11,7 +11,7 @@ def clientFunction(args, files):
     if args:
         filename = os.path.join(fs_tracker.get_artifact('modeldir'), modelfile)
         with open(filename, 'w') as f:
-            pickle.dumps(args, f)
+            pickle.dump(args, f, protocol=2)
 
         return args
 

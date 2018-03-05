@@ -57,7 +57,7 @@ def main():
     with open(args_path, 'rb') as f:
         args = pickle.loads(f.read())
 
-    logger.debug('calling client funciton')
+    logger.debug('calling client function')
     retval = client_module.clientFunction(args, files)
 
     logger.debug('saving the return value')
