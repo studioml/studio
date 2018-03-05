@@ -10,15 +10,15 @@ def clientFunction(args, files):
     modelfile = 'model.dat'
     if args:
         filename = os.path.join(fs_tracker.get_artifact('modeldir'), modelfile)
-        with open(filename, 'w') as f:
-            pickle.dump(args, f, protocol=2)
+        with open(filename, 'wb') as f:
+            f.write(pickle.dumps(args, protocol=2))
 
         return args
 
     else:
         filename = files['model']
-        with open(filename) as f:
-            args = pickle.load(f)
+        with open(filename, 'rb') as f:
+            args = pickle.loads(f.read())
 
         return args
 
