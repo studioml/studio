@@ -354,7 +354,8 @@ class CompletionService:
                 with model.get_db_provider(self.config) as db:
                     ext_experiment = db.get_experiment(ext_experiment_key)
 
-                artifacts[tag] = ext_experiment.artifacts[ext_tag]['key']
+                artifacts[tag]['key'] = \
+                    ext_experiment.artifacts[ext_tag]['key']
                 artifacts[tag]['unpack'] = True
             else:
                 artifacts[tag]['local'] = os.path.abspath(

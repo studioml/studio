@@ -1,3 +1,5 @@
+import os
+import pickle
 from studio import fs_tracker
 
 
@@ -14,11 +16,12 @@ def clientFunction(args, files):
         return args
 
     else:
-        with open(files['model']) as f:
+        filename = files['model']
+        with open(filename) as f:
             args = pickle.load(f)
 
         return args
 
 
 if __name__ == "__main__":
-    clientFunction()
+    clientFunction('test', {})
