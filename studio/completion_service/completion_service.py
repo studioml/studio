@@ -212,46 +212,8 @@ class CompletionService:
 
         self.logger.info('Created workspace ' + workspace_new)
 
-        artifacts = {
-            'retval': {
-                'mutable': True,
-                'unpack': True
-            },
-            'clientscript': {
-                'mutable': False,
-                'local': clientCodeFile,
-                'unpack': True
-            },
-            'args': {
-                'mutable': False,
-                'local': args_file,
-                'unpack': True
-            },
-            'workspace': {
-                'mutable': False,
-                'local': workspace_new,
-                'unpack': True
-            }
-        }
-
-        for tag, name in six.iteritems(files):
-            artifacts[tag] = {}
-            url_schema = re.compile('^https{0,1}://')
-            s3_schema = re.compile('^s3://')
-            gcs_schema = re.compile('^gs://')
-
-            if url_schema.match(name):
-                artifacts[tag]['url'] = name
-                artifacts[tag]['unpack'] = False
-            elif s3_schema.match(name) or gcs_schema.match(name):
-                artifacts[tag]['qualified'] = name
-                artifacts[tag]['unpack'] = False
-            else:
-                artifacts[tag]['local'] = os.path.abspath(
-                    os.path.expanduser(name))
-                artifacts[tag]['unpack'] = True
-
-            artifacts[tag]['mutable'] = False
+        artifacts = self._create_artifacts(
+            clientCodeFile, args_file, workspace_new, files)
 
         with open(args_file, 'wb') as f:
             f.write(pickle.dumps(args, protocol=2))
@@ -342,3 +304,63 @@ class CompletionService:
 
     def getResults(self, blocking=True):
         return self.getResultsWithTimeout(-1 if blocking else 0)
+
+    def _create_artifacts(
+            self,
+            client_code_file,
+            args_file,
+            workspace_new,
+            files):
+        artifacts = {
+            'retval': {
+                'mutable': True,
+                'unpack': True
+            },
+            'clientscript': {
+                'mutable': False,
+                'local': client_code_file,
+                'unpack': True
+            },
+            'args': {
+                'mutable': False,
+                'local': args_file,
+                'unpack': True
+            },
+            'workspace': {
+                'mutable': False,
+                'local': workspace_new,
+                'unpack': True
+            }
+        }
+
+        for tag, name in six.iteritems(files):
+            artifacts[tag] = {}
+            url_schema = re.compile('^https{0,1}://')
+            s3_schema = re.compile('^s3://')
+            gcs_schema = re.compile('^gs://')
+            studio_schema = re.compile(
+                'studio://(?P<experiment>.+)/(?P<artifact>.+)')
+
+            if url_schema.match(name):
+                artifacts[tag]['url'] = name
+                artifacts[tag]['unpack'] = False
+            elif s3_schema.match(name) or gcs_schema.match(name):
+                artifacts[tag]['qualified'] = name
+                artifacts[tag]['unpack'] = False
+            elif studio_schema.match(name):
+                ext_experiment_key = studio_schema.match(
+                    name).group('experiment')
+                ext_tag = studio_schema.match(name).group('artifact')
+                with model.get_db_provider(self.config) as db:
+                    ext_experiment = db.get_experiment(ext_experiment_key)
+
+                artifacts[tag] = ext_experiment.artifacts[ext_tag]['key']
+                artifacts[tag]['unpack'] = True
+            else:
+                artifacts[tag]['local'] = os.path.abspath(
+                    os.path.expanduser(name))
+                artifacts[tag]['unpack'] = True
+
+            artifacts[tag]['mutable'] = False
+
+            return artifacts
