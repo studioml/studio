@@ -115,12 +115,10 @@ class SQSQueue(object):
             sleep_time=10, logger=self.logger)
 
     def hold(self, ack_id, minutes):
-        retry(lambda: self._client.change_message_visibility(
+        self._client.change_message_visibility(
             QueueUrl=self._queue_url,
             ReceiptHandle=ack_id,
-            VisibilityTimeout=int(minutes * 60)),
-
-            sleep_time=10, logger=self.logger)
+            VisibilityTimeout=int(minutes * 60))
 
     def delete(self):
         self._client.delete_queue(QueueUrl=self._queue_url)
