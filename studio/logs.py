@@ -5,7 +5,7 @@ INFO = logging.INFO
 ERROR = logging.ERROR
 
 logging.basicConfig(
-    format='%(asctime)s %(levelname)-8s %(message)s',
+    format='%(asctime)s %(levelname)-6s %(name)s - %(message)s',
     level=ERROR,
     datefmt='%Y-%m-%d %H:%M:%S')
 
