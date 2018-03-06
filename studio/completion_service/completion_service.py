@@ -195,7 +195,7 @@ class CompletionService:
         os.chdir(cwd)
 
         experiment_name = self.project_name + "_" + \
-            (job_id or str(uuid.uuid4()))
+            str(job_id or uuid.uuid4())
 
         tmpdir = tempfile.gettempdir()
         args_file = os.path.join(tmpdir, experiment_name + "_args.pkl")
