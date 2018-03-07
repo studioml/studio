@@ -15,6 +15,7 @@ class GCloudArtifactStore(TartifactStore):
         self.logger.setLevel(verbose)
 
         self.config = config
+        self._client = None
 
         compression = compression if compression else config.get('compression')
 
@@ -41,12 +42,15 @@ class GCloudArtifactStore(TartifactStore):
         return bucket
 
     def get_client(self):
-        from google.cloud import storage
-        if 'credentials' in self.config.keys():
-            return storage.Client \
-                .from_service_account_json(self.config['serviceAccount'])
-        else:
-            return storage.Client()
+        if self._client is None:
+            from google.cloud import storage
+            if 'credentials' in self.config.keys():
+                self._client = storage.Client \
+                    .from_service_account_json(self.config['serviceAccount'])
+            else:
+                self._client = storage.Client()
+
+        return self._client
 
     def _upload_file(self, key, local_path):
         self._get_bucket_obj().blob(key).upload_from_filename(local_path)
