@@ -82,7 +82,7 @@ class CompletionServiceTest(unittest.TestCase):
 
         files['url'] = _file_url
 
-        # TODO peterz enable passing aws credentials to google workers 
+        # TODO peterz enable passing aws credentials to google workers
         # if has_aws_credentials():
         #     files['s3'] = _file_s3
 
