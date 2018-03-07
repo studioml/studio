@@ -5,6 +5,9 @@ from .tartifact_store import TartifactStore
 from . import logs
 
 
+STORAGE_CLIENT_EXPIRATION = 3600
+
+
 class GCloudArtifactStore(TartifactStore):
     def __init__(self, config,
                  measure_timestamp_diff=False,
@@ -16,6 +19,7 @@ class GCloudArtifactStore(TartifactStore):
 
         self.config = config
         self._client = None
+        self._client_timestamp = None
 
         compression = compression if compression else config.get('compression')
 
@@ -42,13 +46,17 @@ class GCloudArtifactStore(TartifactStore):
         return bucket
 
     def get_client(self):
-        if self._client is None:
+        if self._client is None or \
+           self._client_timestamp is None or \
+           time.time() - self._client_timestamp > STORAGE_CLIENT_EXPIRATION:
+
             from google.cloud import storage
             if 'credentials' in self.config.keys():
                 self._client = storage.Client \
                     .from_service_account_json(self.config['serviceAccount'])
             else:
                 self._client = storage.Client()
+            self._client_timestamp = time.time()
 
         return self._client
 
