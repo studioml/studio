@@ -194,8 +194,10 @@ class CompletionService:
         cwd = os.path.dirname(os.path.realpath(__file__))
         os.chdir(cwd)
 
-        experiment_name = self.project_name + "_" + \
-            str(job_id or uuid.uuid4())
+        if job_id is not None:
+            experiment_name = self.project_name + "_" + str(job_id)
+        else:
+            experiment_name = self.project_name + "_" + str(uuid.uuid4())
 
         tmpdir = tempfile.gettempdir()
         args_file = os.path.join(tmpdir, experiment_name + "_args.pkl")
@@ -248,8 +250,9 @@ class CompletionService:
 
         return experiment_name
 
-    def submitTask(self, clientCodeFile, args):
-        return self.submitTaskWithFiles(clientCodeFile, args, {})
+    def submitTask(self, clientCodeFile, args, job_id=None):
+        return self.submitTaskWithFiles(
+            clientCodeFile, args, {}, job_id=job_id)
 
     def getResultsWithTimeout(self, timeout=0):
         total_sleep_time = 0

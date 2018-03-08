@@ -36,6 +36,8 @@ def main():
 
     logger.debug("Files = {}".format(files))
     script_path = files['clientscript']
+    retval_path = fs_tracker.get_artifact('retval')
+    shutil.rmtree(retval_path)
 
     # script_name = os.path.basename(script_path)
     new_script_path = os.path.join(os.getcwd(), '_clientscript.py')
@@ -61,7 +63,6 @@ def main():
     retval = client_module.clientFunction(args, files)
 
     logger.debug('saving the return value')
-    retval_path = fs_tracker.get_artifact('retval')
     if os.path.isdir(fs_tracker.get_artifact('clientscript')):
         # on go runner:
         logger.debug("Running in a go runner, creating {} for retval"
