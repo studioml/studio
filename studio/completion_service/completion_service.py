@@ -123,7 +123,7 @@ class CompletionService:
         self.bid = bid
         self.ssh_keypair = ssh_keypair
 
-        self.submitted = set([])
+        self.submitted = {}
         self.num_workers = num_workers
         self.resumable = resumable
         self.queue_upscaling = queue_upscaling
@@ -240,7 +240,7 @@ class CompletionService:
             cloud=self.cloud,
             queue_name=self.queue_name)
 
-        self.submitted.add(experiment.key)
+        self.submitted[experiment.key] = time.time()
         os.chdir(old_cwd)
         toc = time.time()
         self.logger.info('Submitted experiment ' + experiment.key +
@@ -255,29 +255,23 @@ class CompletionService:
         total_sleep_time = 0
         sleep_time = self.sleep_time
 
+        assert self.resumable is False
+
         while True:
             with model.get_db_provider(self.config) as db:
-                if self.resumable:
-                    experiment_keys = db.get_project_experiments(
-                        self.project_name).keys()
-                else:
-                    experiment_keys = self.submitted
 
-                for key in experiment_keys:
+                for key, submitted_time in six.iteritems(self.submitted):
                     try:
                         e = db.get_experiment(key)
                         if e is not None:
                             retval_path = db.get_artifact(
                                 e.artifacts['retval'])
-                            if os.path.exists(retval_path):
+                            if os.path.exists(retval_path) and \
+                               os.path.getmtime(retval_path) > submitted_time:
                                 with open(retval_path, 'rb') as f:
                                     data = pickle.load(f)
 
-                                if not self.resumable:
-                                    self.submitted.remove(e.key)
-                                else:
-                                    db.delete_experiment(e.key)
-
+                                del self.submitted[e.key]
                                 return (e.key, data)
                     except BaseException as e:
                         self.logger.debug(
