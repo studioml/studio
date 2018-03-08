@@ -37,7 +37,8 @@ def main():
     logger.debug("Files = {}".format(files))
     script_path = files['clientscript']
     retval_path = fs_tracker.get_artifact('retval')
-    shutil.rmtree(retval_path)
+    if os.path.exists(retval_path):
+        shutil.rmtree(retval_path)
 
     # script_name = os.path.basename(script_path)
     new_script_path = os.path.join(os.getcwd(), '_clientscript.py')
