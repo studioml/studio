@@ -5,7 +5,7 @@ import os
 import sys
 import six
 
-from studio import fs_tracker, model, logs
+from studio import fs_tracker, model, logs, util
 
 logger = logs.getLogger('completion_service_client')
 try:
@@ -37,8 +37,7 @@ def main():
     logger.debug("Files = {}".format(files))
     script_path = files['clientscript']
     retval_path = fs_tracker.get_artifact('retval')
-    if os.path.exists(retval_path):
-        shutil.rmtree(retval_path)
+    util.remove(retval_path)
 
     # script_name = os.path.basename(script_path)
     new_script_path = os.path.join(os.getcwd(), '_clientscript.py')
