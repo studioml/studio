@@ -481,10 +481,13 @@ def str2duration(s):
     return parse_duration(s.lower())
 
 
-def remove(path):
+def rm_rf(path):
     '''
     remove file or a directory
     '''
+    if not os.path.exists(path):
+        return
+
     if os.path.isfile(path):
         os.remove(path)  # remove the file
     elif os.path.isdir(path):
