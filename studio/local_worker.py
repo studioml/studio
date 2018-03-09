@@ -58,7 +58,7 @@ class LocalExecutor(object):
 
             env['PYTHONUNBUFFERED'] = 'TRUE'
 
-            fs_tracker.setup_experiment(env, experiment, clean=True)
+            fs_tracker.setup_experiment(env, experiment, clean=False)
             log_path = fs_tracker.get_artifact_cache('output', experiment.key)
 
             # log_path = os.path.join(model_dir, self.config['log']['name'])

@@ -51,9 +51,9 @@ class LocalQueue:
                 elif waited == timeout:
                     return None
 
-            self.logger.info(
-                ('No messages found, sleeping for {} ' +
-                 ' (total sleep time {})').format(wait_step, waited))
+            # self.logger.info(
+            #    ('No messages found, sleeping for {} ' +
+            #     ' (total sleep time {})').format(wait_step, waited))
             time.sleep(wait_step)
 
     def enqueue(self, data):
