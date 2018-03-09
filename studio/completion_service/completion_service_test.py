@@ -18,7 +18,7 @@ _file_url = 'https://s3-us-west-2.amazonaws.com/ml-enn/' + \
 
 _file_s3 = 's3://s3-us-west-2.amazonaws.com/studioml-test/t.txt'
 
-LOCAL_TEST_TIMEOUT = 600
+LOCAL_TEST_TIMEOUT = 400
 CLOUD_TEST_TIMEOUT = 800
 
 
@@ -83,8 +83,8 @@ class CompletionServiceTest(unittest.TestCase):
 
         files['url'] = _file_url
 
-        if has_aws_credentials():
-            files['s3'] = _file_s3
+        # if has_aws_credentials():
+        #    files['s3'] = _file_s3
 
         expected_results = [
             (i, self._get_file_hashes(files)) for i in range(n_experiments)

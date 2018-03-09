@@ -180,10 +180,6 @@ class CompletionService:
         if self.shutdown_del_queue:
             self.queue.delete()
 
-        if self.p:
-            self.p.kill()
-            # os.kill(self.p.pid, signal.SIGKILL)
-
     def submitTaskWithFiles(
             self,
             clientCodeFile,
