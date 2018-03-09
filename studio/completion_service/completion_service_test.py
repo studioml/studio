@@ -1,4 +1,5 @@
 import uuid
+import random
 import unittest
 import os
 import hashlib
@@ -17,7 +18,7 @@ _file_url = 'https://s3-us-west-2.amazonaws.com/ml-enn/' + \
 
 _file_s3 = 's3://s3-us-west-2.amazonaws.com/studioml-test/t.txt'
 
-LOCAL_TEST_TIMEOUT = 600
+LOCAL_TEST_TIMEOUT = 400
 CLOUD_TEST_TIMEOUT = 800
 
 
@@ -82,8 +83,8 @@ class CompletionServiceTest(unittest.TestCase):
 
         files['url'] = _file_url
 
-        if has_aws_credentials():
-            files['s3'] = _file_s3
+        # if has_aws_credentials():
+        #    files['s3'] = _file_s3
 
         expected_results = [
             (i, self._get_file_hashes(files)) for i in range(n_experiments)
@@ -185,7 +186,7 @@ class CompletionServiceTest(unittest.TestCase):
     def test_studiolink(self):
 
         experiment_id = str(uuid.uuid4())
-        arg1 = str(uuid.uuid4())
+        arg1 = random.randint(0, 10000)
 
         jobfile = self.get_jobfile('completion_service_testfunc_saveload.py')
         with CompletionService(experiment_id,
@@ -202,7 +203,25 @@ class CompletionServiceTest(unittest.TestCase):
             key2 = cs.submitTaskWithFiles(jobfile, None, files=files)
             ret_key2, result2 = cs.getResults()
             self.assertEquals(key2, ret_key2)
-            self.assertEquals(result2, arg1)
+            self.assertEquals(result2, arg1 + 1)
+
+    @timeout(LOCAL_TEST_TIMEOUT, use_signals=False)
+    def test_restart(self):
+        experiment_id = str(uuid.uuid4())
+        arg1 = random.randint(0, 10000)
+
+        jobfile = self.get_jobfile('completion_service_testfunc_saveload.py')
+        with CompletionService(experiment_id,
+                               config=self.get_config_path()) as cs:
+            key1 = cs.submitTask(jobfile, arg1, job_id=0)
+            ret_key1, result1 = cs.getResults()
+            self.assertEquals(key1, ret_key1)
+            self.assertEquals(result1, arg1)
+
+            key2 = cs.submitTask(jobfile, None, job_id=0)
+            ret_key2, result2 = cs.getResults()
+            self.assertEquals(key2, ret_key2)
+            self.assertEquals(result2, arg1 + 1)
 
     def get_config_path(self, config_name='test_config_http_client.yaml'):
         mypath = os.path.dirname(os.path.realpath(__file__))
