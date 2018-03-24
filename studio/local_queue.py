@@ -33,27 +33,28 @@ class LocalQueue:
     def dequeue(self, acknowledge=True, timeout=0):
         wait_step = 1
         for waited in range(0, timeout + wait_step, wait_step):
-            files = glob.glob(self.path + '/*')
-            if any(files):
-                break
-            elif waited == timeout:
-                return None
+            with _local_queue_lock:
+                files = glob.glob(self.path + '/*')
+                if any(files):
+                    first_file = min([(p, os.path.getmtime(p)) for p in files],
+                                     key=lambda t: t[1])[0]
 
-            first_file = min([(p, os.path.getmtime(p)) for p in files],
-                             key=lambda t: t[1])[0]
+                    with open(first_file, 'r') as f:
+                        data = f.read()
 
-        with _local_queue_lock:
-            first_file = min([(p, os.path.getmtime(p)) for p in files],
-                             key=lambda t: t[1])[0]
+                    self.acknowledge(first_file)
+                    if not acknowledge:
+                        return data, first_file
+                    else:
+                        return data
 
-            with open(first_file, 'r') as f:
-                data = f.read()
+                elif waited == timeout:
+                    return None
 
-            self.acknowledge(first_file)
-            if not acknowledge:
-                return data, first_file
-            else:
-                return data
+            # self.logger.info(
+            #    ('No messages found, sleeping for {} ' +
+            #     ' (total sleep time {})').format(wait_step, waited))
+            time.sleep(wait_step)
 
     def enqueue(self, data):
         with _local_queue_lock:

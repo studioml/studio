@@ -123,7 +123,7 @@ class CompletionService:
         self.bid = bid
         self.ssh_keypair = ssh_keypair
 
-        self.submitted = set([])
+        self.submitted = {}
         self.num_workers = num_workers
         self.resumable = resumable
         self.queue_upscaling = queue_upscaling
@@ -180,16 +180,20 @@ class CompletionService:
         if self.shutdown_del_queue:
             self.queue.delete()
 
-        if self.p:
-            self.p.kill()
-            # os.kill(self.p.pid, signal.SIGKILL)
-
-    def submitTaskWithFiles(self, clientCodeFile, args, files={}):
+    def submitTaskWithFiles(
+            self,
+            clientCodeFile,
+            args,
+            files={},
+            job_id=None):
         old_cwd = os.getcwd()
         cwd = os.path.dirname(os.path.realpath(__file__))
         os.chdir(cwd)
 
-        experiment_name = self.project_name + "_" + str(uuid.uuid4())
+        if job_id is not None:
+            experiment_name = self.project_name + "_" + str(job_id)
+        else:
+            experiment_name = self.project_name + "_" + str(uuid.uuid4())
 
         tmpdir = tempfile.gettempdir()
         args_file = os.path.join(tmpdir, experiment_name + "_args.pkl")
@@ -212,38 +216,8 @@ class CompletionService:
 
         self.logger.info('Created workspace ' + workspace_new)
 
-        artifacts = {
-            'retval': {
-                'mutable': True
-            },
-            'clientscript': {
-                'mutable': False,
-                'local': clientCodeFile
-            },
-            'args': {
-                'mutable': False,
-                'local': args_file
-            },
-            'workspace': {
-                'mutable': False,
-                'local': workspace_new
-            }
-        }
-
-        for tag, name in six.iteritems(files):
-            artifacts[tag] = {}
-            url_schema = re.compile('^https{0,1}://')
-            s3_schema = re.compile('^s3://')
-            gcs_schema = re.compile('^gs://')
-
-            if url_schema.match(name):
-                artifacts[tag]['url'] = name
-            elif s3_schema.match(name) or gcs_schema.match(name):
-                artifacts[tag]['qualified'] = name
-            else:
-                artifacts[tag]['local'] = os.path.abspath(
-                    os.path.expanduser(name))
-            artifacts[tag]['mutable'] = False
+        artifacts = self._create_artifacts(
+            clientCodeFile, args_file, workspace_new, files)
 
         with open(args_file, 'wb') as f:
             f.write(pickle.dumps(args, protocol=2))
@@ -264,7 +238,7 @@ class CompletionService:
             cloud=self.cloud,
             queue_name=self.queue_name)
 
-        self.submitted.add(experiment.key)
+        self.submitted[experiment.key] = time.time()
         os.chdir(old_cwd)
         toc = time.time()
         self.logger.info('Submitted experiment ' + experiment.key +
@@ -272,36 +246,31 @@ class CompletionService:
 
         return experiment_name
 
-    def submitTask(self, clientCodeFile, args):
-        return self.submitTaskWithFiles(clientCodeFile, args, {})
+    def submitTask(self, clientCodeFile, args, job_id=None):
+        return self.submitTaskWithFiles(
+            clientCodeFile, args, {}, job_id=job_id)
 
     def getResultsWithTimeout(self, timeout=0):
         total_sleep_time = 0
         sleep_time = self.sleep_time
 
+        assert self.resumable is False
+
         while True:
             with model.get_db_provider(self.config) as db:
-                if self.resumable:
-                    experiment_keys = db.get_project_experiments(
-                        self.project_name).keys()
-                else:
-                    experiment_keys = self.submitted
 
-                for key in experiment_keys:
+                for key, submitted_time in six.iteritems(self.submitted):
                     try:
                         e = db.get_experiment(key)
                         if e is not None:
                             retval_path = db.get_artifact(
                                 e.artifacts['retval'])
-                            if os.path.exists(retval_path):
+                            if os.path.exists(retval_path) and \
+                               os.path.getmtime(retval_path) > submitted_time:
                                 with open(retval_path, 'rb') as f:
                                     data = pickle.load(f)
 
-                                if not self.resumable:
-                                    self.submitted.remove(e.key)
-                                else:
-                                    db.delete_experiment(e.key)
-
+                                del self.submitted[e.key]
                                 return (e.key, data)
                     except BaseException as e:
                         self.logger.debug(
@@ -334,3 +303,64 @@ class CompletionService:
 
     def getResults(self, blocking=True):
         return self.getResultsWithTimeout(-1 if blocking else 0)
+
+    def _create_artifacts(
+            self,
+            client_code_file,
+            args_file,
+            workspace_new,
+            files):
+        artifacts = {
+            'retval': {
+                'mutable': True,
+                'unpack': True
+            },
+            'clientscript': {
+                'mutable': False,
+                'local': client_code_file,
+                'unpack': True
+            },
+            'args': {
+                'mutable': False,
+                'local': args_file,
+                'unpack': True
+            },
+            'workspace': {
+                'mutable': False,
+                'local': workspace_new,
+                'unpack': True
+            }
+        }
+
+        for tag, name in six.iteritems(files):
+            artifacts[tag] = {}
+            url_schema = re.compile('^https{0,1}://')
+            s3_schema = re.compile('^s3://')
+            gcs_schema = re.compile('^gs://')
+            studio_schema = re.compile(
+                'studio://(?P<experiment>.+)/(?P<artifact>.+)')
+
+            if url_schema.match(name):
+                artifacts[tag]['url'] = name
+                artifacts[tag]['unpack'] = False
+            elif s3_schema.match(name) or gcs_schema.match(name):
+                artifacts[tag]['qualified'] = name
+                artifacts[tag]['unpack'] = False
+            elif studio_schema.match(name):
+                ext_experiment_key = studio_schema.match(
+                    name).group('experiment')
+                ext_tag = studio_schema.match(name).group('artifact')
+                with model.get_db_provider(self.config) as db:
+                    ext_experiment = db.get_experiment(ext_experiment_key)
+
+                artifacts[tag]['key'] = \
+                    ext_experiment.artifacts[ext_tag]['key']
+                artifacts[tag]['unpack'] = True
+            else:
+                artifacts[tag]['local'] = os.path.abspath(
+                    os.path.expanduser(name))
+                artifacts[tag]['unpack'] = True
+
+            artifacts[tag]['mutable'] = False
+
+        return artifacts

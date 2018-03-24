@@ -552,7 +552,8 @@ def spin_up_workers(
         # logger.info('worker args: {}'.format(worker_args))
         if not runner_args.num_workers or int(runner_args.num_workers) == 1:
             if 'STUDIOML_DUMMY_MODE' not in os.environ:
-                local_worker.main(worker_args)
+                retval = local_worker.main(worker_args)
+                sys.exit(retval)
         else:
             raise NotImplementedError("Multiple local workers are not " +
                                       "implemented yet")
@@ -725,7 +726,8 @@ def parse_artifacts(art_list, mutable):
                 'artifacts specfied by url can only be immutable'
             retval[tag] = {
                 'url': path,
-                'mutable': False
+                'mutable': False,
+                'unpack': False
             }
         elif s3_schema.match(entry) or \
                 gcs_schema.match(entry) or \
@@ -736,12 +738,14 @@ def parse_artifacts(art_list, mutable):
                 'artifacts specfied by url can only be immutable'
             retval[tag] = {
                 'qualified': path,
-                'mutable': False
+                'mutable': False,
+                'unpack': False
             }
         else:
             retval[tag] = {
                 'local': os.path.expanduser(path),
-                'mutable': mutable
+                'mutable': mutable,
+                'unpack': True
             }
             if not mutable:
                 assert os.path.exists(retval[tag]['local'])

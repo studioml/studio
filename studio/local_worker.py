@@ -16,6 +16,7 @@ from .local_queue import LocalQueue
 from .gpu_util import get_available_gpus, get_gpu_mapping, get_gpus_summary
 from .experiment import Experiment
 from .util import sixdecode, str2duration, retry
+from .model import parse_verbosity
 
 logs.getLogger('apscheduler.scheduler').setLevel(logs.ERROR)
 
@@ -57,7 +58,7 @@ class LocalExecutor(object):
 
             env['PYTHONUNBUFFERED'] = 'TRUE'
 
-            fs_tracker.setup_experiment(env, experiment, clean=True)
+            fs_tracker.setup_experiment(env, experiment, clean=False)
             log_path = fs_tracker.get_artifact_cache('output', experiment.key)
 
             # log_path = os.path.join(model_dir, self.config['log']['name'])
@@ -181,6 +182,7 @@ class LocalExecutor(object):
                     logtail = None
                     db.checkpoint_experiment(experiment)
                     db.finish_experiment(experiment)
+                    return p.returncode
 
 
 def allocate_resources(experiment, config=None, verbose=10):
@@ -234,13 +236,18 @@ def main(args=sys.argv):
     parser.add_argument(
         '--timeout',
         default=0, type=int)
+    parser.add_argument(
+        '--verbose',
+        default='error')
 
     parsed_args, script_args = parser.parse_known_args(args)
+    verbose = parse_verbosity(parsed_args.verbose)
 
-    queue = LocalQueue()
+    queue = LocalQueue(verbose=verbose)
     # queue = glob.glob(fs_tracker.get_queue_directory() + "/*")
     # wait_for_messages(queue, parsed_args.timeout)
-    worker_loop(queue, parsed_args, timeout=parsed_args.timeout)
+    returncode = worker_loop(queue, parsed_args, timeout=parsed_args.timeout)
+    sys.exit(returncode)
 
 
 def worker_loop(queue, parsed_args,
@@ -253,6 +260,7 @@ def worker_loop(queue, parsed_args,
     logger = logs.getLogger('worker_loop')
 
     hold_period = 4
+    retval = 0
     while True:
         msg = queue.dequeue(acknowledge=False, timeout=timeout)
         if not msg:
@@ -350,14 +358,16 @@ def worker_loop(queue, parsed_args,
                                     logger=logger
                                 )
 
-                    executor.run(experiment)
+                    returncode = executor.run(experiment)
+                    if returncode != 0:
+                        retval = returncode
                 finally:
                     sched.shutdown()
                     queue.acknowledge(ack_key)
 
                 if single_experiment:
                     logger.info('single_experiment is True, quitting')
-                    return
+                    return retval
             else:
                 logger.info('Cannot run experiment ' + experiment.key +
                             ' due lack of resources. Will retry')
@@ -369,6 +379,8 @@ def worker_loop(queue, parsed_args,
 
     logger.info("Queue in {} is empty, quitting"
                 .format(fs_tracker.get_queue_directory()))
+
+    return retval
 
 
 def pip_install_packages(packages, python='python', logger=None):

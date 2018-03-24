@@ -160,8 +160,9 @@ class EC2WorkerManager(object):
                     }]
             }]
         }
+        ports = set(ports)
         if ssh_keypair is not None:
-            ports.append(22)  # ssh port
+            ports.add(22)  # ssh port
         if any(ports):
             groupid = self._get_security_group(ports)
             kwargs['SecurityGroupIds'] = [groupid]
@@ -175,14 +176,17 @@ class EC2WorkerManager(object):
 
         if blocking:
             while True:
-                response = self.client.describe_instances(
-                    InstanceIds=[instance_id]
-                )
-                instance_data = response['Reservations'][0]['Instances'][0]
-                ip_addr = instance_data.get('PublicIpAddress')
-                if ip_addr:
-                    print("ip address: {}".format(ip_addr))
-                    return
+                try:
+                    response = self.client.describe_instances(
+                        InstanceIds=[instance_id]
+                    )
+                    instance_data = response['Reservations'][0]['Instances'][0]
+                    ip_addr = instance_data.get('PublicIpAddress')
+                    if ip_addr:
+                        print("ip address: {}".format(ip_addr))
+                        return
+                except BaseException as e:
+                    pass
 
     def _select_instance_type(self, resources_needed):
         sorted_specs = sorted(_instance_specs.items(),
@@ -261,6 +265,7 @@ class EC2WorkerManager(object):
         return 'studioml_worker_' + str(uuid.uuid4())
 
     def _get_security_group(self, ports):
+        ports = sorted([p for p in set(ports)])
         group_name = "studioml_{}".format(
             hashlib.sha256(
                 pickle.dumps(sorted(ports))
@@ -273,8 +278,10 @@ class EC2WorkerManager(object):
             )
             groupid = response['SecurityGroups'][0]['GroupId']
 
-        except botocore.exceptions.ClientError:
+        except botocore.exceptions.ClientError as e:
 
+            self.logger.error("Error creating security group!")
+            self.logger.exception(e)
             response = self.client.create_security_group(
                 GroupName=group_name,
                 Description='opens ports {} in studioml workers'
