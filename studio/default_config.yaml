@@ -1,15 +1,9 @@
 database:
-    #type: http
-    #serverUrl: http://zoo.studio.ml
-    #projectId: "studio-ed756"
     type: gs
     bucket: studioml-meta
     projectId: "studio-ed756"
     
     authentication: github
-        #type: firebase
-        #apiKey: AIzaSyCLQbp5X2B4SWzBw-sz9rUnGHNSdMl0Yx8
-        #authDomain: "studio-ed756.firebaseapp.com"
             
 storage:
     type: gcloud
