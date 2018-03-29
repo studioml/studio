@@ -22,11 +22,11 @@ from .util import rand_string, Progbar, rsync_cp
 from .experiment import create_experiment
 
 from . import model
-from . import auth
 from . import git_util
 from . import local_worker
 from . import fs_tracker
 from . import logs
+from .auth import get_auth
 
 
 def main(args=sys.argv[1:]):
@@ -451,11 +451,8 @@ def get_worker_manager(config, cloud=None, verbose=10):
     logger = logs.getLogger('runner.get_worker_manager')
     logger.setLevel(verbose)
 
-    auth_cookie = None if config['database'].get('guest') \
-        else os.path.join(
-        auth.TOKEN_DIR,
-        config['database']['apiKey']
-    )
+    auth = get_auth(config['database']['authentication'])
+    auth_cookie = auth.get_token_file() if auth else None
 
     branch = config['cloud'].get('branch')
 

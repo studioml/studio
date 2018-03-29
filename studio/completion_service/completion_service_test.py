@@ -83,8 +83,9 @@ class CompletionServiceTest(unittest.TestCase):
 
         files['url'] = _file_url
 
+        # TODO peterz enable passing aws credentials to google workers
         # if has_aws_credentials():
-        #    files['s3'] = _file_s3
+        #     files['s3'] = _file_s3
 
         expected_results = [
             (i, self._get_file_hashes(files)) for i in range(n_experiments)
