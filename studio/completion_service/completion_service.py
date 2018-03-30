@@ -298,6 +298,10 @@ class CompletionService:
                (timeout > 0 and total_sleep_time > timeout):
                 return None
 
+            if self.p is not None:
+                assert self.p.poll() is None, \
+                    "Executor process died, no point in waiting for results"
+
             time.sleep(sleep_time)
             total_sleep_time += sleep_time
 
