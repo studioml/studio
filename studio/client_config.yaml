@@ -1,13 +1,12 @@
 database:
-    type: gs
-    bucket: studioml-meta
-    projectId: "studio-ed756"
-    
-    authentication: github
+    type: http
+    serverUrl: http://localhost:5000
+    authentication:
+        type: github
             
 storage:
     type: gcloud
-    bucket: studio-ed756.appspot.com
+    bucket: studioml-sentient-artifacts
 
 
 
@@ -19,12 +18,12 @@ verbose: error
 
 cloud:
     gcloud:
-        zone: us-east1-c
+        zone: us-central1-f
 
 resources_needed:
     cpus: 2
     ram:  3g
-    hdd:  60g
+    hdd:  10g
     gpus: 0
 
 sleep_time: 1

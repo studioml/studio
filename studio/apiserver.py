@@ -1,6 +1,6 @@
 import time
 import sys
-from flask import Flask, render_template, request, redirect
+from flask import Flask, render_template, request, redirect, abort
 from . import model
 import argparse
 import yaml
@@ -9,11 +9,12 @@ import socket
 import subprocess
 import traceback
 import six
-
-import google.oauth2.id_token
-import google.auth.transport.requests
+import os
+import requests
+from requests.exceptions import ChunkedEncodingError
 
 from .experiment import experiment_from_dict
+from .auth import get_and_verify_user, get_auth
 from . import logs
 
 app = Flask(__name__)
@@ -26,7 +27,6 @@ _db_provider = None
 _config = model.get_config()
 
 _tensorboard_dirs = {}
-_grequest = google.auth.transport.requests.Request()
 _save_auth_cookie = False
 
 logger = None
@@ -155,7 +155,7 @@ def get_experiment():
 @app.route('/api/get_user_experiments', methods=['POST'])
 def get_user_experiments():
     tic = time.time()
-    myuser_id = get_and_verify_user(request)
+    myuser_id = get_and_verify_user(request, get_auth_config())
     if request.json and 'user' in request.json.keys():
         user = request.json['user']
     else:
@@ -183,7 +183,7 @@ def get_user_experiments():
 @app.route('/api/get_all_experiments', methods=['POST'])
 def get_all_experiments():
     tic = time.time()
-    get_and_verify_user(request)
+    get_and_verify_user(request, get_auth_config())
 
     # TODO check is myuser_id is authorized to do that
 
@@ -208,7 +208,7 @@ def get_all_experiments():
 @app.route('/api/get_projects', methods=['POST'])
 def get_projects():
     tic = time.time()
-    get_and_verify_user(request)
+    get_and_verify_user(request, get_auth_config())
 
     # TODO check / filter access
 
@@ -229,7 +229,7 @@ def get_projects():
 @app.route('/api/get_users', methods=['POST'])
 def get_users():
     tic = time.time()
-    get_and_verify_user(request)
+    get_and_verify_user(request, get_auth_config())
 
     # TODO check / filter access
 
@@ -249,7 +249,7 @@ def get_users():
 @app.route('/api/get_project_experiments', methods=['POST'])
 def get_project_experiments():
     tic = time.time()
-    get_and_verify_user(request)
+    get_and_verify_user(request, get_auth_config())
 
     project = request.json.get('project')
     if not project:
@@ -277,7 +277,7 @@ def get_project_experiments():
 @app.route('/api/delete_experiment', methods=['POST'])
 def delete_experiment():
     tic = time.time()
-    userid = get_and_verify_user(request)
+    userid = get_and_verify_user(request, get_auth_config())
     try:
         key = request.json['key']
         if get_db().can_write_experiment(key, userid):
@@ -300,7 +300,7 @@ def delete_experiment():
 @app.route('/api/stop_experiment', methods=['POST'])
 def stop_experiment():
     tic = time.time()
-    userid = get_and_verify_user(request)
+    userid = get_and_verify_user(request, get_auth_config())
     try:
         key = request.json['key']
         if get_db().can_write_experiment(key, userid):
@@ -323,7 +323,7 @@ def stop_experiment():
 @app.route('/api/start_experiment', methods=['POST'])
 def start_experiment():
     tic = time.time()
-    userid = get_and_verify_user(request)
+    userid = get_and_verify_user(request, get_auth_config())
     try:
         key = request.json['key']
         if get_db().can_write_experiment(key, userid):
@@ -347,7 +347,7 @@ def start_experiment():
 @app.route('/api/finish_experiment', methods=['POST'])
 def finish_experiment():
     tic = time.time()
-    userid = get_and_verify_user(request)
+    userid = get_and_verify_user(request, get_auth_config())
     try:
         key = request.json['key']
         if get_db().can_write_experiment(key, userid):
@@ -370,7 +370,7 @@ def finish_experiment():
 @app.route('/api/add_experiment', methods=['POST'])
 def add_experiment():
     tic = time.time()
-    userid = get_and_verify_user(request)
+    userid = get_and_verify_user(request, get_auth_config())
 
     artifacts = {}
     try:
@@ -403,7 +403,7 @@ def add_experiment():
 @app.route('/api/checkpoint_experiment', methods=['POST'])
 def checkpoint_experiment():
     tic = time.time()
-    userid = get_and_verify_user(request)
+    userid = get_and_verify_user(request, get_auth_config())
 
     artifacts = {}
     try:
@@ -427,6 +427,37 @@ def checkpoint_experiment():
     return json.dumps({'status': status, 'artifacts': artifacts})
 
 
+@app.route('/api/exchange_github_code')
+def exchange_github_code():
+    tic = time.time()
+    code = request.args.get('code')
+
+    getlogger().debug('Code = ' + code)
+
+    try:
+        response = requests.post(
+            'https://github.com/login/oauth/access_token',
+            json={
+                'client_id': os.environ.get('STUDIO_GITHUB_ID'),
+                'client_secret': os.environ.get('STUDIO_GITHUB_SECRET'),
+                'code': code,
+            })
+    except ChunkedEncodingError as e:
+        getlogger().info(e.__dict__)
+        raise e
+
+    if response.status_code != 200:
+        abort(response.status_code)
+    else:
+        getlogger().info(response.content)
+
+        toc = time.time()
+        getlogger().info('Processed exchange_github_code in {} s'
+                         .format(toc - tic))
+
+        return response.content
+
+
 def _process_artifacts(experiment):
     artifacts = {}
     for tag, art in six.iteritems(experiment.artifacts):
@@ -439,33 +470,6 @@ def _process_artifacts(experiment):
             artifacts[tag] = art
 
     return artifacts
-
-
-def get_and_verify_user(request):
-    if not request.headers or 'Authorization' not in request.headers.keys():
-        return None
-
-    auth_token = request.headers['Authorization'].split(' ')[-1]
-    if not auth_token or auth_token == 'null':
-        return None
-
-    claims = google.oauth2.id_token.verify_firebase_token(
-        auth_token, _grequest)
-
-    if not claims:
-        return None
-    else:
-        global _save_auth_cookie
-        if _save_auth_cookie and request.json and \
-                'refreshToken' in request.json.keys():
-            get_db().refresh_auth_token(
-                claims['email'],
-                request.json['refreshToken']
-            )
-
-        get_db().register_user(claims['user_id'], claims['email'])
-
-        return claims['user_id']
 
 
 def get_db():
@@ -496,14 +500,30 @@ def getlogger():
     return logger
 
 
+def get_config():
+    global _config
+    if _config is None:
+        _config = model.get_config()
+    return _config
+
+
+def get_auth_config():
+    return get_config()['server']['authentication']
+
+
 def _render(page, **kwargs):
     tic = time.time()
+    token = get_auth(get_auth_config()).get_token(
+    ) if _save_auth_cookie else None
+
     retval = render_template(
         page,
         api_key=get_db().app.api_key,
-        project_id=_config['database']['projectId'],
+        project_id=_config['database'].get('project_id'),
         send_refresh_token="true",
         allow_tensorboard=get_allow_tensorboard(),
+        github_client_id=os.environ.get('STUDIO_GITHUB_ID'),
+        auth_token=token,
         **kwargs
     )
     toc = time.time()
@@ -553,7 +573,7 @@ def main(args=sys.argv[1:]):
     global _config
     global _db_provider
     _config = config
-    _db_provider = model.get_db_provider(_config, blocking_auth=False)
+    _db_provider = model.get_db_provider(_config)
 
     getlogger().setLevel(model.parse_verbosity(config.get('verbose')))
 

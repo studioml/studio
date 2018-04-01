@@ -45,10 +45,7 @@
     
 
     <script>
-        $(authWidget(function() {
-            reload(() => data_ajax('get_experiment', data={"key": "{{ experiment }}"}), updateExperimentPage, 1, 120,
-                                   compareExperimentData)
-        }));
+        reload(() => data_ajax('get_experiment', data={"key": "{{ experiment }}"}), updateExperimentPage, 1, 120, compareExperimentData)
 
         function compareExperimentData(expA, expB) {
             if (expA == null || expB == null) {

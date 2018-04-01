@@ -1,4 +1,5 @@
 pycodestyle
 pytest_xdist
+pytest-random-order
 tensorflow<=1.4.1
 keras

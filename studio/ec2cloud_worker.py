@@ -330,6 +330,7 @@ class EC2WorkerManager(object):
 
         asg_name = "studioml_autoscaling_" + queue_name or \
                    autoscaling_group_name
+        launch_config_name = asg_name + "_launch_config"
 
         startup_script = self._get_startup_script(
             resources_needed, queue_name, asg_name, timeout=timeout)
