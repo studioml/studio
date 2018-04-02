@@ -550,7 +550,7 @@ def main(args=sys.argv[1:]):
 
     parser.add_argument('--host',
                         help='host name.',
-                        default='0.0.0.0')
+                        default='localhost')
 
     parser.add_argument(
         '--verbose', '-v',
