@@ -29,7 +29,6 @@ google-cloud-storage <= 1.5.0
 google-cloud-pubsub <= 0.28.3
 google-gax <= 0.15.14
 google-auth-httplib2
-pip <= 9.0.1
 
 oauth2client==3.0.0
 boto3
