@@ -5,9 +5,7 @@
     <table class="table table-striped" id="projectsTable"></table>
 
     <script>
-        $(authWidget(function() {
-            reload(() => data_ajax('get_projects'), fillProjectsTable);
-        }));
+        reload(() => data_ajax('get_projects'), fillProjectsTable);
         
         $(function() {
             $('#projectsTable').DataTable({
