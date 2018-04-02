@@ -1,8 +1,6 @@
 database:
-    type: gs
-    bucket: studioml-meta
-    projectId: "studio-ed756"
-    
+    type: http
+    serverUrl: https://zoo.studio.ml
     authentication: github
             
 storage:

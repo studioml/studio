@@ -31,7 +31,7 @@ class HTTPProvider(object):
         guest = config.get('guest')
         if not guest and 'serviceAccount' not in config.keys():
             self.auth = get_auth(
-                config['authentication'],
+                config.get('authentication'),
                 blocking_auth
             )
 
