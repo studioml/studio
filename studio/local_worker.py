@@ -371,7 +371,9 @@ def worker_loop(queue, parsed_args,
             else:
                 logger.info('Cannot run experiment ' + experiment.key +
                             ' due lack of resources. Will retry')
-                time.sleep(config['sleep_time'])
+                time.sleep(str2duration(
+                    config.get('noRunnableJobsRetryFrequency', '10s')
+                ))
 
         # wait_for_messages(queue, timeout, logger)
 

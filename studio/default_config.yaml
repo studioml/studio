@@ -13,6 +13,8 @@ queue: local
 
 saveMetricsFrequency: 1m
 saveWorkspaceFrequency: 1m
+noRunnableJobsRetryFrequency: 10s
+
 verbose: error
 
 cloud:
