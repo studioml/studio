@@ -18,7 +18,7 @@ _file_url = 'https://s3-us-west-2.amazonaws.com/ml-enn/' + \
 
 _file_s3 = 's3://s3-us-west-2.amazonaws.com/studioml-test/t.txt'
 
-LOCAL_TEST_TIMEOUT = 400
+LOCAL_TEST_TIMEOUT = 200
 CLOUD_TEST_TIMEOUT = 800
 
 
@@ -138,7 +138,8 @@ class CompletionServiceTest(unittest.TestCase):
     def test_two_experiments_apiserver(self):
         self._run_test_myfiles(
             n_experiments=2,
-            config=self.get_config_path()
+            config=self.get_config_path(),
+            cloud_timeout=LOCAL_TEST_TIMEOUT
         )
 
     @unittest.skipIf(
@@ -191,7 +192,8 @@ class CompletionServiceTest(unittest.TestCase):
 
         jobfile = self.get_jobfile('completion_service_testfunc_saveload.py')
         with CompletionService(experiment_id,
-                               config=self.get_config_path()) as cs:
+                               config=self.get_config_path(),
+                               cloud_timeout=LOCAL_TEST_TIMEOUT) as cs:
             key1 = cs.submitTask(jobfile, arg1)
             ret_key1, result1 = cs.getResults()
             self.assertEquals(key1, ret_key1)
@@ -213,7 +215,8 @@ class CompletionServiceTest(unittest.TestCase):
 
         jobfile = self.get_jobfile('completion_service_testfunc_saveload.py')
         with CompletionService(experiment_id,
-                               config=self.get_config_path()) as cs:
+                               config=self.get_config_path(),
+                               cloud_timeout=LOCAL_TEST_TIMEOUT) as cs:
             key1 = cs.submitTask(jobfile, arg1, job_id=0)
             ret_key1, result1 = cs.getResults()
             self.assertEquals(key1, ret_key1)

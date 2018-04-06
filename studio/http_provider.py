@@ -30,11 +30,10 @@ class HTTPProvider(object):
         self.app = pyrebase.initialize_app(config)
         guest = config.get('guest')
         if not guest and 'serviceAccount' not in config.keys():
-            self.auth = get_auth(self.app,
-                                 config.get("use_email_auth"),
-                                 config.get("email"),
-                                 config.get("password"),
-                                 blocking_auth)
+            self.auth = get_auth(
+                config.get('authentication'),
+                blocking_auth
+            )
 
         self.compression = compression
         if self.compression is None:
@@ -126,8 +125,10 @@ class HTTPProvider(object):
                                     )
 
             self._raise_detailed_error(request)
-            return experiment_from_dict(request.json()['experiment'])
+            data = request.json()['experiment']
+            return experiment_from_dict(data)
         except BaseException as e:
+            self.logger.info('error getting experiment {}'.format(key))
             self.logger.info(e)
             return None
 

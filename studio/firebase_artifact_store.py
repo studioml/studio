@@ -26,17 +26,18 @@ class FirebaseArtifactStore(TartifactStore):
 
         self.auth = None
         if not guest and 'serviceAccount' not in db_config.keys():
-            self.auth = get_auth(self.app,
-                                 db_config.get("use_email_auth"),
-                                 db_config.get("email"),
-                                 db_config.get("password"),
-                                 blocking_auth)
+            self.auth = get_auth(
+                db_config['type'],
+                blocking_auth,
+                verbose=verbose
+            )
 
         self.logger = logs.getLogger('FirebaseArtifactStore')
         self.logger.setLevel(verbose)
         super(FirebaseArtifactStore, self).__init__(
             measure_timestamp_diff,
-            compression=compression)
+            compression=compression,
+            verbose=verbose)
 
     def _upload_file(self, key, local_file_path):
         try:

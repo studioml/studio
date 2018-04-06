@@ -36,11 +36,7 @@ class S3ArtifactStore(TartifactStore):
 
         if self.bucket not in [b['Name'] for b in buckets['Buckets']]:
             self.client.create_bucket(
-                Bucket=self.bucket,
-                CreateBucketConfiguration={
-                    'LocationConstraint': self.client._client_config
-                    .region_name
-                }
+                Bucket=self.bucket
             )
 
         super(S3ArtifactStore, self).__init__(
