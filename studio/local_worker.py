@@ -160,10 +160,20 @@ class LocalExecutor(object):
                     minutes=minutes)
 
                 def kill_if_stopped():
-                    if db.get_experiment(
+                    db_expr = db.get_experiment(
                             experiment.key,
-                            getinfo=False).status == 'stopped':
-                        p.kill()
+                            getinfo=False)
+
+                    # Transient issues with getting experiment data might
+                    # result in a None value being returned, as result
+                    # leave the experiment running because we wont be able to
+                    # do anything else even if this experiment is stopped,
+		    # in any event if the experiment runs too long then it
+                    # will exceed its allocated time and stop
+                    if db_expr is not None:
+                        if db_expr.status == 'stopped':
+                            p.kill()
+                            return
 
                     if experiment.max_duration is not None and \
                             time.time() > experiment.time_started + \
