@@ -145,8 +145,8 @@ class GithubAuth(object):
         tokendir_contents = os.listdir(self.tokendir)
         tokens = [
             f for f in tokendir_contents
-            if os.path.isfile(os.path.join(self.tokendir, f))
-            and f.endswith('.githubtoken')
+            if os.path.isfile(os.path.join(self.tokendir, f)) and
+            f.endswith('.githubtoken')
         ]
 
         # TODO selection out of multiple token files
