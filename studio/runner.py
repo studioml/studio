@@ -478,7 +478,12 @@ def get_worker_manager(config, cloud=None, verbose=10):
     return worker_manager
 
 
-def get_queue(queue_name=None, cloud=None, config=None, logger=None, verbose=10):
+def get_queue(
+        queue_name=None,
+        cloud=None,
+        config=None,
+        logger=None,
+        verbose=10):
     if queue_name is None:
         if cloud in ['gcloud', 'gcspot']:
             queue_name = 'pubsub_' + str(uuid.uuid4())
@@ -491,7 +496,11 @@ def get_queue(queue_name=None, cloud=None, config=None, logger=None, verbose=10)
        queue_name.startswith('sqs'):
         return SQSQueue(queue_name, verbose=verbose)
     elif queue_name.startswith('rmq_'):
-        return RMQueue(queue=queue_name, config=config, logger=logger, verbose=verbose)
+        return RMQueue(
+            queue=queue_name,
+            config=config,
+            logger=logger,
+            verbose=verbose)
     elif queue_name == 'local':
         return LocalQueue(verbose=verbose)
     else:
