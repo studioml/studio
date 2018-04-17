@@ -10,11 +10,12 @@ env:
 
 script:
     - git fetch --unshallow
-    - pycodestyle --show-source --exclude=.eggs --ignore=W605,W504,E704 .
     - 'if [ -n "$GOOGLE_CREDENTIALS_ENCODED" ]; then echo "$GOOGLE_CREDENTIALS_ENCODED" | base64 --decode > ./credentials.json && export GOOGLE_APPLICATION_CREDENTIALS=$(pwd)/credentials.json; fi'
     # - 'if [ -n "$GOOGLE_CREDENTIALS_DS_ENCODED" ]; then echo "$GOOGLE_CREDENTIALS_DS_ENCODED" | base64 --decode > ./credentials_ds.json && export GOOGLE_APPLICATION_CREDENTIALS_DC=$(pwd)/credentials_ds.json; fi'
     - pip install -e .
     - pip install -r test_requirements.txt
+
+    - pycodestyle --show-source --exclude=.eggs --ignore=W605,W504,E704 .
 
     - echo GOOGLE_APPLICATION_CREDENTIALS=$GOOGLE_APPLICATION_CREDENTIALS
     - echo GOOGLE_APPLICATION_CREDENTIALS_DC=$GOOGLE_APPLICATION_CREDENTIALS_DC
