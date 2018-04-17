@@ -18,7 +18,7 @@ class RMQueue(object):
 
     """
 
-    def __init__(self, queue, amqp_url='',
+    def __init__(self, queue, amqp_url='', route='StudioML.route',
                  config=None, logger=None, verbose=None):
         """Setup the example publisher object, passing in the URL we will use
         to connect to RabbitMQ.
@@ -42,8 +42,9 @@ class RMQueue(object):
 
         self._stopping = False
         self._url = amqp_url
-        self._exchange = 'StudioML'
+        self._exchange = 'StudioML.topic'
         self._exchange_type = 'topic'
+        self._routing_key = route
 
         if logger is not None:
             self._logger = logger
@@ -60,11 +61,8 @@ class RMQueue(object):
                         self._url = config['cloud']['queue']['uri']
                         self._logger.warn('url {}'
                                           .format(self._url))
-                    if 'route' in config['cloud']['queue']:
-                        routing_key = config['cloud']['queue']['route']
 
         self._queue = queue
-        self._routing_key = routing_key
 
         # The pika library for RabbitMQ has an asynchronous run method that needs to
         # run forever and will do reconnections etc automatically for us
@@ -168,9 +166,9 @@ class RMQueue(object):
         """
         self._logger.debug('declaring exchange ' + exchange_name)
         with self._rmq_lock:
-            self._channel.exchange_declare(self.on_exchange_declareok,
-                                           exchange_name,
-                                           self._exchange_type)
+            self._channel.exchange_declare(callback=self.on_exchange_declareok,
+                                           exchange=exchange_name,
+                                           exchange_type=self._exchange_type)
 
     def on_exchange_declareok(self, unused_frame):
         """

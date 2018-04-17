@@ -52,7 +52,11 @@ def main(args=sys.argv):
        parsed_args.queue.startswith('sqs_'):
         queue = SQSQueue(parsed_args.queue, verbose=verbose)
     elif parsed_args.queue.startswith('rmq_'):
-        queue = RMQueue(queue=parsed_args.queue, config=config, verbose=verbose)
+        queue = RMQueue(
+            queue=parsed_args.queue,
+            route ='StudioML.*',
+            config=config,
+            verbose=verbose)
     else:
         queue = PubsubQueue(parsed_args.queue, verbose=verbose)
 
