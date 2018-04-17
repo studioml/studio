@@ -35,3 +35,4 @@ boto3
 awscli
 filelock
 pygtail
+pika == 0.11.2
