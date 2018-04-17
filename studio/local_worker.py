@@ -161,11 +161,11 @@ class LocalExecutor(object):
 
                 def kill_if_stopped():
                     db_expr = db.get_experiment(
-                            experiment.key,
-                            getinfo=False)
+                        experiment.key,
+                        getinfo=False)
 
                     # Transient issues with getting experiment data might
-                    # result in a None value being returned, as result 
+                    # result in a None value being returned, as result
                     # leave the experiment running because we wont be able to
                     # do anything else even if this experiment is stopped
                     if db_expr is not None:
@@ -379,8 +379,8 @@ def worker_loop(queue, parsed_args,
             else:
                 logger.info('Cannot run experiment ' + experiment.key +
                             ' due lack of resources. Will retry')
-		# Debounce failed requests we cannot service yet
-		time.sleep(config.get('sleep_time', 5))
+                # Debounce failed requests we cannot service yet
+                time.sleep(config.get('sleep_time', 5))
 
         # wait_for_messages(queue, timeout, logger)
 

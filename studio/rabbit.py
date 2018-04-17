@@ -8,11 +8,12 @@ import threading
 
 from . import logs
 
+
 class RMQueue(object):
     """This publisher will handle failures and closures and will
     attempt to restart things
 
-    delivery confirmations are used to track messages that have 
+    delivery confirmations are used to track messages that have
     been sent and if they have been confirmed
 
     """
@@ -28,16 +29,16 @@ class RMQueue(object):
         self._rmq_lock = threading.RLock()
         self._connection = None
         self._channel = None
-	self._consumer = None
-	self._consume_ready = False
+        self._consumer = None
+        self._consume_ready = False
 
         self._deliveries = None
         self._acked = None
         self._nacked = None
         self._message_number = None
 
-	self._rmq_msg = None
-	self._rmq_id = None
+        self._rmq_msg = None
+        self._rmq_id = None
 
         self._stopping = False
         self._url = amqp_url
@@ -58,7 +59,7 @@ class RMQueue(object):
                     if 'uri' in config['cloud']['queue']:
                         self._url = config['cloud']['queue']['uri']
                         self._logger.warn('url {}'
-                            .format(self._url))
+                                          .format(self._url))
                     if 'route' in config['cloud']['queue']:
                         routing_key = config['cloud']['queue']['route']
 
@@ -81,10 +82,12 @@ class RMQueue(object):
         :rtype: pika.SelectConnection
 
         """
-        return pika.SelectConnection(pika.URLParameters(self._url),
-                                     on_open_callback=self.on_connection_open,
-                                     on_close_callback=self.on_connection_closed,
-                                     stop_ioloop_on_close=False)
+        return pika.SelectConnection(
+            pika.URLParameters(
+                self._url),
+            on_open_callback=self.on_connection_open,
+            on_close_callback=self.on_connection_closed,
+            stop_ioloop_on_close=False)
 
     def on_connection_open(self, unused_connection):
         """
@@ -108,13 +111,13 @@ class RMQueue(object):
             else:
                 # retry in 5 seconds
                 self._logger.info('connection closed, retry in 5 seconds: ' +
-                            reply_code + reply_text)
+                                  reply_code + reply_text)
                 self._connection.add_timeout(5, self._connection.ioloop.stop)
 
     def open_channel(self):
         """
-        open a new channel using the Channel.Open RPC command. RMQ confirms 
-        the channel is open by sending the Channel.OpenOK RPC reply, the 
+        open a new channel using the Channel.Open RPC command. RMQ confirms
+        the channel is open by sending the Channel.OpenOK RPC reply, the
         on_channel_open method will be invoked.
         """
         self._logger.debug('creating a new channel')
@@ -138,7 +141,6 @@ class RMQueue(object):
 
         self.setup_exchange(self._exchange)
 
-
     def on_channel_closed(self, channel, reply_code, reply_text):
         """
         physical network issues and logical protocol abuses can
@@ -157,8 +159,8 @@ class RMQueue(object):
 
     def setup_exchange(self, exchange_name):
         """
-        exchange setup by invoking the Exchange.Declare RPC command. 
-        When complete, the on_exchange_declareok method will be invoked 
+        exchange setup by invoking the Exchange.Declare RPC command.
+        When complete, the on_exchange_declareok method will be invoked
         by pika.
 
         :param str|unicode exchange_name: The name of the exchange to declare
@@ -167,8 +169,8 @@ class RMQueue(object):
         self._logger.debug('declaring exchange ' + exchange_name)
         with self._rmq_lock:
             self._channel.exchange_declare(self.on_exchange_declareok,
-                                        exchange_name,
-                                        self._exchange_type)
+                                           exchange_name,
+                                           self._exchange_type)
 
     def on_exchange_declareok(self, unused_frame):
         """
@@ -182,7 +184,7 @@ class RMQueue(object):
 
     def setup_queue(self, queue_name):
         """
-        Setup the queue invoking the Queue.Declare RPC command. 
+        Setup the queue invoking the Queue.Declare RPC command.
         The completion callback is, the on_queue_declareok method.
 
         :param str|unicode queue_name: The name of the queue to declare.
@@ -195,25 +197,37 @@ class RMQueue(object):
     def on_queue_declareok(self, method_frame):
         """
         Queue.Declare RPC completion callback.
-        In this method the queue and exchange are bound together 
+        In this method the queue and exchange are bound together
         with the routing key by issuing the Queue.Bind
-        RPC command. 
+        RPC command.
 
         The completion callback is the on_bindok method.
 
         :param pika.frame.Method method_frame: The Queue.DeclareOk frame
 
         """
-        self._logger.debug('binding ' + self._exchange + ' to ' + self._queue + ' with ' + self._routing_key)
+        self._logger.debug(
+            'binding ' +
+            self._exchange +
+            ' to ' +
+            self._queue +
+            ' with ' +
+            self._routing_key)
         with self._rmq_lock:
             self._channel.queue_bind(self.on_bindok, self._queue,
-                                    self._exchange, self._routing_key)
+                                     self._exchange, self._routing_key)
 
     def on_bindok(self, unused_frame):
         """This method is invoked by pika when it receives the Queue.BindOk
         response from RabbitMQ. Since we know we're now setup and bound, it's
         time to start publishing."""
-        self._logger.info('bound ' + self._exchange + ' to ' + self._queue + ' with ' + self._routing_key)
+        self._logger.info(
+            'bound ' +
+            self._exchange +
+            ' to ' +
+            self._queue +
+            ' with ' +
+            self._routing_key)
 
         """
         Send the Confirm.Select RPC method to RMQ to enable delivery
@@ -243,17 +257,24 @@ class RMQueue(object):
 
         """
         confirmation_type = method_frame.method.NAME.split('.')[1].lower()
-        self._logger.debug('received ' + confirmation_type + ' for delivery tag: ' +
-            str(method_frame.method.delivery_tag))
+        self._logger.debug('received ' +
+                           confirmation_type +
+                           ' for delivery tag: ' +
+                           str(method_frame.method.delivery_tag))
         if confirmation_type == 'ack':
             self._acked += 1
         elif confirmation_type == 'nack':
             self._nacked += 1
         self._deliveries.remove(method_frame.method.delivery_tag)
-        self._logger.info('published ' + str(self._message_number) + ' messages, ' +
-            str(len(self._deliveries)) + ' have yet to be confirmed, ' +
-            str(self._acked) + ' were acked and ' + str(self._nacked) + ' were nacked')
-
+        self._logger.info('published ' +
+                          str(self._message_number) +
+                          ' messages, ' +
+                          str(len(self._deliveries)) +
+                          ' have yet to be confirmed, ' +
+                          str(self._acked) +
+                          ' were acked and ' +
+                          str(self._nacked) +
+                          ' were nacked')
 
     def run(self):
         """
@@ -284,8 +305,8 @@ class RMQueue(object):
         Stop the by closing the channel and connection and setting
         a stop state.
 
-        The IOLoop is started independently which means we need this 
-        method to handle things such as the Try/Catch when KeyboardInterrupts 
+        The IOLoop is started independently which means we need this
+        method to handle things such as the Try/Catch when KeyboardInterrupts
         are caught.
         Starting the IOLoop again will allow the publisher to cleanly
         disconnect from RMQ.
@@ -315,24 +336,27 @@ class RMQueue(object):
 
     def enqueue(self, msg, retries=5):
         """
-        Publish a message to RMQ, appending a list of deliveries with 
-        the message number that was sent.  This list will be used to 
+        Publish a message to RMQ, appending a list of deliveries with
+        the message number that was sent.  This list will be used to
         check for delivery confirmations in the on_delivery_confirmations method.
         """
         if self._url is None:
             raise Exception('url for rmq not initialized')
 
         if msg is None:
-            raise Exception('message was None, it needs to have a meaningful value to be sent')
+            raise Exception(
+                'message was None, it needs to have a meaningful value to be sent')
 
         # Wait to see if the channel gets opened
         for i in range(retries):
             if self._channel is None:
-                self._logger.warn('failed to send message ({}) to {} as the channel API was not initialized'
-                            .format(i, self._url))
+                self._logger.warn(
+                    'failed to send message ({}) to {} as the channel API was not initialized' .format(
+                        i, self._url))
             elif not self._channel.is_open:
-                self._logger.warn('failed to send message ({}) to {} as the channel was not open'
-                            .format(i, self._url))
+                self._logger.warn(
+                    'failed to send message ({}) to {} as the channel was not open' .format(
+                        i, self._url))
             else:
                 break
 
@@ -342,7 +366,7 @@ class RMQueue(object):
             time.sleep(1)
 
         self._logger.debug('sending message {} to {} '
-                          .format(msg, self._url))
+                           .format(msg, self._url))
         properties = pika.BasicProperties(app_id='studioml',
                                           content_type='application/json')
 
@@ -351,7 +375,7 @@ class RMQueue(object):
                                     msg,
                                     properties)
         self._logger.debug('sent message to {} '
-                          .format(self._url))
+                           .format(self._url))
 
         self._message_number += 1
         self._deliveries.append(self._message_number)
@@ -359,25 +383,25 @@ class RMQueue(object):
         return self._message_number
 
     def dequeue(self, acknowledge=True, timeout=0):
-	msg = None
+        msg = None
 
-	# start the consumer and allow single messages to returned via
-	# this method to the caller blocking using a callback lock 
-	# while waiting
-        for i in range(timeout+1):
+        # start the consumer and allow single messages to returned via
+        # this method to the caller blocking using a callback lock
+        # while waiting
+        for i in range(timeout + 1):
             with self._rmq_lock:
-		if self._consumer is None and self._channel is not None:
-		    self._consumer = \
-			self._channel.basic_consume(self.on_message,
-						    queue=self._queue)
+                if self._consumer is None and self._channel is not None:
+                    self._consumer = \
+                        self._channel.basic_consume(self.on_message,
+                                                    queue=self._queue)
 
-		if self._rmq_msg is not None:
+                if self._rmq_msg is not None:
                     self._logger.info('message {} from {} '
-                          .format(self._rmq_msg, self._url))
+                                      .format(self._rmq_msg, self._url))
                     return self._rmq_msg, self._rmq_id
                 else:
                     self._logger.info('idle {} {}'
-                          .format(self._url, self._queue))
+                                      .format(self._url, self._queue))
 
             if i >= timeout:
                 self._logger.info('timed-out')
@@ -391,27 +415,29 @@ class RMQueue(object):
 
         with self._rmq_lock:
             if self._channel is not None:
-		# Cancel the consumer as we only consume 1 message
-		# at a time
-		self._channel.basic_cancel(nowait=True, consumer_tag=self._consumer)
-	    self._consumer = None
+                # Cancel the consumer as we only consume 1 message
+                # at a time
+                self._channel.basic_cancel(
+                    nowait=True, consumer_tag=self._consumer)
+            self._consumer = None
 
-	    # If we already had a delivered message, reject the one we just got
-	    if self._rmq_msg != None:
-		if self._connection is not None:
-		    self._channel.basic_nack(delivery_tag=basic_deliver.delivery_tag)
-	    else:
-		self._rmq_msg = body
-		self._rmq_id = basic_deliver.delivery_tag
-
+            # If we already had a delivered message, reject the one we just got
+            if self._rmq_msg is not None:
+                if self._connection is not None:
+                    self._channel.basic_nack(
+                        delivery_tag=basic_deliver.delivery_tag)
+            else:
+                self._rmq_msg = body
+                self._rmq_id = basic_deliver.delivery_tag
 
     def has_next(self):
-        raise NotImplementedError('using has_next with distributed queue is not supportable')
+        raise NotImplementedError(
+            'using has_next with distributed queue is not supportable')
 
     def acknowledge(self, ack_id):
         with self._rmq_lock:
-	    self._rmq_msg = None
-	    self._rmq_id = None
+            self._rmq_msg = None
+            self._rmq_id = None
             if self._channel is None:
                 return None
             result = self._channel.basic_ack(delivery_tag=ack_id)
