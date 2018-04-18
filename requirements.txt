@@ -36,3 +36,4 @@ awscli
 filelock
 pygtail
 pika == 0.11.2
+pip == 9.0.3

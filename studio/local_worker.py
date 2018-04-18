@@ -74,6 +74,8 @@ class LocalExecutor(object):
                 if experiment.pythonver == 3:
                     python = 'python3'
 
+                python = which(python)
+
                 cmd = [python, experiment.filename] + experiment.args
                 cwd = experiment.artifacts['workspace']['local']
                 container_artifact = experiment.artifacts.get('_singularity')
@@ -102,7 +104,7 @@ class LocalExecutor(object):
                     else:
                         cmd = ['singularity', 'run', container]
 
-                self.logger.info('Running cmd: \n {} '.format(cmd))
+                self.logger.info('Running cmd: {} in {}'.format(cmd, cwd))
 
                 p = subprocess.Popen(
                     cmd,
@@ -111,6 +113,7 @@ class LocalExecutor(object):
                     env=env,
                     cwd=cwd
                 )
+
                 # simple hack to show what's in the log file
                 # ptail = subprocess.Popen(["tail", "-f", log_path])
 
@@ -256,6 +259,24 @@ def main(args=sys.argv):
     # wait_for_messages(queue, parsed_args.timeout)
     returncode = worker_loop(queue, parsed_args, timeout=parsed_args.timeout)
     sys.exit(returncode)
+
+
+def which(program):
+    import os
+    def is_exe(fpath):
+        return os.path.isfile(fpath) and os.access(fpath, os.X_OK)
+
+    fpath, fname = os.path.split(program)
+    if fpath:
+        if is_exe(program):
+            return program
+    else:
+        for path in os.environ["PATH"].split(os.pathsep):
+            exe_file = os.path.join(path, program)
+            if is_exe(exe_file):
+                return exe_file
+
+    return None
 
 
 def worker_loop(queue, parsed_args,
