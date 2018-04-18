@@ -268,14 +268,14 @@ class RMQueue(object):
                 self._nacked += 1
             self._deliveries.remove(method_frame.method.delivery_tag)
             self._logger.info('published ' +
-                            str(self._message_number) +
-                            ' messages, ' +
-                            str(len(self._deliveries)) +
-                            ' have yet to be confirmed, ' +
-                            str(self._acked) +
-                            ' were acked and ' +
-                            str(self._nacked) +
-                            ' were nacked')
+                              str(self._message_number) +
+                              ' messages, ' +
+                              str(len(self._deliveries)) +
+                              ' have yet to be confirmed, ' +
+                              str(self._acked) +
+                              ' were acked and ' +
+                              str(self._nacked) +
+                              ' were nacked')
 
     def run(self):
         """

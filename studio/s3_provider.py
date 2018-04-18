@@ -40,7 +40,8 @@ class S3Provider(KeyValueProvider):
             if response['KeyCount'] > 1:
                 assert shallow, \
                     'multiple-object reads ' + \
-                    'are not supported for s3 provider yet {} {}'.format(key, response)
+                    'are not supported for s3 provider yet {} {}'.format(
+                        key, response)
 
             keys = []
             keys += [c['Key'] for c in response.get('Contents', [])]
