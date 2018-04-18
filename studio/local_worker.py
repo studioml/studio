@@ -171,6 +171,8 @@ class LocalExecutor(object):
                     # result in a None value being returned, as result
                     # leave the experiment running because we wont be able to
                     # do anything else even if this experiment is stopped
+                    # in any event if the experiment runs too long then it
+                    # will exceed its allocated time and stop
                     if db_expr is not None:
                         if db_expr.status == 'stopped':
                             p.kill()

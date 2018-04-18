@@ -513,8 +513,11 @@ def get_auth_config():
 
 def _render(page, **kwargs):
     tic = time.time()
-    token = get_auth(get_auth_config()).get_token(
-    ) if _save_auth_cookie else None
+    token = None
+    if _save_auth_cookie:
+        auth = get_auth(get_auth_config())
+        if auth:
+            token = auth.get_token()
 
     retval = render_template(
         page,
