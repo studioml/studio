@@ -142,6 +142,27 @@ class CompletionServiceTest(unittest.TestCase):
             cloud_timeout=LOCAL_TEST_TIMEOUT
         )
 
+    @timeout(LOCAL_TEST_TIMEOUT, use_signals=False)
+    def test_two_experiments_datacenter(self):
+        mypath = os.path.dirname(os.path.realpath(__file__))
+        config_path = os.path.join(
+            mypath,
+            '..',
+            'datacenter_config.yaml')
+
+        files_in_workspace = os.listdir(mypath)
+        files = {f: os.path.join(mypath, f) for f in files_in_workspace if
+                 os.path.isfile(os.path.join(mypath, f))}
+
+        files['url'] = _file_url
+        files['s3'] = _file_s3
+
+        with get_local_queue_lock():
+            self._run_test_files(
+                n_experiments=2,
+                files=files,
+                config=config_path)
+
     @unittest.skipIf(
         'GOOGLE_APPLICATION_CREDENTIALS' not in os.environ.keys(),
         'Need GOOGLE_APPLICATION_CREDENTIALS env variable to' +

@@ -98,7 +98,6 @@ def get_db_provider(config=None, blocking_auth=True):
                           verbose=verbose,
                           store=artifact_store,
                           blocking_auth=blocking_auth)
-
     else:
         raise ValueError('Unknown type of the database ' + db_config['type'])
 
