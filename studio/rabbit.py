@@ -65,8 +65,8 @@ class RMQueue(object):
 
         self._queue = queue
 
-        # The pika library for RabbitMQ has an asynchronous run method 
-        # that needs to run forever and will do reconnections etc 
+        # The pika library for RabbitMQ has an asynchronous run method
+        # that needs to run forever and will do reconnections etc
         # automatically for us
         thr = threading.Thread(target=self.run, args=(), kwargs={})
         thr.setDaemon(True)
