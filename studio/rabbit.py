@@ -341,7 +341,7 @@ class RMQueue(object):
         """
         Publish a message to RMQ, appending a list of deliveries with
         the message number that was sent.  This list will be used to
-        check for delivery confirmations in the 
+        check for delivery confirmations in the
         on_delivery_confirmations method.
         """
         if self._url is None:
