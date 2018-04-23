@@ -142,6 +142,7 @@ class CompletionServiceTest(unittest.TestCase):
             cloud_timeout=LOCAL_TEST_TIMEOUT
         )
 
+    @unittest.skipIf(true , 'Test requires k8s style configurations that are not yet in play')
     @timeout(LOCAL_TEST_TIMEOUT, use_signals=False)
     def test_two_experiments_datacenter(self):
         mypath = os.path.dirname(os.path.realpath(__file__))
