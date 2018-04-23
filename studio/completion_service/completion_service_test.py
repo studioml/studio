@@ -142,7 +142,7 @@ class CompletionServiceTest(unittest.TestCase):
             cloud_timeout=LOCAL_TEST_TIMEOUT
         )
 
-    @unittest.skipIf(true,
+    @unittest.skipIf(True,
                      'Test requires k8s style configurations ' +
                      'that are not yet in play')
     @timeout(LOCAL_TEST_TIMEOUT, use_signals=False)
