@@ -32,10 +32,11 @@ class RMQueue(object):
         self._consumer = None
         self._consume_ready = False
 
-        self._deliveries = None
-        self._acked = None
-        self._nacked = None
-        self._message_number = None
+        self._msg_tracking_lock = threading.RLock()
+        self._deliveries = []
+        self._acked = 0
+        self._nacked = 0
+        self._message_number = 0
 
         self._rmq_msg = None
         self._rmq_id = None
@@ -53,8 +54,8 @@ class RMQueue(object):
             self._logger.setLevel(logging.INFO)
 
         if config is not None:
-            # extract from the config data structure any settings related to queue
-            # messaging for rabbit MQ
+            # extract from the config data structure any settings related to
+            # queue messaging for rabbit MQ
             if 'cloud' in config:
                 if 'queue' in config['cloud']:
                     if 'uri' in config['cloud']['queue']:
@@ -64,8 +65,9 @@ class RMQueue(object):
 
         self._queue = queue
 
-        # The pika library for RabbitMQ has an asynchronous run method that needs to
-        # run forever and will do reconnections etc automatically for us
+        # The pika library for RabbitMQ has an asynchronous run method
+        # that needs to run forever and will do reconnections etc
+        # automatically for us
         thr = threading.Thread(target=self.run, args=(), kwargs={})
         thr.setDaemon(True)
         thr.start()
@@ -174,7 +176,7 @@ class RMQueue(object):
         """
         completion callback for the Exchange.Declare RPC command.
 
-        :param pika.Frame.Method unused_frame: Exchange.DeclareOk response frame
+        :param pika.Frame.Method unused_frame: Exchange.DeclareOk response
 
         """
         self._logger.debug('declared exchange ' + self._exchange)
@@ -259,20 +261,22 @@ class RMQueue(object):
                            confirmation_type +
                            ' for delivery tag: ' +
                            str(method_frame.method.delivery_tag))
-        if confirmation_type == 'ack':
-            self._acked += 1
-        elif confirmation_type == 'nack':
-            self._nacked += 1
-        self._deliveries.remove(method_frame.method.delivery_tag)
-        self._logger.info('published ' +
-                          str(self._message_number) +
-                          ' messages, ' +
-                          str(len(self._deliveries)) +
-                          ' have yet to be confirmed, ' +
-                          str(self._acked) +
-                          ' were acked and ' +
-                          str(self._nacked) +
-                          ' were nacked')
+
+        with self._msg_tracking_lock:
+            if confirmation_type == 'ack':
+                self._acked += 1
+            elif confirmation_type == 'nack':
+                self._nacked += 1
+            self._deliveries.remove(method_frame.method.delivery_tag)
+            self._logger.info('published ' +
+                              str(self._message_number) +
+                              ' messages, ' +
+                              str(len(self._deliveries)) +
+                              ' have yet to be confirmed, ' +
+                              str(self._acked) +
+                              ' were acked and ' +
+                              str(self._nacked) +
+                              ' were nacked')
 
     def run(self):
         """
@@ -280,10 +284,11 @@ class RMQueue(object):
         """
         while not self._stopping:
             self._connection = None
-            self._deliveries = []
-            self._acked = 0
-            self._nacked = 0
-            self._message_number = 0
+            with self._msg_tracking_lock:
+                self._deliveries = []
+                self._acked = 0
+                self._nacked = 0
+                self._message_number = 0
 
             try:
                 with self._rmq_lock:
@@ -336,32 +341,37 @@ class RMQueue(object):
         """
         Publish a message to RMQ, appending a list of deliveries with
         the message number that was sent.  This list will be used to
-        check for delivery confirmations in the on_delivery_confirmations method.
+        check for delivery confirmations in the
+        on_delivery_confirmations method.
         """
         if self._url is None:
             raise Exception('url for rmq not initialized')
 
         if msg is None:
             raise Exception(
-                'message was None, it needs to have a meaningful value to be sent')
+                'message was None, it needs a meaningful value to be sent')
 
         # Wait to see if the channel gets opened
-        for i in range(retries):
+        tries = retries
+        while tries != 0:
             if self._channel is None:
                 self._logger.warn(
-                    'failed to send message ({}) to {} as the channel API was not initialized' .format(
-                        i, self._url))
+                    'failed to send message ({} tries left) to {} as '
+                    'the channel API was not initialized' .format(
+                        tries, self._url))
             elif not self._channel.is_open:
                 self._logger.warn(
-                    'failed to send message ({}) to {} as the channel was not open' .format(
-                        i, self._url))
+                    'failed to send message ({} tries left) to {} as '
+                    'the channel was not open' .format(
+                        tries, self._url))
             else:
                 break
 
-            if i == retries:
-                raise Exception('studioml request could not be sent')
-
             time.sleep(1)
+            tries -= 1
+
+        if tries == 0:
+            raise Exception('studioml request could not be sent')
 
         self._logger.debug('sending message {} to {} '
                            .format(msg, self._url))
@@ -375,10 +385,26 @@ class RMQueue(object):
         self._logger.debug('sent message to {} '
                            .format(self._url))
 
-        self._message_number += 1
-        self._deliveries.append(self._message_number)
+        message_number = 0
+        with self._msg_tracking_lock:
+            self._message_number += 1
 
-        return self._message_number
+            message_number = self._message_number
+            self._deliveries.append(self._message_number)
+
+        while tries != 0:
+            with self._msg_tracking_lock:
+                if message_number not in self._deliveries:
+                    tries = 0
+                    break
+
+            tries -= 1
+            if tries <= 0:
+                break
+
+            time.sleep(1)
+
+        return message_number
 
     def dequeue(self, acknowledge=True, timeout=0):
         msg = None

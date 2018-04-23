@@ -227,8 +227,8 @@ def main(args=sys.argv[1:]):
     # detect which argument is the script filename
     # and attribute all arguments past that index as related to the script
     (runner_args, other_args) = parser.parse_known_args(args)
-    py_suffix_args = [i for i, arg in enumerate(args) if arg.endswith('.py')
-                      or '::' in arg]
+    py_suffix_args = [i for i, arg in enumerate(args)
+                      if arg.endswith('.py') or '::' in arg]
 
     rerun = False
     if len(py_suffix_args) < 1:
