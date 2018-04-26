@@ -170,7 +170,9 @@ class RMQueue(object):
         with self._rmq_lock:
             self._channel.exchange_declare(callback=self.on_exchange_declareok,
                                            exchange=exchange_name,
-                                           exchange_type=self._exchange_type)
+                                           exchange_type=self._exchange_type,
+                                           durable=True,
+                                           auto_delete=True)
 
     def on_exchange_declareok(self, unused_frame):
         """
