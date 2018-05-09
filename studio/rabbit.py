@@ -58,8 +58,8 @@ class RMQueue(object):
             # queue messaging for rabbit MQ
             if 'cloud' in config:
                 if 'queue' in config['cloud']:
-                    if 'manager' in config['cloud']['queue']:
-                        self._url = config['cloud']['queue']['manager']
+                    if 'rmq' in config['cloud']['queue']:
+                        self._url = config['cloud']['queue']['rmq']
                         self._logger.warn('url {}'
                                           .format(self._url))
 

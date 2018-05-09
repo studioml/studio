@@ -63,7 +63,7 @@ are hosted.
 
     cloud:
         queue:
-                manager: "amqp://guest@guest@localhost:15672/"
+            rmq: "amqp://guest@guest@localhost:15672/"
 
 When running your experiment you should use a rmq\_ prefixed queue name and option
 on the command line for the RabbitMQ parameters, for example:
