@@ -1,0 +1,54 @@
+database: 
+    type: s3
+    endpoint: https://s3-us-west-2.amazonaws.com/
+    bucket: "karl-mutch-rmq"
+    compression: None
+    authentication: none
+
+storage:
+    type: s3
+    endpoint: https://s3-us-west-2.amazonaws.com/
+    bucket: "karl-mutch-rmq"
+    compression: None
+
+runner:
+    slack_destination: "@karl.mutch"
+
+cloud:
+    queue:
+        rmq: "amqp://guest:guest@localhost:5672/"
+
+verbose: debug
+saveWorkspaceFrequency: 3m
+experimentLifetime: 20m
+
+resources_needed:
+    cpus: 1
+    gpus: 1
+    hdd: 3gb
+    ram: 2gb
+    gpuMem: 3gb
+
+env:
+    AWS_ACCESS_KEY_ID: **removed**
+    AWS_DEFAULT_REGION: us-west-2
+    AWS_SECRET_ACCESS_KEY: **removed**
+    PATH: "%PATH%:./bin"
+
+pip:
+    - keras==2.0.8
+
+optimizer:
+    cmaes_config:
+        popsize: 100
+        sigma0: 0.25
+        load_best_only: false
+    load_checkpoint_file:
+    visualization: true
+    result_dir: "~/Desktop/"
+    checkpoint_interval: 0
+    termination_criterion:
+        generation: 5
+        fitness: 999
+        skip_gen_thres: 1.0
+        skip_gen_timeout: 30

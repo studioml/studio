@@ -15,6 +15,7 @@ import numpy as np
 from .local_queue import LocalQueue
 from .pubsub_queue import PubsubQueue
 from .sqs_queue import SQSQueue
+from .rabbit import RMQueue
 from .gcloud_worker import GCloudWorkerManager
 from .ec2cloud_worker import EC2WorkerManager
 from .hyperparameter import HyperparameterParser
@@ -477,7 +478,12 @@ def get_worker_manager(config, cloud=None, verbose=10):
     return worker_manager
 
 
-def get_queue(queue_name=None, cloud=None, verbose=10):
+def get_queue(
+        queue_name=None,
+        cloud=None,
+        config=None,
+        logger=None,
+        verbose=10):
     if queue_name is None:
         if cloud in ['gcloud', 'gcspot']:
             queue_name = 'pubsub_' + str(uuid.uuid4())
@@ -489,6 +495,12 @@ def get_queue(queue_name=None, cloud=None, verbose=10):
     if queue_name.startswith('ec2') or \
        queue_name.startswith('sqs'):
         return SQSQueue(queue_name, verbose=verbose)
+    elif queue_name.startswith('rmq_'):
+        return RMQueue(
+            queue=queue_name,
+            config=config,
+            logger=logger,
+            verbose=verbose)
     elif queue_name == 'local':
         return LocalQueue(verbose=verbose)
     else:
@@ -593,10 +605,10 @@ def submit_experiments(
     for experiment in experiments:
         print("studio run: submitted experiment " + experiment.key)
 
-    logger.info("Added %s experiments in %s seconds" %
-                (num_experiments, int(time.time() - start_time)))
+    logger.info("Added %s experiment(s) in %s seconds to queue %s" %
+                (num_experiments, int(time.time() - start_time), queue_name))
 
-    queue = get_queue(queue_name, cloud, verbose)
+    queue = get_queue(queue_name, cloud, config, logger, verbose)
     for e in experiments:
         queue.enqueue(json.dumps({
             'experiment': e.__dict__,

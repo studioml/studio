@@ -79,6 +79,8 @@ class KeyValueProvider(object):
 
         if 'local' in experiment.artifacts['workspace'].keys() and \
                 os.path.exists(experiment.artifacts['workspace']['local']):
+            self.logger.info("git location for experiment " +
+                             experiment.artifacts['workspace']['local'])
             experiment.git = git_util.get_git_info(
                 experiment.artifacts['workspace']['local'])
 
@@ -224,6 +226,9 @@ class KeyValueProvider(object):
             key = experiment.key
         else:
             key = experiment
+
+        self.logger.debug(('checkpointing {}'.format(
+            self._get_experiments_keybase() + key)))
 
         experiment_dict = self._get(self._get_experiments_keybase() + key)
 

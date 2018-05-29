@@ -49,7 +49,8 @@ def get_auth_class(authtype):
         return GithubAuth
     else:
         raise ValueError(
-            'Unknown authentication type {}'
+            'Unknown authentication type {}, valid values are none, ' +
+            'firebase, github'
             .format(authtype))
 
 
