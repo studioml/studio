@@ -1,3 +1,5 @@
+pip == 9.0.3
+
 setuptools_scm
 setuptools_scm_git_archive
 
@@ -36,4 +38,3 @@ awscli
 filelock
 pygtail
 pika == 0.11.2
-pip == 9.0.3

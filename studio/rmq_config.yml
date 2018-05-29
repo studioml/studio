@@ -16,7 +16,7 @@ runner:
 
 cloud:
     queue:
-        uri: "amqp://guest:guest@localhost:5672/%2F?connection_attempts=50"
+        rmq: "amqp://guest:guest@localhost:5672/"
 
 verbose: debug
 saveWorkspaceFrequency: 3m

@@ -227,7 +227,8 @@ class KeyValueProvider(object):
         else:
             key = experiment
 
-        self.logger.debug(('checkpointing {}'.format(self._get_experiments_keybase() + key)))
+        self.logger.debug(('checkpointing {}'.format(
+            self._get_experiments_keybase() + key)))
 
         experiment_dict = self._get(self._get_experiments_keybase() + key)
 

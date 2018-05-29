@@ -20,7 +20,8 @@ script:
     - echo GOOGLE_APPLICATION_CREDENTIALS=$GOOGLE_APPLICATION_CREDENTIALS
     - echo GOOGLE_APPLICATION_CREDENTIALS_DC=$GOOGLE_APPLICATION_CREDENTIALS_DC
     - pip freeze
-    - py.test -n 8 -v --durations=0
+    - pytest --collect-only -v
+    - pytest -n 8 -v --durations=0 -l
 
 jobs:
   include:

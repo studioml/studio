@@ -49,7 +49,8 @@ def get_auth_class(authtype):
         return GithubAuth
     else:
         raise ValueError(
-            'Unknown authentication type {}'
+            'Unknown authentication type {}, valid values are none, ' +
+            'firebase, github'
             .format(authtype))
 
 
@@ -146,7 +147,7 @@ class GithubAuth(object):
         tokens = [
             f for f in tokendir_contents
             if os.path.isfile(os.path.join(self.tokendir, f)) and
-               f.endswith('.githubtoken')
+            f.endswith('.githubtoken')
         ]
 
         # TODO selection out of multiple token files

@@ -54,7 +54,7 @@ def main(args=sys.argv):
     elif parsed_args.queue.startswith('rmq_'):
         queue = RMQueue(
             queue=parsed_args.queue,
-            route ='StudioML.*',
+            route='StudioML.*',
             config=config,
             verbose=verbose)
     else:

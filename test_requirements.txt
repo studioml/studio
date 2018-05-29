@@ -2,4 +2,4 @@ pycodestyle
 pytest_xdist
 pytest-random-order
 tensorflow<=1.4.1
-keras
+keras<=2.0.8

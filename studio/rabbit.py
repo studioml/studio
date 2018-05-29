@@ -54,19 +54,20 @@ class RMQueue(object):
             self._logger.setLevel(logging.INFO)
 
         if config is not None:
-            # extract from the config data structure any settings related to queue
-            # messaging for rabbit MQ
+            # extract from the config data structure any settings related to
+            # queue messaging for rabbit MQ
             if 'cloud' in config:
                 if 'queue' in config['cloud']:
-                    if 'uri' in config['cloud']['queue']:
-                        self._url = config['cloud']['queue']['uri']
+                    if 'rmq' in config['cloud']['queue']:
+                        self._url = config['cloud']['queue']['rmq']
                         self._logger.warn('url {}'
                                           .format(self._url))
 
         self._queue = queue
 
-        # The pika library for RabbitMQ has an asynchronous run method that needs to
-        # run forever and will do reconnections etc automatically for us
+        # The pika library for RabbitMQ has an asynchronous run method
+        # that needs to run forever and will do reconnections etc
+        # automatically for us
         thr = threading.Thread(target=self.run, args=(), kwargs={})
         thr.setDaemon(True)
         thr.start()
@@ -169,13 +170,15 @@ class RMQueue(object):
         with self._rmq_lock:
             self._channel.exchange_declare(callback=self.on_exchange_declareok,
                                            exchange=exchange_name,
-                                           exchange_type=self._exchange_type)
+                                           exchange_type=self._exchange_type,
+                                           durable=True,
+                                           auto_delete=True)
 
     def on_exchange_declareok(self, unused_frame):
         """
         completion callback for the Exchange.Declare RPC command.
 
-        :param pika.Frame.Method unused_frame: Exchange.DeclareOk response frame
+        :param pika.Frame.Method unused_frame: Exchange.DeclareOk response
 
         """
         self._logger.debug('declared exchange ' + self._exchange)
@@ -268,14 +271,14 @@ class RMQueue(object):
                 self._nacked += 1
             self._deliveries.remove(method_frame.method.delivery_tag)
             self._logger.info('published ' +
-                            str(self._message_number) +
-                            ' messages, ' +
-                            str(len(self._deliveries)) +
-                            ' have yet to be confirmed, ' +
-                            str(self._acked) +
-                            ' were acked and ' +
-                            str(self._nacked) +
-                            ' were nacked')
+                              str(self._message_number) +
+                              ' messages, ' +
+                              str(len(self._deliveries)) +
+                              ' have yet to be confirmed, ' +
+                              str(self._acked) +
+                              ' were acked and ' +
+                              str(self._nacked) +
+                              ' were nacked')
 
     def run(self):
         """
@@ -340,25 +343,28 @@ class RMQueue(object):
         """
         Publish a message to RMQ, appending a list of deliveries with
         the message number that was sent.  This list will be used to
-        check for delivery confirmations in the on_delivery_confirmations method.
+        check for delivery confirmations in the
+        on_delivery_confirmations method.
         """
         if self._url is None:
             raise Exception('url for rmq not initialized')
 
         if msg is None:
             raise Exception(
-                'message was None, it needs to have a meaningful value to be sent')
+                'message was None, it needs a meaningful value to be sent')
 
         # Wait to see if the channel gets opened
         tries = retries
         while tries != 0:
             if self._channel is None:
                 self._logger.warn(
-                    'failed to send message ({} tries left) to {} as the channel API was not initialized' .format(
+                    'failed to send message ({} tries left) to {} as '
+                    'the channel API was not initialized' .format(
                         tries, self._url))
             elif not self._channel.is_open:
                 self._logger.warn(
-                    'failed to send message ({} tries left) to {} as the channel was not open' .format(
+                    'failed to send message ({} tries left) to {} as '
+                    'the channel was not open' .format(
                         tries, self._url))
             else:
                 break
