@@ -336,6 +336,9 @@ class RMQueue(object):
                 self._logger.info('closing connection')
                 self._connection.close()
 
+    def clean(self, timeout=0):
+        return
+
     def get_name(self):
         return self._exchange
 
