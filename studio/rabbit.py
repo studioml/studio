@@ -340,7 +340,7 @@ class RMQueue(object):
         return
 
     def get_name(self):
-        return self._exchange
+        return self._queue
 
     def enqueue(self, msg, retries=5):
         """
