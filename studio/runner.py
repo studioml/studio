@@ -492,8 +492,6 @@ def get_queue(
         else:
             queue_name = 'local'
 
-    logger.info('using queue name {}'.format(queue_name))
-
     if queue_name.startswith('ec2') or \
        queue_name.startswith('sqs'):
         return SQSQueue(queue_name, verbose=verbose)
