@@ -114,7 +114,7 @@ class CompletionService:
 
         self.queue = runner.get_queue(queue_name=queue, cloud=self.cloud,
                                       config=studio_config,
-                                      logger=self.logg,
+                                      logger=self.log,
                                       verbose=self.verbose_level)
 
         self.queue_name = self.queue.get_name()
