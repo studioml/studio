@@ -112,6 +112,7 @@ class CompletionService:
         self.verbose_level = model.parse_verbosity(self.config['verbose'])
         self.logger.setLevel(self.verbose_level)
 
+        self.logger.info("CompletionService configured with queue " + queue)
         self.queue = runner.get_queue(queue_name=queue, cloud=self.cloud,
                                       config=studio_config,
                                       logger=self.logger,
