@@ -89,7 +89,9 @@ class CompletionService:
         # Whether to delete the queue on shutdown
         shutdown_del_queue=False,
         # delay between queries for results
-        sleep_time=1
+        sleep_time=1,
+        # used to pass a studioML configuration block read by client software
+        studio_config=None
     ):
 
         self.config = model.get_config(config)
@@ -111,6 +113,7 @@ class CompletionService:
         self.logger.setLevel(self.verbose_level)
 
         self.queue = runner.get_queue(queue_name=queue, cloud=self.cloud,
+                                      config=studio_config,
                                       verbose=self.verbose_level)
 
         self.queue_name = self.queue.get_name()
