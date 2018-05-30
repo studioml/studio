@@ -110,8 +110,8 @@ class CompletionService:
         self.verbose_level = model.parse_verbosity(self.config['verbose'])
         self.logger.setLevel(self.verbose_level)
 
-        self.queue = runner.get_queue(queue, self.cloud,
-                                      self.verbose_level)
+        self.queue = runner.get_queue(queue_name=queue, cloud=self.cloud,
+                                      verbose=self.verbose_level)
 
         self.queue_name = self.queue.get_name()
 
