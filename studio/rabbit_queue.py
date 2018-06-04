@@ -284,6 +284,7 @@ class RMQueue(object):
         """
         Blocking run loop, connecting and then starting the IOLoop.
         """
+        self._logger.info('RMQ started')
         while not self._stopping:
             self._connection = None
             with self._msg_tracking_lock:
@@ -295,6 +296,7 @@ class RMQueue(object):
             try:
                 with self._rmq_lock:
                     self._connection = self.connect()
+                self._logger.info('RMQ connected')
                 self._connection.ioloop.start()
             except KeyboardInterrupt:
                 self.stop()
