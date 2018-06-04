@@ -337,6 +337,10 @@ class RMQueue(object):
                 self._connection.close()
 
     def clean(self, timeout=0):
+        while True:
+            msg = self.dequeue(timeout=timeout)
+            if not msg:
+                break
         return
 
     def get_name(self):

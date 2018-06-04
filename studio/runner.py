@@ -496,8 +496,8 @@ def get_queue(
        queue_name.startswith('sqs'):
         return SQSQueue(queue_name, verbose=verbose)
     elif queue_name.startswith('rmq_'):
-        return RMQueue(
-            queue=queue_name,
+        return get_cached_queue(
+            name=queue_name,
             config=config,
             logger=logger,
             verbose=verbose)
