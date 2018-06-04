@@ -12,14 +12,9 @@ def get_cached_queue(
         config=None,
         logger=None,
         verbose=10):
-    q = queue_cache.get(name, None)
-    if q is not None:
-        return q
-    q = RMQueue(
+    return RMQueue(
         queue=name,
         route=route,
         config=config,
         logger=logger,
         verbose=verbose)
-    queue_cache[name] = q
-    return q
