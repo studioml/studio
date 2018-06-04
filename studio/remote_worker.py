@@ -7,6 +7,8 @@ from .pubsub_queue import PubsubQueue
 from .sqs_queue import SQSQueue
 from .rabbit_queue import RMQueue
 
+from .qclient_cache import get_cached_queue
+
 
 def main(args=sys.argv):
     logger = logs.getLogger('studio-remote-worker')

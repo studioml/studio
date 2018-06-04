@@ -16,6 +16,7 @@ from .local_queue import LocalQueue
 from .pubsub_queue import PubsubQueue
 from .sqs_queue import SQSQueue
 from .rabbit_queue import RMQueue
+from .qclient_cache import get_cached_queue
 from .gcloud_worker import GCloudWorkerManager
 from .ec2cloud_worker import EC2WorkerManager
 from .hyperparameter import HyperparameterParser
