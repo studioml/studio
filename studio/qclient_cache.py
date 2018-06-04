@@ -1,5 +1,7 @@
 from cachetools import LRUCache
 
+from .rabbit_queue import RMQueue
+
 queue_cache = {}
 
 
