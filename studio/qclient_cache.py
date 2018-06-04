@@ -16,7 +16,7 @@ def get_cached_queue(
     if q is not None:
         return q
     q = RMQueue(
-        queue=queue,
+        queue=name,
         route=route,
         config=config,
         logger=logger,
