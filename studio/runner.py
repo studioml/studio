@@ -499,6 +499,7 @@ def get_queue(
     elif queue_name.startswith('rmq_'):
         return get_cached_queue(
             name=queue_name,
+            route='StudioML.route',
             config=config,
             logger=logger,
             verbose=verbose)

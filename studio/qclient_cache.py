@@ -6,9 +6,9 @@ queue_cache = {}
 
 
 def get_cached_queue(
-        name=None,
-        cloud=None,
-        route=None,
+        name,
+        cloud,
+        route,
         config=None,
         logger=None,
         verbose=10):

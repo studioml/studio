@@ -18,13 +18,10 @@ class RMQueue(object):
 
     """
 
-    def __init__(self, queue, amqp_url='', route='StudioML.route',
+    def __init__(self, queue, route,
                  config=None, logger=None, verbose=None):
         """Setup the example publisher object, passing in the URL we will use
         to connect to RabbitMQ.
-
-        :param str amqp_url: The URL for connecting to RabbitMQ
-
         """
         self._rmq_lock = threading.RLock()
         self._connection = None
@@ -42,7 +39,6 @@ class RMQueue(object):
         self._rmq_id = None
 
         self._stopping = False
-        self._url = amqp_url
         self._exchange = 'StudioML.topic'
         self._exchange_type = 'topic'
         self._routing_key = route
