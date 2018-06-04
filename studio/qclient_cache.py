@@ -2,15 +2,16 @@ from cachetools import LRUCache
 
 queue_cache = {}
 
+
 def get_cached_queue(
-        name=None, 
-        cloud=None, 
+        name=None,
+        cloud=None,
         route=None,
-        config=None, 
-        logger=None, 
+        config=None,
+        logger=None,
         verbose=10):
     q = queue_cache.get(name, None)
-    if q != None:
+    if q is not None:
         return q
     q = RMQueue(
         queue=queue_name,
