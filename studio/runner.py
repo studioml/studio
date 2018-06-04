@@ -15,7 +15,7 @@ import numpy as np
 from .local_queue import LocalQueue
 from .pubsub_queue import PubsubQueue
 from .sqs_queue import SQSQueue
-from .rabbit import RMQueue
+from .rabbit_queue import RMQueue
 from .gcloud_worker import GCloudWorkerManager
 from .ec2cloud_worker import EC2WorkerManager
 from .hyperparameter import HyperparameterParser

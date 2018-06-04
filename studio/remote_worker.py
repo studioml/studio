@@ -5,7 +5,7 @@ from . import model, logs
 from .local_worker import worker_loop
 from .pubsub_queue import PubsubQueue
 from .sqs_queue import SQSQueue
-from .rabbit import RMQueue
+from .rabbit_queue import RMQueue
 
 
 def main(args=sys.argv):
