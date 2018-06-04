@@ -7,8 +7,8 @@ queue_cache = {}
 
 def get_cached_queue(
         name,
-        cloud,
         route,
+        cloud=None,
         config=None,
         logger=None,
         verbose=10):
