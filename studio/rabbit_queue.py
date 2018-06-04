@@ -18,7 +18,7 @@ class RMQueue(object):
 
     """
 
-    def __init__(self, queue, route,
+    def __init__(self, queue, route, amqp_url='',
                  config=None, logger=None, verbose=None):
         """Setup the example publisher object, passing in the URL we will use
         to connect to RabbitMQ.
@@ -42,6 +42,8 @@ class RMQueue(object):
         self._exchange = 'StudioML.topic'
         self._exchange_type = 'topic'
         self._routing_key = route
+
+        self._url = amqp_url
 
         if logger is not None:
             self._logger = logger
