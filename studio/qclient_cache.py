@@ -4,7 +4,6 @@ from .rabbit_queue import RMQueue
 
 queue_cache = {}
 
-
 def get_cached_queue(
         name,
         route,
@@ -12,9 +11,14 @@ def get_cached_queue(
         config=None,
         logger=None,
         verbose=10):
-    return RMQueue(
+    #q = queue_cache.get(name, None)
+    #if q is not None:
+    #    return q
+    q = RMQueue(
         queue=name,
         route=route,
         config=config,
         logger=logger,
         verbose=verbose)
+    #queue_cache[name] = q
+    return q
