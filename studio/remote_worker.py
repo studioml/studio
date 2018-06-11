@@ -56,7 +56,7 @@ def main(args=sys.argv):
     elif parsed_args.queue.startswith('rmq_'):
         queue = get_cached_queue(
             name=parsed_args.queue,
-            route='StudioML.*',
+            route='StudioML.' + parsed_args.queue,
             config=config,
             logger=logger,
             verbose=verbose)
