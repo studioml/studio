@@ -69,8 +69,7 @@ class TartifactStore(object):
     def get_artifact_hash(
             self,
             artifact,
-            local_path=None,
-            cache=True):
+            local_path=None):
 
         if local_path is None:
             local_path = artifact['local']
@@ -83,9 +82,18 @@ class TartifactStore(object):
 
         key = artifact.get('key')
         tar_filename = self._tartifact(local_path, key)
-        retval = util.sha256_checksum(tar_filename)
-        os.remove(tar_filename)
-        return retval
+
+        try:
+            retval = util.sha256_checksum(tar_filename)
+            os.remove(tar_filename)
+            self.logger.debug('deleted local artifact file {}'.format(tar_filename))
+            return retval
+        except BaseException as e:
+            self.logger.info('error generating a hash for {}'.format(tar_filename))
+            self.logger.info(e)
+
+        return None
+
 
     def put_artifact(
             self,
