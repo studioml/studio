@@ -257,9 +257,10 @@ class TartifactStore(object):
 
                 tarout, tarerr = tarp.communicate()
                 if tarp.returncode != 0:
-                    self.logger.info('tar had a non-zero return code!')
+                    self.logger.info('tar had a non-zero return code ! (' + str(tarp.returncode)+ ')')
                     self.logger.info('tar cmd = ' + tarcmd)
-                    self.logger.info('tar output: \n ' + str(tarout))
+                    self.logger.info('tar stdout output: \n ' + str(tarout))
+                    self.logger.info('tar stderr output: \n ' + str(tarerr))
 
                 if len(listtar) == 1:
                     actual_path = os.path.join(basepath, listtar[0])
@@ -395,12 +396,13 @@ class TartifactStore(object):
                                 stderr=subprocess.STDOUT,
                                 close_fds=True)
 
-        tarout, _ = tarp.communicate()
+        tarout, tarerr = tarp.communicate()
         toc = time.time()
 
         if tarp.returncode != 0:
-            self.logger.info('tar had a non-zero return code!')
+            self.logger.info('tar had a non-zero return code ! (' + str(tarp.returncode)+ ')')
             self.logger.info('tar output: \n ' + sixdecode(tarout))
+            self.logger.info('tar stderr output: \n ' + str(tarerr))
 
         self.logger.info('tar finished in {}s'.format(toc - tic))
         return tar_filename
