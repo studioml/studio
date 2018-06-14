@@ -70,9 +70,9 @@ class S3ArtifactStore(TartifactStore):
             Key=key)
 
     def _get_file_timestamp(self, key):
-        obj = self.client.head_object(Bucket=self.bucket, Key=key)
 
         try:
+            obj = self.client.head_object(Bucket=self.bucket, Key=key)
             time_updated = obj.get('LastModified', None)
         except BaseException:
             return None
