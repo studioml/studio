@@ -12,44 +12,6 @@ from studio.util import rsync_cp
 from studio.experiment import create_experiment
 
 
-'''
-class CompletionServiceManager:
-    def __init__(
-            self,
-            config=None,
-            resources_needed=None,
-            cloud=None):
-        self.config = config
-        self.resources_needed = resources_needed
-        self.wm = runner.get_worker_manager(config, cloud)
-        self.logger = logs.getLogger(self.__class__.__name__)
-        verbose = model.parse_verbosity(self.config['verbose'])
-        self.logger.setLevel(verbose)
-
-        self.queue = runner.get_queue(self.cloud, verbose)
-
-        self.completion_services = {}
-
-    def submitTask(self, experimentId, clientCodeFile, args):
-        if experimentId not in self.completion_services.keys():
-            self.completion_services[experimentId] = \
-                CompletionService(
-                    experimentId,
-                    self.config,
-                    self.resources_needed,
-                    self.cloud).__enter__()
-
-        return self.completion_services[experimentId].submitTask(
-            clientCodeFile, args)
-
-    def __enter__(self):
-        return self
-
-    def __exit__(self, *args):
-        for _, cs in self.completion_services.iter_items():
-            cs.__exit__()
-'''
-
 DEFAULT_RESOURCES_NEEDED = {
     'cpus': 2,
     'ram': '3g',

@@ -1,5 +1,8 @@
-from cachetools import LRUCache
+import threading
 
+from datetime import timedelta
+
+from cachetools import LRUCache
 from .rabbit_queue import RMQueue
 
 queue_cache = {}
@@ -10,6 +13,7 @@ def get_cached_queue(
         cloud=None,
         config=None,
         logger=None,
+        close_after=timedelta(),
         verbose=10):
     #if queue_cache.get(name, None) is None:
     #    queue_cache[name] = RMQueue(
@@ -20,9 +24,25 @@ def get_cached_queue(
     #        verbose=verbose)
     #
     #return queue_cache[name]
-    return RMQueue(
+    q = RMQueue(
             queue=name,
             route=route,
             config=config,
             logger=logger,
             verbose=verbose)
+    if close_after is not None and close_after.total_seconds() > 0:
+        thr = threading.Timer(interval=close_after.total_seconds(), function=purge_rmq, args=(q), kwargs={})
+        thr.setDaemon(True)
+        thr.start()
+
+    return q
+
+def purge_rmq(q):
+    if q is None:
+        return
+
+    try:
+        q.stop()
+    except BaseException:
+        return
+    return
