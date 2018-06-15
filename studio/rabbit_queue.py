@@ -18,13 +18,10 @@ class RMQueue(object):
 
     """
 
-    def __init__(self, queue, amqp_url='', route='StudioML.route',
+    def __init__(self, queue, route, amqp_url='',
                  config=None, logger=None, verbose=None):
         """Setup the example publisher object, passing in the URL we will use
         to connect to RabbitMQ.
-
-        :param str amqp_url: The URL for connecting to RabbitMQ
-
         """
         self._rmq_lock = threading.RLock()
         self._connection = None
@@ -42,10 +39,11 @@ class RMQueue(object):
         self._rmq_id = None
 
         self._stopping = False
-        self._url = amqp_url
         self._exchange = 'StudioML.topic'
         self._exchange_type = 'topic'
         self._routing_key = route
+
+        self._url = amqp_url
 
         if logger is not None:
             self._logger = logger
@@ -151,7 +149,7 @@ class RMQueue(object):
         :param str reply_text: The text reason the channel was closed
 
         """
-        self._logger.info('channel closed ' + reply_code + reply_text)
+        self._logger.info('channel closed ' + str(reply_code) + ' ' + reply_text)
         with self._rmq_lock:
             self._channel = None
             if not self._stopping:
@@ -284,6 +282,7 @@ class RMQueue(object):
         """
         Blocking run loop, connecting and then starting the IOLoop.
         """
+        self._logger.info('RMQ started')
         while not self._stopping:
             self._connection = None
             with self._msg_tracking_lock:
@@ -295,6 +294,7 @@ class RMQueue(object):
             try:
                 with self._rmq_lock:
                     self._connection = self.connect()
+                self._logger.info('RMQ connected')
                 self._connection.ioloop.start()
             except KeyboardInterrupt:
                 self.stop()
@@ -336,8 +336,15 @@ class RMQueue(object):
                 self._logger.info('closing connection')
                 self._connection.close()
 
+    def clean(self, timeout=0):
+        while True:
+            msg = self.dequeue(timeout=timeout)
+            if not msg:
+                break
+        return
+
     def get_name(self):
-        return self._exchange
+        return self._queue
 
     def enqueue(self, msg, retries=5):
         """

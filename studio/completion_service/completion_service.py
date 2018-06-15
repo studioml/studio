@@ -12,44 +12,6 @@ from studio.util import rsync_cp
 from studio.experiment import create_experiment
 
 
-'''
-class CompletionServiceManager:
-    def __init__(
-            self,
-            config=None,
-            resources_needed=None,
-            cloud=None):
-        self.config = config
-        self.resources_needed = resources_needed
-        self.wm = runner.get_worker_manager(config, cloud)
-        self.logger = logs.getLogger(self.__class__.__name__)
-        verbose = model.parse_verbosity(self.config['verbose'])
-        self.logger.setLevel(verbose)
-
-        self.queue = runner.get_queue(self.cloud, verbose)
-
-        self.completion_services = {}
-
-    def submitTask(self, experimentId, clientCodeFile, args):
-        if experimentId not in self.completion_services.keys():
-            self.completion_services[experimentId] = \
-                CompletionService(
-                    experimentId,
-                    self.config,
-                    self.resources_needed,
-                    self.cloud).__enter__()
-
-        return self.completion_services[experimentId].submitTask(
-            clientCodeFile, args)
-
-    def __enter__(self):
-        return self
-
-    def __exit__(self, *args):
-        for _, cs in self.completion_services.iter_items():
-            cs.__exit__()
-'''
-
 DEFAULT_RESOURCES_NEEDED = {
     'cpus': 2,
     'ram': '3g',
@@ -89,7 +51,9 @@ class CompletionService:
         # Whether to delete the queue on shutdown
         shutdown_del_queue=False,
         # delay between queries for results
-        sleep_time=1
+        sleep_time=1,
+        # used to pass a studioML configuration block read by client software
+        studio_config=None
     ):
 
         self.config = model.get_config(config)
@@ -110,8 +74,13 @@ class CompletionService:
         self.verbose_level = model.parse_verbosity(self.config['verbose'])
         self.logger.setLevel(self.verbose_level)
 
-        self.queue = runner.get_queue(queue, self.cloud,
-                                      self.verbose_level)
+        if queue is not None:
+            self.logger.info("CompletionService configured with queue " + queue)
+
+        self.queue = runner.get_queue(queue_name=queue, cloud=self.cloud,
+                                      config=studio_config,
+                                      logger=self.logger,
+                                      verbose=self.verbose_level)
 
         self.queue_name = self.queue.get_name()
 
