@@ -31,8 +31,8 @@ def get_cached_queue(
             logger=logger,
             verbose=verbose)
     if close_after is not None and close_after.total_seconds() > 0:
-        args=(q, logger)
-        thr = threading.Timer(interval=close_after.total_seconds(), function=purge_rmq, *args)
+        args=[q, logger]
+        thr = threading.Timer(interval=close_after.total_seconds(), function=purge_rmq, args=args)
         thr.setDaemon(True)
         thr.start()
 
