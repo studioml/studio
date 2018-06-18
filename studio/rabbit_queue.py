@@ -149,7 +149,11 @@ class RMQueue(object):
         :param str reply_text: The text reason the channel was closed
 
         """
-        self._logger.info('channel closed ' + str(reply_code) + ' ' + reply_text)
+        self._logger.info(
+            'channel closed ' +
+            str(reply_code) +
+            ' ' +
+            reply_text)
         with self._rmq_lock:
             self._channel = None
             if not self._stopping:

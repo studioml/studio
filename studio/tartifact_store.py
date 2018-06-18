@@ -86,14 +86,15 @@ class TartifactStore(object):
         try:
             retval = util.sha256_checksum(tar_filename)
             os.remove(tar_filename)
-            self.logger.debug('deleted local artifact file {}'.format(tar_filename))
+            self.logger.debug(
+                'deleted local artifact file {}'.format(tar_filename))
             return retval
         except BaseException as e:
-            self.logger.info('error generating a hash for {}'.format(tar_filename))
+            self.logger.info(
+                'error generating a hash for {}'.format(tar_filename))
             self.logger.info(e)
 
         return None
-
 
     def put_artifact(
             self,
@@ -265,7 +266,9 @@ class TartifactStore(object):
 
                 tarout, tarerr = tarp.communicate()
                 if tarp.returncode != 0:
-                    self.logger.info('tar had a non-zero return code ! (' + str(tarp.returncode)+ ')')
+                    self.logger.info(
+                        'tar had a non-zero return code ! (' +
+                        str(tarp.returncode) + ')')
                     self.logger.info('tar cmd = ' + tarcmd)
                     self.logger.info('tar stdout output: \n ' + str(tarout))
                     self.logger.info('tar stderr output: \n ' + str(tarerr))
@@ -408,7 +411,9 @@ class TartifactStore(object):
         toc = time.time()
 
         if tarp.returncode != 0:
-            self.logger.info('tar had a non-zero return code ! (' + str(tarp.returncode)+ ')')
+            self.logger.info(
+                'tar had a non-zero return code ! (' +
+                str(tarp.returncode) + ')')
             self.logger.info('tar output: \n ' + sixdecode(tarout))
             self.logger.info('tar stderr output: \n ' + str(tarerr))
 
