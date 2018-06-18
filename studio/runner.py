@@ -486,7 +486,7 @@ def get_queue(
         cloud=None,
         config=None,
         logger=None,
-	close_after=None,
+        close_after=None,
         verbose=10):
     if queue_name is None:
         if cloud in ['gcloud', 'gcspot']:
@@ -504,7 +504,7 @@ def get_queue(
             name=queue_name,
             route='StudioML.' + queue_name,
             config=config,
-	    close_after=close_after,
+            close_after=close_after,
             logger=logger,
             verbose=verbose)
     elif queue_name == 'local':
@@ -614,8 +614,14 @@ def submit_experiments(
     logger.info("Added %s experiment(s) in %s seconds to queue %s" %
                 (num_experiments, int(time.time() - start_time), queue_name))
 
-    queue = get_queue(queue_name=queue_name, cloud=cloud, 
-    config=config, close_after=timedelta(minutes=2), logger=logger, verbose=verbose)
+    queue = get_queue(
+        queue_name=queue_name,
+        cloud=cloud,
+        config=config,
+        close_after=timedelta(
+            minutes=2),
+        logger=logger,
+        verbose=verbose)
     for e in experiments:
         queue.enqueue(json.dumps({
             'experiment': e.__dict__,
