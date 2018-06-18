@@ -5,7 +5,9 @@ from . import model, logs
 from .local_worker import worker_loop
 from .pubsub_queue import PubsubQueue
 from .sqs_queue import SQSQueue
-from .rabbit import RMQueue
+from .rabbit_queue import RMQueue
+
+from .qclient_cache import get_cached_queue
 
 
 def main(args=sys.argv):
@@ -52,10 +54,11 @@ def main(args=sys.argv):
        parsed_args.queue.startswith('sqs_'):
         queue = SQSQueue(parsed_args.queue, verbose=verbose)
     elif parsed_args.queue.startswith('rmq_'):
-        queue = RMQueue(
-            queue=parsed_args.queue,
-            route='StudioML.*',
+        queue = get_cached_queue(
+            name=parsed_args.queue,
+            route='StudioML.' + parsed_args.queue,
             config=config,
+            logger=logger,
             verbose=verbose)
     else:
         queue = PubsubQueue(parsed_args.queue, verbose=verbose)
