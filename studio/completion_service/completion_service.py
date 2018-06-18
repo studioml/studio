@@ -75,7 +75,8 @@ class CompletionService:
         self.logger.setLevel(self.verbose_level)
 
         if queue is not None:
-            self.logger.info("CompletionService configured with queue " + queue)
+            self.logger.info(
+                "CompletionService configured with queue " + queue)
 
         self.queue = runner.get_queue(queue_name=queue, cloud=self.cloud,
                                       config=studio_config,
