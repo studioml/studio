@@ -267,7 +267,7 @@ class TartifactStore(object):
                 tarout, tarerr = tarp.communicate()
                 if tarp.returncode != 0:
                     self.logger.info(
-                        'tar had a non-zero return code ! (' + 
+                        'tar had a non-zero return code ! (' +
                         str(tarp.returncode) + ')')
                     self.logger.info('tar cmd = ' + tarcmd)
                     self.logger.info('tar stdout output: \n ' + str(tarout))
@@ -412,7 +412,7 @@ class TartifactStore(object):
 
         if tarp.returncode != 0:
             self.logger.info(
-                'tar had a non-zero return code ! (' + 
+                'tar had a non-zero return code ! (' +
                 str(tarp.returncode) + ')')
             self.logger.info('tar output: \n ' + sixdecode(tarout))
             self.logger.info('tar stderr output: \n ' + str(tarerr))
