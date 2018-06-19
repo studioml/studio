@@ -104,7 +104,7 @@ class CompletionService:
 
         print("Completion service basic info")
         print("Project name: %s" % self.project_name)
-        print("Initial and final queue name: %s, %s" % (queue, self.queue_name))
+        print("Initial/final queue name: %s, %s" % (queue, self.queue_name))
         print("Cloud name: %s" % self.cloud) 
 
     def __enter__(self):
