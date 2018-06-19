@@ -67,8 +67,9 @@ class CompletionService:
 
         self.resources_needed.update(resources_needed)
 
+        assert queue.startswith("rmq_") and self.cloud is None
         self.wm = runner.get_worker_manager(
-            self.config, self.cloud)
+           self.config, self.cloud)
 
         self.logger = logs.getLogger(self.__class__.__name__)
         self.verbose_level = model.parse_verbosity(self.config['verbose'])
@@ -100,6 +101,11 @@ class CompletionService:
         self.shutdown_del_queue = shutdown_del_queue
         self.use_spot = cloud in ['ec2spot', 'gcspot']
         self.sleep_time = sleep_time
+
+        print("Completion service basic info")
+        print("Project name: %s" % self.project_name)
+        print("Initial and final queue name: %s, %s" % (queue, self.queue_name))
+        print("Cloud name: %s" % self.cloud) 
 
     def __enter__(self):
         with model.get_db_provider(self.config):
