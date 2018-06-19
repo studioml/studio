@@ -5,6 +5,9 @@ from . import model, logs
 from .local_worker import worker_loop
 from .pubsub_queue import PubsubQueue
 from .sqs_queue import SQSQueue
+from .rabbit_queue import RMQueue
+
+from .qclient_cache import get_cached_queue
 
 
 def main(args=sys.argv):
@@ -42,12 +45,25 @@ def main(args=sys.argv):
     parsed_args, script_args = parser.parse_known_args(args)
     verbose = model.parse_verbosity(parsed_args.verbose)
     logger.setLevel(verbose)
+
+    config = None
+    if parsed_args.config is not None:
+        config = model.get_config(parsed_args.config)
+
     if parsed_args.queue.startswith('ec2_') or \
        parsed_args.queue.startswith('sqs_'):
         queue = SQSQueue(parsed_args.queue, verbose=verbose)
+    elif parsed_args.queue.startswith('rmq_'):
+        queue = get_cached_queue(
+            name=parsed_args.queue,
+            route='StudioML.' + parsed_args.queue,
+            config=config,
+            logger=logger,
+            verbose=verbose)
     else:
         queue = PubsubQueue(parsed_args.queue, verbose=verbose)
-    logger.info('Waiting for the work in the queue...')
+
+    logger.info('Waiting for work')
 
     timeout_before = parsed_args.timeout
     timeout_after = timeout_before if timeout_before > 0 else 0

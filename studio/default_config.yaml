@@ -2,7 +2,7 @@ database:
     type: http
     serverUrl: https://zoo.studio.ml
     authentication: github
-            
+
 storage:
     type: gcloud
     bucket: studio-ed756.appspot.com

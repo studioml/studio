@@ -9,12 +9,16 @@ import time
 import multiprocessing
 import six
 import traceback
-from contextlib import closing
 import numpy as np
+
+from contextlib import closing
+from datetime import timedelta
 
 from .local_queue import LocalQueue
 from .pubsub_queue import PubsubQueue
 from .sqs_queue import SQSQueue
+from .rabbit_queue import RMQueue
+from .qclient_cache import get_cached_queue
 from .gcloud_worker import GCloudWorkerManager
 from .ec2cloud_worker import EC2WorkerManager
 from .hyperparameter import HyperparameterParser
@@ -226,8 +230,8 @@ def main(args=sys.argv[1:]):
     # detect which argument is the script filename
     # and attribute all arguments past that index as related to the script
     (runner_args, other_args) = parser.parse_known_args(args)
-    py_suffix_args = [i for i, arg in enumerate(args) if arg.endswith('.py')
-                      or '::' in arg]
+    py_suffix_args = [i for i, arg in enumerate(args)
+                      if arg.endswith('.py') or '::' in arg]
 
     rerun = False
     if len(py_suffix_args) < 1:
@@ -477,7 +481,13 @@ def get_worker_manager(config, cloud=None, verbose=10):
     return worker_manager
 
 
-def get_queue(queue_name=None, cloud=None, verbose=10):
+def get_queue(
+        queue_name=None,
+        cloud=None,
+        config=None,
+        logger=None,
+        close_after=None,
+        verbose=10):
     if queue_name is None:
         if cloud in ['gcloud', 'gcspot']:
             queue_name = 'pubsub_' + str(uuid.uuid4())
@@ -489,6 +499,14 @@ def get_queue(queue_name=None, cloud=None, verbose=10):
     if queue_name.startswith('ec2') or \
        queue_name.startswith('sqs'):
         return SQSQueue(queue_name, verbose=verbose)
+    elif queue_name.startswith('rmq_'):
+        return get_cached_queue(
+            name=queue_name,
+            route='StudioML.' + queue_name,
+            config=config,
+            close_after=close_after,
+            logger=logger,
+            verbose=verbose)
     elif queue_name == 'local':
         return LocalQueue(verbose=verbose)
     else:
@@ -593,10 +611,17 @@ def submit_experiments(
     for experiment in experiments:
         print("studio run: submitted experiment " + experiment.key)
 
-    logger.info("Added %s experiments in %s seconds" %
-                (num_experiments, int(time.time() - start_time)))
+    logger.info("Added %s experiment(s) in %s seconds to queue %s" %
+                (num_experiments, int(time.time() - start_time), queue_name))
 
-    queue = get_queue(queue_name, cloud, verbose)
+    queue = get_queue(
+        queue_name=queue_name,
+        cloud=cloud,
+        config=config,
+        close_after=timedelta(
+            minutes=2),
+        logger=logger,
+        verbose=verbose)
     for e in experiments:
         queue.enqueue(json.dumps({
             'experiment': e.__dict__,

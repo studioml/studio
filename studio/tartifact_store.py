@@ -69,8 +69,7 @@ class TartifactStore(object):
     def get_artifact_hash(
             self,
             artifact,
-            local_path=None,
-            cache=True):
+            local_path=None):
 
         if local_path is None:
             local_path = artifact['local']
@@ -83,9 +82,19 @@ class TartifactStore(object):
 
         key = artifact.get('key')
         tar_filename = self._tartifact(local_path, key)
-        retval = util.sha256_checksum(tar_filename)
-        os.remove(tar_filename)
-        return retval
+
+        try:
+            retval = util.sha256_checksum(tar_filename)
+            os.remove(tar_filename)
+            self.logger.debug(
+                'deleted local artifact file {}'.format(tar_filename))
+            return retval
+        except BaseException as e:
+            self.logger.info(
+                'error generating a hash for {}'.format(tar_filename))
+            self.logger.info(e)
+
+        return None
 
     def put_artifact(
             self,
@@ -257,9 +266,12 @@ class TartifactStore(object):
 
                 tarout, tarerr = tarp.communicate()
                 if tarp.returncode != 0:
-                    self.logger.info('tar had a non-zero return code!')
+                    self.logger.info(
+                        'tar had a non-zero return code ! (' +
+                        str(tarp.returncode) + ')')
                     self.logger.info('tar cmd = ' + tarcmd)
-                    self.logger.info('tar output: \n ' + str(tarout))
+                    self.logger.info('tar stdout output: \n ' + str(tarout))
+                    self.logger.info('tar stderr output: \n ' + str(tarerr))
 
                 if len(listtar) == 1:
                     actual_path = os.path.join(basepath, listtar[0])
@@ -395,12 +407,15 @@ class TartifactStore(object):
                                 stderr=subprocess.STDOUT,
                                 close_fds=True)
 
-        tarout, _ = tarp.communicate()
+        tarout, tarerr = tarp.communicate()
         toc = time.time()
 
         if tarp.returncode != 0:
-            self.logger.info('tar had a non-zero return code!')
+            self.logger.info(
+                'tar had a non-zero return code ! (' +
+                str(tarp.returncode) + ')')
             self.logger.info('tar output: \n ' + sixdecode(tarout))
+            self.logger.info('tar stderr output: \n ' + str(tarerr))
 
         self.logger.info('tar finished in {}s'.format(toc - tic))
         return tar_filename
