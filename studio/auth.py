@@ -168,7 +168,7 @@ class GithubAuth(object):
         return token, token_file
 
     def get_token_file(self):
-        return self._load_token[1]
+        return self._load_token()[1]
 
     def _save_token(self):
         if self.token is None:
