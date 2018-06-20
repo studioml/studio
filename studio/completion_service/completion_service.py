@@ -102,10 +102,10 @@ class CompletionService:
         self.use_spot = cloud in ['ec2spot', 'gcspot']
         self.sleep_time = sleep_time
 
-        print("Completion service basic info")
-        print("Project name: %s" % self.project_name)
-        print("Initial/final queue name: %s, %s" % (queue, self.queue_name))
-        print("Cloud name: %s" % self.cloud) 
+        self.logger.info("Project name: %s" % self.project_name)
+        self.logger.info("Initial/final queue name: %s, %s" % \
+            (queue, self.queue_name))
+        self.logger.info("Cloud name: %s" % self.cloud) 
 
     def __enter__(self):
         with model.get_db_provider(self.config):
