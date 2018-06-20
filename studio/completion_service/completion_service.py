@@ -67,7 +67,8 @@ class CompletionService:
 
         self.resources_needed.update(resources_needed)
 
-        assert queue.startswith("rmq_") and self.cloud is None
+        if queue is not None and queue.startswith("rmq_"):
+          assert self.cloud is None
         self.wm = runner.get_worker_manager(
            self.config, self.cloud)
 
