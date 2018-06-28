@@ -405,7 +405,10 @@ class RMQueue(object):
             message_number = self._message_number
             self._deliveries.append(self._message_number)
 
+        tries = retries
         while tries != 0:
+            time.sleep(1)
+
             with self._msg_tracking_lock:
                 if message_number not in self._deliveries:
                     tries = 0
@@ -414,8 +417,6 @@ class RMQueue(object):
             tries -= 1
             if tries <= 0:
                 break
-
-            time.sleep(1)
 
         return message_number
 
