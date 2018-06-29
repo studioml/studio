@@ -53,6 +53,23 @@ once the installation has been completed you should ensure that the 5672, and
 15672 ports are open for access and that the user name and password you intend on
 using with the StudioML client have been added.
 
+When running RabbitMQ care should be made to ensure that the log files being
+generated do not fill your server and cause failures.  Adding the following
+block to your RabbitMQ servers rabbitmq.config file will prevent this.
+
+::
+    {log, [
+        {file, [{file, "/var/log/rabbitmq/rabbitmq.log"}, %% log.file
+                {level, info},        %% log.file.info
+                {date, "$D0"},           %% log.file.rotation.date
+                {size, 1024},            %% log.file.rotation.size
+                {count, 15}            %% log.file.rotation.count
+        ]}
+    ]},
+
+It is also highly recommended that the number of concurrent connections be also limited
+using the web adminitsration interface.
+
 The StudioML tools need to access the RMQ server using its management
 interface.  The following example shows an example of accessing a RabbitMQ server
 on a local host.  The user name password and the host name will also be used
@@ -118,7 +135,7 @@ to the file as follows:
 		authentication: None
 
 	env:
-		AWS_ACCESS_KEY_ID: J27XQZC2IYBGXH56NO2I
+		AWS_ACCESS_KEY_ID: J27XQZC2IYBGXH56NO2
 		AWS_DEFAULT_REGION: us-west-2
 		AWS_SECRET_ACCESS_KEY: "zMohtbV2O+scofEyNgdxmPAdjQKrT+vfu1Uh23hm"
 		PATH: "%PATH%:./bin"
