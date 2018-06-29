@@ -350,7 +350,7 @@ class RMQueue(object):
     def get_name(self):
         return self._queue
 
-    def enqueue(self, msg, retries=5):
+    def enqueue(self, msg, retries=10):
         """
         Publish a message to RMQ, appending a list of deliveries with
         the message number that was sent.  This list will be used to
@@ -391,12 +391,11 @@ class RMQueue(object):
         properties = pika.BasicProperties(app_id='studioml',
                                           content_type='application/json')
 
-        self._channel.basic_publish(self._exchange,
-                                    self._routing_key,
-                                    msg,
-                                    properties)
-        self._logger.debug('sent message to {} '
-                           .format(self._url))
+        self._channel.basic_publish(exchange=self._exchange,
+                                    routing_key=self._routing_key,
+                                    body=msg,
+                                    properties=properties,
+                                    mandatory=True)
 
         message_number = 0
         with self._msg_tracking_lock:
@@ -411,14 +410,16 @@ class RMQueue(object):
 
             with self._msg_tracking_lock:
                 if message_number not in self._deliveries:
-                    tries = 0
-                    break
+                    self._logger.debug('sent message acknowledged to {} after waiting {} seconds'
+                                       .format(self._url, abs(tries-5)))
 
-            tries -= 1
-            if tries <= 0:
-                break
+                    return message_number
+                else:
+                    tries -= 1
 
-        return message_number
+        raise Exception('studioml message was never acknowledged to {} after waiting {} seconds'
+                        .format(self._url, abs(tries-5)))
+
 
     def dequeue(self, acknowledge=True, timeout=0):
         msg = None

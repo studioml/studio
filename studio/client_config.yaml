@@ -3,7 +3,7 @@ database:
     serverUrl: http://localhost:5000
     authentication:
         type: github
-            
+
 storage:
     type: gcloud
     bucket: studioml-sentient-artifacts
