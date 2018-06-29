@@ -209,8 +209,9 @@ def allocate_resources(experiment, config=None, verbose=10):
         if experiment.resources_needed else 0
 
     if gpus_needed > 0:
-        ret_val = ret_val and allocate_gpus(gpus_needed, 
-            experiment.resources_needed, config)
+        ret_val = ret_val and allocate_gpus(gpus_needed,
+                                            experiment.resources_needed,
+                                            config)
     else:
         allocate_gpus(0)
 
@@ -222,7 +223,7 @@ def allocate_gpus(gpus_needed, resources_needed={}, config=None):
     if gpus_needed < 0:
         os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
         return True
-    elif gpus_needed == 0: 
+    elif gpus_needed == 0:
         return True
 
     gpu_mem_needed = resources_needed.get('gpuMem', None)

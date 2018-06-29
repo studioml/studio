@@ -27,26 +27,28 @@ def get_available_gpus(gpu_mem_needed=None, strict=False):
             memstr2int(gpu.find('fb_memory_usage').find('free').text)
     if gpu_mem_needed is None:
         if strict:
-            return [gpu.find('minor_number').text for gpu in gpus if \
-                check_gpu_nomem_strict(gpu)]
+            return [gpu.find('minor_number').text for gpu in gpus if
+                    check_gpu_nomem_strict(gpu)]
         else:
             return [gpu.find('minor_number').text for gpu in gpus]
 
     gpu_mem_needed = memstr2int(gpu_mem_needed)
+
     def check_gpu_mem_strict(gpu):
         return gpu_mem_needed < \
             memstr2int(gpu.find('fb_memory_usage').find('free').text)
+
     def check_gpu_mem_loose(gpu):
-        return (gpu_mem_needed < \
-            memstr2int(gpu.find('fb_memory_usage').find('total').text)) and \
-            check_gpu_nomem_strict(gpu)
+        return (gpu_mem_needed <
+                memstr2int(gpu.find('fb_memory_usage').find('total').text)) \
+            and check_gpu_nomem_strict(gpu)
 
     if strict:
-        return [gpu.find('minor_number').text \
-            for gpu in gpus if check_gpu_mem_strict(gpu)]
+        return [gpu.find('minor_number').text
+                for gpu in gpus if check_gpu_mem_strict(gpu)]
     else:
-        return [gpu.find('minor_number').text \
-            for gpu in gpus if check_gpu_mem_loose(gpu)]
+        return [gpu.find('minor_number').text
+                for gpu in gpus if check_gpu_mem_loose(gpu)]
 
 
 def _get_gpu_info():
