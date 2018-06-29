@@ -35,7 +35,7 @@ class S3Provider(KeyValueProvider):
             response = self.meta_store.client.get_object(
                 Bucket=self.bucket,
                 Key=key)
-            return json.loads(response['Body'].read())
+            return json.loads(response['Body'].read().decode("utf-8"))
         else:
             if response['KeyCount'] > 1:
                 assert shallow, \
