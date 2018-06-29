@@ -410,16 +410,17 @@ class RMQueue(object):
 
             with self._msg_tracking_lock:
                 if message_number not in self._deliveries:
-                    self._logger.debug('sent message acknowledged to {} after waiting {} seconds'
-                                       .format(self._url, abs(tries-5)))
+                    self._logger.debug('sent message acknowledged to {} ' +
+                                       'after waiting {} seconds'
+                                       .format(self._url, abs(tries - 5)))
 
                     return message_number
                 else:
                     tries -= 1
 
-        raise Exception('studioml message was never acknowledged to {} after waiting {} seconds'
-                        .format(self._url, abs(tries-5)))
-
+        raise Exception('studioml message was never acknowledged to {} ' +
+                        'after waiting {} seconds'
+                        .format(self._url, abs(tries - 5)))
 
     def dequeue(self, acknowledge=True, timeout=0):
         msg = None
