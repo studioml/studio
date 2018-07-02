@@ -109,7 +109,7 @@ class RMQueue(object):
             else:
                 # retry in 5 seconds
                 self._logger.info('connection closed, retry in 5 seconds: ' +
-                                  reply_code + reply_text)
+                                  str(reply_code) + ' ' + reply_text)
                 self._connection.add_timeout(5, self._connection.ioloop.stop)
 
     def open_channel(self):
