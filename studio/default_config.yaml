@@ -1,6 +1,6 @@
 database:
     type: http
-    serverUrl: https://zoo.studio.ml
+    serverUrl: http://zoo.studio.ml
     authentication: github
 
 storage:
