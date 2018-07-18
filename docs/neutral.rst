@@ -84,11 +84,18 @@ on a local host.  The user name password and the host name will also be used
 by system to determine where queues identified in the 'studio run' command
 are hosted.
 
+The amqp URI used within the ~/.studioml/config.yaml file is used by the StudioML 
+client to locate the queue server and to also specify some important options. The
+following example shows the configuration for a rabbitMQ server running locally
+to the studioML client.  The timeout values shown are critically important
+when queuing work in a production environment as the timeouts that exist by default
+inside the rabbitMQ libraries is too small to be viable in a distributed system.
+
 ::
 
     cloud:
         queue:
-            rmq: "amqp://guest@guest@localhost:15672/"
+            rmq: "amqp://guest@password@localhost:15672/%2f?connection_attempts=30&retry_delay=.5&socket_timeout=5"
 
 When running your experiment you should use a rmq\_ prefixed queue name and option
 on the command line for the RabbitMQ parameters, for example:

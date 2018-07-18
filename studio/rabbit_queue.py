@@ -81,7 +81,6 @@ class RMQueue(object):
 
         """
         params = pika.URLParameters(self._url)
-        params.socket_timeout = 5
         return pika.SelectConnection(
             params,
             on_open_callback=self.on_connection_open,
