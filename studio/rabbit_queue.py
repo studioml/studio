@@ -80,9 +80,9 @@ class RMQueue(object):
         :rtype: pika.SelectConnection
 
         """
+        params = pika.URLParameters(self._url)
         return pika.SelectConnection(
-            pika.URLParameters(
-                self._url),
+            params,
             on_open_callback=self.on_connection_open,
             on_close_callback=self.on_connection_closed,
             stop_ioloop_on_close=False)
