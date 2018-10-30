@@ -269,6 +269,7 @@ class TartifactStore(object):
                     self.logger.info(
                         'tar had a non-zero return code ! (' +
                         str(tarp.returncode) + ')')
+
                     self.logger.info('tar cmd = ' + tarcmd)
                     self.logger.info('tar stdout output: \n ' + str(tarout))
                     self.logger.info('tar stderr output: \n ' + str(tarerr))
@@ -414,6 +415,7 @@ class TartifactStore(object):
             self.logger.info(
                 'tar had a non-zero return code ! (' +
                 str(tarp.returncode) + ')')
+
             self.logger.info('tar output: \n ' + sixdecode(tarout))
             self.logger.info('tar stderr output: \n ' + str(tarerr))
 

@@ -396,6 +396,8 @@ class RMQueue(object):
                                     body=msg,
                                     properties=properties,
                                     mandatory=True)
+        self._logger.debug('sent message to {} '
+                           .format(self._url))
 
         message_number = 0
         with self._msg_tracking_lock:
