@@ -27,17 +27,33 @@ if [ "$1" = "gae" ]; then
     mv default_config.yaml default_config.yaml.orig
     cp $config default_config.yaml
     cp app.yaml app.yaml.old
+    echo "env_variables:" >> app.yaml
+
     if [ -n "$AWS_ACCESS_KEY_ID" ]; then
         echo "exporting AWS env variables to app.yaml"
-        echo "env_variables:" >> app.yaml
         echo "  AWS_ACCESS_KEY_ID: $AWS_ACCESS_KEY_ID" >> app.yaml
         echo "  AWS_SECRET_ACCESS_KEY: $AWS_SECRET_ACCESS_KEY" >> app.yaml
         echo "  AWS_DEFAULT_REGION: $AWS_DEFAULT_REGION" >> app.yaml
     fi
 
+    if [ -n "$STUDIO_GITHUB_ID" ]; then
+        echo "exporting github secret env variables to app.yaml"
+        echo "  STUDIO_GITHUB_ID: $STUDIO_GITHUB_ID" >> app.yaml
+        echo "  STUDIO_GITHUB_SECRET: $STUDIO_GITHUB_SECRET" >> app.yaml
+    fi
+
     rm -rf lib
     # pip install -t lib -r ../requirements.txt
     pip install -t lib ../
+    # pip install -t lib -r ../extra_server_requirements.txt
+
+    # patch library files where necessary
+    for patch in $(find patches -name "*.patch"); do
+        filename=${patch#patches/}
+        filename=${filename%.patch}
+        patch lib/$filename $patch
+    done
+
     rm lib/tensorflow/python/_pywrap_tensorflow_internal.so
     echo "" >  lib/tensorflow/__init__.py
 
@@ -56,4 +72,4 @@ else if [ "$1" = "local" ]; then
 fi
 
 # rm -f $creds
-rm -rf lib
+# rm -rf lib

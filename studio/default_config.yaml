@@ -1,26 +1,28 @@
 database:
     type: http
-    serverUrl: http://zoo.studio.ml
-    apiKey: AIzaSyCLQbp5X2B4SWzBw-sz9rUnGHNSdMl0Yx8
-    authDomain: "studio-ed756.firebaseapp.com"
-    projectId: "studio-ed756"
+    serverUrl: https://zoo.studio.ml
+    authentication: github
+
+storage:
+    type: gcloud
+    bucket: studio-ed756.appspot.com
+
 
 
 queue: local
 
-saveMetricsIntervalMinutes: 1
-saveWorkspaceFrequencyMinutes: 1
-saveMectricsIntervalMinutes: 1
+saveMetricsFrequency: 1m
+saveWorkspaceFrequency: 1m
 verbose: error
 
 cloud:
     gcloud:
-        zone: us-central1-f
+        zone: us-east1-c
 
 resources_needed:
     cpus: 2
     ram:  3g
-    hdd:  10g
+    hdd:  60g
     gpus: 0
 
 sleep_time: 1

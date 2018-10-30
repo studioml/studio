@@ -1,4 +1,3 @@
-import logging
 import time
 
 try:
@@ -7,14 +6,14 @@ except BaseException:
     boto3 = None
 
 from .model import parse_verbosity
-
-logging.basicConfig()
+from .util import retry
+from . import logs
 
 
 class SQSQueue(object):
 
     def __init__(self, name, verbose=10, receive_timeout=300,
-                 retry_time=10, region_name='us-east-1'):
+                 retry_time=10, region_name=None):
         assert boto3 is not None
         self._client = boto3.client('sqs', region_name=region_name)
 
@@ -22,7 +21,7 @@ class SQSQueue(object):
             QueueName=name)
 
         self._queue_url = create_q_response['QueueUrl']
-        self.logger = logging.getLogger('SQSQueue')
+        self.logger = logs.getLogger('SQSQueue')
         if verbose is not None:
             self.logger.setLevel(parse_verbosity(verbose))
         self._name = name
@@ -109,9 +108,11 @@ class SQSQueue(object):
             return (retval['Body'], retval['ReceiptHandle'])
 
     def acknowledge(self, ack_id):
-        self._client.delete_message(
+        retry(lambda: self._client.delete_message(
             QueueUrl=self._queue_url,
-            ReceiptHandle=ack_id)
+            ReceiptHandle=ack_id),
+
+            sleep_time=10, logger=self.logger)
 
     def hold(self, ack_id, minutes):
         self._client.change_message_visibility(

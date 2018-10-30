@@ -6,7 +6,7 @@
     {{ experimenttable(delete_button=true) }}
 
     <script>
-        $(authWidget(() => reload(() => data_ajax('get_user_experiments', data={"user": "{{ user }}"}), fillExperimentTable)));
+        reload(() => data_ajax('get_user_experiments', data={"user": "{{ user }}"}), fillExperimentTable)
     </script>
 
 {% endblock %}

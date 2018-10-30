@@ -1,14 +1,12 @@
-import logging
 import time
 import calendar
 import certifi
 import json
 
 from . import pyrebase
+from . import logs
 from .auth import get_auth
 from .tartifact_store import TartifactStore
-
-logging.basicConfig()
 
 
 class FirebaseArtifactStore(TartifactStore):
@@ -28,17 +26,18 @@ class FirebaseArtifactStore(TartifactStore):
 
         self.auth = None
         if not guest and 'serviceAccount' not in db_config.keys():
-            self.auth = get_auth(self.app,
-                                 db_config.get("use_email_auth"),
-                                 db_config.get("email"),
-                                 db_config.get("password"),
-                                 blocking_auth)
+            self.auth = get_auth(
+                db_config['type'],
+                blocking_auth,
+                verbose=verbose
+            )
 
-        self.logger = logging.getLogger('FirebaseArtifactStore')
+        self.logger = logs.getLogger('FirebaseArtifactStore')
         self.logger.setLevel(verbose)
         super(FirebaseArtifactStore, self).__init__(
             measure_timestamp_diff,
-            compression=compression)
+            compression=compression,
+            verbose=verbose)
 
     def _upload_file(self, key, local_file_path):
         try:
@@ -54,7 +53,7 @@ class FirebaseArtifactStore(TartifactStore):
                                "raised an exception: {}")
                               .format(local_file_path, key, err))
 
-    def _download_file(self, key, local_file_path):
+    def _download_file(self, key, local_file_path, bucket=None):
         self.logger.debug("Downloading file at key {} to local path {}..."
                           .format(key, local_file_path))
         try:

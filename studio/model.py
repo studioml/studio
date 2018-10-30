@@ -9,7 +9,6 @@ except ImportError:
     pip = None
 
 import yaml
-import logging
 import six
 
 from .artifact_store import get_artifact_store
@@ -17,14 +16,16 @@ from .http_provider import HTTPProvider
 from .firebase_provider import FirebaseProvider
 from .s3_provider import S3Provider
 from .gs_provider import GSProvider
-
-logging.basicConfig()
+from . import logs
 
 
 def get_config(config_file=None):
 
     config_paths = []
     if config_file:
+        if not os.path.exists(config_file):
+            raise ValueError('User config file {} not found'
+                             .format(config_file))
         config_paths.append(os.path.expanduser(config_file))
 
     config_paths.append(os.path.expanduser('~/.studioml/config.yaml'))
@@ -61,7 +62,7 @@ def get_db_provider(config=None, blocking_auth=True):
         config = get_config()
     verbose = parse_verbosity(config.get('verbose'))
 
-    logger = logging.getLogger("get_db_provider")
+    logger = logs.getLogger("get_db_provider")
     logger.setLevel(verbose)
     logger.debug('Choosing db provider with config:')
     logger.debug(config)
@@ -97,7 +98,6 @@ def get_db_provider(config=None, blocking_auth=True):
                           verbose=verbose,
                           store=artifact_store,
                           blocking_auth=blocking_auth)
-
     else:
         raise ValueError('Unknown type of the database ' + db_config['type'])
 

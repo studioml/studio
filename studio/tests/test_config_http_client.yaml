@@ -1,24 +1,23 @@
 database: 
     type: http
     serverUrl: "https://studio-ed756.appspot.com"
-    apiKey: AIzaSyCLQbp5X2B4SWzBw-sz9rUnGHNSdMl0Yx8
-    authDomain: "studio-ed756.firebaseapp.com"
-    guest: true
+    authentication:
+        type: none
 
 log:
     name: output.log
 
-saveWorkspaceFrequencyMinutes: 1 #how often is workspace being saved (minutes)
-saveMetricsIntervalMinutes: 1
+saveWorkspaceFrequency: 1m #how often is workspace being saved (minutes)
+saveMetricsFrequency: 1m
 
 verbose: debug
 cloud:
     gcloud:
-        zone: us-central1-f
+        zone: us-east1-c
 
 resources_needed:
     cpus: 2
     ram:  3g
-    hdd:  10g
+    hdd:  60g
     gpus: 0
 

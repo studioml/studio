@@ -2,28 +2,27 @@ import os
 import sys
 import subprocess
 import argparse
-import logging
 import json
 import psutil
 import time
 import six
-
+from pygtail import Pygtail
+import threading
 
 from apscheduler.schedulers.background import BackgroundScheduler
 
-from . import fs_tracker
-from . import model
+from . import fs_tracker, model, logs
 from .local_queue import LocalQueue
 from .gpu_util import get_available_gpus, get_gpu_mapping, get_gpus_summary
 from .experiment import Experiment
-from .util import sixdecode
+from .util import sixdecode, str2duration, retry
+from .model import parse_verbosity
 
-logging.basicConfig()
-logging.getLogger('apscheduler.scheduler').setLevel(logging.ERROR)
+logs.getLogger('apscheduler.scheduler').setLevel(logs.ERROR)
 
 
 class LocalExecutor(object):
-    """Runs job while capturing environment and logging results.
+    """Runs job while capturing environment and logs results.
     """
 
     def __init__(self, args):
@@ -32,7 +31,7 @@ class LocalExecutor(object):
         if args.guest:
             self.config['database']['guest'] = True
 
-        self.logger = logging.getLogger('LocalExecutor')
+        self.logger = logs.getLogger('LocalExecutor')
         self.logger.setLevel(model.parse_verbosity(self.config.get('verbose')))
         self.logger.debug("Config: ")
         self.logger.debug(self.config)
@@ -57,7 +56,9 @@ class LocalExecutor(object):
                     if v is not None:
                         env[str(k)] = str(v)
 
-            fs_tracker.setup_experiment(env, experiment, clean=True)
+            env['PYTHONUNBUFFERED'] = 'TRUE'
+
+            fs_tracker.setup_experiment(env, experiment, clean=False)
             log_path = fs_tracker.get_artifact_cache('output', experiment.key)
 
             # log_path = os.path.join(model_dir, self.config['log']['name'])
@@ -73,40 +74,114 @@ class LocalExecutor(object):
                 if experiment.pythonver == 3:
                     python = 'python3'
 
-                p = subprocess.Popen([python,
-                                      experiment.filename] +
-                                     experiment.args,
-                                     stdout=output_file,
-                                     stderr=subprocess.STDOUT,
-                                     env=env,
-                                     cwd=experiment
-                                     .artifacts['workspace']['local'])
+                python = which(python)
+
+                cmd = [python, experiment.filename] + experiment.args
+                cwd = experiment.artifacts['workspace']['local']
+                container_artifact = experiment.artifacts.get('_singularity')
+                if container_artifact:
+                    container = container_artifact.get('local')
+                    if not container:
+                        container = container_artifact.get('qualified')
+
+                    cwd = fs_tracker.get_artifact_cache(
+                        'workspace', experiment.key)
+
+                    for tag, art in six.iteritems(experiment.artifacts):
+                        local_path = art.get('local')
+                        if not art['mutable'] and os.path.exists(local_path):
+                            os.symlink(
+                                art['local'],
+                                os.path.join(os.path.dirname(cwd), tag)
+                            )
+
+                    if experiment.filename is not None:
+                        cmd = [
+                            'singularity',
+                            'exec',
+                            container,
+                        ] + cmd
+                    else:
+                        cmd = ['singularity', 'run', container]
+
+                self.logger.info('Running cmd: {} in {}'.format(cmd, cwd))
+
+                p = subprocess.Popen(
+                    cmd,
+                    stdout=output_file,
+                    stderr=subprocess.STDOUT,
+                    env=env,
+                    cwd=cwd
+                )
+
                 # simple hack to show what's in the log file
-                ptail = subprocess.Popen(["tail", "-f", log_path])
+                # ptail = subprocess.Popen(["tail", "-f", log_path])
+
+                logtail = Pygtail(log_path)
+
+                def tail_func():
+                    while logtail:
+                        for line in logtail:
+                            print(line)
+
+                        time.sleep(0.1)
+
+                tail_thread = threading.Thread(target=tail_func)
+                tail_thread.start()
+
+                minutes = 0
+                if self.config.get('saveWorkspaceFrequency'):
+                    minutes = int(
+                        str2duration(
+                            self.config['saveWorkspaceFrequency'])
+                        .total_seconds() / 60)
+
+                def checkpoint():
+                    try:
+                        db.checkpoint_experiment(experiment)
+                    except BaseException as e:
+                        self.logger.info(e)
 
                 sched.add_job(
-                    lambda: db.checkpoint_experiment(experiment),
+                    checkpoint,
                     'interval',
-                    minutes=self.config['saveWorkspaceFrequencyMinutes'])
+                    minutes=minutes)
 
                 metrics_path = fs_tracker.get_artifact_cache(
                     '_metrics', experiment.key)
 
+                minutes = 0
+                if self.config.get('saveMetricsFrequency'):
+                    minutes = int(
+                        str2duration(
+                            self.config['saveMetricsFrequency'])
+                        .total_seconds() / 60)
+
                 sched.add_job(
                     lambda: save_metrics(metrics_path),
                     'interval',
-                    minutes=self.config['saveMetricsIntervalMinutes']
-                )
+                    minutes=minutes)
 
                 def kill_if_stopped():
-                    if db.get_experiment(
-                            experiment.key,
-                            getinfo=False).status == 'stopped':
-                        p.kill()
+                    db_expr = db.get_experiment(
+                        experiment.key,
+                        getinfo=False)
+
+                    # Transient issues with getting experiment data might
+                    # result in a None value being returned, as result
+                    # leave the experiment running because we wont be able to
+                    # do anything else even if this experiment is stopped
+                    # in any event if the experiment runs too long then it
+                    # will exceed its allocated time and stop
+                    if db_expr is not None:
+                        if db_expr.status == 'stopped':
+                            p.kill()
+                            return
 
                     if experiment.max_duration is not None and \
-                            time.time() > experiment.start_time + \
-                            experiment.max_duration:
+                            time.time() > experiment.time_started + \
+                            int(str2duration(experiment.max_duration)
+                                .total_seconds()):
 
                         p.kill()
 
@@ -116,14 +191,15 @@ class LocalExecutor(object):
                     p.wait()
                 finally:
                     save_metrics(metrics_path)
-                    ptail.kill()
+                    sched.shutdown()
+                    logtail = None
                     db.checkpoint_experiment(experiment)
                     db.finish_experiment(experiment)
-                    sched.shutdown()
+                    return p.returncode
 
 
 def allocate_resources(experiment, config=None, verbose=10):
-    logger = logging.getLogger('allocate_resources')
+    logger = logs.getLogger('allocate_resources')
     logger.setLevel(verbose)
     logger.info('Allocating resources {} for experiment {}'
                 .format(experiment.resources_needed, experiment.key))
@@ -133,23 +209,31 @@ def allocate_resources(experiment, config=None, verbose=10):
         if experiment.resources_needed else 0
 
     if gpus_needed > 0:
-        ret_val = ret_val and allocate_gpus(gpus_needed, config)
+        ret_val = ret_val and allocate_gpus(gpus_needed,
+                                            experiment.resources_needed,
+                                            config)
     else:
-        allocate_gpus(0, config)
+        allocate_gpus(0)
 
     return ret_val
 
 
-def allocate_gpus(gpus_needed, config=None):
-    if gpus_needed <= 0:
+def allocate_gpus(gpus_needed, resources_needed={}, config=None):
+    # Only disable gpus if gpus_needed < 0
+    if gpus_needed < 0:
         os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
         return True
+    elif gpus_needed == 0:
+        return True
 
-    available_gpus = get_available_gpus()
+    gpu_mem_needed = resources_needed.get('gpuMem', None)
+    strict = resources_needed.get('gpuMemStrict', False)
+
+    available_gpus = get_available_gpus(gpu_mem_needed, strict)
     gpu_mapping = get_gpu_mapping()
-    mapped_gpus = [str(gpu_mapping[g])
-                   for g in available_gpus]
+    mapped_gpus = [str(gpu_mapping[g]) for g in available_gpus]
 
+    os.environ['CUDA_DEVICE_ORDER'] = 'PCI_BUS_ID'
     if len(mapped_gpus) >= gpus_needed:
         os.environ['CUDA_VISIBLE_DEVICES'] = ','.join(
             mapped_gpus[:gpus_needed])
@@ -172,13 +256,37 @@ def main(args=sys.argv):
     parser.add_argument(
         '--timeout',
         default=0, type=int)
+    parser.add_argument(
+        '--verbose',
+        default='error')
 
     parsed_args, script_args = parser.parse_known_args(args)
+    verbose = parse_verbosity(parsed_args.verbose)
 
-    queue = LocalQueue()
+    queue = LocalQueue(verbose=verbose)
     # queue = glob.glob(fs_tracker.get_queue_directory() + "/*")
     # wait_for_messages(queue, parsed_args.timeout)
-    worker_loop(queue, parsed_args, timeout=parsed_args.timeout)
+    returncode = worker_loop(queue, parsed_args, timeout=parsed_args.timeout)
+    sys.exit(returncode)
+
+
+def which(program):
+    import os
+
+    def is_exe(fpath):
+        return os.path.isfile(fpath) and os.access(fpath, os.X_OK)
+
+    fpath, fname = os.path.split(program)
+    if fpath:
+        if is_exe(program):
+            return program
+    else:
+        for path in os.environ["PATH"].split(os.pathsep):
+            exe_file = os.path.join(path, program)
+            if is_exe(exe_file):
+                return exe_file
+
+    return None
 
 
 def worker_loop(queue, parsed_args,
@@ -188,9 +296,10 @@ def worker_loop(queue, parsed_args,
 
     fetch_artifacts = True
 
-    logger = logging.getLogger('worker_loop')
+    logger = logs.getLogger('worker_loop')
 
     hold_period = 4
+    retval = 0
     while True:
         msg = queue.dequeue(acknowledge=False, timeout=timeout)
         if not msg:
@@ -211,13 +320,33 @@ def worker_loop(queue, parsed_args,
 
         logger.setLevel(verbose)
 
-        logger.debug('Received experiment {} with config {} from the queue'.
-                     format(experiment_key, config))
+        logger.debug('Received message: \n{}'.format(data_dict))
 
         executor = LocalExecutor(parsed_args)
 
         with model.get_db_provider(config) as db:
-            experiment = db.get_experiment(experiment_key)
+            # experiment = experiment_from_dict(data_dict['experiment'])
+            def try_get_experiment():
+                experiment = db.get_experiment(experiment_key)
+                if experiment is None:
+                    raise ValueError(
+                        'experiment is not found - indicates storage failure')
+                return experiment
+
+            experiment = retry(
+                try_get_experiment,
+                sleep_time=10,
+                logger=logger)
+
+            if config.get('experimentLifetime') and \
+                int(str2duration(config['experimentLifetime'])
+                    .total_seconds()) + experiment.time_added < time.time():
+                logger.info(
+                    'Experiment expired (max lifetime of {} was exceeded)'
+                    .format(config.get('experimentLifetime'))
+                )
+                queue.acknowledge(ack_key)
+                continue
 
             if allocate_resources(experiment, config, verbose=verbose):
                 def hold_job():
@@ -232,40 +361,57 @@ def worker_loop(queue, parsed_args,
                     python = 'python'
                     if experiment.pythonver == 3:
                         python = 'python3'
-                    pip_diff = pip_needed_packages(
-                        experiment.pythonenv, python)
-                    if any(pip_diff):
-                        logger.info(
-                            'Setting up python packages for experiment')
-                        if pip_install_packages(pip_diff, python, logger) != 0:
+                    if '_singularity' not in experiment.artifacts.keys():
+                        pip_diff = pip_needed_packages(
+                            experiment.pythonenv, python)
+                        if any(pip_diff):
                             logger.info(
-                                "Installation of all packages together " +
-                                " failed, "
-                                "trying one package at a time")
+                                'Setting up python packages for experiment')
+                            if pip_install_packages(
+                                    pip_diff,
+                                    python,
+                                    logger
+                            ) != 0:
 
-                            for pkg in pip_diff:
-                                pip_install_packages([pkg], python, logger)
+                                logger.info(
+                                    "Installation of all packages together " +
+                                    " failed, "
+                                    "trying one package at a time")
+
+                                for pkg in pip_diff:
+                                    pip_install_packages([pkg], python, logger)
 
                     for tag, art in six.iteritems(experiment.artifacts):
                         if fetch_artifacts or 'local' not in art.keys():
                             logger.info('Fetching artifact ' + tag)
                             if tag == 'workspace':
-                                art['local'] = db.get_artifact(
-                                    art, only_newer=False)
+                                art['local'] = retry(lambda: db.get_artifact(
+                                    art,
+                                    only_newer=False),
+                                    sleep_time=10,
+                                    logger=logger)
                             else:
-                                art['local'] = db.get_artifact(art)
-                    executor.run(experiment)
+                                art['local'] = retry(
+                                    lambda: db.get_artifact(art),
+                                    sleep_time=10,
+                                    logger=logger
+                                )
+
+                    returncode = executor.run(experiment)
+                    if returncode != 0:
+                        retval = returncode
                 finally:
                     sched.shutdown()
                     queue.acknowledge(ack_key)
 
                 if single_experiment:
                     logger.info('single_experiment is True, quitting')
-                    return
+                    return retval
             else:
                 logger.info('Cannot run experiment ' + experiment.key +
                             ' due lack of resources. Will retry')
-                time.sleep(config['sleep_time'])
+                # Debounce failed requests we cannot service yet
+                time.sleep(config.get('sleep_time', 5))
 
         # wait_for_messages(queue, timeout, logger)
 
@@ -273,6 +419,8 @@ def worker_loop(queue, parsed_args,
 
     logger.info("Queue in {} is empty, quitting"
                 .format(fs_tracker.get_queue_directory()))
+
+    return retval
 
 
 def pip_install_packages(packages, python='python', logger=None):

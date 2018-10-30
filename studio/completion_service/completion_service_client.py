@@ -2,14 +2,12 @@ import importlib
 import shutil
 import pickle
 import os
-import logging
 import sys
 import six
 
-from studio import fs_tracker, model
+from studio import fs_tracker, model, logs, util
 
-logging.basicConfig()
-logger = logging.getLogger('completion_service_client')
+logger = logs.getLogger('completion_service_client')
 try:
     logger.setLevel(model.parse_verbosity(sys.argv[1]))
 except BaseException:
@@ -17,7 +15,6 @@ except BaseException:
 
 
 def main():
-    logger.setLevel(logging.DEBUG)
     logger.debug('copying and importing client module')
     logger.debug('getting file mappings')
 
@@ -26,7 +23,7 @@ def main():
     logger.debug("Artifacts = {}".format(artifacts))
 
     for tag, path in six.iteritems(artifacts):
-        if tag not in {'workspace', 'modeldir', 'tb'}:
+        if tag not in {'workspace', 'modeldir', 'tb', '_runner'}:
             if os.path.isfile(path):
                 files[tag] = path
             elif os.path.isdir(path):
@@ -39,6 +36,8 @@ def main():
 
     logger.debug("Files = {}".format(files))
     script_path = files['clientscript']
+    retval_path = fs_tracker.get_artifact('retval')
+    util.rm_rf(retval_path)
 
     # script_name = os.path.basename(script_path)
     new_script_path = os.path.join(os.getcwd(), '_clientscript.py')
@@ -60,11 +59,10 @@ def main():
     with open(args_path, 'rb') as f:
         args = pickle.loads(f.read())
 
-    logger.debug('calling client funciton')
+    logger.debug('calling client function')
     retval = client_module.clientFunction(args, files)
 
     logger.debug('saving the return value')
-    retval_path = fs_tracker.get_artifact('retval')
     if os.path.isdir(fs_tracker.get_artifact('clientscript')):
         # on go runner:
         logger.debug("Running in a go runner, creating {} for retval"
@@ -79,7 +77,7 @@ def main():
 
     logger.debug('Saving retval')
     with open(retval_path, 'wb') as f:
-        f.write(pickle.dumps(retval))
+        f.write(pickle.dumps(retval, protocol=2))
     logger.debug('Done')
 
 

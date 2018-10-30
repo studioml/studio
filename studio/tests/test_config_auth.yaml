@@ -8,9 +8,13 @@ database:
     storageBucket: "{}.appspot.com"
     messagingSenderId: 81790704397
 
-    use_email_auth: true
-    email: authtest@sentient.ai
-    password: HumptyDumptyS@tOnAWall
+    authentication:
+        type: firebase
+        use_email_auth: true
+        email: authtest@sentient.ai
+        password: HumptyDumptyS@tOnAWall
+        authDomain: "studio-ed756.firebaseapp.com"
+        apiKey: AIzaSyCLQbp5X2B4SWzBw-sz9rUnGHNSdMl0Yx8
                                                                     
 log:
     name: output.log

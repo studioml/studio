@@ -1,4 +1,3 @@
-import logging
 import calendar
 
 try:
@@ -12,7 +11,7 @@ except ImportError:
     boto3 = None
 
 from .tartifact_store import TartifactStore
-logging.basicConfig()
+from . import logs
 
 
 class S3ArtifactStore(TartifactStore):
@@ -20,9 +19,6 @@ class S3ArtifactStore(TartifactStore):
                  verbose=10,
                  measure_timestamp_diff=False,
                  compression=None):
-        self.logger = logging.getLogger('S3ArtifactStore')
-        self.logger.setLevel(verbose)
-
         self.client = boto3.client(
             's3',
             aws_access_key_id=config.get('aws_access_key'),
@@ -40,22 +36,20 @@ class S3ArtifactStore(TartifactStore):
 
         if self.bucket not in [b['Name'] for b in buckets['Buckets']]:
             self.client.create_bucket(
-                Bucket=self.bucket,
-                CreateBucketConfiguration={
-                    'LocationConstraint': self.client._client_config
-                    .region_name
-                }
+                Bucket=self.bucket
             )
 
         super(S3ArtifactStore, self).__init__(
             measure_timestamp_diff,
-            compression=compression)
+            compression=compression,
+            verbose=verbose)
 
     def _upload_file(self, key, local_path):
         self.client.upload_file(local_path, self.bucket, key)
 
-    def _download_file(self, key, local_path):
-        self.client.download_file(self.bucket, key, local_path)
+    def _download_file(self, key, local_path, bucket=None):
+        bucket = bucket or self.bucket
+        self.client.download_file(bucket, key, local_path)
 
     def _delete_file(self, key):
         self.client.delete_object(Bucket=self.bucket, Key=key)
@@ -76,10 +70,10 @@ class S3ArtifactStore(TartifactStore):
             Key=key)
 
     def _get_file_timestamp(self, key):
-        obj = boto3.resource('s3').Object(self.bucket, key)
 
         try:
-            time_updated = obj.last_modified
+            obj = self.client.head_object(Bucket=self.bucket, Key=key)
+            time_updated = obj.get('LastModified', None)
         except BaseException:
             return None
 

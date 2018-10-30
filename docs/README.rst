@@ -1,5 +1,8 @@
-What is Studio?
-==============
+.. raw:: html
+   
+   <p align="center">
+      <img src="logo.png">
+   </p>
 
 |Hex.pm| |Build.pm|
 
@@ -32,35 +35,38 @@ Start visualizer:
 
     studio ui
 
-Run your job:
+Run your jobs:
 
 ::
 
     studio run train_mnist_keras.py
 
-You can see the results of your job at http://127.0.0.1:5000. Run
-``studio {ui|run} --help`` for a full list of ui / runner options
+You can see results of your job at http://localhost:5000. Run
+``studio {ui|run} --help`` for a full list of ui / runner options.
+WARNING: because studio tries to create a reproducible environment 
+for your experiment, if you run it in a large folder, it will take
+a while to archive and upload the folder. 
 
 Installation
 ------------
 
-pip install ``studioml`` from the master pypi repositry:
+pip install studioml from the master pypi repositry:
 
 ::
 
     pip install studioml
 
-Find more `details <http://docs.studio.ml/en/latest/installation.html>`__ on installation methods and the release process. 
+Find more `details <installation.rst>`__ on installation methods and the release process. 
 
 Authentication
 --------------
 
-Currently Studio supports 2 methods of authentication: `email / password <http://docs.studio.ml/en/latest/authentication.html#email--password-authentication>`__ and using a `Google account. <http://docs.studio.ml/en/latest/authentication.html#google-account-authentication>`__ To use ``studio run`` and ``studio ui`` in guest
+Currently Studio supports 2 methods of authentication: `email / password <authentication.rst#email--password-authentication>`__ and using a `Google account. <authentication.rst#google-account-authentication>`__ To use studio runner and studio ui in guest
 mode, in studio/default\_config.yaml, uncomment "guest: true" under the
 database section.
 
 Alternatively, you can set up your own database and configure Studio to
-use it. See `setting up database <http://docs.studio.ml/en/latest/setup_database.html>`__. This is the
+use it. See `setting up database <setup_database.rst>`__. This is a
 preferred option if you want to keep your models and artifacts private.
 
 
@@ -73,13 +79,14 @@ Further reading and cool features
 
 -  `Running experiments in the cloud <http://docs.studio.ml/en/latest/cloud.html>`__
 
-   -  `Google Cloud setup instructions <http://docs.studio.ml/en/latest/gcloud_setup.html>`__
+   -  `Google Cloud setup instructions <http://docs.studio.ml/en/latest/glcloud_setup.html>`__
 
    -  `Amazon EC2 setup instructions <http://docs.studio.ml/en/latest/ec2_setup.html>`__
 
 -  `Artifact management <http://docs.studio.ml/en/latest/artifacts.html>`__
 -  `Hyperparameter search <http://docs.studio.ml/en/latest/hyperparams.html>`__
--  `Pipeline for trained models <http://docs.studio.ml/en/latest/model_pipelines.html>`__
+-  `Pipelines for trained models <http://docs.studio.ml/en/latest/model_pipelines.html>`__
+-  `Containerized experiments <http://docs.studio.ml/en/latest/containers.html>`__
 
 .. |Hex.pm| image:: https://img.shields.io/hexpm/l/plug.svg
    :target: https://github.com/studioml/studio/blob/master/LICENSE

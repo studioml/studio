@@ -1,0 +1,24 @@
+ubuntu16.04:
+    # us-east-1: ami-da05a4a0  # Vanilla ubuntu 16.04
+    us-east-1: ami-d91866a3   # studio.ml enabled
+    # us-east-1: ami-f346c289 # aws deep learning ami
+
+    us-east-2: ami-336b4456
+    us-west-1:  ami-1c1d217c
+    # us-west-2: ami-0a00ce72  # Vanilla ubuntu 16.04
+    us-west-2: ami-aa508ad2  # studio.ml enabled
+
+    ca-central-1: ami-8a71c9ee
+    eu-west-1: ami-add175d4
+    eu-central-1: ami-97e953f8
+    eu-west-2: ami-ecbea388
+    ap-southeast-1: ami-67a6e604
+    ap-southeast-2: ami-41c12e23
+    ap-northeast-2: ami-7b1cb915
+    ap-northeast-1: ami-15872773
+    ap-south-1: ami-bc0d40d3
+    sa-east-1: ami-466b132a
+
+
+
+

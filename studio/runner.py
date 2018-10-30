@@ -1,6 +1,5 @@
 import sys
 import argparse
-import logging
 import json
 import re
 import os
@@ -10,12 +9,16 @@ import time
 import multiprocessing
 import six
 import traceback
-from contextlib import closing
 import numpy as np
+
+from contextlib import closing
+from datetime import timedelta
 
 from .local_queue import LocalQueue
 from .pubsub_queue import PubsubQueue
 from .sqs_queue import SQSQueue
+from .rabbit_queue import RMQueue
+from .qclient_cache import get_cached_queue
 from .gcloud_worker import GCloudWorkerManager
 from .ec2cloud_worker import EC2WorkerManager
 from .hyperparameter import HyperparameterParser
@@ -23,18 +26,15 @@ from .util import rand_string, Progbar, rsync_cp
 from .experiment import create_experiment
 
 from . import model
-from . import auth
-from . import util
 from . import git_util
 from . import local_worker
 from . import fs_tracker
+from . import logs
+from .auth import get_auth
 
 
-logging.basicConfig()
-
-
-def main(args=sys.argv):
-    logger = logging.getLogger('studio-runner')
+def main(args=sys.argv[1:]):
+    logger = logs.getLogger('studio-runner')
     parser = argparse.ArgumentParser(
         description='Studio runner. \
                      Usage: studio run <runner_arguments> \
@@ -128,7 +128,7 @@ def main(args=sys.argv):
         default=None)
 
     parser.add_argument(
-        '--metric', '-m',
+        '--metric',
         help='Metric to show in the summary of the experiment, ' +
              'and to base hyperparameter search on. ' +
              'Refers a scalar value in tensorboard log ' +
@@ -203,23 +203,55 @@ def main(args=sys.argv):
     parser.add_argument(
         '--max-duration',
         help='Max experiment runtime (i.e. time after which experiment ' +
-             'should be killed no matter what.',
+             'should be killed no matter what.).  Examples of values ' +
+             'might include 5h, 48h2m10s',
         default=None)
+
+    parser.add_argument(
+        '--lifetime',
+        help='Max experiment lifetime (i.e. wait time after which ' +
+             'experiment loses relevance and should not be started)' +
+             '  Examples include 240h30m10s',
+        default=None)
+
+    parser.add_argument(
+        '--container',
+        help='Singularity container in which experiment should be run. ' +
+             'Assumes that container has all dependencies installed',
+        default=None
+    )
+
+    parser.add_argument(
+        '--port',
+        help='Ports to open on a cloud instance',
+        default=[], action='append'
+    )
 
     # detect which argument is the script filename
     # and attribute all arguments past that index as related to the script
-    py_suffix_args = [i for i, arg in enumerate(args) if arg.endswith('.py')]
+    (runner_args, other_args) = parser.parse_known_args(args)
+    py_suffix_args = [i for i, arg in enumerate(args)
+                      if arg.endswith('.py') or '::' in arg]
+
     rerun = False
     if len(py_suffix_args) < 1:
-        print('None of the arugments end with .py, ' +
-              'treating last argument as experiment name to rerun')
-        rerun = True
-        runner_args = parser.parse_args(args[1:-1])
-        experiment_key = args[-1]
+        print('None of the arugments end with .py')
+        if len(other_args) == 0:
+            print("Trying to run a container job")
+            assert runner_args.container is not None
+            exec_filename = None
+        elif len(other_args) == 1:
+            print("Treating last argument as experiment key to rerun")
+            rerun = True
+            experiment_key = args[-1]
+        else:
+            print("Too many extra arguments - should be either none " +
+                  "for container job or one for experiment re-run")
+            sys.exit(1)
     else:
         script_index = py_suffix_args[0]
         exec_filename, other_args = args[script_index], args[script_index + 1:]
-        runner_args = parser.parse_args(args[1:script_index])
+        runner_args = parser.parse_args(args[:script_index])
 
     # TODO: Queue the job based on arguments and only then execute.
 
@@ -230,6 +262,10 @@ def main(args=sys.argv):
 
     if runner_args.guest:
         config['database']['guest'] = True
+
+    if runner_args.container:
+        runner_args.capture_once.append(
+            runner_args.container + ':_singularity')
 
     verbose = model.parse_verbosity(config['verbose'])
     logger.setLevel(verbose)
@@ -258,8 +294,8 @@ def main(args=sys.argv):
         config['cloud']['user_startup_script'] = \
             runner_args.user_startup_script
 
-    if runner_args.max_duration:
-        runner_args.max_duration = util.str2duration(runner_args.max_duration)
+    if runner_args.lifetime:
+        config['experimentLifetime'] = runner_args.lifetime
 
     if any(runner_args.hyperparam):
         if runner_args.optimizer is "grid":
@@ -377,7 +413,8 @@ def main(args=sys.argv):
                 artifacts=artifacts,
                 resources_needed=resources_needed,
                 metric=runner_args.metric,
-                max_duration=runner_args.max_duration)]
+                max_duration=runner_args.max_duration,
+            )]
 
         queue_name = submit_experiments(
             experiments,
@@ -399,7 +436,9 @@ def main(args=sys.argv):
 def add_experiment(args):
     try:
         config, python_pkg, e = args
+
         e.pythonenv = add_packages(e.pythonenv, python_pkg)
+
         with model.get_db_provider(config) as db:
             db.add_experiment(e)
     except BaseException:
@@ -413,14 +452,11 @@ def get_worker_manager(config, cloud=None, verbose=10):
         return None
 
     assert cloud in ['gcloud', 'gcspot', 'ec2', 'ec2spot']
-    logger = logging.getLogger('runner.get_worker_manager')
+    logger = logs.getLogger('runner.get_worker_manager')
     logger.setLevel(verbose)
 
-    auth_cookie = None if config['database'].get('guest') \
-        else os.path.join(
-        auth.TOKEN_DIR,
-        config['database']['apiKey']
-    )
+    auth = get_auth(config['database']['authentication'])
+    auth_cookie = auth.get_token_file() if auth else None
 
     branch = config['cloud'].get('branch')
 
@@ -445,7 +481,13 @@ def get_worker_manager(config, cloud=None, verbose=10):
     return worker_manager
 
 
-def get_queue(queue_name=None, cloud=None, verbose=10):
+def get_queue(
+        queue_name=None,
+        cloud=None,
+        config=None,
+        logger=None,
+        close_after=None,
+        verbose=10):
     if queue_name is None:
         if cloud in ['gcloud', 'gcspot']:
             queue_name = 'pubsub_' + str(uuid.uuid4())
@@ -457,6 +499,14 @@ def get_queue(queue_name=None, cloud=None, verbose=10):
     if queue_name.startswith('ec2') or \
        queue_name.startswith('sqs'):
         return SQSQueue(queue_name, verbose=verbose)
+    elif queue_name.startswith('rmq_'):
+        return get_cached_queue(
+            name=queue_name,
+            route='StudioML.' + queue_name,
+            config=config,
+            close_after=close_after,
+            logger=logger,
+            verbose=verbose)
     elif queue_name == 'local':
         return LocalQueue(verbose=verbose)
     else:
@@ -487,7 +537,8 @@ def spin_up_workers(
                 worker_manager.start_worker(
                     queue_name, resources_needed,
                     ssh_keypair=runner_args.ssh_keypair,
-                    timeout=runner_args.cloud_timeout)
+                    timeout=runner_args.cloud_timeout,
+                    ports=runner_args.port)
         else:
             assert runner_args.bid is not None
             if runner_args.num_workers:
@@ -504,7 +555,8 @@ def spin_up_workers(
                 start_workers=start_workers,
                 queue_upscaling=queue_upscaling,
                 ssh_keypair=runner_args.ssh_keypair,
-                timeout=runner_args.cloud_timeout)
+                timeout=runner_args.cloud_timeout,
+                ports=runner_args.port)
 
     elif queue_name == 'local':
         worker_args = ['studio-local-worker']
@@ -518,7 +570,8 @@ def spin_up_workers(
         # logger.info('worker args: {}'.format(worker_args))
         if not runner_args.num_workers or int(runner_args.num_workers) == 1:
             if 'STUDIOML_DUMMY_MODE' not in os.environ:
-                local_worker.main(worker_args)
+                retval = local_worker.main(worker_args)
+                sys.exit(retval)
         else:
             raise NotImplementedError("Multiple local workers are not " +
                                       "implemented yet")
@@ -542,24 +595,33 @@ def submit_experiments(
     with closing(multiprocessing.Pool(n_workers, maxtasksperchild=20)) as p:
         experiments = p.imap_unordered(add_experiment,
                                        zip([config] * num_experiments,
-                                           [python_pkg] *
-                                           num_experiments,
+                                           [python_pkg] * num_experiments,
                                            experiments),
                                        chunksize=1)
         p.close()
         p.join()
 
     '''
-    experiements = [add_experiment(e) for e in
-                    zip([config] * num_experiments,
-                        [python_pkg] *
-                        num_experiments,
-                        experiments)]
+    experiments = [add_experiment(e) for e in
+                   zip([config] * num_experiments,
+                       [python_pkg] *
+                       num_experiments,
+                       experiments)]
 
-    logger.info("Added %s experiments in %s seconds" %
-                (num_experiments, int(time.time() - start_time)))
+    for experiment in experiments:
+        print("studio run: submitted experiment " + experiment.key)
 
-    queue = get_queue(queue_name, cloud, verbose)
+    logger.info("Added %s experiment(s) in %s seconds to queue %s" %
+                (num_experiments, int(time.time() - start_time), queue_name))
+
+    queue = get_queue(
+        queue_name=queue_name,
+        cloud=cloud,
+        config=config,
+        close_after=timedelta(
+            minutes=2),
+        logger=logger,
+        verbose=verbose)
     for e in experiments:
         queue.enqueue(json.dumps({
             'experiment': e.__dict__,
@@ -675,8 +737,11 @@ def get_experiment_fitnesses(experiments, optimizer, config, logger):
 def parse_artifacts(art_list, mutable):
     retval = {}
     url_schema = re.compile('^https{0,1}://')
-    s3_schema = re.compile('^s3://')
-    gcs_schema = re.compile('^gs://')
+    s3_schema = re.compile('s3://')
+    gcs_schema = re.compile('gs://')
+    dhub_schema = re.compile('dockerhub://')
+    shub_schema = re.compile('shub://')
+
     for entry in art_list:
         path = re.sub(':[^:]*\Z', '', entry)
         tag = re.sub('.*:(?=[^:]*\Z)', '', entry)
@@ -686,19 +751,26 @@ def parse_artifacts(art_list, mutable):
                 'artifacts specfied by url can only be immutable'
             retval[tag] = {
                 'url': path,
-                'mutable': False
+                'mutable': False,
+                'unpack': False
             }
-        elif s3_schema.match(entry) or gcs_schema.match(entry):
+        elif s3_schema.match(entry) or \
+                gcs_schema.match(entry) or \
+                dhub_schema.match(entry) or \
+                shub_schema.match(entry):
+
             assert not mutable, \
                 'artifacts specfied by url can only be immutable'
             retval[tag] = {
                 'qualified': path,
-                'mutable': False
+                'mutable': False,
+                'unpack': False
             }
         else:
             retval[tag] = {
                 'local': os.path.expanduser(path),
-                'mutable': mutable
+                'mutable': mutable,
+                'unpack': True
             }
             if not mutable:
                 assert os.path.exists(retval[tag]['local'])
@@ -815,7 +887,8 @@ def add_hyperparam_experiments(
                 artifacts=current_artifacts,
                 resources_needed=resources_needed,
                 metric=runner_args.metric,
-                max_duration=runner_args.max_duration))
+                max_duration=runner_args.max_duration,
+            ))
         return experiments
 
     if optimizer is not None:
@@ -829,8 +902,17 @@ def add_hyperparam_experiments(
 
 
 def add_packages(list1, list2):
-    pkg_dict = {re.sub('==.+', '', pkg): pkg for pkg in list1 + list2}
-    return [pkg for _, pkg in six.iteritems(pkg_dict)]
+    # This function dedups the package names which I think could be
+    # functionally not desirable however rather than changing the behavior
+    # instead we will do the dedup in a stable manner that prevents
+    # package re-ordering
+    pkgs = {re.sub('==.+', '', pkg): pkg for pkg in list1 + list2}
+    merged = []
+    for k in list1 + list2:
+        v = pkgs.pop(re.sub('==.+', '', k), None)
+        if v is not None:
+            merged.append(v)
+    return merged
 
 
 if __name__ == "__main__":

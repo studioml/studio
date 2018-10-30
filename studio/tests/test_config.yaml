@@ -14,8 +14,8 @@ database:
 log:
     name: output.log
 
-saveWorkspaceFrequencyMinutes: 1 #how often is workspace being saved (minutes)
-saveMetricsIntervalMinutes: 1
+saveWorkspaceFrequency: 1m #how often is workspace being saved (minutes)
+saveMetricsFrequency: 1m
 verbose: error
 
 cloud:
@@ -25,6 +25,6 @@ cloud:
 resources_needed:
     cpus: 2
     ram:  3g
-    hdd:  10g
+    hdd:  60g
     gpus: 0
 

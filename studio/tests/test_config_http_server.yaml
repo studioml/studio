@@ -1,17 +1,12 @@
 database: 
     type: gs
-    apiKey: AIzaSyCLQbp5X2B4SWzBw-sz9rUnGHNSdMl0Yx8
-    authDomain: "studio-ed756.firebaseapp.com"
     bucket: "studioml-meta"
+    authentication: none
 
 storage:
     type: gcloud
     bucket: "studioml-artifacts"
 
-
-
-
-saveMetricsIntervalMinutes: 1
-saveWorkspaceFrequencyMinutes: 1 #how often is workspace being saved (minutes)
-
+server:
+    authentication: github
 

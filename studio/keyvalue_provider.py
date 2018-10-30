@@ -1,17 +1,15 @@
-import logging
 import time
 import os
 import six
+import re
 from threading import Thread
 
-from . import util, git_util, pyrebase
+from . import util, git_util, pyrebase, logs
 from .firebase_artifact_store import FirebaseArtifactStore
 from .auth import get_auth
 from .experiment import experiment_from_dict
 from .tartifact_store import get_immutable_artifact_key
-from .util import timeit
-
-logging.basicConfig()
+from .util import timeit, retry
 
 
 class KeyValueProvider(object):
@@ -27,7 +25,7 @@ class KeyValueProvider(object):
         guest = db_config.get('guest')
 
         self.app = pyrebase.initialize_app(db_config)
-        self.logger = logging.getLogger(self.__class__.__name__)
+        self.logger = logs.getLogger(self.__class__.__name__)
         self.logger.setLevel(verbose)
 
         self.compression = compression
@@ -36,11 +34,10 @@ class KeyValueProvider(object):
 
         self.auth = None
         if not guest and 'serviceAccount' not in db_config.keys():
-            self.auth = get_auth(self.app,
-                                 db_config.get("use_email_auth"),
-                                 db_config.get("email"),
-                                 db_config.get("password"),
-                                 blocking_auth)
+            self.auth = get_auth(
+                db_config['authentication'],
+                blocking_auth
+            )
 
         self.store = store if store else FirebaseArtifactStore(
             db_config,
@@ -49,7 +46,7 @@ class KeyValueProvider(object):
             compression=self.compression
         )
 
-        if self.auth and not self.auth.expired:
+        if self.auth and not self.auth.is_expired():
             self.register_user(None, self.auth.get_user_email())
 
         self.max_keys = db_config.get('max_keys', 100)
@@ -82,6 +79,8 @@ class KeyValueProvider(object):
 
         if 'local' in experiment.artifacts['workspace'].keys() and \
                 os.path.exists(experiment.artifacts['workspace']['local']):
+            self.logger.info("git location for experiment " +
+                             experiment.artifacts['workspace']['local'])
             experiment.git = git_util.get_git_info(
                 experiment.artifacts['workspace']['local'])
 
@@ -103,8 +102,19 @@ class KeyValueProvider(object):
             key = art.get('key')
             if key is not None:
                 art['qualified'] = self.store.get_qualified_location(key)
+                art['bucket'] = self.store.get_bucket()
+            elif art.get('qualified'):
+                qualified = art.get('qualified')
+                bucket = re.search('(?<=://)[^/]+(?=/)', qualified).group(0)
+                if bucket.endswith('.com'):
+                    bucket = re.search(
+                        '(?<=' + re.escape(bucket) + '/)[^/]+(?=/)',
+                        qualified
+                    ).group(0)
 
-            art['bucket'] = self.store.get_bucket()
+                key = re.search('(?<=' + bucket + '/).+\Z', qualified).group(0)
+                # art['bucket'] = bucket
+                # art['key'] = key
 
         userid = userid if userid else self._get_userid()
         experiment.owner = userid
@@ -124,7 +134,9 @@ class KeyValueProvider(object):
                       experiment.key + "/owner",
                       userid)
 
-        self.checkpoint_experiment(experiment, blocking=True)
+        retry(lambda: self.checkpoint_experiment(experiment, blocking=True),
+              sleep_time=10,
+              logger=self.logger)
         self.logger.info("Added experiment " + experiment.key)
 
     def start_experiment(self, experiment):
@@ -194,7 +206,7 @@ class KeyValueProvider(object):
                      'experiments/' + experiment_key)
         if experiment is not None:
             for tag, art in six.iteritems(experiment.artifacts):
-                if art.get('key') is not None:
+                if art.get('key') is not None and art['mutable']:
                     self.logger.debug(
                         ('Deleting artifact {} from the store, ' +
                          'artifact key {}').format(tag, art['key']))
@@ -214,6 +226,9 @@ class KeyValueProvider(object):
             key = experiment.key
         else:
             key = experiment
+
+        self.logger.debug(('checkpointing {}'.format(
+            self._get_experiments_keybase() + key)))
 
         experiment_dict = self._get(self._get_experiments_keybase() + key)
 

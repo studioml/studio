@@ -182,7 +182,7 @@ We can run it via
 
     studio run --reuse=linear_regression/weights:w print_norm_linreg.py
 
-The flag ``reuse`` tells ``studio ru``n that artifact ``weights`` from experiment
+The flag ``reuse`` tells ``studio run`` that artifact ``weights`` from experiment
 ``linear_regression`` will be used in the current experiment with a tag
 ``w``. There is a bit of a catch - for download optimization, all
 artifacts from other experiments are considered immutable, and cached as

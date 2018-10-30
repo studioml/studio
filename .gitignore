@@ -107,3 +107,6 @@ pip-selfcheck.json
 # ctags
 .tags
 .tags_sorted_by_file
+
+#version - for deployment from travis
+.version

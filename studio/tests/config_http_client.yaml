@@ -4,8 +4,8 @@ database:
     apiKey: AIzaSyCLQbp5X2B4SWzBw-sz9rUnGHNSdMl0Yx8
     authDomain: "studio-ed756.firebaseapp.com"
 
-saveMetricsIntervalMinutes: 1
-saveWorkspaceFrequencyMinutes: 1 #how often is workspace being saved (minutes)
+saveMetricsFrequency: 1m
+saveWorkspaceFrequency: 1m #how often is workspace being saved (minutes)
 
 cloud:
     cpus: 1

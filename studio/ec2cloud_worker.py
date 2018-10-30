@@ -1,21 +1,23 @@
 try:
     import boto3
+    import botocore
 except BaseException:
     boto3 = None
+    botocore = None
 
 import uuid
-import logging
 import os
 import base64
-import requests
 import json
+import yaml
 import six
+import filelock
+import hashlib
+import pickle
 
-from . import git_util
+from . import git_util, util, logs
 from .gpu_util import memstr2int
 from .cloud_worker_util import insert_user_startup_script
-
-logging.basicConfig()
 
 # list of instance types sorted by price
 _instance_specs = {
@@ -71,13 +73,17 @@ class EC2WorkerManager(object):
             os.path.dirname(__file__),
             'scripts/ec2_worker_startup.sh')
 
+        self.install_studio_script = os.path.join(
+            os.path.dirname(__file__),
+            'scripts/install_studio.sh')
+
         self.client = boto3.client('ec2')
         self.asclient = boto3.client('autoscaling')
         self.cwclient = boto3.client('cloudwatch')
 
         self.region = self.client._client_config.region_name
 
-        self.logger = logging.getLogger('EC2WorkerManager')
+        self.logger = logs.getLogger('EC2WorkerManager')
         self.logger.setLevel(verbose)
         self.auth_cookie = auth_cookie
 
@@ -91,8 +97,15 @@ class EC2WorkerManager(object):
             self.logger.warn('User startup script argument is deprecated')
 
     def _get_image_id(self):
-        # return 'ami-cd0f5cb6'  # vanilla ubuntu 16.04 image
-        return 'ami-a9a47cd3'  # studio.ml gpu image with python2 and python3
+        price_path = os.path.join(
+            os.path.dirname(__file__),
+            'aws/aws_amis.yaml')
+        with open(price_path) as f:
+            ami_dict = yaml.load(f.read())
+
+        region = self.client._client_config.region_name
+        image_type = 'ubuntu16.04'
+        return ami_dict[image_type][region]
 
     def _get_block_device_mappings(self, resources_needed):
         return [{
@@ -111,7 +124,8 @@ class EC2WorkerManager(object):
             resources_needed={},
             blocking=True,
             ssh_keypair=None,
-            timeout=300):
+            timeout=300,
+            ports=[]):
 
         imageid = self._get_image_id()
 
@@ -121,9 +135,6 @@ class EC2WorkerManager(object):
 
         startup_script = self._get_startup_script(
             resources_needed, queue_name, timeout=timeout)
-
-        if ssh_keypair is not None:
-            groupid = self._create_security_group(ssh_keypair)
 
         self.logger.info(
             'Starting EC2 instance of type {}'.format(instance_type))
@@ -149,14 +160,33 @@ class EC2WorkerManager(object):
                     }]
             }]
         }
-        if ssh_keypair:
-            kwargs['KeyName'] = ssh_keypair
+        ports = set(ports)
+        if ssh_keypair is not None:
+            ports.add(22)  # ssh port
+        if any(ports):
+            groupid = self._get_security_group(ports)
             kwargs['SecurityGroupIds'] = [groupid]
+            if ssh_keypair is not None:
+                kwargs['KeyName'] = ssh_keypair
 
         response = self.client.run_instances(**kwargs)
+        instance_id = response['Instances'][0]['InstanceId']
         self.logger.info(
-            'Starting instance {}'.format(
-                response['Instances'][0]['InstanceId']))
+            'Starting instance {}'.format(instance_id))
+
+        if blocking:
+            while True:
+                try:
+                    response = self.client.describe_instances(
+                        InstanceIds=[instance_id]
+                    )
+                    instance_data = response['Reservations'][0]['Instances'][0]
+                    ip_addr = instance_data.get('PublicIpAddress')
+                    if ip_addr:
+                        print("ip address: {}".format(ip_addr))
+                        return
+                except BaseException as e:
+                    pass
 
     def _select_instance_type(self, resources_needed):
         sorted_specs = sorted(_instance_specs.items(),
@@ -197,8 +227,13 @@ class EC2WorkerManager(object):
             self.logger.info('credentials NOT found')
 
         with open(self.startup_script_file) as f:
-
             startup_script = f.read()
+
+        with open(self.install_studio_script) as f:
+            install_studio_script = f.read()
+
+        startup_script = startup_script.replace(
+            '{install_studio}', install_studio_script)
 
         startup_script = startup_script.format(
             auth_key=auth_key if auth_key else "",
@@ -214,7 +249,8 @@ class EC2WorkerManager(object):
             use_gpus=0 if resources_needed['gpus'] == 0 else 1,
             timeout=timeout,
             repo_url=self.repo_url,
-            studioml_branch=self.branch)
+            studioml_branch=self.branch,
+        )
 
         startup_script = insert_user_startup_script(
             self.user_startup_script,
@@ -228,26 +264,49 @@ class EC2WorkerManager(object):
     def _generate_instance_name(self):
         return 'studioml_worker_' + str(uuid.uuid4())
 
-    def _create_security_group(self, ssh_keypair):
-        group_name = str(uuid.uuid4())
-
-        response = self.client.create_security_group(
-            GroupName=group_name,
-            Description='group to provide ssh access to studioml workers')
-        groupid = response['GroupId']
-
-        response = self.client.authorize_security_group_ingress(
-            GroupId=groupid,
-            GroupName=group_name,
-            IpPermissions=[{
-                'IpProtocol': 'tcp',
-                'FromPort': 22,
-                'ToPort': 22,
-                'IpRanges': [{
-                    'CidrIp': '0.0.0.0/0'
-                }]
-            }]
+    def _get_security_group(self, ports):
+        ports = sorted([p for p in set(ports)])
+        group_name = "studioml_{}".format(
+            hashlib.sha256(
+                pickle.dumps(sorted(ports))
+            ).hexdigest()
         )
+
+        try:
+            response = self.client.describe_security_groups(
+                GroupNames=[group_name]
+            )
+            groupid = response['SecurityGroups'][0]['GroupId']
+
+        except botocore.exceptions.ClientError as e:
+
+            self.logger.error("Error creating security group!")
+            self.logger.exception(e)
+            response = self.client.create_security_group(
+                GroupName=group_name,
+                Description='opens ports {} in studioml workers'
+                            .format(",".join([str(p) for p in ports]))
+            )
+
+            groupid = response['GroupId']
+
+            ip_permissions = []
+            for port in ports:
+                ip_permissions.append({
+                    'IpProtocol': 'tcp',
+                    'FromPort': int(port),
+                    'ToPort': int(port),
+                    'IpRanges': [{
+                        'CidrIp': '0.0.0.0/0'
+                    }]
+                })
+
+            response = self.client.authorize_security_group_ingress(
+                GroupId=groupid,
+                GroupName=group_name,
+                IpPermissions=ip_permissions
+            )
+
         return groupid
 
     def start_spot_workers(
@@ -259,7 +318,9 @@ class EC2WorkerManager(object):
             queue_upscaling=True,
             start_workers=1,
             max_workers=100,
-            timeout=300):
+            timeout=300,
+            ports=[],
+            autoscaling_group_name=None):
 
         # TODO should be able to put bid price as None,
         # which means price of on-demand instance
@@ -267,7 +328,8 @@ class EC2WorkerManager(object):
 
         instance_type = self._select_instance_type(resources_needed)
 
-        asg_name = "studioml-" + str(uuid.uuid4())
+        asg_name = "studioml_autoscaling_" + queue_name or \
+                   autoscaling_group_name
         launch_config_name = asg_name + "_launch_config"
 
         startup_script = self._get_startup_script(
@@ -291,19 +353,30 @@ class EC2WorkerManager(object):
             "SpotPrice": bid_price,
         }
 
+        launch_config_name = 'studioml_launch_config_' + \
+            hashlib.sha256(
+                json.dumps(launch_config, sort_keys=True).encode('utf-8')
+            ).hexdigest()
+
         if ssh_keypair is not None:
-            groupid = self._create_security_group(ssh_keypair)
+            ports.append(22)
+        if any(ports):
+            groupid = self._get_security_group(ports)
             launch_config['SecurityGroups'] = [groupid]
-            launch_config['KeyName'] = ssh_keypair
+            if ssh_keypair is not None:
+                launch_config['KeyName'] = ssh_keypair
 
-        response = self.asclient.create_launch_configuration(
-            LaunchConfigurationName=launch_config_name, **launch_config)
-
-        self.logger.debug(
-            "create_launch_configuration response:\n {}".format(response))
+        try:
+            response = self.asclient.create_launch_configuration(
+                LaunchConfigurationName=launch_config_name, **launch_config)
+            self.logger.debug(
+                "create_launch_configuration response:\n {}".format(response))
+        except self.asclient.exceptions.AlreadyExistsFault:
+            self.logger.debug('Launch config {} already exists'
+                              .format(launch_config_name))
 
         asg_config = {
-            "LaunchConfigurationName": asg_name + '_launch_config',
+            "LaunchConfigurationName": launch_config_name,
             "MinSize": 0,
             "MaxSize": max_workers,
             "DesiredCapacity": int(start_workers),
@@ -316,16 +389,31 @@ class EC2WorkerManager(object):
 
         self.logger.debug("Creating auto-scaling group " + asg_name)
 
-        response = self.asclient.create_auto_scaling_group(
-            AutoScalingGroupName=asg_name, **asg_config)
+        try:
+            response = self.asclient.create_auto_scaling_group(
+                AutoScalingGroupName=asg_name, **asg_config)
+        except self.asclient.exceptions.AlreadyExistsFault:
+            self.logger.debug('Autoscaling group {} already exists'
+                              .format(asg_name))
 
         if queue_upscaling:
+            max_steps = 20
+            stepsize = - (- max_workers // max_steps)
+
+            step_adjustments = [{
+                'MetricIntervalLowerBound': i,
+                'MetricIntervalUpperBound': i + stepsize,
+                'ScalingAdjustment': i
+            } for i in range(0, max_workers, stepsize)]
+
+            del step_adjustments[-1]['MetricIntervalUpperBound']
+
             scaleup_policy_response = self.asclient.put_scaling_policy(
                 AutoScalingGroupName=asg_name,
                 PolicyName=asg_name + "_scaleup",
+                PolicyType='StepScaling',
                 AdjustmentType="ChangeInCapacity",
-                ScalingAdjustment=1,
-                Cooldown=0
+                StepAdjustments=step_adjustments
             )
 
             self.cwclient.put_metric_alarm(
@@ -349,28 +437,36 @@ class EC2WorkerManager(object):
         # TODO un-hardcode the us-east as a region
         # so that prices are being read for a correct region
 
+        price_path = os.path.join(
+            os.path.dirname(__file__),
+            'aws/aws_prices.yaml')
+        with open(price_path, 'r') as f:
+            data = yaml.load(f.read())
+
+        return {i: data[i] for i in instances}
+
         price_path = os.path.join(os.path.expanduser('~'), '.studioml',
                                   'awsprices.json')
+        offer_file_lock = filelock.FileLock(price_path + '.lock')
+
         try:
             self.logger.info('Reading AWS prices from cache...')
-            with open(price_path, 'r') as f:
-                offer_dict = json.load(f)
+            with offer_file_lock:
+                with open(price_path, 'r') as f:
+                    offer_dict = json.load(f)
 
-        except BaseException:
+        except IOError:
             self.logger.info(
                 'Getting prices info from AWS (this may take a moment...)')
 
-            r = requests.get(
-                'https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/' +
-                'AmazonEC2/current/index.json')
-            if r.status_code != 200:
-                self.logger.error(
-                    'Getting AWS offers returned code {}'.format(
-                        r.status_code))
+            with offer_file_lock:
+                util.download_file(
+                    'https://pricing.us-east-1.amazonaws.com/offers/v1.0/'
+                    'aws/AmazonEC2/current/index.json',
+                    price_path)
 
-            offer_dict = r.json()
-            with open(price_path, 'w') as f:
-                f.write(json.dumps(offer_dict))
+                with open(price_path, 'r') as f:
+                    offer_dict = json.load(f)
 
         self.logger.info('Done!')
 

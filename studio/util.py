@@ -1,5 +1,6 @@
 import hashlib
 from io import StringIO
+from datetime import timedelta
 import re
 import random
 import string
@@ -13,9 +14,8 @@ import numpy as np
 import requests
 import six
 
-from tensorflow.core.util import event_pb2
-
 import boto3
+from botocore.exceptions import ClientError
 
 DAY = 86400
 HOUR = 3600
@@ -40,11 +40,14 @@ def remove_backspaces(line):
 
 
 def sha256_checksum(filename, block_size=65536):
-    sha256 = hashlib.sha256()
+    return filehash(filename, block_size, hashobj=hashlib.sha256())
+
+
+def filehash(filename, block_size=65536, hashobj=hashlib.sha256()):
     with open(filename, 'rb') as f:
         for block in iter(lambda: f.read(block_size), b''):
-            sha256.update(block)
-    return sha256.hexdigest()
+            hashobj.update(block)
+    return hashobj.hexdigest()
 
 
 def rand_string(length):
@@ -53,6 +56,7 @@ def rand_string(length):
 
 
 def event_reader(fileobj):
+    from tensorflow.core.util import event_pb2
 
     if isinstance(fileobj, str):
         fileobj = open(fileobj, 'rb')
@@ -81,18 +85,30 @@ def event_reader(fileobj):
 
 
 def rsync_cp(source, dest, ignore_arg='', logger=None):
-    if os.path.exists(dest):
-        shutil.rmtree(dest) if os.path.isdir(dest) else os.remove(dest)
-    os.makedirs(dest)
+    try:
+        if os.path.exists(dest):
+            shutil.rmtree(dest) if os.path.isdir(dest) else os.remove(dest)
+        os.makedirs(dest)
+    except OSError:
+        pass
 
     if ignore_arg != '':
         source += "/"
         tool = 'rsync'
         args = [tool, ignore_arg, '-aHAXE', source, dest]
     else:
-        os.rmdir(dest)
+        try:
+            os.rmdir(dest)
+        except OSError:
+            pass
+
         tool = 'cp'
-        args = [tool, '-pR', source, dest]
+        args = [
+            tool,
+            '-pR',
+            source,
+            dest
+        ]
 
     pcp = subprocess.Popen(args, stdout=subprocess.PIPE,
                            stderr=subprocess.STDOUT)
@@ -222,6 +238,9 @@ class Progbar(object):
 
 
 def download_file(url, local_path, logger=None):
+    if url.startswith('s3://') or url.startswith('gs://'):
+        return download_file_from_qualified(url, local_path, logger)
+
     response = requests.get(
         url,
         stream=True)
@@ -240,12 +259,37 @@ def download_file(url, local_path, logger=None):
     return response
 
 
+def upload_file(url, local_path, logger=None):
+    if logger:
+        logger.info(("Trying to upload file {} to " +
+                     "url {}").format(local_path, url))
+    tic = time.time()
+    with open(local_path, 'rb') as f:
+        resp = requests.put(url, data=f)
+
+    if resp.status_code != 200 and logger:
+        logger.error(str(resp.reason))
+
+    if logger:
+        logger.debug('File upload done in {} s'
+                     .format(time.time() - tic))
+
+
 def download_file_from_qualified(qualified, local_path, logger=None):
+    if qualified.startswith('dockerhub://') or \
+       qualified.startswith('shub://'):
+        return
+
     assert qualified.startswith('s3://') or \
         qualified.startswith('gs://')
 
-    bucket = qualified.split('/')[2]
-    key = '/'.join(qualified.split('/')[3:])
+    qualified_split = qualified.split('/')
+    if qualified_split[2].endswith('.com'):
+        bucket = qualified_split[3]
+        key = '/'.join(qualified_split[4:])
+    else:
+        bucket = qualified_split[2]
+        key = '/'.join(qualified_split[3:])
 
     if logger is not None:
         logger.debug(('Downloading file from bucket {} ' +
@@ -253,9 +297,68 @@ def download_file_from_qualified(qualified, local_path, logger=None):
                      .format(bucket, key, local_path))
 
     if qualified.startswith('s3://'):
-        boto3.client('s3').download_file(bucket, key, local_path)
+
+        if qualified.endswith('/'):
+            # subprocess.Popen(
+            #    [
+            #        'aws', 's3', 'cp', '--recursive',
+            #        "s3://{}/{}".format(bucket, key),
+            #        local_path
+            #    ]
+            # ).communicate()
+            _s3_download_dir(bucket, key, local_path, logger=logger)
+        else:
+            boto3.client('s3').download_file(bucket, key, local_path)
     else:
         raise NotImplementedError
+
+
+def _s3_download_dir(bucket, dist, local, logger=None):
+    client = boto3.client('s3')
+
+    paginator = client.get_paginator('list_objects')
+    for result in paginator.paginate(
+            Bucket=bucket,
+            Delimiter='/',
+            Prefix=dist):
+        if result.get('CommonPrefixes') is not None:
+            for subdir in result.get('CommonPrefixes'):
+                _s3_download_dir(
+                    bucket,
+                    subdir.get('Prefix'),
+                    os.path.join(local, subdir.get('Prefix'))
+                )
+
+        if result.get('Contents') is not None:
+            for file in result.get('Contents'):
+                if not os.path.exists(
+                    os.path.dirname(
+                        local +
+                        os.sep +
+                        file.get('Key'))):
+                    os.makedirs(
+                        os.path.dirname(
+                            local +
+                            os.sep +
+                            file.get('Key')))
+
+                try:
+                    key = file.get('Key')
+                    local_path = os.path.join(
+                        local,
+                        re.sub('^' + dist, '', file.get('Key'))
+                    )
+
+                    if logger:
+                        logger.debug(
+                            'Downloading {}/{} to {}'
+                            .format(bucket, key, local_path))
+
+                    client.download_file(bucket, key, local_path)
+                except ClientError as e:
+                    if logger:
+                        logger.debug(
+                            'Download failed with exception {}'.format(e))
 
 
 def has_aws_credentials():
@@ -263,18 +366,21 @@ def has_aws_credentials():
 
 
 def retry(f,
-          no_retries=5, sleeptime=1,
+          no_retries=5, sleep_time=1,
           exception_class=BaseException, logger=None):
     for i in range(no_retries):
         try:
             return f()
         except exception_class as e:
+            if i == no_retries - 1:
+                raise e
+
             if logger:
                 logger.info(
                     ('Exception {} is caught, ' +
                      'sleeping {}s and retrying (attempt {} of {})')
-                    .format(e, sleeptime, i, no_retries))
-            time.sleep(sleeptime)
+                    .format(e, sleep_time, i, no_retries))
+            time.sleep(sleep_time)
 
 
 def compression_to_extension(compression):
@@ -344,19 +450,50 @@ def sixdecode(s):
     raise TypeError("Unknown type of " + str(s))
 
 
-def str2duration(s):
-    s = s.lower()
+def shquote(s):
     try:
-        if s.endswith('d'):
-            return DAY * float(s[:-1])
-        elif s.endswith('h'):
-            return HOUR * float(s[:-1])
-        elif s.endswith('m'):
-            return MINUTE * float(s[:-1])
-        elif s.endswith('s'):
-            return float(s[:-1])
-        else:
-            return float(s)
+        import pipes as P
+    except ImportError:
+        import shlex as P
 
-    except BaseException:
-        return None
+    return P.quote(s)
+
+
+duration_regex = re.compile(
+    r'((?P<hours>-?\d+?)h)?((?P<minutes>-?\d+?)m)?((?P<seconds>-?\d+?)s)?')
+
+# parse_duration parses strings into time delta values that python can
+# deal with.  Examples include 12h, 11h60m, 719m60s, 11h3600s
+#
+
+
+def parse_duration(duration_str):
+    parts = duration_regex.match(duration_str)
+    if not parts:
+        return
+    parts = parts.groupdict()
+    time_params = {}
+    for (name, param) in six.iteritems(parts):
+        if param:
+            time_params[name] = int(param)
+    retval = timedelta(**time_params)
+    return retval
+
+
+def str2duration(s):
+    return parse_duration(s.lower())
+
+
+def rm_rf(path):
+    '''
+    remove file or a directory
+    '''
+    if not os.path.exists(path):
+        return
+
+    if os.path.isfile(path):
+        os.remove(path)  # remove the file
+    elif os.path.isdir(path):
+        shutil.rmtree(path)  # remove dir and all contains
+    else:
+        raise ValueError("file {} is not a file or dir.".format(path))

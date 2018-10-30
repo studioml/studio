@@ -21,11 +21,8 @@ class ModelTest(unittest.TestCase):
         experiment_project = 'create_experiment_project'
         experiment = create_experiment(
             filename, args, experiment_name, experiment_project)
-        packages = [
-            p._key +
-            '==' +
-            p._version for p in pip.pip.get_installed_distributions(
-                local_only=True)]
+
+        packages = [p for p in pip.operations.freeze.freeze()]
 
         self.assertTrue(experiment.key == experiment_name)
         self.assertTrue(experiment.filename == filename)

@@ -1,3 +1,5 @@
+pip == 9.0.3
+
 setuptools_scm
 setuptools_scm_git_archive
 
@@ -12,7 +14,6 @@ jinja2
 
 pyyaml
 cma
-
 
 apscheduler
 pycryptodome
@@ -32,3 +33,9 @@ google-auth-httplib2
 
 oauth2client==3.0.0
 boto3
+awscli
+filelock
+pygtail
+pika == 0.11.2
+
+cachetools == 2.0.1

@@ -1,4 +1,3 @@
-import sys
 import unittest
 import os
 import uuid
@@ -9,6 +8,9 @@ from local_worker_test import stubtest_worker
 
 from timeout_decorator import timeout
 from studio.util import has_aws_credentials
+
+
+CLOUD_TEST_TIMEOUT = 900
 
 
 @unittest.skipIf(
@@ -22,7 +24,7 @@ class GCloudWorkerTest(unittest.TestCase):
         project = 'studio-ed756'
         return GCloudWorkerManager(project)
 
-    @timeout(500)
+    @timeout(CLOUD_TEST_TIMEOUT, use_signals=False)
     def test_worker(self):
         experiment_name = 'test_gcloud_worker_' + str(uuid.uuid4())
         with stubtest_worker(
@@ -33,11 +35,11 @@ class GCloudWorkerTest(unittest.TestCase):
             config_name='test_config_http_client.yaml',
             test_script='tf_hello_world.py',
             script_args=['arg0'],
-            expected_output='[ 2.  6.]',
+            expected_output='[ 2.0 6.0 ]',
         ):
             pass
 
-    @timeout(500)
+    @timeout(CLOUD_TEST_TIMEOUT, use_signals=False)
     def test_worker_spot(self):
         experiment_name = 'test_gcloud_spot_worker_' + str(uuid.uuid4())
         with stubtest_worker(
@@ -48,7 +50,26 @@ class GCloudWorkerTest(unittest.TestCase):
             config_name='test_config_http_client.yaml',
             test_script='tf_hello_world.py',
             script_args=['arg0'],
-            expected_output='[ 2.  6.]',
+            expected_output='[ 2.0 6.0 ]',
+        ):
+            pass
+
+    @timeout(CLOUD_TEST_TIMEOUT, use_signals=False)
+    def test_worker_spot_container(self):
+        experiment_name = 'test_gcloud_spot_simg_' + str(uuid.uuid4())
+        with stubtest_worker(
+            self,
+            experiment_name=experiment_name,
+            runner_args=['--cloud=gcspot',
+                         '--force-git',
+                         '--cloud-timeout=120',
+                         '--container=shub://vsoch/hello-world'],
+
+            config_name='test_config_http_client.yaml',
+            test_script='',
+            script_args=[],
+            expected_output='RaawwWWWWWRRRR!!',
+            test_workspace=False
         ):
             pass
 
@@ -62,22 +83,22 @@ class EC2WorkerTest(unittest.TestCase):
     def get_worker_manager(self):
         return EC2WorkerManager()
 
-    @timeout(500)
+    @timeout(CLOUD_TEST_TIMEOUT, use_signals=False)
     def test_worker(self):
         experiment_name = 'test_ec2_worker_' + str(uuid.uuid4())
         with stubtest_worker(
             self,
             experiment_name=experiment_name,
             runner_args=['--cloud=ec2', '--force-git', '--gpus=1',
-                         '--cloud-timeout=120'],
+                         '--cloud-timeout=120', '--ssh-keypair=peterz-k1'],
             config_name='test_config_http_client.yaml',
             test_script='tf_hello_world.py',
             script_args=['arg0'],
-            expected_output='[ 2.  6.]',
+            expected_output='[ 2.0 6.0 ]',
         ):
             pass
 
-    @timeout(500)
+    @timeout(CLOUD_TEST_TIMEOUT, use_signals=False)
     def test_worker_spot(self):
         experiment_name = 'test_ec2_worker_' + str(uuid.uuid4())
         stubtest_worker(
@@ -92,7 +113,7 @@ class EC2WorkerTest(unittest.TestCase):
             config_name='test_config_http_client.yaml',
             test_script='tf_hello_world.py',
             script_args=['arg0'],
-            expected_output='[ 2.  6.]',
+            expected_output='[ 2.0 6.0 ]',
         )
 
     def test_get_ondemand_prices(self):
@@ -101,6 +122,25 @@ class EC2WorkerTest(unittest.TestCase):
 
         expected_prices = {'c4.large': 0.1, 'p2.xlarge': 0.9}
         self.assertEquals(prices, expected_prices)
+
+    @timeout(CLOUD_TEST_TIMEOUT, use_signals=False)
+    def test_worker_spot_container(self):
+        experiment_name = 'test_gcloud_spot_simg_' + str(uuid.uuid4())
+        with stubtest_worker(
+            self,
+            experiment_name=experiment_name,
+            runner_args=['--cloud=ec2spot',
+                         '--force-git',
+                         '--cloud-timeout=120',
+                         '--container=shub://vsoch/hello-world'],
+
+            config_name='test_config_http_client.yaml',
+            test_script='',
+            script_args=[],
+            expected_output='RaawwWWWWWRRRR!!',
+            test_workspace=False
+        ):
+            pass
 
 
 if __name__ == '__main__':

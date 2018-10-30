@@ -5,12 +5,10 @@ import uuid
 import subprocess
 
 from studio.pubsub_queue import PubsubQueue
+from studio import logs
 from local_worker_test import stubtest_worker
 
 from timeout_decorator import timeout
-import logging
-
-logging.basicConfig()
 
 
 @unittest.skip('testing requires docker')
@@ -27,7 +25,7 @@ class RemoteWorkerTest(unittest.TestCase):
     def test_remote_worker(self):
         experiment_name = 'test_remote_worker_' + str(uuid.uuid4())
         queue_name = experiment_name
-        logger = logging.getLogger('test_remote_worker')
+        logger = logs.getLogger('test_remote_worker')
         logger.setLevel(10)
 
         pw = subprocess.Popen(
@@ -48,7 +46,7 @@ class RemoteWorkerTest(unittest.TestCase):
             config_name='test_config_http_client.yaml',
             test_script='tf_hello_world.py',
             script_args=['arg0'],
-            expected_output='[ 2.  6.]',
+            expected_output='[ 2.0 6.0 ]',
             queue=PubsubQueue(queue_name))
 
         workerout, _ = pw.communicate()
@@ -67,7 +65,7 @@ class RemoteWorkerTest(unittest.TestCase):
         tmpfile = os.path.join(tempfile.gettempdir(),
                                str(uuid.uuid4()))
 
-        logger = logging.getLogger('test_remote_worker_c')
+        logger = logs.getLogger('test_remote_worker_c')
         logger.setLevel(10)
         experiment_name = "test_remote_worker_c_" + str(uuid.uuid4())
 
@@ -130,7 +128,7 @@ class RemoteWorkerTest(unittest.TestCase):
         'variable not set, won'' be able to use google ' +
         'PubSub')
     def test_remote_worker_co(self):
-        logger = logging.getLogger('test_remote_worker_co')
+        logger = logs.getLogger('test_remote_worker_co')
         logger.setLevel(10)
 
         tmpfile = os.path.join(tempfile.gettempdir(),
@@ -180,8 +178,8 @@ class RemoteWorkerTest(unittest.TestCase):
 
         # create a docker image with baked in credentials
         # and run a remote worker tests with it
-        logger = logging.getLogger('test_baked_image')
-        logger.setLevel(logging.DEBUG)
+        logger = logs.getLogger('test_baked_image')
+        logger.setLevel(logs.DEBUG)
 
         # check if docker is installed
         dockertestp = subprocess.Popen(['docker'],
@@ -203,8 +201,9 @@ class RemoteWorkerTest(unittest.TestCase):
                 'studio-add-credentials',
                 '--tag=' + image,
                 '--base-image=peterzhokhoff/studioml'],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT)
+            # stdout=subprocess.PIPE,
+            # stderr=subprocess.STDOUT
+        )
 
         addcredsout, _ = addcredsp.communicate()
         if addcredsout:
@@ -215,7 +214,7 @@ class RemoteWorkerTest(unittest.TestCase):
 
         experiment_name = 'test_remote_worker_baked' + str(uuid.uuid4())
         queue_name = experiment_name
-        logger = logging.getLogger('test_baked_image')
+        logger = logs.getLogger('test_baked_image')
         logger.setLevel(10)
 
         pw = subprocess.Popen(
@@ -225,8 +224,9 @@ class RemoteWorkerTest(unittest.TestCase):
              '--single-run',
              '--timeout=30',
              '--image=' + image],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT)
+            # stdout=subprocess.PIPE,
+            # stderr=subprocess.STDOUT
+        )
 
         stubtest_worker(
             self,
@@ -235,7 +235,7 @@ class RemoteWorkerTest(unittest.TestCase):
             config_name='test_config_http_client.yaml',
             test_script='tf_hello_world.py',
             script_args=['arg0'],
-            expected_output='[ 2.  6.]',
+            expected_output='[ 2.0 6.0 ]',
             queue=PubsubQueue(queue_name))
 
         workerout, _ = pw.communicate()

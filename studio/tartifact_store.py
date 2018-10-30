@@ -1,7 +1,6 @@
 import os
 import uuid
 
-import logging
 import time
 import tempfile
 import re
@@ -16,19 +15,17 @@ except ImportError:
 
 import hashlib
 
-from . import fs_tracker
+from . import fs_tracker, logs
 from . import util
 from .util import download_file, download_file_from_qualified, retry
 from .util import compression_to_extension, compression_to_taropt, timeit
 from .util import sixdecode
 
-logging.basicConfig()
-
 
 class TartifactStore(object):
 
     def __init__(self, measure_timestamp_diff=False, compression=None,
-                 verbose=logging.DEBUG):
+                 verbose=logs.DEBUG):
         if measure_timestamp_diff:
             try:
                 self.timestamp_shift = self._measure_timestamp_diff()
@@ -39,7 +36,7 @@ class TartifactStore(object):
 
         self.compression = compression
 
-        self.logger = logging.getLogger(self.__class__.__name__)
+        self.logger = logs.getLogger(self.__class__.__name__)
         self.logger.setLevel(verbose)
 
     def _measure_timestamp_diff(self):
@@ -72,18 +69,32 @@ class TartifactStore(object):
     def get_artifact_hash(
             self,
             artifact,
-            local_path=None,
-            cache=True):
+            local_path=None):
 
         if local_path is None:
             local_path = artifact['local']
 
+        if local_path is None or not os.path.exists(local_path):
+            if artifact.get('qualified'):
+                return hashlib.sha256(artifact.get('qualified')).hexdigest()
+            elif artifact.get('url'):
+                return hashlib.sha256(artifact.get('url')).hexdigest()
+
         key = artifact.get('key')
-        if os.path.exists(local_path):
-            tar_filename = self._tartifact(local_path, key)
+        tar_filename = self._tartifact(local_path, key)
+
+        try:
             retval = util.sha256_checksum(tar_filename)
             os.remove(tar_filename)
+            self.logger.debug(
+                'deleted local artifact file {}'.format(tar_filename))
             return retval
+        except BaseException as e:
+            self.logger.info(
+                'error generating a hash for {}'.format(tar_filename))
+            self.logger.info(e)
+
+        return None
 
     def put_artifact(
             self,
@@ -139,6 +150,7 @@ class TartifactStore(object):
             background=False):
 
         key = artifact.get('key')
+        bucket = artifact.get('bucket')
 
         if key is None:
             assert not artifact['mutable']
@@ -160,8 +172,19 @@ class TartifactStore(object):
             if artifact.get('url') is not None:
                 download_file(remote_path, local_path, self.logger)
             else:
+                if remote_path.startswith('dockerhub://') or \
+                   remote_path.startswith('shub://'):
+                    self.logger.info((
+                        'Qualified {} points to a shub or dockerhub,' +
+                        ' skipping the download'))
+                    return remote_path
+
                 download_file_from_qualified(
                     remote_path, local_path, self.logger)
+
+            self.logger.debug('Downloaded file {} from external source {}'
+                              .format(local_path, remote_path))
+            return local_path
 
         if local_path is None:
             if 'local' in artifact.keys() and \
@@ -206,8 +229,8 @@ class TartifactStore(object):
         def finish_download():
             try:
                 self._download_file(key, tar_filename)
-            except BaseException:
-                pass
+            except BaseException as e:
+                self.logger.debug(e)
 
             if os.path.exists(tar_filename):
                 # first, figure out if the tar file has a base path of .
@@ -243,9 +266,13 @@ class TartifactStore(object):
 
                 tarout, tarerr = tarp.communicate()
                 if tarp.returncode != 0:
-                    self.logger.info('tar had a non-zero return code!')
+                    self.logger.info(
+                        'tar had a non-zero return code ! (' +
+                        str(tarp.returncode) + ')')
+
                     self.logger.info('tar cmd = ' + tarcmd)
-                    self.logger.info('tar output: \n ' + str(tarout))
+                    self.logger.info('tar stdout output: \n ' + str(tarout))
+                    self.logger.info('tar stderr output: \n ' + str(tarerr))
 
                 if len(listtar) == 1:
                     actual_path = os.path.join(basepath, listtar[0])
@@ -254,13 +281,13 @@ class TartifactStore(object):
                             actual_path, local_path))
                     retry(lambda: os.rename(actual_path, local_path),
                           no_retries=5,
-                          sleeptime=1,
+                          sleep_time=1,
                           exception_class=OSError,
                           logger=self.logger)
 
                 os.remove(tar_filename)
             else:
-                self.logger.warn(
+                self.logger.warning(
                     'file {} download failed'.format(tar_filename))
 
         if background:
@@ -381,12 +408,16 @@ class TartifactStore(object):
                                 stderr=subprocess.STDOUT,
                                 close_fds=True)
 
-        tarout, _ = tarp.communicate()
+        tarout, tarerr = tarp.communicate()
         toc = time.time()
 
         if tarp.returncode != 0:
-            self.logger.info('tar had a non-zero return code!')
+            self.logger.info(
+                'tar had a non-zero return code ! (' +
+                str(tarp.returncode) + ')')
+
             self.logger.info('tar output: \n ' + sixdecode(tarout))
+            self.logger.info('tar stderr output: \n ' + str(tarerr))
 
         self.logger.info('tar finished in {}s'.format(toc - tic))
         return tar_filename
