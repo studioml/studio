@@ -80,9 +80,9 @@ class RMQueue(object):
         :rtype: pika.SelectConnection
 
         """
+        params = pika.URLParameters(self._url)
         return pika.SelectConnection(
-            pika.URLParameters(
-                self._url),
+            params,
             on_open_callback=self.on_connection_open,
             on_close_callback=self.on_connection_closed,
             stop_ioloop_on_close=False)
@@ -109,7 +109,7 @@ class RMQueue(object):
             else:
                 # retry in 5 seconds
                 self._logger.info('connection closed, retry in 5 seconds: ' +
-                                  reply_code + reply_text)
+                                  str(reply_code) + ' ' + reply_text)
                 self._connection.add_timeout(5, self._connection.ioloop.stop)
 
     def open_channel(self):
@@ -350,7 +350,7 @@ class RMQueue(object):
     def get_name(self):
         return self._queue
 
-    def enqueue(self, msg, retries=5):
+    def enqueue(self, msg, retries=10):
         """
         Publish a message to RMQ, appending a list of deliveries with
         the message number that was sent.  This list will be used to
@@ -391,10 +391,11 @@ class RMQueue(object):
         properties = pika.BasicProperties(app_id='studioml',
                                           content_type='application/json')
 
-        self._channel.basic_publish(self._exchange,
-                                    self._routing_key,
-                                    msg,
-                                    properties)
+        self._channel.basic_publish(exchange=self._exchange,
+                                    routing_key=self._routing_key,
+                                    body=msg,
+                                    properties=properties,
+                                    mandatory=True)
         self._logger.debug('sent message to {} '
                            .format(self._url))
 
@@ -405,19 +406,23 @@ class RMQueue(object):
             message_number = self._message_number
             self._deliveries.append(self._message_number)
 
+        tries = retries
         while tries != 0:
-            with self._msg_tracking_lock:
-                if message_number not in self._deliveries:
-                    tries = 0
-                    break
-
-            tries -= 1
-            if tries <= 0:
-                break
-
             time.sleep(1)
 
-        return message_number
+            with self._msg_tracking_lock:
+                if message_number not in self._deliveries:
+                    self._logger.debug('sent message acknowledged to {} ' +
+                                       'after waiting {} seconds'
+                                       .format(self._url, abs(tries - 5)))
+
+                    return message_number
+                else:
+                    tries -= 1
+
+        raise Exception('studioml message was never acknowledged to {} ' +
+                        'after waiting {} seconds'
+                        .format(self._url, abs(tries - 5)))
 
     def dequeue(self, acknowledge=True, timeout=0):
         msg = None

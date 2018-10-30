@@ -209,22 +209,29 @@ def allocate_resources(experiment, config=None, verbose=10):
         if experiment.resources_needed else 0
 
     if gpus_needed > 0:
-        ret_val = ret_val and allocate_gpus(gpus_needed, config)
+        ret_val = ret_val and allocate_gpus(gpus_needed,
+                                            experiment.resources_needed,
+                                            config)
     else:
-        allocate_gpus(0, config)
+        allocate_gpus(0)
 
     return ret_val
 
 
-def allocate_gpus(gpus_needed, config=None):
-    if gpus_needed <= 0:
+def allocate_gpus(gpus_needed, resources_needed={}, config=None):
+    # Only disable gpus if gpus_needed < 0
+    if gpus_needed < 0:
         os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
         return True
+    elif gpus_needed == 0:
+        return True
 
-    available_gpus = get_available_gpus()
+    gpu_mem_needed = resources_needed.get('gpuMem', None)
+    strict = resources_needed.get('gpuMemStrict', False)
+
+    available_gpus = get_available_gpus(gpu_mem_needed, strict)
     gpu_mapping = get_gpu_mapping()
-    mapped_gpus = [str(gpu_mapping[g])
-                   for g in available_gpus]
+    mapped_gpus = [str(gpu_mapping[g]) for g in available_gpus]
 
     os.environ['CUDA_DEVICE_ORDER'] = 'PCI_BUS_ID'
     if len(mapped_gpus) >= gpus_needed:

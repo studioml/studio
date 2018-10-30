@@ -67,6 +67,8 @@ class CompletionService:
 
         self.resources_needed.update(resources_needed)
 
+        if queue is not None and queue.startswith("rmq_"):
+            assert self.cloud is None
         self.wm = runner.get_worker_manager(
             self.config, self.cloud)
 
@@ -75,7 +77,8 @@ class CompletionService:
         self.logger.setLevel(self.verbose_level)
 
         if queue is not None:
-            self.logger.info("CompletionService configured with queue " + queue)
+            self.logger.info(
+                "CompletionService configured with queue " + queue)
 
         self.queue = runner.get_queue(queue_name=queue, cloud=self.cloud,
                                       config=studio_config,
@@ -99,6 +102,11 @@ class CompletionService:
         self.shutdown_del_queue = shutdown_del_queue
         self.use_spot = cloud in ['ec2spot', 'gcspot']
         self.sleep_time = sleep_time
+
+        self.logger.info("Project name: %s" % self.project_name)
+        self.logger.info("Initial/final queue name: %s, %s" %
+                         (queue, self.queue_name))
+        self.logger.info("Cloud name: %s" % self.cloud)
 
     def __enter__(self):
         with model.get_db_provider(self.config):
