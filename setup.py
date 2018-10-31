@@ -92,10 +92,10 @@ with open('requirements.txt') as f:
             else:
                 _libcudart = ctypes.cdll.LoadLibrary('libcudart.so')
                 _libcuda = ctypes.cdll.LoadLibrary('libcuda.so')
-            required.append(tensorflow+'=='+versions[tensorflow])
-            required.append(tensorflow+'-gpu=='+versions[tensorflow])
+            required.append(tensorflow + '==' + versions[tensorflow])
+            required.append(tensorflow + '-gpu==' + versions[tensorflow])
         except Exception:
-            required.append(tensorflow+'=='+versions[tensorflow])
+            required.append(tensorflow + '==' + versions[tensorflow])
 
 
 with open('test_requirements.txt') as f:
