@@ -21,7 +21,7 @@ script:
     - echo GOOGLE_APPLICATION_CREDENTIALS_DC=$GOOGLE_APPLICATION_CREDENTIALS_DC
     - pip freeze
     - pytest --collect-only -v
-    - pytest -n 8 -v --durations=0 -l
+    - pytest -n 4 -v --durations=0 -l
 
 jobs:
   include:

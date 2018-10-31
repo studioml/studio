@@ -6,6 +6,11 @@ from subprocess import call
 from setuptools.command.install import install
 from setuptools.command.develop import develop
 
+import sys
+import platform
+import ctypes
+import pip
+
 
 def read(fname):
     try:
@@ -70,6 +75,28 @@ with open('requirements.txt') as f:
     # python modules but be selective about whether the GPU version is used
     # or the default CPU version.  Not doing this will result in the CPU
     # version taking precedence in many cases.
+    versions = {package.key:
+                package.version for package in
+                pip.pip.get_installed_distributions(local_only=True)}
+    package_set = {p._key for p in
+                   pip.pip.get_installed_distributions(local_only=True)}
+
+    tensorflow = 'tensorflow'
+    if 'tf-nightly' in package_set or 'tf-nightly-gpu' in package_set:
+        tensorflow = 'tf-nightly'
+
+    if tensorflow in package_set:
+        try:
+            if platform.system() == "Microsoft":
+                _libcudart = ctypes.windll.LoadLibrary('cudart.dll')
+            else:
+                _libcudart = ctypes.cdll.LoadLibrary('libcudart.so')
+                _libcuda = ctypes.cdll.LoadLibrary('libcuda.so')
+            required.append(tensorflow + '==' + versions[tensorflow])
+            required.append(tensorflow + '-gpu==' + versions[tensorflow])
+        except Exception:
+            required.append(tensorflow + '==' + versions[tensorflow])
+
 
 with open('test_requirements.txt') as f:
     test_required = f.read().splitlines()
