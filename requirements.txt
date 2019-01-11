@@ -37,6 +37,6 @@ rsa==3.4.2
 awscli
 filelock
 pygtail
-pika == 0.11.2
+pika == 0.12.0
 
 cachetools == 2.0.1
