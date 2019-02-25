@@ -9,8 +9,8 @@ from local_worker_test import stubtest_worker
 from timeout_decorator import timeout
 from studio.util import has_aws_credentials
 
-
-CLOUD_TEST_TIMEOUT = 900
+#900
+CLOUD_TEST_TIMEOUT = 20
 
 
 @unittest.skipIf(
