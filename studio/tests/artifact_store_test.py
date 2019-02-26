@@ -313,7 +313,8 @@ class FirebaseArtifactStoreTest(ArtifactStoreTest, unittest.TestCase):
     'GOOGLE_APPLICATION_CREDENTIALS environment ' +
     'variable not set, won'' be able to use google cloud')
 class GCloudArtifactStoreTest(ArtifactStoreTest, unittest.TestCase):
-
+    #def on_gcp(self):
+    #    self.assertFalse('GOOGLE_APPLICATION_CREDENTIALS' not in os.environ.keys())
     def get_store(self, config_name=None):
         store = ArtifactStoreTest.get_store(
             self, 'test_config_gcloud_storage.yaml')
@@ -330,7 +331,8 @@ class GCloudArtifactStoreTest(ArtifactStoreTest, unittest.TestCase):
     'AWS credentials not found, '
     'won'' be able to use S3')
 class S3ArtifactStoreTest(ArtifactStoreTest, unittest.TestCase):
-
+    def on_aws(self):
+        self.assertTrue(has_aws_credentials())
     def get_store(self, config_name=None):
         store = ArtifactStoreTest.get_store(
             self, 'test_config_s3_storage.yaml')
