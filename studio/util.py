@@ -21,6 +21,16 @@ DAY = 86400
 HOUR = 3600
 MINUTE = 60
 
+AWSInstance = True
+GCPInstance = False
+
+#to simulate user input
+def is_on_gcp():
+    return GCPInstance
+        
+def is_on_aws():
+    return AWSInstance
+
 
 def remove_backspaces(line):
     splitline = re.split('(\x08+)', line)
@@ -361,6 +371,7 @@ def _s3_download_dir(bucket, dist, local, logger=None):
                             'Download failed with exception {}'.format(e))
 
 
+
 def has_aws_credentials():
     return boto3.client('s3')._request_signer._credentials is not None
 
@@ -498,3 +509,5 @@ def rm_rf(path):
         shutil.rmtree(path)  # remove dir and all contains
     else:
         raise ValueError("file {} is not a file or dir.".format(path))
+        
+

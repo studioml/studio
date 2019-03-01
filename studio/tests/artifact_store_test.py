@@ -20,10 +20,18 @@ from studio.auth import remove_all_keys
 from studio.gcloud_artifact_store import GCloudArtifactStore
 from studio.s3_artifact_store import S3ArtifactStore
 from studio.util import has_aws_credentials
+from studio.util import is_on_gcp
+from studio.util import is_on_aws
 
 
+
+        
 class ArtifactStoreTest(object):
     _multiprocess_shared_ = True
+    
+
+    def on_enviornment(self):
+        pass
 
     def get_store(self, config_name='test_config.yaml'):
         config_file = os.path.join(
@@ -309,12 +317,11 @@ class FirebaseArtifactStoreTest(ArtifactStoreTest, unittest.TestCase):
 
 
 @unittest.skipIf(
-    'GOOGLE_APPLICATION_CREDENTIALS' not in os.environ.keys(),
-    'GOOGLE_APPLICATION_CREDENTIALS environment ' +
-    'variable not set, won'' be able to use google cloud')
+    not is_on_gcp(),
+    'User indicated not on gcp')
 class GCloudArtifactStoreTest(ArtifactStoreTest, unittest.TestCase):
-    #def on_gcp(self):
-    #    self.assertFalse('GOOGLE_APPLICATION_CREDENTIALS' not in os.environ.keys())
+    def on_enviornment(self):
+        self.assertFalse('GOOGLE_APPLICATION_CREDENTIALS' not in os.environ.keys())
     def get_store(self, config_name=None):
         store = ArtifactStoreTest.get_store(
             self, 'test_config_gcloud_storage.yaml')
@@ -327,11 +334,10 @@ class GCloudArtifactStoreTest(ArtifactStoreTest, unittest.TestCase):
 
 
 @unittest.skipIf(
-    not has_aws_credentials(),
-    'AWS credentials not found, '
-    'won'' be able to use S3')
+    not is_on_aws(),
+    'User indicated not on aws')
 class S3ArtifactStoreTest(ArtifactStoreTest, unittest.TestCase):
-    def on_aws(self):
+    def on_enviornment(self):
         self.assertTrue(has_aws_credentials())
     def get_store(self, config_name=None):
         store = ArtifactStoreTest.get_store(
