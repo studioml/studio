@@ -25,10 +25,10 @@ AWSInstance = True
 GCPInstance = False
 
 #to simulate user input
-def is_on_gcp():
+def on_gcp():
     return GCPInstance
         
-def is_on_aws():
+def on_aws():
     return AWSInstance
 
 
