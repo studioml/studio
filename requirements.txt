@@ -1,4 +1,4 @@
-pip == 9.0.3
+pip==19.0.3
 
 setuptools_scm
 setuptools_scm_git_archive
@@ -40,3 +40,4 @@ pygtail
 pika == 0.12.0
 
 cachetools == 2.0.1
+
