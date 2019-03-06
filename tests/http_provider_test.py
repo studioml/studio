@@ -9,6 +9,7 @@ import uuid
 from studio import model
 from model_test import get_test_experiment
 
+from studio.util import on_gcp, on_aws
 
 @unittest.skipIf('GOOGLE_APPLICATION_CREDENTIALS' not in os.environ.keys(),
                  "GOOGLE_APPLICATION_CREDENTIALS is missing, needed for " +

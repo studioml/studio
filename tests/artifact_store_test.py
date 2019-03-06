@@ -19,12 +19,8 @@ from studio.auth import remove_all_keys
 
 from studio.gcloud_artifact_store import GCloudArtifactStore
 from studio.s3_artifact_store import S3ArtifactStore
-from studio.util import has_aws_credentials
 
-from studio.util import on_gcp
-from studio.util import on_aws
-
-
+from studio.util import has_aws_credentials, on_gcp, on_aws
 
         
 class ArtifactStoreTest(object):
