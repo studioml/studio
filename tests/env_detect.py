@@ -5,7 +5,7 @@ AWSInstance = "aws" in list(
         open(
             "./test_config.yaml",
             "r"))["cloud"].keys())
-GCPInstance = "gcloud" in list(
+GcloudInstance = "gcloud" in list(
     yaml.load(
         open(
             "./test_config.yaml",
@@ -13,7 +13,7 @@ GCPInstance = "gcloud" in list(
 
 
 def on_gcp():
-    return GCPInstance
+    return GcloudInstance
 
 
 def on_aws():
