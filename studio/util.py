@@ -13,6 +13,7 @@ import os
 import numpy as np
 import requests
 import six
+import yaml
 
 import boto3
 from botocore.exceptions import ClientError
@@ -20,6 +21,16 @@ from botocore.exceptions import ClientError
 DAY = 86400
 HOUR = 3600
 MINUTE = 60
+
+AWSInstance = "aws" in list(yaml.load(open("../tests/test_config.yaml","r"))["cloud"].keys())
+GCPInstance = "gcloud" in list(yaml.load(open("../tests/test_config.yaml","r"))["cloud"].keys())
+
+#to simulate user input
+def on_gcp():
+    return GCPInstance
+        
+def on_aws():
+    return AWSInstance
 
 
 def remove_backspaces(line):
@@ -361,8 +372,10 @@ def _s3_download_dir(bucket, dist, local, logger=None):
                             'Download failed with exception {}'.format(e))
 
 
+
 def has_aws_credentials():
     return boto3.client('s3')._request_signer._credentials is not None
+
 
 
 def retry(f,
@@ -497,3 +510,5 @@ def rm_rf(path):
         shutil.rmtree(path)  # remove dir and all contains
     else:
         raise ValueError("file {} is not a file or dir.".format(path))
+        
+

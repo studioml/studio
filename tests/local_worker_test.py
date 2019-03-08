@@ -16,7 +16,7 @@ except BaseException:
 
 from studio import model, logs
 from studio.local_queue import LocalQueue, get_local_queue_lock
-from studio.util import has_aws_credentials, sixdecode, retry
+from studio.util import has_aws_credentials, sixdecode, retry, on_aws, on_gcp
 
 TEST_TIMEOUT = 600
 
@@ -168,8 +168,15 @@ class LocalWorkerTest(unittest.TestCase):
             pass
 
     @unittest.skipIf(
-        not has_aws_credentials(),
-        'AWS credentials not found, cannot download s3://-like links')
+        not on_aws(),
+        'User indicated not on aws')
+    class UserIndicatedOnAWSTest(unittest.TestCase):
+        def test_on_enviornment(self):
+            self.assertTrue(has_aws_credentials())
+            
+    @unittest.skipIf(
+        (not on_aws()) or not has_aws_credentials(),
+        'Skipping due to userinput or AWS Not detected')
     @timeout(TEST_TIMEOUT, use_signals=False)
     def test_local_worker_co_s3(self):
         expected_str = 'No4 ulica fonar apteka, bessmyslennyj i tusklyj svet'

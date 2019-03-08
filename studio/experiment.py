@@ -6,9 +6,12 @@ import sys
 import time
 
 try:
-    import pip
+    try:
+        from pip._internal.operations import freeze
+    except Exception:
+        from pip.operations import freeze
 except ImportError:
-    pip = None
+    freeze = None
 
 from . import fs_tracker
 from .util import shquote
@@ -132,7 +135,7 @@ def create_experiment(
         str(int(time.time())) + "_" + str(uuid.uuid4())
 
     packages = []
-    for pkg in pip.operations.freeze.freeze():
+    for pkg in freeze.freeze():
 
         if pkg.startswith('-e git+'):
             # git package

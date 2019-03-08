@@ -19,8 +19,8 @@ saveMetricsFrequency: 1m
 verbose: error
 
 cloud:
-    gcloud:
-        zone: us-east1-c
+    aws:
+        zone: us-west-2
 
 resources_needed:
     cpus: 2

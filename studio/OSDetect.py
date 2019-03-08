@@ -1,2 +1,4 @@
 import os
-print(os.environ)
+
+def test():
+    print(os.environ)

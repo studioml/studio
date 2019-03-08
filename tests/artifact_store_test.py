@@ -19,11 +19,14 @@ from studio.auth import remove_all_keys
 
 from studio.gcloud_artifact_store import GCloudArtifactStore
 from studio.s3_artifact_store import S3ArtifactStore
-from studio.util import has_aws_credentials
 
+from studio.util import has_aws_credentials, on_gcp, on_aws
 
+        
 class ArtifactStoreTest(object):
     _multiprocess_shared_ = True
+    
+
 
     def get_store(self, config_name='test_config.yaml'):
         config_file = os.path.join(
@@ -307,28 +310,39 @@ class FirebaseArtifactStoreTest(ArtifactStoreTest, unittest.TestCase):
         fb._download_file(key, tmp_filename)
         self.assertTrue(not os.path.exists(tmp_filename))
 
+@unittest.skipIf(
+    not on_gcp(),
+    'User indicated not on gcp')
+class UserIndicatedOnGCPTest(unittest.TestCase):
+    def test_on_enviornment(self):
+        self.assertTrue('GOOGLE_APPLICATION_CREDENTIALS' in os.environ.keys())
 
 @unittest.skipIf(
-    'GOOGLE_APPLICATION_CREDENTIALS' not in os.environ.keys(),
-    'GOOGLE_APPLICATION_CREDENTIALS environment ' +
-    'variable not set, won'' be able to use google cloud')
-class GCloudArtifactStoreTest(ArtifactStoreTest, unittest.TestCase):
+    (not on_gcp()) or 'GOOGLE_APPLICATION_CREDENTIALS' not in os.environ.keys(),
+    'Skipping due to userinput or GCP Not detected')
+class GCloudArtifactStoreTest(ArtifactStoreTest, unittest.TestCase):    
 
     def get_store(self, config_name=None):
         store = ArtifactStoreTest.get_store(
             self, 'test_config_gcloud_storage.yaml')
         self.assertTrue(isinstance(store, GCloudArtifactStore))
         return store
+        
 
     def get_qualified_location_prefix(self):
         store = self.get_store()
         return "gs://" + store.get_bucket() + "/"
 
-
 @unittest.skipIf(
-    not has_aws_credentials(),
-    'AWS credentials not found, '
-    'won'' be able to use S3')
+    not on_aws(),
+    'User indicated not on aws')
+class UserIndicatedOnAWSTest(unittest.TestCase):
+    def test_on_enviornment(self):
+        self.assertTrue(has_aws_credentials())
+        
+@unittest.skipIf(
+    (not on_aws()) or not has_aws_credentials(),
+    'Skipping due to userinput or AWS Not detected')
 class S3ArtifactStoreTest(ArtifactStoreTest, unittest.TestCase):
 
     def get_store(self, config_name=None):
