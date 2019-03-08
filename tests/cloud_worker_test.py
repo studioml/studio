@@ -20,8 +20,10 @@ class UserIndicatedOnGCPTest(unittest.TestCase):
     def test_on_enviornment(self):
         self.assertTrue('GOOGLE_APPLICATION_CREDENTIALS' in os.environ.keys())
 
+
 @unittest.skipIf(
-    (not on_gcp()) or 'GOOGLE_APPLICATION_CREDENTIALS' not in os.environ.keys(),
+    (not on_gcp()) or
+    'GOOGLE_APPLICATION_CREDENTIALS' not in os.environ.keys(),
     'Skipping due to userinput or GCP Not detected')
 class GCloudWorkerTest(unittest.TestCase):
     _multiprocess_shared_ = True
@@ -86,7 +88,8 @@ class GCloudWorkerTest(unittest.TestCase):
 class UserIndicatedOnAWSTest(unittest.TestCase):
     def test_on_enviornment(self):
         self.assertTrue(has_aws_credentials())
-        
+
+
 @unittest.skipIf(
     (not on_aws()) or not has_aws_credentials(),
     'Skipping due to userinput or AWS Not detected')

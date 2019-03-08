@@ -159,7 +159,7 @@ class GithubAuth(object):
             token = f.read().strip()
 
         self.userid = self.verify_token(token)
-        if self.userid != re.sub('.githubtoken\Z', '', tokens[0]):
+        if self.userid != re.sub(r'.githubtoken\Z', '', tokens[0]):
             self.logger.error(
                 'Token filename does not match github login'
             )
@@ -281,9 +281,9 @@ class FirebaseAuth(object):
 
     def _update_user(self):
         if not os.path.exists(self.token_file):
-                # refresh tokens don't expire, hence we can
-                # use them forever once obtained
-                # or (time.time() - os.path.getmtime(api_key)) > HOUR:
+            # refresh tokens don't expire, hence we can
+            # use them forever once obtained
+            # or (time.time() - os.path.getmtime(api_key)) > HOUR:
             if self.use_email_auth:
                 self.sign_in_with_email()
                 self.expired = False
