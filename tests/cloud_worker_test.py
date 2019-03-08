@@ -7,7 +7,8 @@ from studio.ec2cloud_worker import EC2WorkerManager
 from local_worker_test import stubtest_worker
 
 from timeout_decorator import timeout
-from studio.util import has_aws_credentials, on_gcp, on_aws
+from studio.util import has_aws_credentials
+from env_detect import on_gcp, on_aws
 
 
 CLOUD_TEST_TIMEOUT = 900

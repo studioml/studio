@@ -16,7 +16,9 @@ except BaseException:
 
 from studio import model, logs
 from studio.local_queue import LocalQueue, get_local_queue_lock
-from studio.util import has_aws_credentials, sixdecode, retry, on_aws, on_gcp
+from studio.util import has_aws_credentials, sixdecode, retry, 
+from studio.util import has_aws_credentials
+from env_detect import on_gcp, on_aws
 
 TEST_TIMEOUT = 600
 

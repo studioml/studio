@@ -9,7 +9,7 @@ from studio import logs
 from local_worker_test import stubtest_worker
 
 from timeout_decorator import timeout
-from studio.util import on_gcp
+from env_detect import on_gcp
 
 
 @unittest.skip('testing requires docker')

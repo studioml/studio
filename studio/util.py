@@ -13,7 +13,7 @@ import os
 import numpy as np
 import requests
 import six
-import yaml
+
 
 import boto3
 from botocore.exceptions import ClientError
@@ -22,24 +22,6 @@ DAY = 86400
 HOUR = 3600
 MINUTE = 60
 
-AWSInstance = "aws" in list(
-    yaml.load(
-        open(
-            "./tests/test_config.yaml",
-            "r"))["cloud"].keys())
-GCPInstance = "gcloud" in list(
-    yaml.load(
-        open(
-            "./tests/test_config.yaml",
-            "r"))["cloud"].keys())
-
-
-def on_gcp():
-    return GCPInstance
-
-
-def on_aws():
-    return AWSInstance
 
 
 def remove_backspaces(line):

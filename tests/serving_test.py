@@ -7,7 +7,7 @@ import uuid
 import requests
 
 from studio import model
-from studio.util import on_gcp
+from env_detect import on_gcp
 
 
 @unittest.skipIf(
