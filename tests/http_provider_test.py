@@ -11,6 +11,7 @@ from model_test import get_test_experiment
 
 from studio.util import has_aws_credentials, on_gcp, on_aws
 
+
 @unittest.skipIf(
     not on_gcp(),
     'User indicated not on gcp')
@@ -18,8 +19,10 @@ class UserIndicatedOnGCPTest(unittest.TestCase):
     def test_on_enviornment(self):
         self.assertTrue('GOOGLE_APPLICATION_CREDENTIALS' in os.environ.keys())
 
+
 @unittest.skipIf(
-    (not on_gcp()) or 'GOOGLE_APPLICATION_CREDENTIALS' not in os.environ.keys(),
+    (not on_gcp()) or
+    'GOOGLE_APPLICATION_CREDENTIALS' not in os.environ.keys(),
     'Skipping due to userinput or GCP Not detected')
 class HTTPProviderTest(unittest.TestCase):
 

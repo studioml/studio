@@ -225,7 +225,8 @@ class FirebaseProviderTest(unittest.TestCase, KeyValueProviderTest):
 class UserIndicatedOnAWSTest(unittest.TestCase):
     def test_on_enviornment(self):
         self.assertTrue(has_aws_credentials())
-        
+
+
 @unittest.skipIf(
     (not on_aws()) or not has_aws_credentials(),
     'Skipping due to userinput or AWS Not detected')
