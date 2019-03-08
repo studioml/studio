@@ -13,6 +13,7 @@ import os
 import numpy as np
 import requests
 import six
+import yaml
 
 import boto3
 from botocore.exceptions import ClientError
@@ -21,8 +22,8 @@ DAY = 86400
 HOUR = 3600
 MINUTE = 60
 
-AWSInstance = True
-GCPInstance = False
+AWSInstance = "aws" in list(yaml.load(open("../tests/test_config.yaml","r"))["cloud"].keys())
+GCPInstance = "gcloud" in list(yaml.load(open("../tests/test_config.yaml","r"))["cloud"].keys())
 
 #to simulate user input
 def on_gcp():
