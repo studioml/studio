@@ -7,11 +7,23 @@ import uuid
 import requests
 
 from studio import model
+from studio.util import on_gcp
 
 
-@unittest.skipIf('GOOGLE_APPLICATION_CREDENTIALS' not in os.environ.keys(),
-                 "GOOGLE_APPLICATION_CREDENTIALS is missing, needed for " +
-                 "server to communicate with storage")
+@unittest.skipIf(
+    not on_gcp(),
+    'User indicated not on gcp')
+class UserIndicatedOnGCPTest(unittest.TestCase):
+    def test_on_enviornment(self):
+        self.assertTrue('GOOGLE_APPLICATION_CREDENTIALS' in os.environ.keys())
+
+
+@unittest.skipIf(
+    (not on_gcp()) or
+    'GOOGLE_APPLICATION_CREDENTIALS' not in os.environ.keys(),
+    'Skipping due to userinput or GCP Not detected' +
+    "GOOGLE_APPLICATION_CREDENTIALS is missing, needed for " +
+    "server to communicate with storage")
 class ServingTest(unittest.TestCase):
 
     _mutliprocess_shared_ = True

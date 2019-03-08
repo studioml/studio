@@ -6,6 +6,8 @@ from subprocess import call
 from setuptools.command.install import install
 from setuptools.command.develop import develop
 
+import pkg_resources
+
 import sys
 import platform
 import ctypes
@@ -77,9 +79,9 @@ with open('requirements.txt') as f:
     # version taking precedence in many cases.
     versions = {package.key:
                 package.version for package in
-                pip.pip.get_installed_distributions(local_only=True)}
+                pkg_resources.working_set}
     package_set = {p._key for p in
-                   pip.pip.get_installed_distributions(local_only=True)}
+                   pkg_resources.working_set}
 
     tensorflow = 'tensorflow'
     if 'tf-nightly' in package_set or 'tf-nightly-gpu' in package_set:

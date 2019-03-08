@@ -12,7 +12,7 @@ from studio.firebase_provider import FirebaseProvider
 from studio.postgres_provider import PostgresProvider
 from studio.s3_provider import S3Provider
 from studio.auth import remove_all_keys
-from studio.util import has_aws_credentials
+from studio.util import has_aws_credentials, on_gcp, on_aws
 
 from model_test import get_test_experiment
 
@@ -220,8 +220,16 @@ class FirebaseProviderTest(unittest.TestCase, KeyValueProviderTest):
 
 
 @unittest.skipIf(
-    not has_aws_credentials(),
-    'AWS credentials not found, cannot run test')
+    not on_aws(),
+    'User indicated not on aws')
+class UserIndicatedOnAWSTest(unittest.TestCase):
+    def test_on_enviornment(self):
+        self.assertTrue(has_aws_credentials())
+
+
+@unittest.skipIf(
+    (not on_aws()) or not has_aws_credentials(),
+    'Skipping due to userinput or AWS Not detected')
 class S3ProviderTest(unittest.TestCase, KeyValueProviderTest):
     _multiprocess_shared_ = True
 

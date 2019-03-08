@@ -9,6 +9,7 @@ from studio import logs
 from local_worker_test import stubtest_worker
 
 from timeout_decorator import timeout
+from studio.util import on_gcp
 
 
 @unittest.skip('testing requires docker')
@@ -17,10 +18,19 @@ class RemoteWorkerTest(unittest.TestCase):
 
     @timeout(590)
     @unittest.skipIf(
-        'GOOGLE_APPLICATION_CREDENTIALS' not in
-        os.environ.keys(),
-        'GOOGLE_APPLICATION_CREDENTIALS environment ' +
-        'variable not set, won'' be able to use google ' +
+        not on_gcp(),
+        'User indicated not on gcp')
+    class UserIndicatedOnGCPTest(unittest.TestCase):
+        def test_on_enviornment(self):
+            self.assertTrue(
+                'GOOGLE_APPLICATION_CREDENTIALS' in os.environ.keys())
+
+    @unittest.skipIf(
+        (not on_gcp()) or
+        'GOOGLE_APPLICATION_CREDENTIALS' not in os.environ.keys(),
+        'Skipping due to userinput or GCP Not detected' +
+        'variable not set, won'
+        ' be able to use google ' +
         'PubSub')
     def test_remote_worker(self):
         experiment_name = 'test_remote_worker_' + str(uuid.uuid4())
@@ -56,10 +66,11 @@ class RemoteWorkerTest(unittest.TestCase):
 
     @timeout(590)
     @unittest.skipIf(
-        'GOOGLE_APPLICATION_CREDENTIALS' not in
-        os.environ.keys(),
-        'GOOGLE_APPLICATION_CREDENTIALS environment ' +
-        'variable not set, won'' be able to use google ' +
+        (not on_gcp()) or
+        'GOOGLE_APPLICATION_CREDENTIALS' not in os.environ.keys(),
+        'Skipping due to userinput or GCP Not detected' +
+        'variable not set, won'
+        ' be able to use google ' +
         'PubSub')
     def test_remote_worker_c(self):
         tmpfile = os.path.join(tempfile.gettempdir(),
@@ -122,10 +133,11 @@ class RemoteWorkerTest(unittest.TestCase):
 
     @timeout(590)
     @unittest.skipIf(
-        'GOOGLE_APPLICATION_CREDENTIALS' not in
-        os.environ.keys(),
-        'GOOGLE_APPLICATION_CREDENTIALS environment ' +
-        'variable not set, won'' be able to use google ' +
+        (not on_gcp()) or
+        'GOOGLE_APPLICATION_CREDENTIALS' not in os.environ.keys(),
+        'Skipping due to userinput or GCP Not detected' +
+        'variable not set, won'
+        ' be able to use google ' +
         'PubSub')
     def test_remote_worker_co(self):
         logger = logs.getLogger('test_remote_worker_co')
@@ -169,10 +181,11 @@ class RemoteWorkerTest(unittest.TestCase):
 
     @timeout(590)
     @unittest.skipIf(
-        'GOOGLE_APPLICATION_CREDENTIALS' not in
-        os.environ.keys(),
-        'GOOGLE_APPLICATION_CREDENTIALS environment ' +
-        'variable not set, won'' be able to use google ' +
+        (not on_gcp()) or
+        'GOOGLE_APPLICATION_CREDENTIALS' not in os.environ.keys(),
+        'Skipping due to userinput or GCP Not detected' +
+        'variable not set, won'
+        ' be able to use google ' +
         'PubSub')
     def test_baked_image(self):
 
