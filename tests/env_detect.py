@@ -3,12 +3,12 @@ import yaml
 AWSInstance = "aws" in list(
     yaml.load(
         open(
-            "./test_config.yaml",
+            "tests/test_config.yaml",
             "r"))["cloud"].keys())
 GcloudInstance = "gcloud" in list(
     yaml.load(
         open(
-            "./test_config.yaml",
+            "tests/test_config.yaml",
             "r"))["cloud"].keys())
 
 

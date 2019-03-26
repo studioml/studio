@@ -10,8 +10,8 @@ from timeout_decorator import timeout
 from studio.util import has_aws_credentials
 from env_detect import on_gcp, on_aws
 
-
-CLOUD_TEST_TIMEOUT = 900
+#900
+CLOUD_TEST_TIMEOUT = 60
 
 
 @unittest.skipIf(
