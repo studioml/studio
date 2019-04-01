@@ -4,32 +4,24 @@ MAINTAINER jiamingjxu@gmail.com
 
 ENV LANG C.UTF-8
 
-WORKDIR /setup
+RUN mkdir -p /setupTesting
 
-COPY . /setup
+COPY . /setupTesting
+
+WORKDIR /setupTesting
 
 RUN apt-get update
-
+	
 RUN apt-get install -y python-pip libpq-dev python-dev
 
 RUN apt-get install -y git
 
-RUN git clone https://github.com/studioml/studio.git
-
-RUN pip install studioml -U
-
 RUN pip install -U pytest
 
-EXPOSE 80
+RUN pip install -r test_requirements.txt
 
-ENV NAME World
-
-WORKDIR studio
-
-RUN python setup.py build
+RUN python setup.py build 
 
 RUN python setup.py install
 
-RUN ls
-
-RUN python -m pytest tests
+RUN python -m pytest tests/artifact_store_test.py
