@@ -14,7 +14,6 @@ import numpy as np
 import requests
 import six
 
-
 import boto3
 from botocore.exceptions import ClientError
 

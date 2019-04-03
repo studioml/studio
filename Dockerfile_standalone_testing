@@ -10,18 +10,12 @@ COPY . /setupTesting
 
 WORKDIR /setupTesting
 
-RUN apt-get update
+RUN apt-get update && \
+	apt-get install -y python-pip libpq-dev python-dev && \
+	apt-get install -y git && \
+	pip install -U pytest && \
+	pip install -r test_requirements.txt && \
+	python setup.py build && \
+	python setup.py install
 	
-RUN apt-get install -y python-pip libpq-dev python-dev
-
-RUN apt-get install -y git
-
-RUN pip install -U pytest
-
-RUN pip install -r test_requirements.txt
-
-RUN python setup.py build 
-
-RUN python setup.py install
-
-RUN python -m pytest tests/artifact_store_test.py
+CMD python -m pytest tests/artifact_store_test.py
