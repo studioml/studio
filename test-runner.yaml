@@ -1,0 +1,108 @@
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  # This name uniquely identifies the PVC. Will be used in deployment below.
+  name: test-runner-pv-claim
+  labels:
+    app: test-runner-storage-claim
+  namespace: default
+spec:
+  # Read more about access modes here: https://kubernetes.io/docs/user-guide/persistent-volumes/#access-modes
+  accessModes:
+    - ReadWriteMany
+  resources:
+    # This is the request for storage. Should be available in the cluster.
+    requests:
+      storage: 10Gi
+  # Uncomment and add storageClass specific to your requirements below. Read more https://kubernetes.io/docs/concepts/storage/persistent-volumes/#class-1
+  #storageClassName:
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata: 
+  name: test-runner
+  namespace: default
+  labels: 
+      name: "test-runer"
+      keel.sh/policy: force
+      keel.sh/trigger: poll
+spec:
+  template:
+    metadata:
+      name: test-runner  
+      namespace: default      
+      labels:
+        app: test-runner     
+    spec:      
+      volumes:
+        - name: test-runner-storage
+          persistentVolumeClaim:
+            # Name of the PVC created earlier
+            claimName: test-runner-pv-claim
+        - name: podinfo
+          downwardAPI:
+            items:
+              - path: "namespace"
+                fieldRef:
+                  fieldPath: metadata.namespace
+              - path: "annotations"
+                fieldRef:
+                  fieldPath: metadata.annotations
+              - path: "labels"
+                fieldRef:
+                  fieldPath: metadata.labels
+      containers:                    
+        - image: xujiamin9/standalone_testing
+          imagePullPolicy: Always            
+          name: test-runner
+          env:
+            - name: K8S_POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: K8S_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+          ports:
+            - containerPort: 8080
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "500m"
+            limits:
+              memory: "1024Mi"
+              cpu: 4
+          volumeMounts:
+            - name: test-runner-storage # must match the volume name, above
+              mountPath: "/build"
+            - name: podinfo
+              mountPath: /etc/podinfo
+              readOnly: false       
+          lifecycle:
+            postStart:
+              exec:
+                command:
+                  - "/bin/bash"
+                  - "-c" 
+                  - >
+                    set -euo pipefail ;
+                    IFS=$'\n\t' ;
+                    echo "Starting the keel modifications" $K8S_POD_NAME ;
+                    kubectl label deployment test-runner keel.sh/policy- --namespace=$K8S_NAMESPACE ;
+                    curl -v --cacert /var/run/secrets/kubernetes.io/serviceaccount/ca.crt -H "Authorization: Bearer $(cat /var/runsecrets/kubernetes.io/serviceaccount/token)" https://$KUBERNETES_SERVICE_HOST:$KUBERNETES_PORT_443_TCP_PORT/api/v1/namespaces/$K8S_NAMESPACE/pods/$K8S_POD_NAME
+            preStop:
+              exec:
+                command:
+                  - "/bin/bash"
+                  - "-c"
+                  - >
+                    set -euo pipefail;
+                    IFS=$'\n\t' ;
+                    echo "Starting the namespace injections etc" $K8S_POD_NAME ;
+                    kubectl label deployment test-runner keel.sh/policy=force --namespace=$K8S_NAMESPACE ;
+                    for (( ; ; )) ;
+                    do ;
+                        sleep 10 ;
+                    done        
