@@ -29,6 +29,7 @@ Push the image to your Dockerhub repository with
 Then to run the tests edit the ``test-runner.yaml:56`` to 
 
 ::
+
     - image: [dockerhubUsername]/standalone_testing
 
 Finally use "kubectl apply -f test-runner.yaml" to automatically run tests,
@@ -36,6 +37,7 @@ Finally use "kubectl apply -f test-runner.yaml" to automatically run tests,
 results can be seen using 
 
 ::
+
     kubectl log test-runner-xxxxxxx-xxxxx
 
 where the last values are the id of your image
