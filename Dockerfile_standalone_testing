@@ -28,4 +28,4 @@ RUN apt-get update && \
 	python setup.py build && \
 	python setup.py install
 	
-CMD python -m pytest tests/util_test.py
+CMD python -m pytest tests

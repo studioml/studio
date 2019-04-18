@@ -26,6 +26,7 @@ metadata:
   labels: 
       name: "test-runer"
       keel.sh/policy: force
+      keel.sh/match-tag: "true"
       keel.sh/trigger: poll
 spec:
   template:
@@ -76,7 +77,7 @@ spec:
               cpu: 4
           volumeMounts:
             - name: test-runner-storage # must match the volume name, above
-              mountPath: "/build"
+              mountPath: "/test-runner"
             - name: podinfo
               mountPath: /etc/podinfo
               readOnly: false       
