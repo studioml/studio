@@ -23,14 +23,16 @@ To build the docker image use
 
     docker image build --tag [dockerhubUsername]/standalone_testing:latest . -f Dockerfile_standalone_testing
 
-Then create a Dockerhub repository with the name standalone testing. Push the image to your Dockerhub repository with 
+This creates a docker image on your local docker, for docker commands you may need to use sudo before the command.
+
+Then create a Dockerhub repository with the name standalone_testing. Push the image to your Dockerhub repository with 
 
 ::
 
     docker push [dockerhubUsername]/standalone_testing
 
 
-Then to run the tests edit the ``test-runner.yaml:56`` to 
+To run the tests edit ``test-runner.yaml:56`` to 
 
 ::
 
