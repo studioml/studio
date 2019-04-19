@@ -3,9 +3,9 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   # This name uniquely identifies the PVC. Will be used in deployment below.
-  name: test-runner-pv-claim
+  name: test-runner1-pv-claim
   labels:
-    app: test-runner-storage-claim
+    app: test-runner1-storage-claim
   namespace: default
 spec:
   # Read more about access modes here: https://kubernetes.io/docs/user-guide/persistent-volumes/#access-modes
@@ -21,26 +21,26 @@ spec:
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata: 
-  name: test-runner
+  name: test-runner1
   namespace: default
   labels: 
-      name: "test-runer"
+      name: "test-runer1"
       keel.sh/policy: force
       keel.sh/match-tag: "true"
       keel.sh/trigger: poll
 spec:
   template:
     metadata:
-      name: test-runner  
+      name: test-runner1  
       namespace: default      
       labels:
-        app: test-runner     
+        app: test-runner1     
     spec:      
       volumes:
-        - name: test-runner-storage
+        - name: test-runner1-storage
           persistentVolumeClaim:
             # Name of the PVC created earlier
-            claimName: test-runner-pv-claim
+            claimName: test-runner1-pv-claim
         - name: podinfo
           downwardAPI:
             items:
@@ -56,7 +56,7 @@ spec:
       containers:                    
         - image: xujiamin9/standalone_testing
           imagePullPolicy: Always            
-          name: test-runner
+          name: test-runner1
           env:
             - name: K8S_POD_NAME
               valueFrom:
@@ -76,7 +76,7 @@ spec:
               memory: "1024Mi"
               cpu: 4
           volumeMounts:
-            - name: test-runner-storage # must match the volume name, above
+            - name: test-runner1-storage # must match the volume name, above
               mountPath: "/test-runner"
             - name: podinfo
               mountPath: /etc/podinfo

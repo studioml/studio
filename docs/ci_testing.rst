@@ -21,7 +21,7 @@ To build the docker image use
 
 ::
 
-    docker image build --tag [dockerhubUsername]/standalone_testing:latest . -f Dockerfile_standalone_testing_[dockerhubUsername]
+    docker image build --tag [dockerhubUsername]/standalone_testing:latest . -f Dockerfile_standalone_testing
 
 Then create a Dockerhub repository with the name standalone testing. Push the image to your Dockerhub repository with 
 
@@ -35,6 +35,8 @@ Then to run the tests edit the ``test-runner.yaml:56`` to
 ::
 
     - image: [dockerhubUsername]/standalone_testing
+
+Additionally you may have to edit the names in the yaml file as they may conflict with existing namespaces and resources that might already be running on your kubernetes cluster
 
 Finally use
 
