@@ -55,3 +55,9 @@ results can be seen using
     kubectl logs test-runner-xxxxxxx-xxxxx
 
 where the last values are the id of your image
+
+To stop deployment use 
+
+::
+
+    kubectl delete deployment test-runner
