@@ -110,3 +110,4 @@ pip-selfcheck.json
 
 #version - for deployment from travis
 .version
+examples/.envrc
