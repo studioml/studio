@@ -71,7 +71,7 @@ class LocalExecutor(object):
 
             with open(log_path, 'w') as output_file:
                 python = 'python'
-                if experiment.pythonver == 3:
+                if experiment.pythonver[0] == '3':
                     python = 'python3'
 
                 python = which(python)
@@ -359,7 +359,7 @@ def worker_loop(queue, parsed_args,
 
                 try:
                     python = 'python'
-                    if experiment.pythonver == 3:
+                    if experiment.pythonver[0] == '3':
                         python = 'python3'
                     if '_singularity' not in experiment.artifacts.keys():
                         pip_diff = pip_needed_packages(

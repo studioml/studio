@@ -54,7 +54,7 @@ class Experiment(object):
 
         self.pythonenv = pythonenv
         self.project = project
-        self.pythonver = pythonver if pythonver else sys.version_info[0]
+        self.pythonver = pythonver if pythonver else str(sys.version_info[0]) + '.' + str(sys.version_info[1])
 
         workspace_path = os.path.abspath('.')
         try:
