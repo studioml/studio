@@ -13,7 +13,6 @@ import platform
 import ctypes
 import pip
 
-
 def read(fname):
     try:
         with open(os.path.join(os.path.dirname(__file__), fname)) as f:
@@ -106,7 +105,6 @@ with open('test_requirements.txt') as f:
 
 setup(
     name='studioml',
-    version='0.0.13',
     description='TensorFlow model and data management tool',
     packages=find_packages(exclude=['tensorflow']),
     long_description=read('README.rst'),
