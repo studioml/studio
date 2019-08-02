@@ -41,7 +41,6 @@ sys.path.append('studio/')
 
 class MyDevelop(develop):
     def run(self):
-        # print " >>> MyDevelop with verison {} <<< ".format(VERSION)
         call(["pip install -r requirements.txt --no-clean"], shell=True)
         copyconfig()
         develop.run(self)
@@ -50,7 +49,6 @@ class MyDevelop(develop):
 class MyInstall(install):
 
     def run(self):
-        # print " >>> MyInstall with verison {} <<< ".format(VERSION)
         call(["pip install -r requirements.txt --no-clean"], shell=True)
         copyconfig()
         install.run(self)
@@ -108,7 +106,7 @@ with open('test_requirements.txt') as f:
 
 setup(
     name='studioml',
-    # version=VERSION,
+    version='0.0.13',
     description='TensorFlow model and data management tool',
     packages=find_packages(exclude=['tensorflow']),
     long_description=read('README.rst'),
@@ -138,12 +136,13 @@ setup(
     setup_requires=['setuptools_scm', 'setuptools_scm_git_archive'],
     cmdclass={'develop': MyDevelop, 'install': MyInstall},
     classifiers=[
-        "Development Status :: 3 - Alpha",
+        "Development Status :: 4 - Beta",
         "Environment :: Console",
         "Intended Audience :: Developers",
         "Intended Audience :: Science/Research",
         "Operating System :: POSIX :: Linux",
-        "Programming Language :: Python",
+        "Programming Language :: Python :: 2.7",
+        "Programming Language :: Python :: 3.6",
         "Topic :: Scientific/Engineering :: Artificial Intelligence",
         "Topic :: Utilities",
         "License :: OSI Approved :: Apache Software License",
