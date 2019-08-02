@@ -40,9 +40,10 @@ batch_size = 128
 no_epochs = int(sys.argv[1]) if len(sys.argv) > 1 else 10
 lr = 0.01
 
-print('learning rate = {}'.format(lr))
-print('batch size = {}'.format(batch_size))
-print('no_epochs = {}'.format(no_epochs))
+print('{"experiment": {"completed": "true"}}')
+print('{}{}{}'.format('{"experiment": {"learning_rate": "', '{}'.format(lr), '"}}'))
+print('{}{}{}'.format('{"experiment": {"batch_size": "', '{}'.format(batch_size), '"}}'))
+print('{}{}{}'.format('{"experiment": {"no_epochs": "', '{}'.format(no_epochs), '"}}'))
 
 model.compile(loss='categorical_crossentropy', optimizer=optimizers.SGD(lr=lr),
               metrics=['accuracy'])
@@ -58,7 +59,6 @@ tbcallback = TensorBoard(log_dir=fs_tracker.get_tensorboard_dir(),
                          write_graph=True,
                          write_images=True)
 
-
 model.fit(
     x_train, y_train, validation_data=(
         x_test,
@@ -66,3 +66,5 @@ model.fit(
     epochs=no_epochs,
     callbacks=[checkpointer, tbcallback],
     batch_size=batch_size)
+
+print('{"experiment": {"completed": "true"}}')
