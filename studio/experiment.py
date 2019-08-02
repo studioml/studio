@@ -87,6 +87,11 @@ class Experiment(object):
                 'local': fs_tracker.get_artifact_cache('_metrics', key),
                 'mutable': True,
                 'unpack': True
+            },
+            '_metadata': {
+                'local': fs_tracker.get_artifact_cache('_metadata', key),
+                'mutable': True,
+                'unpack': True
             }
         }
         if artifacts is not None:
