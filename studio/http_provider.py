@@ -4,7 +4,7 @@ import six
 import time
 import re
 
-from . import pyrebase, logs
+from . import logs
 from .auth import get_auth
 from .http_artifact_store import HTTPArtifactStore
 from .experiment import experiment_from_dict
@@ -27,7 +27,6 @@ class HTTPProvider(object):
         self.logger.setLevel(self.verbose)
 
         self.auth = None
-        self.app = pyrebase.initialize_app(config)
         guest = config.get('guest')
         if not guest and 'serviceAccount' not in config.keys():
             self.auth = get_auth(

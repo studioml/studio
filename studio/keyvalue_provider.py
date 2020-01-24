@@ -4,7 +4,7 @@ import six
 import re
 from threading import Thread
 
-from . import util, git_util, pyrebase, logs
+from . import util, git_util, logs
 from .firebase_artifact_store import FirebaseArtifactStore
 from .auth import get_auth
 from .experiment import experiment_from_dict
@@ -24,7 +24,6 @@ class KeyValueProvider(object):
             compression=None):
         guest = db_config.get('guest')
 
-        self.app = pyrebase.initialize_app(db_config)
         self.logger = logs.getLogger(self.__class__.__name__)
         self.logger.setLevel(verbose)
 
@@ -429,7 +428,5 @@ class KeyValueProvider(object):
         return self
 
     def __exit__(self, *args):
-        if self.app:
-            self.app.requests.close()
         if self.store:
             self.store.__exit__()
