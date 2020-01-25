@@ -21,11 +21,16 @@ from .util import download_file, download_file_from_qualified, retry
 from .util import compression_to_extension, compression_to_taropt, timeit
 from .util import sixdecode
 
+from .base_artifact_store import BaseArtifactStore
 
-class TartifactStore(object):
+
+class TartifactStore(BaseArtifactStore):
 
     def __init__(self, measure_timestamp_diff=False, compression=None,
                  verbose=logs.DEBUG):
+
+        super(TartifactStore, self).__init__()
+
         if measure_timestamp_diff:
             try:
                 self.timestamp_shift = self._measure_timestamp_diff()

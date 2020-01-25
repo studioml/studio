@@ -1,7 +1,6 @@
 import hashlib
 from io import StringIO
 from datetime import timedelta
-import model
 import re
 import random
 import string
@@ -15,13 +14,12 @@ import numpy as np
 import requests
 import six
 from botocore.exceptions import ClientError
-from s3_artifact_store import S3ArtifactStore
+from . import model_setup
+from .base_artifact_store import BaseArtifactStore
 
 DAY = 86400
 HOUR = 3600
 MINUTE = 60
-
-
 
 def remove_backspaces(line):
     splitline = re.split('(\x08+)', line)
@@ -329,11 +327,14 @@ def download_file_from_qualified(qualified, local_path, logger=None):
         raise NotImplementedError
 
 def _get_active_s3_client():
-    artifact_store = model.get_artifact_store()
-    if artifact_store is None \
-        or not isinstance(artifact_store, S3ArtifactStore):
-        raise NotImplementedError("Expected artifact store of type S3ArtifactStore")
-    return ((S3ArtifactStore)(artifact_store)).get_s3_client()
+    artifact_store = model_setup.get_artifact_store()
+    if artifact_store is None:
+        raise NotImplementedError("Artifact store is not set up")
+
+    storage_client = ((BaseArtifactStore)(artifact_store)).get_storage_client()
+    if storage_client is None:
+        raise NotImplementedError("Expected boto3 storage client for current artifact store")
+    return storage_client
 
 def _s3_download_dir(bucket, dist, local, logger=None):
     s3_client = _get_active_s3_client()

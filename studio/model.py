@@ -16,10 +16,8 @@ from .http_provider import HTTPProvider
 from .firebase_provider import FirebaseProvider
 from .s3_provider import S3Provider
 from .gs_provider import GSProvider
+from .model_setup import setup_model
 from . import logs
-
-DB_KEY = "database"
-STORE_KEY = "store"
 
 def get_config(config_file=None):
 
@@ -57,10 +55,6 @@ def get_config(config_file=None):
 
     raise ValueError('None of the config paths {} exits!'
                      .format(config_paths))
-
-# Global dictionary which keeps Database Provider
-# and Artifact Store objects created from experiment configuration.
-_model_setup = None
 
 def get_db_provider(config=None, blocking_auth=True):
     if not config:
@@ -112,20 +106,8 @@ def get_db_provider(config=None, blocking_auth=True):
         _model_setup = None
         raise ValueError('Unknown type of the database ' + db_config['type'])
 
-    _model_setup = { DB_KEY: db_provider, STORE_KEY: artifact_store }
+    setup_model(db_provider, artifact_store)
     return db_provider
-
-
-def get_db_provider():
-    if _model_setup is None:
-        return None
-    return _model_setup.get(DB_KEY, None)
-
-def get_artifact_store():
-    if _model_setup is None:
-        return None
-    return _model_setup.get(STORE_KEY, None)
-
 
 def parse_verbosity(verbosity=None):
     if verbosity is None:
