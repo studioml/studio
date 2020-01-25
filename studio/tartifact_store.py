@@ -244,10 +244,12 @@ class TartifactStore(object):
                 listtar = listtar.strip().split(b'\n')
                 listtar = [s.decode('utf-8') for s in listtar]
 
+                isTarFromDotDir = False
                 self.logger.info('List of files in the tar: ' + str(listtar))
                 if listtar[0].startswith('./'):
                     # Files are archived into tar from .; adjust path
                     # accordingly
+                    isTarFromDotDir = True
                     basepath = local_path
                 else:
                     basepath = local_basepath
@@ -274,7 +276,10 @@ class TartifactStore(object):
                     self.logger.info('tar stdout output: \n ' + str(tarout))
                     self.logger.info('tar stderr output: \n ' + str(tarerr))
 
-                if len(listtar) == 1:
+                if len(listtar) == 1 and not isTarFromDotDir:
+                    # Here we protect ourselves from the corner case,
+                    # when we try to move A/. folder to A.
+                    # os.rename() will fail to do that.
                     actual_path = os.path.join(basepath, listtar[0])
                     self.logger.info(
                         'Renaming {} into {}'.format(

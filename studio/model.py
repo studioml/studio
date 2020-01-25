@@ -18,6 +18,8 @@ from .s3_provider import S3Provider
 from .gs_provider import GSProvider
 from . import logs
 
+DB_KEY = "database"
+STORE_KEY = "store"
 
 def get_config(config_file=None):
 
@@ -56,6 +58,9 @@ def get_config(config_file=None):
     raise ValueError('None of the config paths {} exits!'
                      .format(config_paths))
 
+# Global dictionary which keeps Database Provider
+# and Artifact Store objects created from experiment configuration.
+_model_setup = None
 
 def get_db_provider(config=None, blocking_auth=True):
     if not config:
@@ -76,30 +81,50 @@ def get_db_provider(config=None, blocking_auth=True):
         artifact_store = None
 
     assert 'database' in config.keys()
+    db_provider = None
     db_config = config['database']
     if db_config['type'].lower() == 'firebase':
-        return FirebaseProvider(
+        db_provider = FirebaseProvider(
             db_config,
             blocking_auth,
             verbose=verbose,
             store=artifact_store)
+        artifact_store = db_provider.get_artifact_store()
     elif db_config['type'].lower() == 'http':
-        return HTTPProvider(db_config,
+        db_provider = HTTPProvider(db_config,
                             verbose=verbose,
                             blocking_auth=blocking_auth)
     elif db_config['type'].lower() == 's3':
-        return S3Provider(db_config,
+        db_provider = S3Provider(db_config,
                           verbose=verbose,
                           store=artifact_store,
                           blocking_auth=blocking_auth)
+        artifact_store = db_provider.get_artifact_store()
 
     elif db_config['type'].lower() == 'gs':
-        return GSProvider(db_config,
+        db_provider = GSProvider(db_config,
                           verbose=verbose,
                           store=artifact_store,
                           blocking_auth=blocking_auth)
+        artifact_store = db_provider.get_artifact_store()
+
     else:
+        _model_setup = None
         raise ValueError('Unknown type of the database ' + db_config['type'])
+
+    _model_setup = { DB_KEY: db_provider, STORE_KEY: artifact_store }
+    return db_provider
+
+
+def get_db_provider():
+    if _model_setup is None:
+        return None
+    return _model_setup.get(DB_KEY, None)
+
+def get_artifact_store():
+    if _model_setup is None:
+        return None
+    return _model_setup.get(STORE_KEY, None)
 
 
 def parse_verbosity(verbosity=None):

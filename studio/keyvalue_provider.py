@@ -424,6 +424,9 @@ class KeyValueProvider(object):
         if existing_email != email:
             self._set(keypath, email)
 
+    def get_artifact_store(self):
+        return self.store
+
     def __enter__(self):
         return self
 

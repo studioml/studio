@@ -89,3 +89,6 @@ class S3ArtifactStore(TartifactStore):
 
     def get_bucket(self):
         return self.bucket
+
+    def get_s3_client(self):
+        return self.client

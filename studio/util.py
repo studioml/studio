@@ -1,6 +1,7 @@
 import hashlib
 from io import StringIO
 from datetime import timedelta
+import model
 import re
 import random
 import string
@@ -13,9 +14,8 @@ import os
 import numpy as np
 import requests
 import six
-
-import boto3
 from botocore.exceptions import ClientError
+from s3_artifact_store import S3ArtifactStore
 
 DAY = 86400
 HOUR = 3600
@@ -275,6 +275,20 @@ def upload_file(url, local_path, logger=None):
         logger.debug('File upload done in {} s'
                      .format(time.time() - tic))
 
+def _looks_like_url(name):
+    """
+    Function tries to determine if input argument
+    looks like URL and not like S3 bucket name.
+    :param name - input name
+    :return: True, if name looks like URL;
+             False otherwise.
+    """
+    if name.endswith('.com'):
+        return True
+    if name.find(':') >= 0:
+        # Assume it is port number
+        return True
+    return False
 
 def download_file_from_qualified(qualified, local_path, logger=None):
     if qualified.startswith('dockerhub://') or \
@@ -285,7 +299,7 @@ def download_file_from_qualified(qualified, local_path, logger=None):
         qualified.startswith('gs://')
 
     qualified_split = qualified.split('/')
-    if qualified_split[2].endswith('.com'):
+    if _looks_like_url(qualified_split[2]):
         bucket = qualified_split[3]
         key = '/'.join(qualified_split[4:])
     else:
@@ -309,15 +323,22 @@ def download_file_from_qualified(qualified, local_path, logger=None):
             # ).communicate()
             _s3_download_dir(bucket, key, local_path, logger=logger)
         else:
-            boto3.client('s3').download_file(bucket, key, local_path)
+            s3_client = _get_active_s3_client()
+            s3_client.download_file(bucket, key, local_path)
     else:
         raise NotImplementedError
 
+def _get_active_s3_client():
+    artifact_store = model.get_artifact_store()
+    if artifact_store is None \
+        or not isinstance(artifact_store, S3ArtifactStore):
+        raise NotImplementedError("Expected artifact store of type S3ArtifactStore")
+    return ((S3ArtifactStore)(artifact_store)).get_s3_client()
 
 def _s3_download_dir(bucket, dist, local, logger=None):
-    client = boto3.client('s3')
+    s3_client = _get_active_s3_client()
 
-    paginator = client.get_paginator('list_objects')
+    paginator = s3_client.get_paginator('list_objects')
     for result in paginator.paginate(
             Bucket=bucket,
             Delimiter='/',
@@ -355,7 +376,7 @@ def _s3_download_dir(bucket, dist, local, logger=None):
                             'Downloading {}/{} to {}'
                             .format(bucket, key, local_path))
 
-                    client.download_file(bucket, key, local_path)
+                    s3_client.download_file(bucket, key, local_path)
                 except ClientError as e:
                     if logger:
                         logger.debug(
@@ -363,7 +384,7 @@ def _s3_download_dir(bucket, dist, local, logger=None):
 
 
 def has_aws_credentials():
-    return boto3.client('s3')._request_signer._credentials is not None
+    return _get_active_s3_client()._request_signer._credentials is not None
 
 
 def retry(f,
