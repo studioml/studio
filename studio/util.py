@@ -328,8 +328,9 @@ def download_file_from_qualified(qualified, local_path, logger=None):
 
 def _get_active_s3_client():
     artifact_store = model_setup.get_artifact_store()
-    if artifact_store is None:
-        raise NotImplementedError("Artifact store is not set up")
+    if artifact_store is None \
+        or not isinstance(artifact_store, BaseArtifactStore):
+        raise NotImplementedError("Artifact store is not set up or has the wrong type")
 
     storage_client = ((BaseArtifactStore)(artifact_store)).get_storage_client()
     if storage_client is None:
