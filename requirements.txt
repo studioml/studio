@@ -12,7 +12,6 @@ pillow
 flask
 jinja2
 
-pyyaml
 cma
 
 apscheduler

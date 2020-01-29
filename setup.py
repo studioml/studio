@@ -13,6 +13,38 @@ import platform
 import ctypes
 import pip
 
+# **Python version check**
+#
+# This check is also made in IPython/__init__, don't forget to update both when
+# changing Python version requirements.
+if sys.version_info < (3, 4):
+    pip_message = 'This may be due to an out of date pip. Make sure you have pip >= 9.0.1.'
+    try:
+        import pip
+        pip_version = tuple([int(x) for x in pip.__version__.split('.')[:3]])
+        if pip_version < (9, 0, 1) :
+            pip_message = 'Your pip version is out of date, please install pip >= 9.0.1. '\
+            'pip {} detected.'.format(pip.__version__)
+        else:
+            # pip is new enough - it must be something else
+            pip_message = ''
+    except Exception:
+        pass
+
+
+    error = """
+IPython 7.0+ supports Python 3.4 and above.
+When using Python 2.7, please install IPython 5.x LTS Long Term Support version.
+Python 3.3 was supported up to IPython 6.x.
+See IPython `README.rst` file for more information:
+    https://github.com/ipython/ipython/blob/master/README.rst
+Python {py} detected.
+{pip}
+""".format(py=sys.version_info, pip=pip_message )
+
+    print(error)
+    sys.exit(1)
+
 def read(fname):
     try:
         with open(os.path.join(os.path.dirname(__file__), fname)) as f:
@@ -131,6 +163,7 @@ setup(
     use_scm_version={
         "version_scheme": version_scheme,
         "local_scheme": local_scheme},
+    python_requires='>=3.4',
     setup_requires=['setuptools_scm', 'setuptools_scm_git_archive'],
     cmdclass={'develop': MyDevelop, 'install': MyInstall},
     classifiers=[
@@ -139,7 +172,6 @@ setup(
         "Intended Audience :: Developers",
         "Intended Audience :: Science/Research",
         "Operating System :: POSIX :: Linux",
-        "Programming Language :: Python :: 2.7",
         "Programming Language :: Python :: 3.6",
         "Topic :: Scientific/Engineering :: Artificial Intelligence",
         "Topic :: Utilities",
