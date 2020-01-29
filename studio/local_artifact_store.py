@@ -22,20 +22,28 @@ class LocalArtifactStore(TartifactStore):
 
         self.bucket = bucket_name
         if self.bucket is None:
-            self.bucket = config('bucket')
+            self.bucket = config.get('bucket')
         self.store_root = os.path.join(self.store_root, self.bucket)
+        self._ensure_path_dirs_exist(self.store_root)
 
         super(LocalArtifactStore, self).__init__(
             measure_timestamp_diff,
             compression=compression,
             verbose=verbose)
 
+    def _ensure_path_dirs_exist(self, path):
+        dirs = os.path.dirname(path)
+        os.makedirs(dirs, mode = 0o777, exist_ok = True)
 
     def _upload_file(self, key, local_path):
-        shutil.copyfile(local_path, os.path.join(self.store_root, key))
+        target_path = os.path.join(self.store_root, key)
+        self._ensure_path_dirs_exist(target_path)
+        shutil.copyfile(local_path, target_path)
 
     def _download_file(self, key, local_path, bucket=None):
-        shutil.copyfile(os.path.join(self.store_root, key), local_path)
+        source_path = os.path.join(self.store_root, key)
+        self._ensure_path_dirs_exist(local_path)
+        shutil.copyfile(source_path, local_path)
 
     def _delete_file(self, key):
         os.remove(os.path.join(self.store_root, key))
@@ -50,7 +58,7 @@ class LocalArtifactStore(TartifactStore):
             return None
 
     def get_qualified_location(self, key):
-        return 'file://' + self.endpoint + '/' + self.bucket + '/' + key
+        return 'file:/' + self.store_root + '/' + key
 
     def get_bucket(self):
         return self.bucket
