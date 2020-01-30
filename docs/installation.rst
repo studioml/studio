@@ -94,8 +94,9 @@ When working with the pypi command line tooling you should create a
 The command to push a release is as follows.
 
 ::
-
-    python setup.py sdist upload
+    pip install twine
+    python setup.py sdist bdist_wheel
+    twine upload dist/*
 
 If you wish to test releases and not pollute our pypi production release
 train and numbering, please use the '-r' option to specify the test pypi
