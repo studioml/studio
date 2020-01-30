@@ -16,6 +16,8 @@ class LocalDbProvider(KeyValueProvider):
         return LocalDbProvider.single_instance
 
     def __init__(self, config, blocking_auth=True, verbose=10, store=None):
+        print(">>>>>> LocalDbProvider constructor")
+
         self.config = config
         self.bucket = config.get('bucket', 'studioml-meta')
 
@@ -47,13 +49,18 @@ class LocalDbProvider(KeyValueProvider):
         file_name = os.path.join(self.store_root, key)
         if not os.path.exists(file_name):
             return None
-        result = json.load(file_name)
+        with open(file_name) as infile:
+            result = json.load(infile)
         return result
 
     def _delete(self, key):
         file_name = os.path.join(self.store_root, key)
-        os.remove(file_name)
+        if os.path.exists(file_name):
+            os.remove(file_name)
 
     def _set(self, key, value):
         file_name = os.path.join(self.store_root, key)
-        json.dump(value, file_name)
+        self._ensure_path_dirs_exist(file_name)
+        with open(file_name, 'w') as outfile:
+            json.dump(value, outfile)
+        
