@@ -104,7 +104,7 @@ def get_db_provider(config=None, blocking_auth=True):
         artifact_store = db_provider.get_artifact_store()
 
     elif db_config['type'].lower() == 'local':
-        db_provider = LocalDbProvider(db_config,
+        db_provider = LocalDbProvider.get_instance(db_config,
                           verbose=verbose,
                           store=artifact_store,
                           blocking_auth=blocking_auth)
