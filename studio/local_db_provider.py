@@ -1,3 +1,6 @@
+import os
+import json
+
 from .keyvalue_provider import KeyValueProvider
 from .local_artifact_store import LocalArtifactStore
 
@@ -16,6 +19,16 @@ class LocalDbProvider(KeyValueProvider):
         self.config = config
         self.bucket = config.get('bucket', 'studioml-meta')
 
+        self.endpoint = config.get('endpoint', '~')
+        self.store_root = os.path.realpath(os.path.expanduser(self.endpoint))
+        if not os.path.exists(self.store_root) \
+            or not os.path.isdir(self.store_root):
+            raise ValueError()
+
+        self.bucket = config.get('bucket')
+        self.store_root = os.path.join(self.store_root, self.bucket)
+        self._ensure_path_dirs_exist(self.store_root)
+
         self.meta_store = LocalArtifactStore(config, self.bucket, verbose)
 
         super(LocalDbProvider, self).__init__(
@@ -26,11 +39,21 @@ class LocalDbProvider(KeyValueProvider):
 
         self.db_dict = {}
 
+    def _ensure_path_dirs_exist(self, path):
+        dirs = os.path.dirname(path)
+        os.makedirs(dirs, mode = 0o777, exist_ok = True)
+
     def _get(self, key, shallow=False):
-        return self.db_dict.get(key, None)
+        file_name = os.path.join(self.store_root, key)
+        if not os.path.exists(file_name):
+            return None
+        result = json.load(file_name)
+        return result
 
     def _delete(self, key):
-        self.db_dict.pop(key, None)
+        file_name = os.path.join(self.store_root, key)
+        os.remove(file_name)
 
     def _set(self, key, value):
-        self.db_dict[key] = value
+        file_name = os.path.join(self.store_root, key)
+        json.dump(value, file_name)
