@@ -13,7 +13,6 @@ except ImportError:
 from .tartifact_store import TartifactStore
 from . import logs
 
-
 class S3ArtifactStore(TartifactStore):
     def __init__(self, config,
                  verbose=10,
@@ -38,11 +37,13 @@ class S3ArtifactStore(TartifactStore):
             self.client.create_bucket(
                 Bucket=self.bucket
             )
-
         super(S3ArtifactStore, self).__init__(
             measure_timestamp_diff,
             compression=compression,
             verbose=verbose)
+
+        self.set_storage_client(self.client)
+
 
     def _upload_file(self, key, local_path):
         self.client.upload_file(local_path, self.bucket, key)
