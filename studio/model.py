@@ -14,6 +14,8 @@ import six
 from .artifact_store import get_artifact_store
 from .http_provider import HTTPProvider
 from .firebase_provider import FirebaseProvider
+from .local_artifact_store import LocalArtifactStore
+from .local_db_provider import LocalDbProvider
 from .s3_provider import S3Provider
 from .gs_provider import GSProvider
 from .model_setup import setup_model
@@ -97,6 +99,16 @@ def get_db_provider(config=None, blocking_auth=True):
 
     elif db_config['type'].lower() == 'gs':
         db_provider = GSProvider(db_config,
+                          verbose=verbose,
+                          store=artifact_store,
+                          blocking_auth=blocking_auth)
+        artifact_store = db_provider.get_artifact_store()
+
+    elif db_config['type'].lower() == 'local':
+        if artifact_store is None:
+            artifact_store = LocalArtifactStore(db_config, "storage", verbose)
+
+        db_provider = LocalDbProvider(db_config,
                           verbose=verbose,
                           store=artifact_store,
                           blocking_auth=blocking_auth)
