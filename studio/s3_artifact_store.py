@@ -11,6 +11,7 @@ except ImportError:
     boto3 = None
 
 from .tartifact_store import TartifactStore
+from .util import adjust_s3_endpoint_url
 from . import logs
 
 class S3ArtifactStore(TartifactStore):
@@ -18,11 +19,12 @@ class S3ArtifactStore(TartifactStore):
                  verbose=10,
                  measure_timestamp_diff=False,
                  compression=None):
+        store_endpoint_url = adjust_s3_endpoint_url(config.get('endpoint'))
         self.client = boto3.client(
             's3',
             aws_access_key_id=config.get('aws_access_key'),
             aws_secret_access_key=config.get('aws_secret_key'),
-            endpoint_url=config.get('endpoint'),
+            endpoint_url=store_endpoint_url,
             region_name=config.get('region'))
 
         if compression is None:

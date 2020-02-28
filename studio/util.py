@@ -388,6 +388,13 @@ def _s3_download_dir(bucket, dist, local, logger=None):
 def has_aws_credentials():
     return _get_active_s3_client()._request_signer._credentials is not None
 
+def adjust_s3_endpoint_url(endpoint_url):
+    if endpoint_url is None:
+        return None
+    if not isinstance(endpoint_url, str):
+        return endpoint_url
+    if endpoint_url.startswith("s3://"):
+        return endpoint_url.replace("s3://", "http://", 1)
 
 def retry(f,
           no_retries=5, sleep_time=1,
