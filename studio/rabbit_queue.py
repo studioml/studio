@@ -195,7 +195,7 @@ class RMQueue(object):
         """
         self._logger.debug('declare queue ' + queue_name)
         with self._rmq_lock:
-            self._channel.queue_declare(self.on_queue_declareok, queue_name)
+            self._channel.queue_declare(queue_name, self.on_queue_declareok)
 
     def on_queue_declareok(self, method_frame):
         """
