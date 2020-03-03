@@ -84,8 +84,10 @@ class RMQueue(object):
         return pika.SelectConnection(
             params,
             on_open_callback=self.on_connection_open,
+            on_open_error_callback=None,
             on_close_callback=self.on_connection_closed,
-            stop_ioloop_on_close=False)
+            custom_ioloop=None,
+            internal_connection_workflow=True)
 
     def on_connection_open(self, unused_connection):
         """
