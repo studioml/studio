@@ -111,7 +111,16 @@ class RMQueue(object):
                 # retry in 5 seconds
                 self._logger.info('connection closed, retry in 5 seconds: ' +
                                   repr(reason))
-                self._connection.add_timeout(5, self._connection.ioloop.stop)
+                self._connection.ioloop.call_later(5, self._reconnect)
+
+    def _reconnect(self):
+        """Will be invoked by the IOLoop timer if the connection is
+        closed. See the on_connection_closed method.
+
+        """
+        if not self._stopping:
+            # Create a new connection
+            self._connection = self.connect()
 
     def open_channel(self):
         """
