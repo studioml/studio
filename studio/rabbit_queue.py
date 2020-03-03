@@ -95,13 +95,12 @@ class RMQueue(object):
         """
         self.open_channel()
 
-    def on_connection_closed(self, connection, reply_code, reply_text):
+    def on_connection_closed(self, connection, reason):
         """
         on any close reconnect to RabbitMQ, until the stopping is set
 
         :param pika.connection.Connection connection: The closed connection obj
-        :param int reply_code: The server provided reply_code if given
-        :param str reply_text: The server provided reply_text if given
+        :param Exception reason: why the connection was closed
 
         """
         with self._rmq_lock:
@@ -111,7 +110,7 @@ class RMQueue(object):
             else:
                 # retry in 5 seconds
                 self._logger.info('connection closed, retry in 5 seconds: ' +
-                                  str(reply_code) + ' ' + reply_text)
+                                  repr(reason))
                 self._connection.add_timeout(5, self._connection.ioloop.stop)
 
     def open_channel(self):
