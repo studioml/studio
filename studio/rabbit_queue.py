@@ -141,21 +141,18 @@ class RMQueue(object):
 
         self.setup_exchange(self._exchange)
 
-    def on_channel_closed(self, channel, reply_code, reply_text):
+    def on_channel_closed(self, channel, reason):
         """
         physical network issues and logical protocol abuses can
         result in a closure of the channel.
 
         :param pika.channel.Channel channel: The closed channel
         :param int reply_code: The numeric reason the channel was closed
-        :param str reply_text: The text reason the channel was closed
+        :param Exception reason: why the channel was closed
 
         """
         self._logger.info(
-            'channel closed ' +
-            str(reply_code) +
-            ' ' +
-            reply_text)
+            'channel closed ' + repr(reason))
         with self._rmq_lock:
             self._channel = None
             if not self._stopping:
