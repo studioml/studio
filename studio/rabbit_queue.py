@@ -93,6 +93,9 @@ class RMQueue(object):
         """
         :type unused_connection: pika.SelectConnection
         """
+
+        print(">>>CONNECTION OPEN!")
+
         self.open_channel()
 
     def on_connection_closed(self, connection, reason):
@@ -112,6 +115,7 @@ class RMQueue(object):
                 self._logger.info('connection closed, retry in 5 seconds: ' +
                                   repr(reason))
                 self._connection.ioloop.call_later(5, self._reconnect)
+        print("ON CONNECTION CLOSED!"+repr(reason))
 
     def _reconnect(self):
         """Will be invoked by the IOLoop timer if the connection is
@@ -142,10 +146,14 @@ class RMQueue(object):
         """
         self._logger.debug('created a new channel')
 
+        print(">>>GOT CHANNEL" + repr(channel))
+
         with self._rmq_lock:
             self._channel = channel
             self._channel.basic_qos(prefetch_count=0)
             self._channel.add_on_close_callback(self.on_channel_closed)
+
+        print(">>>CHANNEL OPEN" + repr(channel))
 
         self.setup_exchange(self._exchange)
 
@@ -165,6 +173,7 @@ class RMQueue(object):
             self._channel = None
             if not self._stopping:
                 self._connection.close()
+        print("ON CHANNEL CLOSED! "+repr(reason))
 
     def setup_exchange(self, exchange_name):
         """
@@ -177,11 +186,16 @@ class RMQueue(object):
         """
         self._logger.debug('declaring exchange ' + exchange_name)
         with self._rmq_lock:
-            self._channel.exchange_declare(callback=self.on_exchange_declareok,
-                                           exchange=exchange_name,
+            self._channel.exchange_declare(exchange_name,
+                                           callback=self.on_exchange_declareok,
                                            exchange_type=self._exchange_type,
                                            durable=True,
                                            auto_delete=True)
+            #self._channel.exchange_declare(callback=self.on_exchange_declareok,
+            #                               exchange=exchange_name,
+            #                               exchange_type=self._exchange_type,
+            #                               durable=True,
+            #                               auto_delete=True)
 
     def on_exchange_declareok(self, unused_frame):
         """
@@ -203,7 +217,8 @@ class RMQueue(object):
         """
         self._logger.debug('declare queue ' + queue_name)
         with self._rmq_lock:
-            self._channel.queue_declare(queue_name, self.on_queue_declareok)
+            self._channel.queue_declare(queue_name, callback=self.on_queue_declareok)
+            print("QUEUE DECLARE: "+queue_name)
 
     def on_queue_declareok(self, method_frame):
         """
@@ -225,8 +240,11 @@ class RMQueue(object):
             ' with ' +
             self._routing_key)
         with self._rmq_lock:
-            self._channel.queue_bind(self.on_bindok, self._queue,
-                                     self._exchange, self._routing_key)
+            self._channel.queue_bind(self._queue,
+                                     self._exchange,
+                                     routing_key=self._routing_key,
+                                     callback=self.on_bindok)
+            print("QUEUE BIND: "+self._queue+" "+self._exchange)
 
     def on_bindok(self, unused_frame):
         """This method is invoked by pika when it receives the Queue.BindOk
@@ -357,7 +375,7 @@ class RMQueue(object):
     def get_name(self):
         return self._queue
 
-    def enqueue(self, msg, retries=10):
+    def enqueue(self, msg, retries=40):
         """
         Publish a message to RMQ, appending a list of deliveries with
         the message number that was sent.  This list will be used to
@@ -375,11 +393,16 @@ class RMQueue(object):
         tries = retries
         while tries != 0:
             if self._channel is None:
+                print(">>> NO CHANNEL!")
+
                 self._logger.warn(
                     'failed to send message ({} tries left) to {} as '
                     'the channel API was not initialized' .format(
                         tries, self._url))
             elif not self._channel.is_open:
+
+                print(">>>CHANNEL NOT OPENED!")
+
                 self._logger.warn(
                     'failed to send message ({} tries left) to {} as '
                     'the channel was not open' .format(
