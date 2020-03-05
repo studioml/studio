@@ -365,7 +365,7 @@ class RMQueue(object):
     def get_name(self):
         return self._queue
 
-    def enqueue(self, msg, retries=40):
+    def enqueue(self, msg, retries=10):
         """
         Publish a message to RMQ, appending a list of deliveries with
         the message number that was sent.  This list will be used to
