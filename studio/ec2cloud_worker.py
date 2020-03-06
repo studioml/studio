@@ -101,7 +101,7 @@ class EC2WorkerManager(object):
             os.path.dirname(__file__),
             'aws/aws_amis.yaml')
         with open(price_path) as f:
-            ami_dict = yaml.load(f.read())
+            ami_dict = yaml.load(f.read(), Loader=yaml.FullLoader)
 
         region = self.client._client_config.region_name
         image_type = 'ubuntu16.04'
@@ -441,7 +441,7 @@ class EC2WorkerManager(object):
             os.path.dirname(__file__),
             'aws/aws_prices.yaml')
         with open(price_path, 'r') as f:
-            data = yaml.load(f.read())
+            data = yaml.load(f.read(), Loader=yaml.FullLoader)
 
         return {i: data[i] for i in instances}
 
