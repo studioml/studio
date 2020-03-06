@@ -84,22 +84,24 @@ class RMQueue(object):
         return pika.SelectConnection(
             params,
             on_open_callback=self.on_connection_open,
+            on_open_error_callback=None,
             on_close_callback=self.on_connection_closed,
-            stop_ioloop_on_close=False)
+            custom_ioloop=None,
+            internal_connection_workflow=True)
 
     def on_connection_open(self, unused_connection):
         """
         :type unused_connection: pika.SelectConnection
         """
+
         self.open_channel()
 
-    def on_connection_closed(self, connection, reply_code, reply_text):
+    def on_connection_closed(self, connection, reason):
         """
         on any close reconnect to RabbitMQ, until the stopping is set
 
         :param pika.connection.Connection connection: The closed connection obj
-        :param int reply_code: The server provided reply_code if given
-        :param str reply_text: The server provided reply_text if given
+        :param Exception reason: why the connection was closed
 
         """
         with self._rmq_lock:
@@ -109,8 +111,17 @@ class RMQueue(object):
             else:
                 # retry in 5 seconds
                 self._logger.info('connection closed, retry in 5 seconds: ' +
-                                  str(reply_code) + ' ' + reply_text)
-                self._connection.add_timeout(5, self._connection.ioloop.stop)
+                                  repr(reason))
+                self._connection.ioloop.call_later(5, self._reconnect)
+
+    def _reconnect(self):
+        """Will be invoked by the IOLoop timer if the connection is
+        closed. See the on_connection_closed method.
+
+        """
+        if not self._stopping:
+            # Create a new connection
+            self._connection = self.connect()
 
     def open_channel(self):
         """
@@ -139,21 +150,18 @@ class RMQueue(object):
 
         self.setup_exchange(self._exchange)
 
-    def on_channel_closed(self, channel, reply_code, reply_text):
+    def on_channel_closed(self, channel, reason):
         """
         physical network issues and logical protocol abuses can
         result in a closure of the channel.
 
         :param pika.channel.Channel channel: The closed channel
         :param int reply_code: The numeric reason the channel was closed
-        :param str reply_text: The text reason the channel was closed
+        :param Exception reason: why the channel was closed
 
         """
         self._logger.info(
-            'channel closed ' +
-            str(reply_code) +
-            ' ' +
-            reply_text)
+            'channel closed ' + repr(reason))
         with self._rmq_lock:
             self._channel = None
             if not self._stopping:
@@ -170,11 +178,16 @@ class RMQueue(object):
         """
         self._logger.debug('declaring exchange ' + exchange_name)
         with self._rmq_lock:
-            self._channel.exchange_declare(callback=self.on_exchange_declareok,
-                                           exchange=exchange_name,
+            self._channel.exchange_declare(exchange_name,
+                                           callback=self.on_exchange_declareok,
                                            exchange_type=self._exchange_type,
                                            durable=True,
                                            auto_delete=True)
+            #self._channel.exchange_declare(callback=self.on_exchange_declareok,
+            #                               exchange=exchange_name,
+            #                               exchange_type=self._exchange_type,
+            #                               durable=True,
+            #                               auto_delete=True)
 
     def on_exchange_declareok(self, unused_frame):
         """
@@ -196,7 +209,7 @@ class RMQueue(object):
         """
         self._logger.debug('declare queue ' + queue_name)
         with self._rmq_lock:
-            self._channel.queue_declare(self.on_queue_declareok, queue_name)
+            self._channel.queue_declare(queue_name, callback=self.on_queue_declareok)
 
     def on_queue_declareok(self, method_frame):
         """
@@ -218,8 +231,10 @@ class RMQueue(object):
             ' with ' +
             self._routing_key)
         with self._rmq_lock:
-            self._channel.queue_bind(self.on_bindok, self._queue,
-                                     self._exchange, self._routing_key)
+            self._channel.queue_bind(self._queue,
+                                     self._exchange,
+                                     routing_key=self._routing_key,
+                                     callback=self.on_bindok)
 
     def on_bindok(self, unused_frame):
         """This method is invoked by pika when it receives the Queue.BindOk
