@@ -504,5 +504,55 @@ class RMQueue(object):
         # remains open, or we nack it
         pass
 
+    def on_purge_ok(self, unused_frame):
+        """
+        This method is invoked by pika when it receives the Queue.PurgeOk
+        response from RabbitMQ.
+        """
+
+        self._logger.info("queue %s purged.", str(self._queue))
+        with self._rmq_lock:
+            self._logger.info("unbinding queue %s.", str(self._queue))
+            self._channel.queue_unbind(self._queue,
+                                       exchange=self._exchange,
+                                       routing_key=self._routing_key,
+                                       arguments=None,
+                                       callback=self.on_unbind_ok)
+
+
+    def on_unbind_ok(self, unused_frame):
+        """
+        This method is invoked by pika when it receives the Queue.UnbindOk
+        response from RabbitMQ.
+        """
+
+        self._logger.info("Unbound queue %s from exchange %s with %s",
+                            str(self._queue),
+                            str(self._exchange),
+                            str(self._routing_key))
+
+        with self._rmq_lock:
+            self._logger.info("deleting queue %s.", str(self._queue))
+            self._channel.queue_delete(self._queue, callback=self.on_delete_ok)
+
+
+    def on_delete_ok(self, unused_frame):
+        """
+        This method is invoked by pika when it receives the Queue.DeleteOk
+        response from RabbitMQ.
+        """
+
+        self._logger.info("Deleted queue %s", str(self._queue))
+        self.stop()
+
     def delete(self):
-        raise NotImplementedError('')
+        """
+        Delete current RabbitMQ in use.
+        This involves purge => unbind => delete for the queue
+        and subsequent closing of our connection.
+        """
+        self._logger.info("Deleting RMQ %s",
+                          str(self._queue))
+
+        with self._rmq_lock:
+            self._channel.queue_purge(self._queue, callback=self.on_purge_ok)
