@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 import pika
-import json
 import time
 import logging
 import threading
@@ -62,6 +61,7 @@ class RMQueue(object):
                                           .format(self._url))
 
         self._queue = queue
+        self._queue_deleted = True
 
         # The pika library for RabbitMQ has an asynchronous run method
         # that needs to run forever and will do reconnections etc
@@ -89,6 +89,48 @@ class RMQueue(object):
             custom_ioloop=None,
             internal_connection_workflow=True)
 
+    def _wait_queue_deleted(self, timeout_in_secs):
+        """
+        Polling wait till underlying RMQ queue
+        is confirmed deleted or
+        specified timeout (in seconds) is reached.
+        """
+        for i in range(timeout_in_secs):
+            if self._queue_deleted:
+                self._logger.info('Queue {0} is confirmed deleted.'
+                                  .format(self._queue))
+                return
+            time.sleep(1)
+        self._logger.info('Timeout {0} seconds reached while waiting for queue {1} deletion.'
+                          .format(timeout_in_secs, self._queue))
+        return
+
+    def on_delete_ok(self, unused_frame):
+        """
+        This method is invoked by pika when it receives the Queue.DeleteOk
+        response from RabbitMQ.
+        """
+
+        self._logger.info("Queue {0} deleted OK.".format(self._queue))
+        self._queue_deleted = True
+
+    def _delete_queue(self):
+        """
+        Delete underlying RMQ queue,
+        which will also unbind and purge it.
+        """
+        if self._queue_deleted:
+            self._logger.info("Queue {0} is already deleted.".format(self._queue))
+            return
+        with self._rmq_lock:
+            if self._channel is None:
+                self._logger.info("Channel to queue {0} is None: cannot delete queue."
+                                  .format(self._queue))
+                return
+            self._channel.queue_delete(self._queue, callback=self.on_delete_ok)
+
+        self._wait_queue_deleted(30)
+
     def on_connection_open(self, unused_connection):
         """
         :type unused_connection: pika.SelectConnection
@@ -104,15 +146,26 @@ class RMQueue(object):
         :param Exception reason: why the connection was closed
 
         """
+        self._logger.info('connection to queue {0} closed. Reason: {1}'
+                          .format(self._queue, repr(reason)))
         with self._rmq_lock:
-            self._channel = None
             if self._stopping:
+                # If we are here, it means we are doing
+                # the final connection closure and so might as well
+                # delete underlying RMQ message queue:
+                self._delete_queue()
+                # Now we can reset our _channel -
+                # RMQ queue is accessed through it, so don't do this sooner.
+                self._channel = None
                 self._connection.ioloop.stop()
             else:
-                # retry in 5 seconds
-                self._logger.info('connection closed, retry in 5 seconds: ' +
-                                  repr(reason))
-                self._connection.ioloop.call_later(5, self._reconnect)
+                retry_timeout = 3
+                # retry in retry_timeout seconds
+                self._channel = None
+                self._logger.info('connection closed, retry in {0} seconds: {1}'
+                                  .format(retry_timeout, repr(reason)))
+                self._connection.ioloop.call_later(retry_timeout,
+                                                   self._reconnect)
 
     def _reconnect(self):
         """Will be invoked by the IOLoop timer if the connection is
@@ -120,8 +173,9 @@ class RMQueue(object):
 
         """
         if not self._stopping:
-            # Create a new connection
-            self._connection = self.connect()
+            with self._rmq_lock:
+                # Create a new connection
+                self._connection = self.connect()
 
     def open_channel(self):
         """
@@ -161,10 +215,10 @@ class RMQueue(object):
 
         """
         self._logger.info(
-            'channel closed ' + repr(reason))
+            'channel closed {0}'.format(repr(reason)))
         with self._rmq_lock:
-            self._channel = None
             if not self._stopping:
+                self._channel = None
                 self._connection.close()
 
     def setup_exchange(self, exchange_name):
@@ -223,13 +277,8 @@ class RMQueue(object):
         :param pika.frame.Method method_frame: The Queue.DeclareOk frame
 
         """
-        self._logger.debug(
-            'binding ' +
-            self._exchange +
-            ' to ' +
-            self._queue +
-            ' with ' +
-            self._routing_key)
+        self._logger.info('binding {0} to queue {1} with {2}'
+                          .format(self._exchange, self._queue, self._routing_key))
         with self._rmq_lock:
             self._channel.queue_bind(self._queue,
                                      self._exchange,
@@ -240,13 +289,8 @@ class RMQueue(object):
         """This method is invoked by pika when it receives the Queue.BindOk
         response from RabbitMQ. Since we know we're now setup and bound, it's
         time to start publishing."""
-        self._logger.info(
-            'bound ' +
-            self._exchange +
-            ' to ' +
-            self._queue +
-            ' with ' +
-            self._routing_key)
+        self._logger.info('bound {0} to queue {1} with {2}'
+                          .format(self._exchange, self._queue, self._routing_key))
 
         """
         Send the Confirm.Select RPC method to RMQ to enable delivery
@@ -337,7 +381,6 @@ class RMQueue(object):
         """
         self._logger.info('stopping')
         self._stopping = True
-        self.close_channel()
         self.close_connection()
 
     def close_channel(self):
@@ -504,55 +547,11 @@ class RMQueue(object):
         # remains open, or we nack it
         pass
 
-    def on_purge_ok(self, unused_frame):
-        """
-        This method is invoked by pika when it receives the Queue.PurgeOk
-        response from RabbitMQ.
-        """
-
-        self._logger.info("queue %s purged.", str(self._queue))
-        with self._rmq_lock:
-            self._logger.info("unbinding queue %s.", str(self._queue))
-            self._channel.queue_unbind(self._queue,
-                                       exchange=self._exchange,
-                                       routing_key=self._routing_key,
-                                       arguments=None,
-                                       callback=self.on_unbind_ok)
-
-
-    def on_unbind_ok(self, unused_frame):
-        """
-        This method is invoked by pika when it receives the Queue.UnbindOk
-        response from RabbitMQ.
-        """
-
-        self._logger.info("Unbound queue %s from exchange %s with %s",
-                            str(self._queue),
-                            str(self._exchange),
-                            str(self._routing_key))
-
-        with self._rmq_lock:
-            self._logger.info("deleting queue %s.", str(self._queue))
-            self._channel.queue_delete(self._queue, callback=self.on_delete_ok)
-
-
-    def on_delete_ok(self, unused_frame):
-        """
-        This method is invoked by pika when it receives the Queue.DeleteOk
-        response from RabbitMQ.
-        """
-
-        self._logger.info("Deleted queue %s", str(self._queue))
-        self.stop()
-
-    def delete(self):
+    def shutdown(self):
         """
         Delete current RabbitMQ in use.
-        This involves purge => unbind => delete for the queue
+        This involves delete for the queue
         and subsequent closing of our connection.
         """
-        self._logger.info("Deleting RMQ %s",
-                          str(self._queue))
-
-        with self._rmq_lock:
-            self._channel.queue_purge(self._queue, callback=self.on_purge_ok)
+        self._logger.info("Shutting down RMQ {0}".format(str(self._queue)))
+        self.stop()
