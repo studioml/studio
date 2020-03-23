@@ -154,8 +154,8 @@ class CompletionService:
     def close(self, delete_queue=True):
         self.logger.info("Studioml completion service shutting down")
         # if self.queue_name != 'local' and delete_queue:
-        if self.shutdown_del_queue:
-            self.queue.shutdown()
+        request_delete_queue = self.shutdown_del_queue or delete_queue
+        self.queue.shutdown(request_delete_queue)
 
     def submitTaskWithFiles(
             self,

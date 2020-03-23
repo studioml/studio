@@ -376,7 +376,6 @@ class RMQueue(object):
         """
         self._logger.info('stopping')
         self._stopping = True
-        self._delete_queue()
         self.close_connection()
 
     def close_channel(self):
@@ -543,11 +542,14 @@ class RMQueue(object):
         # remains open, or we nack it
         pass
 
-    def shutdown(self):
+    def shutdown(self, delete_queue=True):
         """
         Delete current RabbitMQ in use.
         This involves delete for the queue
         and subsequent closing of our connection.
         """
-        self._logger.info("Shutting down RMQ {0}".format(str(self._queue)))
+        if delete_queue:
+            self._logger.info("Deleting RMQ {0}".format(str(self._queue)))
+            self._delete_queue()
+        self._logger.info("Closing RMQ connection for {0}".format(str(self._queue)))
         self.stop()
