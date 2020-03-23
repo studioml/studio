@@ -149,19 +149,12 @@ class RMQueue(object):
         self._logger.info('connection to queue {0} closed. Reason: {1}'
                           .format(self._queue, repr(reason)))
         with self._rmq_lock:
+            self._channel = None
             if self._stopping:
-                # If we are here, it means we are doing
-                # the final connection closure and so might as well
-                # delete underlying RMQ message queue:
-                self._delete_queue()
-                # Now we can reset our _channel -
-                # RMQ queue is accessed through it, so don't do this sooner.
-                self._channel = None
                 self._connection.ioloop.stop()
             else:
                 retry_timeout = 3
                 # retry in retry_timeout seconds
-                self._channel = None
                 self._logger.info('connection closed, retry in {0} seconds: {1}'
                                   .format(retry_timeout, repr(reason)))
                 self._connection.ioloop.call_later(retry_timeout,
@@ -291,6 +284,8 @@ class RMQueue(object):
         time to start publishing."""
         self._logger.info('bound {0} to queue {1} with {2}'
                           .format(self._exchange, self._queue, self._routing_key))
+        # Now underlying RMQ queue is setup: set the state flag
+        self._queue_deleted = False
 
         """
         Send the Confirm.Select RPC method to RMQ to enable delivery
@@ -381,6 +376,7 @@ class RMQueue(object):
         """
         self._logger.info('stopping')
         self._stopping = True
+        self._delete_queue()
         self.close_connection()
 
     def close_channel(self):
