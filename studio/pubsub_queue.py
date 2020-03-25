@@ -146,3 +146,6 @@ class PubsubQueue(object):
         except google.gax.errors.RetryError as e:
             self.logger.error('Queue deletion failed with exception:')
             self.logger.exception(e)
+
+    def shutdown(self, delete_queue=True):
+        self.delete()

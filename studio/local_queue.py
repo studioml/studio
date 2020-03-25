@@ -74,6 +74,9 @@ class LocalQueue:
     def get_name(self):
         return 'local'
 
+    def shutdown(self, delete_queue=True):
+        self.delete()
+
 
 def get_local_queue_lock():
     return _local_queue_lock

@@ -122,3 +122,6 @@ class SQSQueue(object):
 
     def delete(self):
         self._client.delete_queue(QueueUrl=self._queue_url)
+
+    def shutdown(self, delete_queue=True):
+        self.delete()
