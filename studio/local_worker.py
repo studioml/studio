@@ -163,9 +163,12 @@ class LocalExecutor(object):
                     minutes=minutes)
 
                 def kill_if_stopped():
-                    db_expr = db.get_experiment(
-                        experiment.key,
-                        getinfo=False)
+                    try:
+                        db_expr = db.get_experiment(
+                            experiment.key,
+                            getinfo=False)
+                    except:
+                        db_expr = None
 
                     # Transient issues with getting experiment data might
                     # result in a None value being returned, as result

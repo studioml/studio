@@ -39,9 +39,6 @@ class LocalQueue:
             # Ignore possible exception:
             # we just want list of files without status marker
             pass
-
-        print(">>>> Status: " + str(is_active) + "  [" + repr(files) + ']')
-
         return is_active, files
 
     def has_next(self):
@@ -54,11 +51,9 @@ class LocalQueue:
 
     # Delete and clean are the same for local queue
     def delete(self):
-        print("LOCAL QUEUE CLEAN")
         self.clean()
         with _local_queue_lock:
             os.remove(self.status_marker)
-        print("LOCAL QUEUE CLEAN DONE")
 
     def dequeue(self, acknowledge=True, timeout=0):
         wait_step = 1
@@ -86,7 +81,6 @@ class LocalQueue:
             # self.logger.info(
             #    ('No messages found, sleeping for {} ' +
             #     ' (total sleep time {})').format(wait_step, waited))
-            print('No messages found, sleeping for {0} ({1}) '.format(wait_step, waited))
             time.sleep(wait_step)
 
     def enqueue(self, data):
@@ -108,9 +102,7 @@ class LocalQueue:
         return 'local'
 
     def shutdown(self, delete_queue=True):
-        print("LOCAL QUEUE SHUTDOWN")
         self.delete()
-        print("LOCAL QUEUE SHUTDOWN DONE")
 
 def get_local_queue_lock():
     return _local_queue_lock
