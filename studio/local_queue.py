@@ -46,18 +46,25 @@ class LocalQueue:
         return is_active and len(files) > 0
 
     def is_active(self):
-        is_active, _ = self._get_queue_status()
+        is_active = os.path.isfile(self.status_marker)
         return is_active
 
     def clean(self, timeout=0):
-        while self.has_next():
-            self.dequeue()
+        with _local_queue_lock:
+            _, files = self._get_queue_status()
+            for f in files:
+                try:
+                    os.remove(f)
+                except:
+                    pass
 
-    # Delete and clean are the same for local queue
     def delete(self):
         self.clean()
         with _local_queue_lock:
-            os.remove(self.status_marker)
+            try:
+                os.remove(self.status_marker)
+            except:
+                    pass
 
     def dequeue(self, acknowledge=True, timeout=0):
         wait_step = 1
