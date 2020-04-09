@@ -6,8 +6,6 @@ import json
 import psutil
 import time
 import six
-from pygtail import Pygtail
-import threading
 
 from apscheduler.schedulers.background import BackgroundScheduler
 
@@ -15,7 +13,7 @@ from . import fs_tracker, model, logs
 from .local_queue import LocalQueue
 from .gpu_util import get_available_gpus, get_gpu_mapping, get_gpus_summary
 from .experiment import Experiment
-from .util import sixdecode, str2duration, retry
+from .util import sixdecode, str2duration, retry, LogReprinter
 from .model import parse_verbosity
 
 logs.getLogger('apscheduler.scheduler').setLevel(logs.ERROR)
@@ -25,12 +23,13 @@ class LocalExecutor(object):
     """Runs job while capturing environment and logs results.
     """
 
-    def __init__(self, args):
+    def __init__(self, queue, args):
         self.config = args.config
 
         if args.guest:
             self.config['database']['guest'] = True
 
+        self.task_queue = queue
         self.logger = logs.getLogger('LocalExecutor')
         self.logger.setLevel(model.parse_verbosity(self.config.get('verbose')))
         self.logger.debug("Config: ")
@@ -114,20 +113,12 @@ class LocalExecutor(object):
                     cwd=cwd
                 )
 
-                # simple hack to show what's in the log file
-                # ptail = subprocess.Popen(["tail", "-f", log_path])
+                log_reprinter = LogReprinter(log_path)
+                log_reprinter.run()
 
-                logtail = Pygtail(log_path)
-
-                def tail_func():
-                    while logtail:
-                        for line in logtail:
-                            print(line)
-
-                        time.sleep(0.1)
-
-                tail_thread = threading.Thread(target=tail_func)
-                tail_thread.start()
+                def kill_subprocess():
+                    log_reprinter.stop()
+                    p.kill()
 
                 minutes = 0
                 if self.config.get('saveWorkspaceFrequency'):
@@ -178,7 +169,7 @@ class LocalExecutor(object):
                     # will exceed its allocated time and stop
                     if db_expr is not None:
                         if db_expr.status == 'stopped':
-                            p.kill()
+                            kill_subprocess()
                             return
 
                     if experiment.max_duration is not None and \
@@ -186,16 +177,23 @@ class LocalExecutor(object):
                             int(str2duration(experiment.max_duration)
                                 .total_seconds()):
 
-                        p.kill()
+                        kill_subprocess()
+                        return
+
+                    # If our tasks queue is signalled inactive
+                    # during work process execution, that means we need to drop
+                    # current execution and exit
+                    if not self.task_queue.is_active():
+                        kill_subprocess()
 
                 sched.add_job(kill_if_stopped, 'interval', seconds=10)
 
                 try:
                     p.wait()
                 finally:
+                    log_reprinter.stop()
                     save_metrics(metrics_path)
                     sched.shutdown()
-                    logtail = None
                     db.checkpoint_experiment(experiment)
                     db.finish_experiment(experiment)
                     return p.returncode
@@ -325,7 +323,7 @@ def worker_loop(queue, parsed_args,
 
         logger.debug('Received message: \n{}'.format(data_dict))
 
-        executor = LocalExecutor(parsed_args)
+        executor = LocalExecutor(queue, parsed_args)
 
         with model.get_db_provider(config) as db:
             # experiment = experiment_from_dict(data_dict['experiment'])
@@ -420,7 +418,7 @@ def worker_loop(queue, parsed_args,
 
         # queue = glob.glob(fs_tracker.get_queue_directory() + "/*")
 
-    logger.info("Queue in {} is empty, quitting"
+    logger.info("Queue in {0} is empty, quitting"
                 .format(fs_tracker.get_queue_directory()))
 
     return retval

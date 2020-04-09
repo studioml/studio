@@ -45,6 +45,10 @@ class LocalQueue:
         is_active, files = self._get_queue_status()
         return is_active and len(files) > 0
 
+    def is_active(self):
+        is_active, _ = self._get_queue_status()
+        return is_active
+
     def clean(self, timeout=0):
         while self.has_next():
             self.dequeue()
