@@ -103,7 +103,7 @@ class LocalExecutor(object):
                     else:
                         cmd = ['singularity', 'run', container]
 
-                self.logger.info('Running cmd: {} in {}'.format(cmd, cwd))
+                self.logger.info('Running cmd: {0} in {1}'.format(cmd, cwd))
 
                 p = subprocess.Popen(
                     cmd,
@@ -113,8 +113,10 @@ class LocalExecutor(object):
                     cwd=cwd
                 )
 
+                run_log_reprinter = True
                 log_reprinter = LogReprinter(log_path)
-                log_reprinter.run()
+                if run_log_reprinter:
+                    log_reprinter.run()
 
                 def kill_subprocess():
                     log_reprinter.stop()
@@ -306,7 +308,6 @@ def worker_loop(queue, parsed_args,
         if not msg:
             break
 
-        # first_exp, ack_key = queue.dequeue(acknowledge=False)
         first_exp, ack_key = msg
 
         data_dict = json.loads(sixdecode(first_exp))
@@ -343,7 +344,7 @@ def worker_loop(queue, parsed_args,
                 int(str2duration(config['experimentLifetime'])
                     .total_seconds()) + experiment.time_added < time.time():
                 logger.info(
-                    'Experiment expired (max lifetime of {} was exceeded)'
+                    'Experiment expired (max lifetime of {0} was exceeded)'
                     .format(config.get('experimentLifetime'))
                 )
                 queue.acknowledge(ack_key)
@@ -413,10 +414,6 @@ def worker_loop(queue, parsed_args,
                             ' due lack of resources. Will retry')
                 # Debounce failed requests we cannot service yet
                 time.sleep(config.get('sleep_time', 5))
-
-        # wait_for_messages(queue, timeout, logger)
-
-        # queue = glob.glob(fs_tracker.get_queue_directory() + "/*")
 
     logger.info("Queue in {0} is empty, quitting"
                 .format(fs_tracker.get_queue_directory()))

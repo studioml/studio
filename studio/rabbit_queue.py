@@ -70,6 +70,14 @@ class RMQueue(object):
         thr.setDaemon(True)
         thr.start()
 
+    def _channel_is_valid(self):
+        return self._channel is not None and \
+               self._channel.is_open
+
+    def _connection_is_valid(self):
+        return self._connection is not None and \
+               not self._connection.is_closed
+
     def connect(self):
         """
         When the connection is established, the on_connection_open method
@@ -123,8 +131,9 @@ class RMQueue(object):
             self._logger.info("Queue {0} is already deleted.".format(self._queue))
             return
         with self._rmq_lock:
-            if self._channel is None:
-                self._logger.info("Channel to queue {0} is None: cannot delete queue."
+            if not self._channel_is_valid():
+                self._logger.info(
+                    "Channel to queue {0} is None or closed: cannot delete queue."
                                   .format(self._queue))
                 return
             self._channel.queue_delete(self._queue, callback=self.on_delete_ok)
@@ -149,7 +158,6 @@ class RMQueue(object):
         self._logger.info('connection to queue {0} closed. Reason: {1}'
                           .format(self._queue, repr(reason)))
         with self._rmq_lock:
-            self._channel = None
             if self._stopping:
                 self._connection.ioloop.stop()
             else:
@@ -210,8 +218,8 @@ class RMQueue(object):
         self._logger.info(
             'channel closed {0}'.format(repr(reason)))
         with self._rmq_lock:
-            if not self._stopping:
-                self._channel = None
+            if not self._stopping and \
+                    self._connection_is_valid():
                 self._connection.close()
 
     def setup_exchange(self, exchange_name):
@@ -341,13 +349,13 @@ class RMQueue(object):
         Blocking run loop, connecting and then starting the IOLoop.
         """
         self._logger.info('RMQ started')
+        with self._msg_tracking_lock:
+            self._deliveries = []
+            self._acked = 0
+            self._nacked = 0
+            self._message_number = 0
         while not self._stopping:
             self._connection = None
-            with self._msg_tracking_lock:
-                self._deliveries = []
-                self._acked = 0
-                self._nacked = 0
-                self._message_number = 0
 
             try:
                 with self._rmq_lock:
@@ -356,8 +364,7 @@ class RMQueue(object):
                 self._connection.ioloop.start()
             except KeyboardInterrupt:
                 self.stop()
-                if (self._connection is not None and
-                        not self._connection.is_closed):
+                if self._connection_is_valid():
                     # Finish closing
                     self._connection.ioloop.start()
 
@@ -383,13 +390,13 @@ class RMQueue(object):
         Close channel by sending the Channel.Close RPC command.
         """
         with self._rmq_lock:
-            if self._channel is not None:
+            if self._channel_is_valid():
                 self._logger.info('closing the channel')
                 self._channel.close()
 
     def close_connection(self):
         with self._rmq_lock:
-            if self._connection is not None:
+            if self._connection_is_valid():
                 self._logger.info('closing connection')
                 self._connection.close()
 
@@ -465,17 +472,17 @@ class RMQueue(object):
 
             with self._msg_tracking_lock:
                 if message_number not in self._deliveries:
-                    self._logger.debug('sent message acknowledged to {} ' +
-                                       'after waiting {} seconds'
-                                       .format(self._url, abs(tries - 5)))
+                    self._logger.info('sent message acknowledged to {0} ' +
+                                       'after waiting {1} seconds'
+                                       .format(self._url, tries))
 
                     return message_number
                 else:
                     tries -= 1
 
-        raise Exception('studioml message was never acknowledged to {} ' +
-                        'after waiting {} seconds'
-                        .format(self._url, abs(tries - 5)))
+        raise Exception('studioml message {0} was never acknowledged to {1} ' +
+                        'after waiting {2} seconds'
+                        .format(message_number, self._url, tries))
 
     def dequeue(self, acknowledge=True, timeout=0):
         msg = None
