@@ -11,7 +11,6 @@ import six
 import traceback
 import numpy as np
 
-from contextlib import closing
 from datetime import timedelta
 
 from .local_queue import LocalQueue
