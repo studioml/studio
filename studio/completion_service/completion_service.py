@@ -38,7 +38,7 @@ class CompletionService:
         shutdown_del_queue=False
     ):
         # StudioML configuration
-        self.config = model.get_config(studio_config)
+        self.config = model.get_config(studio_config_file)
 
         self.logger = logs.getLogger(self.__class__.__name__)
         self.verbose_level = model.parse_verbosity(self.config['verbose'])
@@ -60,11 +60,17 @@ class CompletionService:
         self.shutdown_del_queue = shutdown_del_queue
 
         # Figure out request for resources:
-        resources_needed = cs_config.get('resources_needed'),
+        resources_needed = cs_config.get('resources_needed')
+        print("CS: {0}".format(repr(resources_needed)))
         self.resources_needed = DEFAULT_RESOURCES_NEEDED
-        if self.config.get('resources_needed'):
-            self.resources_needed.update(self.config.get('resources_needed'))
+        print("DFLT: {0}".format(repr(self.resources_needed)))
         self.resources_needed.update(resources_needed)
+        print("UPD1: {0}".format(repr(self.resources_needed)))
+        studio_resources = self.config.get('resources_needed')
+        print("ML: {0}".format(repr(studio_resources)))
+        if studio_resources:
+            self.resources_needed.update(studio_resources)
+        print("FINAL: {0}".format(repr(self.resources_needed)))
 
         # Figure out task queue and cloud we are going to use:
         queue_name = cs_config.get('queue')
