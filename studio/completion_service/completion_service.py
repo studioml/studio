@@ -118,7 +118,8 @@ class CompletionService:
         if key_path is not None:
             self.logger.info("Using RSA public key path: {0}".format(key_path))
             self.payload_builder =\
-                EncryptedPayloadBuilder("cs-rsa-encryptor [{0}]".format(key_path))
+                EncryptedPayloadBuilder(
+                    "cs-rsa-encryptor [{0}]".format(key_path), key_path)
 
     def __enter__(self):
         with model.get_db_provider(self.config):

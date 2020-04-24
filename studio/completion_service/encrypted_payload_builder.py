@@ -3,6 +3,7 @@ from Crypto.Cipher import PKCS1_OAEP
 import nacl.secret
 import nacl.utils
 import base64
+import json
 
 from studio.payload_builder import PayloadBuilder
 from studio import logs
@@ -91,7 +92,37 @@ class EncryptedPayloadBuilder(PayloadBuilder):
         unencrypted_payload =\
             self.simple_builder.construct(experiment, config, packages)
 
-        return unencrypted_payload
+        # Construct payload template:
+        encrypted_payload = {
+            "message": {
+                "experiment": {
+                    "status": "unknown",
+                    "pythonver": "unknown",
+                },
+                "time_added": None,
+                "experiment_lifetime": "unknown",
+                "resources_needed": None,
+                "payload": "None"
+            }
+        }
+
+        # Now fill it up with experiment properties:
+        enc_key, enc_payload = self._encrypt_str(json.dumps(unencrypted_payload))
+
+        encrypted_payload["message"]["experiment"]["status"] =\
+            experiment["status"]
+        encrypted_payload["message"]["experiment"]["pythonver"] =\
+            experiment["pythonver"]
+        encrypted_payload["message"]["time_added"] =\
+            experiment["time_added"]
+        encrypted_payload["message"]["experiment_lifetime"] =\
+            experiment["experiment_lifetime"]
+        encrypted_payload["message"]["resources_needed"] =\
+            experiment["resources_needed"]
+        encrypted_payload["message"]["payload"] =\
+            "{0},{1}".format(enc_key, enc_payload)
+
+        return encrypted_payload
 
 # def main():
 #     print("Hello!")
