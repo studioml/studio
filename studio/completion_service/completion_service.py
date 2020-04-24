@@ -11,7 +11,7 @@ from studio import runner, model, fs_tracker, logs
 from studio.util import rsync_cp
 from studio.experiment import create_experiment
 
-from .experiment_encryptor import ExperimentEncryptor
+from .encrypted_payload_builder import EncryptedPayloadBuilder
 
 DEFAULT_RESOURCES_NEEDED = {
     'cpus': 2,
