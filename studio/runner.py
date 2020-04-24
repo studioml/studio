@@ -623,9 +623,7 @@ def submit_experiments(
 
     for experiment in experiments:
         payload = payload_builder.construct(experiment, config, python_pkg)
-        queue.enqueue(json.dumps({
-            'experiment': e.__dict__,
-            'config': config}))
+        queue.enqueue(json.dumps(payload))
         print("studio run: submitted experiment " + experiment.key)
 
     logger.info("Added {0} experiment(s) in {1} seconds to queue {2}"
