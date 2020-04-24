@@ -1,18 +1,24 @@
 from Crypto.PublicKey import RSA
-from Crypto.Cipher import AES, PKCS1_OAEP
+from Crypto.Cipher import PKCS1_OAEP
 import nacl.secret
 import nacl.utils
 import base64
 
-from studio.workload_modifier import WorkloadModifier
+from studio.payload_builder import PayloadBuilder
 from studio import logs
+from studio.unencrypted_payload_builder import UnencryptedPayloadBuilder
 
-class ExperimentEncryptor(WorkloadModifier):
+class EncryptedPayloadBuilder(PayloadBuilder):
     """
-    Implementation for experiment workload encryption.
+    Implementation for experiment payload builder
+    using public key RSA encryption.
     """
     def __init__(self, name: str, keypath: str):
-        super(ExperimentEncryptor, self).__init__(name)
+        """
+        param: name - payload builder name
+        param: keypath - file path to .pem file with public key
+        """
+        super(EncryptedPayloadBuilder, self).__init__(name)
 
         # XXX Set logger verbosity level here
         self.logger = logs.getLogger(self.__class__.__name__)
@@ -26,9 +32,8 @@ class ExperimentEncryptor(WorkloadModifier):
                 "FAILED to import recipient public key from: {0}".format(self.key_path))
             return
 
-
-    def modify(self, workload):
-        pass
+        self.simple_builder =\
+            UnencryptedPayloadBuilder("simple-builder-for-encryptor")
 
     def _import_rsa_key(self, key_path: str):
         key = None
@@ -82,22 +87,24 @@ class ExperimentEncryptor(WorkloadModifier):
 
         return decrypted_data
 
-def main():
-    print("Hello!")
-    encryptor = ExperimentEncryptor("StudioExperimentEncryptor", "keys/receiver.pem")
+    def construct(self, experiment, config, packages):
+        unencrypted_payload =\
+            self.simple_builder.construct(experiment, config, packages)
 
-    enc_key, enc_data = encryptor._encrypt_str("Есть только миг Hello Hello Mr Monkey!")
-    print("Encrypted: key: {0} \ndata: {1}".format(enc_key, enc_data))
+        return unencrypted_payload
 
-
-    decrypt_data = encryptor._decrypt_data("keys/private.pem", enc_key, enc_data)
-
-    print("Return: {0}".format(decrypt_data))
-
-
-
-    pass
-
-if __name__ == '__main__':
-    main()
+# def main():
+#     print("Hello!")
+#     encryptor = ExperimentEncryptor("StudioExperimentEncryptor", "keys/receiver.pem")
+#
+#     enc_key, enc_data = encryptor._encrypt_str("Есть только миг Hello Hello Mr Monkey!")
+#     print("Encrypted: key: {0} \ndata: {1}".format(enc_key, enc_data))
+#
+#
+#     decrypt_data = encryptor._decrypt_data("keys/private.pem", enc_key, enc_data)
+#
+#     print("Return: {0}".format(decrypt_data))
+#
+# if __name__ == '__main__':
+#     main()
 

@@ -6,7 +6,6 @@ import os
 import uuid
 import importlib
 import time
-import multiprocessing
 import six
 import traceback
 import numpy as np
@@ -16,13 +15,13 @@ from datetime import timedelta
 from .local_queue import LocalQueue
 from .pubsub_queue import PubsubQueue
 from .sqs_queue import SQSQueue
-from .rabbit_queue import RMQueue
 from .qclient_cache import get_cached_queue
 from .gcloud_worker import GCloudWorkerManager
 from .ec2cloud_worker import EC2WorkerManager
 from .hyperparameter import HyperparameterParser
 from .util import rand_string, Progbar, rsync_cp
 from .experiment import create_experiment
+from .unencrypted_payload_builder import UnencryptedPayloadBuilder
 
 from . import model
 from . import git_util
@@ -582,36 +581,36 @@ def submit_experiments(
         logger,
         cloud=None,
         queue_name=None,
-        python_pkg=[]):
+        python_pkg=[],
+        payload_builder=None):
 
     num_experiments = len(experiments)
     verbose = model.parse_verbosity(config['verbose'])
 
+    if payload_builder is None:
+        payload_builder = UnencryptedPayloadBuilder("unencrypted-builder")
+
     start_time = time.time()
-    n_workers = min(multiprocessing.cpu_count() * 2, num_experiments)
 
-    '''
-    with closing(multiprocessing.Pool(n_workers, maxtasksperchild=20)) as p:
-        experiments = p.imap_unordered(add_experiment,
-                                       zip([config] * num_experiments,
-                                           [python_pkg] * num_experiments,
-                                           experiments),
-                                       chunksize=1)
-        p.close()
-        p.join()
+    # Update Python environment info for our experiments:
+    for experiment in experiments:
+        experiment.pythonenv = add_packages(experiment.pythonenv, python_pkg)
 
-    '''
+    # Now add them to experiments database:
+    try:
+        with model.get_db_provider(config) as db:
+            for experiment in experiments:
+                db.add_experiment(experiment)
+    except BaseException:
+        traceback.print_exc()
+        raise
+
     experiments = [add_experiment(e) for e in
                    zip([config] * num_experiments,
                        [python_pkg] *
                        num_experiments,
                        experiments)]
 
-    for experiment in experiments:
-        print("studio run: submitted experiment " + experiment.key)
-
-    logger.info("Added %s experiment(s) in %s seconds to queue %s" %
-                (num_experiments, int(time.time() - start_time), queue_name))
 
     queue = get_queue(
         queue_name=queue_name,
@@ -621,11 +620,16 @@ def submit_experiments(
             minutes=2),
         logger=logger,
         verbose=verbose)
-    for e in experiments:
+
+    for experiment in experiments:
+        payload = payload_builder.construct(experiment, config, python_pkg)
         queue.enqueue(json.dumps({
             'experiment': e.__dict__,
             'config': config}))
+        print("studio run: submitted experiment " + experiment.key)
 
+    logger.info("Added {0} experiment(s) in {1} seconds to queue {2}"
+                .format(num_experiments, int(time.time() - start_time), queue_name))
     return queue.get_name()
 
 

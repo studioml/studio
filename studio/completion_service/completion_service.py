@@ -11,6 +11,7 @@ from studio import runner, model, fs_tracker, logs
 from studio.util import rsync_cp
 from studio.experiment import create_experiment
 
+from .experiment_encryptor import ExperimentEncryptor
 
 DEFAULT_RESOURCES_NEEDED = {
     'cpus': 2,
@@ -49,9 +50,9 @@ class CompletionService:
         self.experimentId = experimentId
         self.project_name = "completion_service_" + experimentId
 
-        self.resumable = RESUMABLE,
-        self.clean_queue = CLEAN_QUEUE,
-        self.queue_upscaling = QUEUE_UPSCALING,
+        self.resumable = RESUMABLE
+        self.clean_queue = CLEAN_QUEUE
+        self.queue_upscaling = QUEUE_UPSCALING
         self.num_workers = int(cs_config.get('num_workers', 1))
         self.cloud_timeout = cs_config.get('timeout')
         self.bid = cs_config.get('bid')
@@ -61,16 +62,11 @@ class CompletionService:
 
         # Figure out request for resources:
         resources_needed = cs_config.get('resources_needed')
-        print("CS: {0}".format(repr(resources_needed)))
         self.resources_needed = DEFAULT_RESOURCES_NEEDED
-        print("DFLT: {0}".format(repr(self.resources_needed)))
         self.resources_needed.update(resources_needed)
-        print("UPD1: {0}".format(repr(self.resources_needed)))
         studio_resources = self.config.get('resources_needed')
-        print("ML: {0}".format(repr(studio_resources)))
         if studio_resources:
             self.resources_needed.update(studio_resources)
-        print("FINAL: {0}".format(repr(self.resources_needed)))
 
         # Figure out task queue and cloud we are going to use:
         queue_name = cs_config.get('queue')
@@ -114,6 +110,9 @@ class CompletionService:
         self.logger.info("Initial/final queue name: {0}, {1}"
                          .format(queue_name, self.queue_name))
         self.logger.info("Cloud name: {0}".format(self.cloud))
+
+        # Chain of possible experiment object modifiers
+        self.experiment_modifiers = []
 
     def __enter__(self):
         with model.get_db_provider(self.config):
