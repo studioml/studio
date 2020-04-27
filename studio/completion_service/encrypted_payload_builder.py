@@ -5,6 +5,8 @@ import nacl.utils
 import base64
 import json
 
+import sys
+
 from studio.payload_builder import PayloadBuilder
 from studio import logs
 from studio.unencrypted_payload_builder import UnencryptedPayloadBuilder
@@ -110,17 +112,21 @@ class EncryptedPayloadBuilder(PayloadBuilder):
         enc_key, enc_payload = self._encrypt_str(json.dumps(unencrypted_payload))
 
         encrypted_payload["message"]["experiment"]["status"] =\
-            experiment["status"]
+            experiment.status
         encrypted_payload["message"]["experiment"]["pythonver"] =\
-            experiment["pythonver"]
+            experiment.pythonver
         encrypted_payload["message"]["time_added"] =\
-            experiment["time_added"]
+            experiment.time_added
         encrypted_payload["message"]["experiment_lifetime"] =\
-            experiment["experiment_lifetime"]
+            experiment.max_duration
         encrypted_payload["message"]["resources_needed"] =\
-            experiment["resources_needed"]
+            experiment.resources_needed
         encrypted_payload["message"]["payload"] =\
             "{0},{1}".format(enc_key, enc_payload)
+
+        pretty_str = json.dumps(encrypted_payload, indent=4)
+        print(pretty_str)
+        sys.exit(0)
 
         return encrypted_payload
 
