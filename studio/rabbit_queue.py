@@ -122,9 +122,9 @@ class RMQueue(object):
         self._logger.info("Queue {0} deleted OK.".format(self._queue))
         self._queue_deleted = True
 
-    def _delete_queue(self):
+    def _delete_queue_attempt(self):
         """
-        Delete underlying RMQ queue,
+        Try to delete underlying RMQ queue,
         which will also unbind and purge it.
         """
         if self._queue_deleted:
@@ -135,10 +135,31 @@ class RMQueue(object):
                 self._logger.info(
                     "Channel to queue {0} is None or closed: cannot delete queue."
                                   .format(self._queue))
+                self._queue_deleted = True
                 return
             self._channel.queue_delete(self._queue, callback=self.on_delete_ok)
 
         self._wait_queue_deleted(30)
+
+    def _delete_queue(self):
+        """
+        Delete underlying RMQ queue,
+        which will also unbind and purge it.
+        Retry operation if necessary for fixed number of times.
+        """
+        num_retries = 5
+        retries_cnt = num_retries
+        go_on = True
+        while retries_cnt > 0 and go_on:
+            self._logger.info("Trying to delete queue {0} retries left: {1}"
+                              .format(self._queue, retries_cnt))
+            self._delete_queue_attempt()
+            go_on = not self._queue_deleted
+            retries_cnt -= 1
+
+        if not self._queue_deleted:
+            self._logger.info("FAILED to delete queue {0} after {1} retries. IGNORING."
+                              .format(self._queue, num_retries))
 
     def on_connection_open(self, unused_connection):
         """
