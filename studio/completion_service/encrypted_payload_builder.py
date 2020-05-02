@@ -1,11 +1,10 @@
 from Crypto.PublicKey import RSA
 from Crypto.Cipher import PKCS1_OAEP
+from Crypto.Hash import SHA256
 import nacl.secret
 import nacl.utils
 import base64
 import json
-
-import sys
 
 from studio.payload_builder import PayloadBuilder
 from studio import logs
@@ -59,7 +58,7 @@ class EncryptedPayloadBuilder(PayloadBuilder):
         encrypted_data_text = base64.b64encode(encrypted_data)
 
         # Encrypt the session key with the public RSA key
-        cipher_rsa = PKCS1_OAEP.new(self.recipient_key)
+        cipher_rsa = PKCS1_OAEP.new(key=self.recipient_key, hashAlgo=SHA256)
         encrypted_session_key = cipher_rsa.encrypt(session_key)
         encrypted_session_key_text = base64.b64encode(encrypted_session_key)
 
@@ -122,11 +121,10 @@ class EncryptedPayloadBuilder(PayloadBuilder):
         encrypted_payload["message"]["resources_needed"] =\
             experiment.resources_needed
         encrypted_payload["message"]["payload"] =\
-            "{0},{1}".format(enc_key, enc_payload)
+            "{0},{1}".format(enc_key.decode("utf-8"), enc_payload.decode("utf-8"))
 
         pretty_str = json.dumps(encrypted_payload, indent=4)
         print(pretty_str)
-        sys.exit(0)
 
         return encrypted_payload
 

@@ -6,6 +6,8 @@ import json
 import psutil
 import time
 import six
+import signal
+import pdb
 
 from apscheduler.schedulers.background import BackgroundScheduler
 
@@ -262,6 +264,10 @@ def main(args=sys.argv):
     parser.add_argument(
         '--verbose',
         default='error')
+
+    # Register signal handler for signal.SIGUSR1
+    # which will invoke built-in Python debugger:
+    signal.signal(signal.SIGUSR1, lambda sig, stack: pdb.set_trace())
 
     parsed_args, script_args = parser.parse_known_args(args)
     verbose = parse_verbosity(parsed_args.verbose)

@@ -114,7 +114,7 @@ class CompletionService:
 
         self.payload_builder = UnencryptedPayloadBuilder("cs-simple-payload")
         # Are we using experiment payload encryption?
-        key_path = cs_config.get('rsa_key_path')
+        key_path = cs_config.get('public_key_path')
         if key_path is not None:
             self.logger.info("Using RSA public key path: {0}".format(key_path))
             self.payload_builder =\
