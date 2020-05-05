@@ -16,6 +16,7 @@ cma
 
 apscheduler
 pycryptodome
+PyNaCl==1.3.0
 requests
 requests_toolbelt
 python_jwt

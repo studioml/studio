@@ -1,6 +1,6 @@
 """Data providers."""
 import os
-
+import re
 try:
     # try-except statement needed because
     # pip module is not available in google app engine
@@ -141,3 +141,17 @@ def parse_verbosity(verbosity=None):
         return logger_levels[verbosity]
     else:
         return int(verbosity)
+
+def add_packages(list1, list2):
+    # This function dedups the package names which I think could be
+    # functionally not desirable however rather than changing the behavior
+    # instead we will do the dedup in a stable manner that prevents
+    # package re-ordering
+    pkgs = {re.sub('==.+', '', pkg): pkg for pkg in list1 + list2}
+    merged = []
+    for k in list1 + list2:
+        v = pkgs.pop(re.sub('==.+', '', k), None)
+        if v is not None:
+            merged.append(v)
+    return merged
+

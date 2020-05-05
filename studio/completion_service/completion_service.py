@@ -11,7 +11,6 @@ from studio import runner, model, fs_tracker, logs
 from studio.util import rsync_cp
 from studio.experiment import create_experiment
 
-
 DEFAULT_RESOURCES_NEEDED = {
     'cpus': 2,
     'ram': '3g',
@@ -19,6 +18,9 @@ DEFAULT_RESOURCES_NEEDED = {
     'gpus': 0
 }
 
+RESUMABLE = False
+CLEAN_QUEUE = True
+QUEUE_UPSCALING = False
 
 class CompletionService:
 
@@ -26,87 +28,86 @@ class CompletionService:
         self,
         # Name of experiment
         experimentId,
-        # Config yaml file
-        config=None,
-        # Number of remote workers to spin up
-        num_workers=1,
-        # Compute requirements, amount of RAM, GPU, etc
-        resources_needed={},
-        # Name of the queue for submission to a server.
-        queue=None,
-        # What computer resource to use, either AWS, Google, or local
-        cloud=None,
-        # Timeout for cloud instances
-        cloud_timeout=100,
-        # Bid price for EC2 spot instances
-        bid='100%',
-        # Keypair to use for EC2 workers
-        ssh_keypair=None,
-        # If true, get results that are submitted by other instances of CS
-        resumable=False,
-        # Whether to clean the submission queue on initialization
-        clean_queue=True,
-        # Whether to enable autoscaling for EC2 instances
-        queue_upscaling=True,
-        # Whether to delete the queue on shutdown
-        shutdown_del_queue=False,
-        # delay between queries for results
-        sleep_time=1,
+        # Completion service configuration
+        cs_config=None,
         # used to pass a studioML configuration block read by client software
-        studio_config=None
+        studio_config=None,
+        # Studio config yaml file
+        studio_config_file=None,
+        shutdown_del_queue=False
     ):
-
-        self.config = model.get_config(config)
-        self.cloud = cloud
-        self.experimentId = experimentId
-        self.project_name = "completion_service_" + experimentId
-
-        self.resources_needed = DEFAULT_RESOURCES_NEEDED
-        if self.config.get('resources_needed'):
-            self.resources_needed.update(self.config.get('resources_needed'))
-
-        self.resources_needed.update(resources_needed)
-
-        if queue is not None and queue.startswith("rmq_"):
-            assert self.cloud is None
-        self.wm = runner.get_worker_manager(
-            self.config, self.cloud)
+        # StudioML configuration
+        self.config = model.get_config(studio_config_file)
 
         self.logger = logs.getLogger(self.__class__.__name__)
         self.verbose_level = model.parse_verbosity(self.config['verbose'])
         self.logger.setLevel(self.verbose_level)
 
-        if queue is not None:
-            self.logger.info(
-                "CompletionService configured with queue " + queue)
+        # Setup Completion Service instance properties
+        # based on configuration
+        self.experimentId = experimentId
+        self.project_name = "completion_service_" + experimentId
 
-        self.queue = runner.get_queue(queue_name=queue, cloud=self.cloud,
-                                      config=studio_config,
+        self.resumable = RESUMABLE
+        self.clean_queue = CLEAN_QUEUE
+        self.queue_upscaling = QUEUE_UPSCALING
+        self.num_workers = int(cs_config.get('num_workers', 1))
+        self.cloud_timeout = cs_config.get('timeout')
+        self.bid = cs_config.get('bid')
+        self.ssh_keypair = cs_config.get('ssh_keypair')
+        self.sleep_time = cs_config.get('sleep_time')
+        self.shutdown_del_queue = shutdown_del_queue
+
+        # Figure out request for resources:
+        resources_needed = cs_config.get('resources_needed')
+        self.resources_needed = DEFAULT_RESOURCES_NEEDED
+        self.resources_needed.update(resources_needed)
+        studio_resources = self.config.get('resources_needed')
+        if studio_resources:
+            self.resources_needed.update(studio_resources)
+
+        # Figure out task queue and cloud we are going to use:
+        queue_name = cs_config.get('queue')
+        cloud_name = cs_config.get('cloud')
+        if cs_config.get('local'):
+            queue_name = None
+            cloud_name = None
+        elif queue_name is not None:
+            self.shutdown_del_queue = False
+            if cloud_name in ['ec2spot', 'ec2']:
+                assert queue_name.startswith("sqs_")
+        else:
+            queue_name = self.experiment_id
+            if cloud_name in ['ec2spot', 'ec2']:
+                queue_name = "sqs_" + queue_name
+        self.cloud = cloud_name
+        if queue_name is not None and queue_name.startswith("rmq_"):
+            assert self.cloud is None
+
+        self.wm = runner.get_worker_manager(
+            self.config, self.cloud)
+
+        if queue_name is not None:
+            self.logger.info(
+                "CompletionService configured with queue {0}"
+                    .format(queue_name))
+
+        self.queue = runner.get_queue(queue_name=queue_name, cloud=self.cloud,
+                                      config=self.config,
                                       logger=self.logger,
                                       verbose=self.verbose_level)
 
         self.queue_name = self.queue.get_name()
-
-        self.clean_queue = clean_queue
         if self.clean_queue:
             self.queue.clean()
 
-        self.cloud_timeout = cloud_timeout
-        self.bid = bid
-        self.ssh_keypair = ssh_keypair
-
         self.submitted = {}
-        self.num_workers = num_workers
-        self.resumable = resumable
-        self.queue_upscaling = queue_upscaling
-        self.shutdown_del_queue = shutdown_del_queue
-        self.use_spot = cloud in ['ec2spot', 'gcspot']
-        self.sleep_time = sleep_time
+        self.use_spot = cloud_name in ['ec2spot', 'gcspot']
 
-        self.logger.info("Project name: %s" % self.project_name)
-        self.logger.info("Initial/final queue name: %s, %s" %
-                         (queue, self.queue_name))
-        self.logger.info("Cloud name: %s" % self.cloud)
+        self.logger.info("Project name: {0}".format(self.project_name))
+        self.logger.info("Initial/final queue name: {0}, {1}"
+                         .format(queue_name, self.queue_name))
+        self.logger.info("Cloud name: {0}".format(self.cloud))
 
     def __enter__(self):
         with model.get_db_provider(self.config):

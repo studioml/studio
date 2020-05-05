@@ -4,6 +4,8 @@ import pickle
 import os
 import sys
 import six
+import signal
+import pdb
 
 from studio import fs_tracker, model, logs, util
 
@@ -17,6 +19,10 @@ except BaseException:
 def main():
     logger.debug('copying and importing client module')
     logger.debug('getting file mappings')
+
+    # Register signal handler for signal.SIGUSR1
+    # which will invoke built-in Python debugger:
+    signal.signal(signal.SIGUSR1, lambda sig, stack: pdb.set_trace())
 
     artifacts = fs_tracker.get_artifacts()
     files = {}
