@@ -22,6 +22,7 @@ from .hyperparameter import HyperparameterParser
 from .util import rand_string, Progbar, rsync_cp
 from .experiment import create_experiment
 from .unencrypted_payload_builder import UnencryptedPayloadBuilder
+from .encrypted_payload_builder import EncryptedPayloadBuilder
 
 from . import model
 from . import git_util
@@ -581,14 +582,19 @@ def submit_experiments(
         logger,
         cloud=None,
         queue_name=None,
-        python_pkg=[],
-        payload_builder=None):
+        python_pkg=[]):
 
     num_experiments = len(experiments)
     verbose = model.parse_verbosity(config['verbose'])
 
-    if payload_builder is None:
-        payload_builder = UnencryptedPayloadBuilder("unencrypted-builder")
+    payload_builder = UnencryptedPayloadBuilder("simple-payload")
+    # Are we using experiment payload encryption?
+    key_path = config.get('public_key_path')
+    if key_path is not None:
+        logger.info("Using RSA public key path: {0}".format(key_path))
+        payload_builder = \
+            EncryptedPayloadBuilder(
+                "cs-rsa-encryptor [{0}]".format(key_path), key_path)
 
     start_time = time.time()
 
@@ -624,7 +630,7 @@ def submit_experiments(
     for experiment in experiments:
         payload = payload_builder.construct(experiment, config, python_pkg)
         queue.enqueue(json.dumps(payload))
-        print("studio run: submitted experiment " + experiment.key)
+        logger.info("studio run: submitted experiment " + experiment.key)
 
     logger.info("Added {0} experiment(s) in {1} seconds to queue {2}"
                 .format(num_experiments, int(time.time() - start_time), queue_name))

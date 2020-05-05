@@ -6,9 +6,9 @@ import nacl.utils
 import base64
 import json
 
-from studio.payload_builder import PayloadBuilder
+from .payload_builder import PayloadBuilder
 from studio import logs
-from studio.unencrypted_payload_builder import UnencryptedPayloadBuilder
+from .unencrypted_payload_builder import UnencryptedPayloadBuilder
 
 class EncryptedPayloadBuilder(PayloadBuilder):
     """
@@ -127,19 +127,4 @@ class EncryptedPayloadBuilder(PayloadBuilder):
         print(pretty_str)
 
         return encrypted_payload
-
-# def main():
-#     print("Hello!")
-#     encryptor = ExperimentEncryptor("StudioExperimentEncryptor", "keys/receiver.pem")
-#
-#     enc_key, enc_data = encryptor._encrypt_str("Есть только миг Hello Hello Mr Monkey!")
-#     print("Encrypted: key: {0} \ndata: {1}".format(enc_key, enc_data))
-#
-#
-#     decrypt_data = encryptor._decrypt_data("keys/private.pem", enc_key, enc_data)
-#
-#     print("Return: {0}".format(decrypt_data))
-#
-# if __name__ == '__main__':
-#     main()
 

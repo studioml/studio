@@ -11,9 +11,6 @@ from studio import runner, model, fs_tracker, logs
 from studio.util import rsync_cp
 from studio.experiment import create_experiment
 
-from studio.unencrypted_payload_builder import UnencryptedPayloadBuilder
-from .encrypted_payload_builder import EncryptedPayloadBuilder
-
 DEFAULT_RESOURCES_NEEDED = {
     'cpus': 2,
     'ram': '3g',
@@ -111,15 +108,6 @@ class CompletionService:
         self.logger.info("Initial/final queue name: {0}, {1}"
                          .format(queue_name, self.queue_name))
         self.logger.info("Cloud name: {0}".format(self.cloud))
-
-        self.payload_builder = UnencryptedPayloadBuilder("cs-simple-payload")
-        # Are we using experiment payload encryption?
-        key_path = cs_config.get('public_key_path')
-        if key_path is not None:
-            self.logger.info("Using RSA public key path: {0}".format(key_path))
-            self.payload_builder =\
-                EncryptedPayloadBuilder(
-                    "cs-rsa-encryptor [{0}]".format(key_path), key_path)
 
     def __enter__(self):
         with model.get_db_provider(self.config):
@@ -226,8 +214,7 @@ class CompletionService:
             config=self.config,
             logger=self.logger,
             cloud=self.cloud,
-            queue_name=self.queue_name,
-            payload_builder=self.payload_builder)
+            queue_name=self.queue_name)
 
         self.submitted[experiment.key] = time.time()
         os.chdir(old_cwd)
