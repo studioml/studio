@@ -123,8 +123,5 @@ class EncryptedPayloadBuilder(PayloadBuilder):
         encrypted_payload["message"]["payload"] =\
             "{0},{1}".format(enc_key.decode("utf-8"), enc_payload.decode("utf-8"))
 
-        pretty_str = json.dumps(encrypted_payload, indent=4)
-        print(pretty_str)
-
         return encrypted_payload
 
