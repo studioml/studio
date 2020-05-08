@@ -15,7 +15,7 @@ from datetime import timedelta
 from .local_queue import LocalQueue
 from .pubsub_queue import PubsubQueue
 from .sqs_queue import SQSQueue
-from .qclient_cache import get_cached_queue
+from .qclient_cache import get_cached_queue, shutdown_cached_queue
 from .gcloud_worker import GCloudWorkerManager
 from .ec2cloud_worker import EC2WorkerManager
 from .hyperparameter import HyperparameterParser
@@ -511,6 +511,14 @@ def get_queue(
     else:
         return PubsubQueue(queue_name, verbose=verbose)
 
+def shutdown_queue(queue, logger=None, delete_queue=True):
+    if queue is None:
+        return
+    queue_name = queue.get_name()
+    if queue_name.startswith("rmq_"):
+        shutdown_cached_queue(queue, logger, delete_queue)
+    else:
+        queue.shutdown(delete_queue)
 
 def spin_up_workers(
         runner_args,

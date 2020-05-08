@@ -7,7 +7,6 @@ import threading
 
 from . import logs
 
-
 class RMQueue(object):
     """This publisher will handle failures and closures and will
     attempt to restart things
@@ -117,7 +116,7 @@ class RMQueue(object):
 
     def _wait_queue_created(self, timeout_in_secs):
         """
-        Polling wait till underlying RMQ queue
+        Polling wait till underlying   queue
         is confirmed created.
         If specified timeout (in seconds) is reached,
         exception is raised.
@@ -549,6 +548,7 @@ class RMQueue(object):
 
             if i >= timeout:
                 self._logger.info('timed-out')
+
                 return None
 
             time.sleep(1)
@@ -561,8 +561,7 @@ class RMQueue(object):
             if self._channel is not None:
                 # Cancel the consumer as we only consume 1 message
                 # at a time
-                self._channel.basic_cancel(
-                    nowait=True, consumer_tag=self._consumer)
+                self._channel.basic_cancel(consumer_tag=self._consumer)
             self._consumer = None
 
             # If we already had a delivered message, reject the one we just got
