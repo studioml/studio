@@ -537,15 +537,14 @@ class RMQueue(object):
             with self._rmq_lock:
                 if self._consumer is None and self._channel is not None:
                     self._consumer = \
-                        self._channel.basic_consume(self.on_message,
-                                                    queue=self._queue)
+                        self._channel.basic_consume(self._queue, self.on_message)
 
                 if self._rmq_msg is not None:
-                    self._logger.info('message {} from {} '
+                    self._logger.info('message {0} from {1} '
                                       .format(self._rmq_msg, self._url))
                     return self._rmq_msg, self._rmq_id
                 else:
-                    self._logger.info('idle {} {}'
+                    self._logger.info('idle {0} {1}'
                                       .format(self._url, self._queue))
 
             if i >= timeout:
