@@ -98,8 +98,6 @@ class CompletionService:
                                       verbose=self.verbose_level)
 
         self.queue_name = self.queue.get_name()
-        if self.clean_queue:
-            self.queue.clean()
 
         self.submitted = {}
         self.use_spot = cloud_name in ['ec2spot', 'gcspot']
