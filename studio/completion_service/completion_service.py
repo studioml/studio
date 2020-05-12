@@ -98,8 +98,6 @@ class CompletionService:
                                       verbose=self.verbose_level)
 
         self.queue_name = self.queue.get_name()
-        if self.clean_queue:
-            self.queue.clean()
 
         self.submitted = {}
         self.use_spot = cloud_name in ['ec2spot', 'gcspot']
@@ -154,9 +152,8 @@ class CompletionService:
 
     def close(self, delete_queue=True):
         self.logger.info("Studioml completion service shutting down")
-        # if self.queue_name != 'local' and delete_queue:
         request_delete_queue = self.shutdown_del_queue or delete_queue
-        self.queue.shutdown(request_delete_queue)
+        runner.shutdown_queue(self.queue, self.logger, request_delete_queue)
 
     def submitTaskWithFiles(
             self,

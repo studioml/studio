@@ -7,7 +7,6 @@ import threading
 
 from . import logs
 
-
 class RMQueue(object):
     """This publisher will handle failures and closures and will
     attempt to restart things
@@ -69,6 +68,7 @@ class RMQueue(object):
         thr = threading.Thread(target=self.run, args=(), kwargs={})
         thr.setDaemon(True)
         thr.start()
+        self._wait_queue_created(600)
 
     def _channel_is_valid(self):
         return self._channel is not None and \
@@ -89,13 +89,14 @@ class RMQueue(object):
 
         """
         params = pika.URLParameters(self._url)
-        return pika.SelectConnection(
+        new_connection = pika.SelectConnection(
             params,
             on_open_callback=self.on_connection_open,
             on_open_error_callback=None,
             on_close_callback=self.on_connection_closed,
             custom_ioloop=None,
             internal_connection_workflow=True)
+        return new_connection
 
     def _wait_queue_deleted(self, timeout_in_secs):
         """
@@ -112,6 +113,25 @@ class RMQueue(object):
         self._logger.info('Timeout {0} seconds reached while waiting for queue {1} deletion.'
                           .format(timeout_in_secs, self._queue))
         return
+
+    def _wait_queue_created(self, timeout_in_secs):
+        """
+        Polling wait till underlying   queue
+        is confirmed created.
+        If specified timeout (in seconds) is reached,
+        exception is raised.
+        """
+        self._logger.info('Waiting for queue {0} to be created.'.format(self._queue))
+        for i in range(timeout_in_secs):
+            if not self._queue_deleted:
+                self._logger.info('Queue {0} is confirmed created and bound.'
+                                  .format(self._queue))
+                return
+            time.sleep(1)
+        err_message = 'Timeout {0} seconds reached while waiting for queue {1} creation.'\
+            .format(timeout_in_secs, self._queue)
+        self._logger.error(err_message)
+        raise ValueError(err_message)
 
     def on_delete_ok(self, unused_frame):
         """
@@ -165,6 +185,7 @@ class RMQueue(object):
         """
         :type unused_connection: pika.SelectConnection
         """
+        self._logger.info("Connection is opened")
 
         self.open_channel()
 
@@ -205,7 +226,7 @@ class RMQueue(object):
         the channel is open by sending the Channel.OpenOK RPC reply, the
         on_channel_open method will be invoked.
         """
-        self._logger.debug('creating a new channel')
+        self._logger.info('creating a new channel')
 
         with self._rmq_lock:
             self._connection.channel(on_open_callback=self.on_channel_open)
@@ -217,7 +238,7 @@ class RMQueue(object):
         :param pika.channel.Channel channel: The channel object
 
         """
-        self._logger.debug('created a new channel')
+        self._logger.info('created a new channel')
 
         with self._rmq_lock:
             self._channel = channel
@@ -259,11 +280,6 @@ class RMQueue(object):
                                            exchange_type=self._exchange_type,
                                            durable=True,
                                            auto_delete=True)
-            #self._channel.exchange_declare(callback=self.on_exchange_declareok,
-            #                               exchange=exchange_name,
-            #                               exchange_type=self._exchange_type,
-            #                               durable=True,
-            #                               auto_delete=True)
 
     def on_exchange_declareok(self, unused_frame):
         """
@@ -458,6 +474,11 @@ class RMQueue(object):
                     'failed to send message ({} tries left) to {} as '
                     'the channel was not open' .format(
                         tries, self._url))
+            elif self._queue_deleted:
+                self._logger.warn(
+                    'failed to send message ({} tries left) to {} as '
+                    'the queue is not yet created' .format(
+                        tries, self._url))
             else:
                 break
 
@@ -493,9 +514,9 @@ class RMQueue(object):
 
             with self._msg_tracking_lock:
                 if message_number not in self._deliveries:
-                    self._logger.info('sent message acknowledged to {0} ' +
-                                       'after waiting {1} seconds'
-                                       .format(self._url, tries))
+                    self._logger.info(
+                        'sent message acknowledged to {0} after waiting {1} seconds'
+                        .format(self._url, retries-tries+1))
 
                     return message_number
                 else:
@@ -503,7 +524,7 @@ class RMQueue(object):
 
         raise Exception('studioml message {0} was never acknowledged to {1} ' +
                         'after waiting {2} seconds'
-                        .format(message_number, self._url, tries))
+                        .format(message_number, self._url, retries))
 
     def dequeue(self, acknowledge=True, timeout=0):
         msg = None
@@ -515,19 +536,19 @@ class RMQueue(object):
             with self._rmq_lock:
                 if self._consumer is None and self._channel is not None:
                     self._consumer = \
-                        self._channel.basic_consume(self.on_message,
-                                                    queue=self._queue)
+                        self._channel.basic_consume(self._queue, self.on_message)
 
                 if self._rmq_msg is not None:
-                    self._logger.info('message {} from {} '
+                    self._logger.info('message {0} from {1} '
                                       .format(self._rmq_msg, self._url))
                     return self._rmq_msg, self._rmq_id
                 else:
-                    self._logger.info('idle {} {}'
+                    self._logger.info('idle {0} {1}'
                                       .format(self._url, self._queue))
 
             if i >= timeout:
                 self._logger.info('timed-out')
+
                 return None
 
             time.sleep(1)
@@ -540,8 +561,7 @@ class RMQueue(object):
             if self._channel is not None:
                 # Cancel the consumer as we only consume 1 message
                 # at a time
-                self._channel.basic_cancel(
-                    nowait=True, consumer_tag=self._consumer)
+                self._channel.basic_cancel(consumer_tag=self._consumer)
             self._consumer = None
 
             # If we already had a delivered message, reject the one we just got
