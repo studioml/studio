@@ -305,8 +305,8 @@ class KeyValueProvider(object):
             logdata = util.remove_backspaces(logdata).split('\n')
             return logdata
         except BaseException as e:
-            self.logger.info('Getting experiment logtail raised an exception:')
-            self.logger.info(e)
+            self.logger.debug('Getting experiment logtail raised an exception: {0}'
+                              .format(repr(e)))
             return None
 
     @timeit
@@ -326,7 +326,7 @@ class KeyValueProvider(object):
 
             except Exception as e:
                 self.logger.info(
-                    "Exception {} while info download for {}".format(
+                    "Exception {0} while info download for {1}".format(
                         e, key))
 
         return experiment_from_dict(data, expinfo)
