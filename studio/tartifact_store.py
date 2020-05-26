@@ -308,7 +308,6 @@ class TartifactStore(BaseArtifactStore):
             finish_download()
             return local_path
 
-    @timeit
     def get_artifact_url(self, artifact, method='GET', get_timestamp=False):
         if 'key' in artifact.keys():
             url = self._get_file_url(artifact['key'], method=method)
@@ -334,7 +333,6 @@ class TartifactStore(BaseArtifactStore):
         if 'key' in artifact.keys():
             self._delete_file(artifact['key'])
 
-    @timeit
     def stream_artifact(self, artifact):
         url = self.get_artifact_url(artifact)
         if url is None:

@@ -19,7 +19,6 @@ class GSProvider(KeyValueProvider):
             verbose,
             store)
 
-    @timeit
     def _get(self, key, shallow=False):
         bucket = self.meta_store._get_bucket_obj()
         retval = {}
