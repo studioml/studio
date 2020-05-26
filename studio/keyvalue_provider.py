@@ -254,7 +254,6 @@ class KeyValueProvider(object):
         else:
             return checkpoint_threads
 
-    @timeit
     def _get_experiment_info(self, experiment):
         info = {}
         type_found = False
@@ -291,7 +290,6 @@ class KeyValueProvider(object):
 
         return info
 
-    @timeit
     def _get_experiment_logtail(self, experiment):
         try:
             tarf = self.store.stream_artifact(experiment.artifacts['output'])
@@ -309,7 +307,6 @@ class KeyValueProvider(object):
                               .format(repr(e)))
             return None
 
-    @timeit
     def get_experiment(self, key, getinfo=True):
         data = self._get(self._get_experiments_keybase() + key)
         if data is None:
