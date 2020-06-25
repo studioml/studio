@@ -17,6 +17,7 @@ cma
 apscheduler
 pycryptodome
 PyNaCl==1.3.0
+paramiko
 requests
 requests_toolbelt
 python_jwt
@@ -43,5 +44,5 @@ pika == 1.1.0
 
 cachetools == 2.0.1
 
-tensorflow==1.15.2
+tensorflow==2.2.0
 

@@ -3,6 +3,8 @@ from Crypto.Cipher import PKCS1_OAEP
 from Crypto.Hash import SHA256
 import nacl.secret
 import nacl.utils
+import nacl.signing
+import paramiko
 import base64
 import json
 
@@ -45,26 +47,29 @@ class EncryptedPayloadBuilder(PayloadBuilder):
         self.sender_key = None
         self.sender_fingerprint = None
         if self.sender_key_path:
-            key_text = None
+            # We expect ed25519 signing key in "private key" format
             try:
-                with open(self.sender_key_path, 'r') as keyfile:
-                    key_text = keyfile.read()
+                ed25519Key =\
+                    paramiko.Ed25519Key(filename=self.sender_key_path)
+                self.sender_key = ed25519Key._signing_key
+
+                if self.sender_key is None:
+                    self.logger.error("Failed to get signing key. ABORTING.")
+                    raise ValueError()
+
+                if not isinstance(self.sender_key, nacl.signing.SigningKey):
+                    self.logger.error("Unexpected type {0} of signing key. ABORTING."
+                                      .format(str(type(self.sender_key))))
+                    raise ValueError()
             except:
                 msg = "FAILED to open/read sender private key file: {0}"\
                     .format(self.sender_key_path)
                 self.logger.error(msg)
                 raise ValueError(msg)
 
-            try:
-                self.sender_key = RSA.import_key(key_text)
-            except:
-                msg = "FAILED to import sender private key from: {0}"\
-                    .format(self.sender_key_path)
-                self.logger.error(msg)
-                raise ValueError(msg)
-
-            self.sender_fingerprint =\
-                SHA256.new(key_text.encode("utf-8")).digest()
+            self.sender_fingerprint = "None"
+            # self.sender_fingerprint =\
+            #     SHA256.new(key_text.encode("utf-8")).digest()
             self.sender_fingerprint = \
                 base64.b64encode(self.sender_fingerprint).decode("utf-8")
 
@@ -110,6 +115,15 @@ class EncryptedPayloadBuilder(PayloadBuilder):
         encrypted_data_hash =\
             self._rsa_encrypt_data_to_base64(self.sender_key, data_hash)
         return encrypted_data_hash
+
+    def _sign_payload(self, encrypted_payload):
+        """
+        encrypted_payload - base64 representation of the encrypted payload.
+        returns: base64-encoded signature
+        """
+        signed = self.sender_key.sign(encrypted_payload)
+        signature = signed.signature
+        return base64.b64encode(signature)
 
     def _decrypt_data(self, private_key_path, encrypted_key_text, encrypted_data_text):
         private_key = self._import_rsa_key(private_key_path)
@@ -172,11 +186,14 @@ class EncryptedPayloadBuilder(PayloadBuilder):
             "{0},{1}".format(enc_key.decode("utf-8"), enc_payload.decode("utf-8"))
         if self.sender_key is not None:
             # Generate sender/workload signature:
-            signature_str = self._get_signature_str(unencrypted_payload_str)
+            payload_signature = self._sign_payload(enc_payload)
             encrypted_payload["message"]["signature"] =\
-                "{0}".format(signature_str.decode("utf-8"))
+                "{0}".format(payload_signature.decode("utf-8"))
             encrypted_payload["message"]["fingerprint"] =\
                 "{0}".format(self.sender_fingerprint)
+
+        print("{0}".format(json.dumps(encrypted_payload, indent=4)))
+        exit(0)
 
         return encrypted_payload
 
