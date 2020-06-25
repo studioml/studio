@@ -67,14 +67,27 @@ class EncryptedPayloadBuilder(PayloadBuilder):
                 self.logger.error(msg)
                 raise ValueError(msg)
 
-            self.sender_fingerprint = "None"
-            # self.sender_fingerprint =\
-            #     SHA256.new(key_text.encode("utf-8")).digest()
+            self.sender_fingerprint = \
+                self._get_fingerprint(self.sender_key_path)
             self.sender_fingerprint = \
                 base64.b64encode(self.sender_fingerprint).decode("utf-8")
 
         self.simple_builder =\
             UnencryptedPayloadBuilder("simple-builder-for-encryptor")
+
+    def _get_fingerprint(self, key_file_path):
+        key_text = None
+        try:
+            with open(key_file_path, 'r') as keyfile:
+                key_text = keyfile.read()
+        except:
+            msg = "FAILED to open/read key file: {0}".format(key_file_path)
+            self.logger.error(msg)
+            raise ValueError(msg)
+
+        fingerprint = \
+            SHA256.new(key_text.encode("utf-8")).digest()
+        return fingerprint
 
     def _import_rsa_key(self, key_path: str):
         key = None
