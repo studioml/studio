@@ -7,6 +7,7 @@ import nacl.signing
 import paramiko
 import base64
 import json
+from sshpubkeys import SSHKey
 
 from .payload_builder import PayloadBuilder
 from studio import logs
@@ -46,53 +47,42 @@ class EncryptedPayloadBuilder(PayloadBuilder):
         self.sender_key_path = sender_keypath
         self.sender_key = None
         self.sender_fingerprint = None
-        if self.sender_key_path:
-            # We expect ed25519 signing key in "private key" format
-            try:
-                ed25519Key =\
-                    paramiko.Ed25519Key(filename=self.sender_key_path)
-                self.sender_key = ed25519Key._signing_key
 
-                if self.sender_key is None:
-                    self.logger.error("Failed to get signing key. ABORTING.")
-                    raise ValueError()
+        if self.sender_key_path is None:
+            self.logger.error("Signing key path must be specified for encrypted payloads. ABORTING.")
+            raise ValueError()
 
-                if not isinstance(self.sender_key, nacl.signing.SigningKey):
-                    self.logger.error("Unexpected type {0} of signing key. ABORTING."
-                                      .format(str(type(self.sender_key))))
-                    raise ValueError()
-            except:
-                msg = "FAILED to open/read sender private key file: {0}"\
-                    .format(self.sender_key_path)
-                self.logger.error(msg)
-                raise ValueError(msg)
+        # We expect ed25519 signing key in "private key" format
+        try:
+            self.sender_key =\
+                paramiko.Ed25519Key(filename=self.sender_key_path)
 
-            self.sender_fingerprint = \
-                self._get_fingerprint(self.sender_key_path)
-            self.sender_fingerprint = \
-                base64.b64encode(self.sender_fingerprint).decode("utf-8")
+            if self.sender_key is None:
+                self.logger.error("Failed to import private signing key. ABORTING.")
+                raise ValueError()
+        except:
+            msg = "FAILED to open/read private signing key file: {0}"\
+                .format(self.sender_key_path)
+            self.logger.error(msg)
+            raise ValueError(msg)
+
+        self.sender_fingerprint = \
+            self._get_fingerprint(self.sender_key)
 
         self.simple_builder =\
             UnencryptedPayloadBuilder("simple-builder-for-encryptor")
 
-    def _get_text_fingerprint(self, text: str):
-        fingerprint = \
-            SHA256.new(text.encode("ascii")).digest()
-        return fingerprint
-
-    def _get_fingerprint(self, key_file_path):
-        key_text = None
+    def _get_fingerprint(self, signing_key):
+        ssh_key = SSHKey("ssh-ed25519 {0}"
+                         .format(signing_key.get_base64()))
         try:
-            with open(key_file_path, 'r') as keyfile:
-                key_text = keyfile.read()
+            ssh_key.parse()
         except:
-            msg = "FAILED to open/read key file: {0}".format(key_file_path)
+            msg = "INVALID signing key type. ABORTING."
             self.logger.error(msg)
             raise ValueError(msg)
 
-        fingerprint = \
-            self._get_text_fingerprint(key_text)
-        return fingerprint
+        return ssh_key.hash_sha256()  # SHA256:xyz
 
     def _import_rsa_key(self, key_path: str):
         key = None
@@ -139,9 +129,14 @@ class EncryptedPayloadBuilder(PayloadBuilder):
         encrypted_payload - base64 representation of the encrypted payload.
         returns: base64-encoded signature
         """
-        signed = self.sender_key.sign(encrypted_payload)
-        signature = signed.signature
-        return base64.b64encode(signature)
+        sign_message = self.sender_key.sign_ssh_data(encrypted_payload)
+
+        # Verify what we generated just in case:
+        signature = self.sender_key._signing_key.sign(encrypted_payload).signature
+        self.sender_key._signing_key.verify_key.verify(encrypted_payload, signature)
+        print("VERIFIED!")
+
+        return base64.b64encode(sign_message.asbytes())
 
     def _decrypt_data(self, private_key_path, encrypted_key_text, encrypted_data_text):
         private_key = self._import_rsa_key(private_key_path)
@@ -210,7 +205,7 @@ class EncryptedPayloadBuilder(PayloadBuilder):
             encrypted_payload["message"]["fingerprint"] =\
                 "{0}".format(self.sender_fingerprint)
 
-        #print("{0}".format(json.dumps(encrypted_payload, indent=4)))
+        print(json.dumps(encrypted_payload, indent=4))
 
         return encrypted_payload
 
