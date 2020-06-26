@@ -75,6 +75,11 @@ class EncryptedPayloadBuilder(PayloadBuilder):
         self.simple_builder =\
             UnencryptedPayloadBuilder("simple-builder-for-encryptor")
 
+    def _get_text_fingerprint(self, text: str):
+        fingerprint = \
+            SHA256.new(text.encode("ascii")).digest()
+        return fingerprint
+
     def _get_fingerprint(self, key_file_path):
         key_text = None
         try:
@@ -86,7 +91,7 @@ class EncryptedPayloadBuilder(PayloadBuilder):
             raise ValueError(msg)
 
         fingerprint = \
-            SHA256.new(key_text.encode("utf-8")).digest()
+            self._get_text_fingerprint(key_text)
         return fingerprint
 
     def _import_rsa_key(self, key_path: str):
@@ -205,8 +210,7 @@ class EncryptedPayloadBuilder(PayloadBuilder):
             encrypted_payload["message"]["fingerprint"] =\
                 "{0}".format(self.sender_fingerprint)
 
-        print("{0}".format(json.dumps(encrypted_payload, indent=4)))
-        exit(0)
+        #print("{0}".format(json.dumps(encrypted_payload, indent=4)))
 
         return encrypted_payload
 

@@ -647,7 +647,6 @@ def submit_experiments(
         payload = payload_builder.construct(experiment, config, python_pkg)
 
         print(json.dumps(payload, indent=4))
-        exit(0)
 
         queue.enqueue(json.dumps(payload))
         logger.info("studio run: submitted experiment " + experiment.key)
