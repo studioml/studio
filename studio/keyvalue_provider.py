@@ -254,7 +254,6 @@ class KeyValueProvider(object):
         else:
             return checkpoint_threads
 
-    @timeit
     def _get_experiment_info(self, experiment):
         info = {}
         type_found = False
@@ -291,7 +290,6 @@ class KeyValueProvider(object):
 
         return info
 
-    @timeit
     def _get_experiment_logtail(self, experiment):
         try:
             tarf = self.store.stream_artifact(experiment.artifacts['output'])
@@ -305,11 +303,10 @@ class KeyValueProvider(object):
             logdata = util.remove_backspaces(logdata).split('\n')
             return logdata
         except BaseException as e:
-            self.logger.info('Getting experiment logtail raised an exception:')
-            self.logger.info(e)
+            self.logger.debug('Getting experiment logtail raised an exception: {0}'
+                              .format(repr(e)))
             return None
 
-    @timeit
     def get_experiment(self, key, getinfo=True):
         data = self._get(self._get_experiments_keybase() + key)
         if data is None:
@@ -326,7 +323,7 @@ class KeyValueProvider(object):
 
             except Exception as e:
                 self.logger.info(
-                    "Exception {} while info download for {}".format(
+                    "Exception {0} while info download for {1}".format(
                         e, key))
 
         return experiment_from_dict(data, expinfo)
