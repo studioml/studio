@@ -595,10 +595,6 @@ def submit_experiments(
     num_experiments = len(experiments)
     verbose = model.parse_verbosity(config['verbose'])
 
-    print("===========================================")
-    print(repr(config))
-    print("===========================================")
-
     payload_builder = UnencryptedPayloadBuilder("simple-payload")
     # Are we using experiment payload encryption?
     public_key_path = config.get('public_key_path', None)

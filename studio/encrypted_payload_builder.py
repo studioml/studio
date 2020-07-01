@@ -58,13 +58,10 @@ class EncryptedPayloadBuilder(PayloadBuilder):
                 paramiko.Ed25519Key(filename=self.sender_key_path)
 
             if self.sender_key is None:
-                self.logger.error("Failed to import private signing key. ABORTING.")
-                raise ValueError()
+                self._raise_error("Failed to import private signing key. ABORTING.")
         except:
-            msg = "FAILED to open/read private signing key file: {0}"\
-                .format(self.sender_key_path)
-            self.logger.error(msg)
-            raise ValueError(msg)
+            self._raise_error("FAILED to open/read private signing key file: {0}"\
+                .format(self.sender_key_path))
 
         self.sender_fingerprint = \
             self._get_fingerprint(self.sender_key)
@@ -72,15 +69,17 @@ class EncryptedPayloadBuilder(PayloadBuilder):
         self.simple_builder =\
             UnencryptedPayloadBuilder("simple-builder-for-encryptor")
 
+    def _raise_error(self, msg: str):
+        self.logger.error(msg)
+        raise ValueError(msg)
+
     def _get_fingerprint(self, signing_key):
         ssh_key = SSHKey("ssh-ed25519 {0}"
                          .format(signing_key.get_base64()))
         try:
             ssh_key.parse()
         except:
-            msg = "INVALID signing key type. ABORTING."
-            self.logger.error(msg)
-            raise ValueError(msg)
+            self._raise_error("INVALID signing key type. ABORTING.")
 
         return ssh_key.hash_sha256()  # SHA256:xyz
 
@@ -117,12 +116,16 @@ class EncryptedPayloadBuilder(PayloadBuilder):
 
         return encrypted_session_key_text, encrypted_data_text
 
-    def _get_signature_str(self, workload: str):
-        data_to_hash = workload.encode("utf-8")
-        data_hash = SHA256.new(data_to_hash).digest()
-        encrypted_data_hash =\
-            self._rsa_encrypt_data_to_base64(self.sender_key, data_hash)
-        return encrypted_data_hash
+    def _verify_signature(self, data, msg):
+        if msg.get_text() != "ssh-ed25519":
+            return False
+
+        try:
+            self.sender_key._signing_key.verify_key.verify(data, msg.get_binary())
+        except:
+            return False
+        else:
+            return True
 
     def _sign_payload(self, encrypted_payload):
         """
@@ -132,11 +135,14 @@ class EncryptedPayloadBuilder(PayloadBuilder):
         sign_message = self.sender_key.sign_ssh_data(encrypted_payload)
 
         # Verify what we generated just in case:
-        signature = self.sender_key._signing_key.sign(encrypted_payload).signature
-        self.sender_key._signing_key.verify_key.verify(encrypted_payload, signature)
-        print("VERIFIED!")
+        verify_message = paramiko.Message(sign_message.asbytes())
+        verify_res = self._verify_signature(encrypted_payload, verify_message)
 
-        return base64.b64encode(sign_message.asbytes())
+        if not verify_res:
+            self._raise_error("FAILED to verify signed data. ABORTING.")
+
+        result = base64.b64encode(sign_message.asbytes())
+        return result
 
     def _decrypt_data(self, private_key_path, encrypted_key_text, encrypted_data_text):
         private_key = self._import_rsa_key(private_key_path)
@@ -199,13 +205,16 @@ class EncryptedPayloadBuilder(PayloadBuilder):
             "{0},{1}".format(enc_key.decode("utf-8"), enc_payload.decode("utf-8"))
         if self.sender_key is not None:
             # Generate sender/workload signature:
-            payload_signature = self._sign_payload(enc_payload)
+            final_payload = encrypted_payload["message"]["payload"]
+            payload_signature = self._sign_payload(final_payload.encode("utf-8"))
             encrypted_payload["message"]["signature"] =\
                 "{0}".format(payload_signature.decode("utf-8"))
             encrypted_payload["message"]["fingerprint"] =\
                 "{0}".format(self.sender_fingerprint)
 
         print(json.dumps(encrypted_payload, indent=4))
+
+        exit(0)
 
         return encrypted_payload
 
