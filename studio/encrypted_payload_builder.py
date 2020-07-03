@@ -214,7 +214,5 @@ class EncryptedPayloadBuilder(PayloadBuilder):
 
         print(json.dumps(encrypted_payload, indent=4))
 
-        exit(0)
-
         return encrypted_payload
 
