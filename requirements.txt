@@ -13,6 +13,8 @@ cma
 
 apscheduler
 pycryptodome
+paramiko
+sshpubkeys
 PyNaCl
 requests
 requests_toolbelt

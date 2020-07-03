@@ -597,12 +597,16 @@ def submit_experiments(
 
     payload_builder = UnencryptedPayloadBuilder("simple-payload")
     # Are we using experiment payload encryption?
-    key_path = config.get('public_key_path')
-    if key_path is not None:
-        logger.info("Using RSA public key path: {0}".format(key_path))
+    public_key_path = config.get('public_key_path', None)
+    if public_key_path is not None:
+        logger.info("Using RSA public key path: {0}".format(public_key_path))
+        signing_key_path = config.get('signing_key_path', None)
+        if signing_key_path is not None:
+            logger.info("Using RSA signing key path: {0}".format(signing_key_path))
         payload_builder = \
             EncryptedPayloadBuilder(
-                "cs-rsa-encryptor [{0}]".format(key_path), key_path)
+                "cs-rsa-encryptor [{0}]".format(public_key_path),
+                public_key_path, signing_key_path)
 
     start_time = time.time()
 
@@ -637,6 +641,9 @@ def submit_experiments(
 
     for experiment in experiments:
         payload = payload_builder.construct(experiment, config, python_pkg)
+
+        print(json.dumps(payload, indent=4))
+
         queue.enqueue(json.dumps(payload))
         logger.info("studio run: submitted experiment " + experiment.key)
 
