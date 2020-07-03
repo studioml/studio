@@ -18,7 +18,7 @@ from .local_artifact_store import LocalArtifactStore
 from .local_db_provider import LocalDbProvider
 from .s3_provider import S3Provider
 from .gs_provider import GSProvider
-from model_setup import setup_model, get_model_db_provider
+from .model_setup import setup_model, get_model_db_provider
 from . import logs
 
 def get_config(config_file=None):
