@@ -9,12 +9,12 @@ _model_setup = None
 def setup_model(db_provider, artifact_store):
     _model_setup = { DB_KEY: db_provider, STORE_KEY: artifact_store }
 
-def get_db_provider():
+def get_model_db_provider():
     if _model_setup is None:
         return None
     return _model_setup.get(DB_KEY, None)
 
-def get_artifact_store():
+def get_model_artifact_store():
     if _model_setup is None:
         return None
     return _model_setup.get(STORE_KEY, None)

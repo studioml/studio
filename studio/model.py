@@ -18,7 +18,7 @@ from .local_artifact_store import LocalArtifactStore
 from .local_db_provider import LocalDbProvider
 from .s3_provider import S3Provider
 from .gs_provider import GSProvider
-import model_setup
+from model_setup import setup_model, get_model_db_provider
 from . import logs
 
 def get_config(config_file=None):
@@ -60,7 +60,7 @@ def get_config(config_file=None):
 
 def get_db_provider(config=None, blocking_auth=True):
 
-    db_provider = model_setup.get_db_provider()
+    db_provider = get_model_db_provider()
     if not db_provider is None:
         return db_provider
 
@@ -120,10 +120,10 @@ def get_db_provider(config=None, blocking_auth=True):
         artifact_store = db_provider.get_artifact_store()
 
     else:
-        model_setup._model_setup = None
+        _model_setup = None
         raise ValueError('Unknown type of the database ' + db_config['type'])
 
-    model_setup.setup_model(db_provider, artifact_store)
+    setup_model(db_provider, artifact_store)
     return db_provider
 
 def parse_verbosity(verbosity=None):
