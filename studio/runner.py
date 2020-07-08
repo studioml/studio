@@ -12,10 +12,6 @@ import numpy as np
 
 from datetime import timedelta
 
-from .local_queue import LocalQueue
-from .pubsub_queue import PubsubQueue
-from .sqs_queue import SQSQueue
-from .qclient_cache import get_cached_queue, shutdown_cached_queue
 from .gcloud_worker import GCloudWorkerManager
 from .ec2cloud_worker import EC2WorkerManager
 from .hyperparameter import HyperparameterParser
@@ -436,7 +432,7 @@ def add_experiment(args):
     try:
         config, python_pkg, e = args
 
-        e.pythonenv = add_packages(e.pythonenv, python_pkg)
+        e.pythonenv = model.add_packages(e.pythonenv, python_pkg)
 
         with model.get_db_provider(config) as db:
             db.add_experiment(e)
@@ -479,46 +475,6 @@ def get_worker_manager(config, cloud=None, verbose=10):
         )
     return worker_manager
 
-
-def get_queue(
-        queue_name=None,
-        cloud=None,
-        config=None,
-        logger=None,
-        close_after=None,
-        verbose=10):
-    if queue_name is None:
-        if cloud in ['gcloud', 'gcspot']:
-            queue_name = 'pubsub_' + str(uuid.uuid4())
-        elif cloud in ['ec2', 'ec2spot']:
-            queue_name = 'sqs_' + str(uuid.uuid4())
-        else:
-            queue_name = 'local'
-
-    if queue_name.startswith('ec2') or \
-       queue_name.startswith('sqs'):
-        return SQSQueue(queue_name, verbose=verbose)
-    elif queue_name.startswith('rmq_'):
-        return get_cached_queue(
-            name=queue_name,
-            route='StudioML.' + queue_name,
-            config=config,
-            close_after=close_after,
-            logger=logger,
-            verbose=verbose)
-    elif queue_name == 'local':
-        return LocalQueue(verbose=verbose)
-    else:
-        return PubsubQueue(queue_name, verbose=verbose)
-
-def shutdown_queue(queue, logger=None, delete_queue=True):
-    if queue is None:
-        return
-    queue_name = queue.get_name()
-    if queue_name.startswith("rmq_"):
-        shutdown_cached_queue(queue, logger, delete_queue)
-    else:
-        queue.shutdown(delete_queue)
 
 def spin_up_workers(
         runner_args,
@@ -612,7 +568,7 @@ def submit_experiments(
 
     # Update Python environment info for our experiments:
     for experiment in experiments:
-        experiment.pythonenv = add_packages(experiment.pythonenv, python_pkg)
+        experiment.pythonenv = model.add_packages(experiment.pythonenv, python_pkg)
 
     # Now add them to experiments database:
     try:
@@ -630,7 +586,7 @@ def submit_experiments(
                        experiments)]
 
 
-    queue = get_queue(
+    queue = model.get_queue(
         queue_name=queue_name,
         cloud=cloud,
         config=config,
@@ -921,21 +877,6 @@ def add_hyperparam_experiments(
         experiments = create_experiments(hyperparam_tuples)
 
     return experiments
-
-
-def add_packages(list1, list2):
-    # This function dedups the package names which I think could be
-    # functionally not desirable however rather than changing the behavior
-    # instead we will do the dedup in a stable manner that prevents
-    # package re-ordering
-    pkgs = {re.sub('==.+', '', pkg): pkg for pkg in list1 + list2}
-    merged = []
-    for k in list1 + list2:
-        v = pkgs.pop(re.sub('==.+', '', k), None)
-        if v is not None:
-            merged.append(v)
-    return merged
-
 
 if __name__ == "__main__":
     main()
