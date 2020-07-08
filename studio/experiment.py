@@ -192,5 +192,5 @@ def experiment_from_dict(data, info={}):
             max_duration=data.get('max_duration')
         )
     except KeyError as e:
-        self.logger.error(data)
+        logger.error(data)
         raise e

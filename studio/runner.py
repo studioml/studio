@@ -17,8 +17,7 @@ from .ec2cloud_worker import EC2WorkerManager
 from .hyperparameter import HyperparameterParser
 from .util import rand_string, Progbar, rsync_cp
 from .experiment import create_experiment
-from .unencrypted_payload_builder import UnencryptedPayloadBuilder
-from .encrypted_payload_builder import EncryptedPayloadBuilder
+from .experiment_submitter import submit_experiments
 
 from . import model
 from . import git_util
@@ -302,12 +301,20 @@ def main(args=sys.argv[1:]):
                 resources_needed,
                 logger)
 
+            queue = model.get_queue(
+                queue_name=runner_args.queue,
+                cloud=runner_args.cloud,
+                config=config,
+                close_after=timedelta(
+                    minutes=2),
+                logger=logger,
+                verbose=verbose)
+
             queue_name = submit_experiments(
                 experiments,
                 config=config,
                 logger=logger,
-                queue_name=runner_args.queue,
-                cloud=runner_args.cloud)
+                queue=queue)
 
             spin_up_workers(
                 runner_args,
@@ -355,12 +362,20 @@ def main(args=sys.argv[1:]):
                     optimizer=optimizer,
                     hyperparam_tuples=hyperparam_tuples)
 
+                queue = model.get_queue(
+                    queue_name=queue_name,
+                    cloud=runner_args.cloud,
+                    config=config,
+                    close_after=timedelta(
+                        minutes=2),
+                    logger=logger,
+                    verbose=verbose)
+
                 queue_name = submit_experiments(
                     experiments,
                     config=config,
                     logger=logger,
-                    cloud=runner_args.cloud,
-                    queue_name=queue_name)
+                    queue=queue)
 
                 if not workers_started:
                     spin_up_workers(
@@ -411,12 +426,20 @@ def main(args=sys.argv[1:]):
                 max_duration=runner_args.max_duration,
             )]
 
+        queue = model.get_queue(
+            queue_name=runner_args.queue,
+            cloud=runner_args.cloud,
+            config=config,
+            close_after=timedelta(
+                minutes=2),
+            logger=logger,
+            verbose=verbose)
+
         queue_name = submit_experiments(
             experiments,
             config=config,
             logger=logger,
-            cloud=runner_args.cloud,
-            queue_name=runner_args.queue)
+            queue=queue)
 
         spin_up_workers(
             runner_args,
@@ -426,20 +449,6 @@ def main(args=sys.argv[1:]):
             verbose=verbose)
 
     return
-
-
-def add_experiment(args):
-    try:
-        config, python_pkg, e = args
-
-        e.pythonenv = model.add_packages(e.pythonenv, python_pkg)
-
-        with model.get_db_provider(config) as db:
-            db.add_experiment(e)
-    except BaseException:
-        traceback.print_exc()
-        raise
-    return e
 
 
 def get_worker_manager(config, cloud=None, verbose=10):
@@ -538,74 +547,6 @@ def spin_up_workers(
         else:
             raise NotImplementedError("Multiple local workers are not " +
                                       "implemented yet")
-
-
-def submit_experiments(
-        experiments,
-        config,
-        logger,
-        cloud=None,
-        queue_name=None,
-        python_pkg=[]):
-
-    num_experiments = len(experiments)
-    verbose = model.parse_verbosity(config['verbose'])
-
-    payload_builder = UnencryptedPayloadBuilder("simple-payload")
-    # Are we using experiment payload encryption?
-    public_key_path = config.get('public_key_path', None)
-    if public_key_path is not None:
-        logger.info("Using RSA public key path: {0}".format(public_key_path))
-        signing_key_path = config.get('signing_key_path', None)
-        if signing_key_path is not None:
-            logger.info("Using RSA signing key path: {0}".format(signing_key_path))
-        payload_builder = \
-            EncryptedPayloadBuilder(
-                "cs-rsa-encryptor [{0}]".format(public_key_path),
-                public_key_path, signing_key_path)
-
-    start_time = time.time()
-
-    # Update Python environment info for our experiments:
-    for experiment in experiments:
-        experiment.pythonenv = model.add_packages(experiment.pythonenv, python_pkg)
-
-    # Now add them to experiments database:
-    try:
-        with model.get_db_provider(config) as db:
-            for experiment in experiments:
-                db.add_experiment(experiment)
-    except BaseException:
-        traceback.print_exc()
-        raise
-
-    experiments = [add_experiment(e) for e in
-                   zip([config] * num_experiments,
-                       [python_pkg] *
-                       num_experiments,
-                       experiments)]
-
-
-    queue = model.get_queue(
-        queue_name=queue_name,
-        cloud=cloud,
-        config=config,
-        close_after=timedelta(
-            minutes=2),
-        logger=logger,
-        verbose=verbose)
-
-    for experiment in experiments:
-        payload = payload_builder.construct(experiment, config, python_pkg)
-
-        print(json.dumps(payload, indent=4))
-
-        queue.enqueue(json.dumps(payload))
-        logger.info("studio run: submitted experiment " + experiment.key)
-
-    logger.info("Added {0} experiment(s) in {1} seconds to queue {2}"
-                .format(num_experiments, int(time.time() - start_time), queue_name))
-    return queue.get_name()
 
 
 def get_experiment_fitnesses(experiments, optimizer, config, logger):
