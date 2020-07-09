@@ -15,7 +15,11 @@ from .gs_provider import GSProvider
 from .local_queue import LocalQueue
 from .pubsub_queue import PubsubQueue
 from .sqs_queue import SQSQueue
+from .gcloud_worker import GCloudWorkerManager
+from .ec2cloud_worker import EC2WorkerManager
 from .qclient_cache import get_cached_queue, shutdown_cached_queue
+from .util import parse_verbosity
+from .auth import get_auth
 
 from .model_setup import setup_model, get_model_db_provider
 from . import logs
@@ -165,26 +169,38 @@ def shutdown_queue(queue, logger=None, delete_queue=True):
     else:
         queue.shutdown(delete_queue)
 
-def parse_verbosity(verbosity=None):
-    if verbosity is None:
-        return parse_verbosity('info')
+def get_worker_manager(config, cloud=None, verbose=10):
+    if cloud is None:
+        return None
 
-    if verbosity == 'True':
-        return parse_verbosity('info')
+    assert cloud in ['gcloud', 'gcspot', 'ec2', 'ec2spot']
+    logger = logs.getLogger('runner.get_worker_manager')
+    logger.setLevel(verbose)
 
-    logger_levels = {
-        'debug': 10,
-        'info': 20,
-        'warn': 30,
-        'error': 40,
-        'crit': 50
-    }
+    auth = get_auth(config['database']['authentication'])
+    auth_cookie = auth.get_token_file() if auth else None
 
-    if isinstance(verbosity, six.string_types) and \
-       verbosity in logger_levels.keys():
-        return logger_levels[verbosity]
-    else:
-        return int(verbosity)
+    branch = config['cloud'].get('branch')
+
+    logger.info('using branch {}'.format(branch))
+
+    if cloud in ['gcloud', 'gcspot']:
+
+        cloudconfig = config['cloud']['gcloud']
+        worker_manager = GCloudWorkerManager(
+            auth_cookie=auth_cookie,
+            zone=cloudconfig['zone'],
+            branch=branch,
+            user_startup_script=config['cloud'].get('user_startup_script')
+        )
+
+    if cloud in ['ec2', 'ec2spot']:
+        worker_manager = EC2WorkerManager(
+            auth_cookie=auth_cookie,
+            branch=branch,
+            user_startup_script=config['cloud'].get('user_startup_script')
+        )
+    return worker_manager
 
 def add_packages(list1, list2):
     # This function dedups the package names which I think could be

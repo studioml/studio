@@ -14,7 +14,6 @@ def submit_experiments(
         python_pkg=[]):
 
     num_experiments = len(experiments)
-    verbose = model.parse_verbosity(config['verbose'])
 
     payload_builder = UnencryptedPayloadBuilder("simple-payload")
     # Are we using experiment payload encryption?

@@ -5,7 +5,7 @@ from . import model, logs
 from .local_worker import worker_loop
 from .pubsub_queue import PubsubQueue
 from .sqs_queue import SQSQueue
-from .rabbit_queue import RMQueue
+from .util import parse_verbosity
 
 from .qclient_cache import get_cached_queue
 
@@ -43,7 +43,7 @@ def main(args=sys.argv):
         default=100)
 
     parsed_args, script_args = parser.parse_known_args(args)
-    verbose = model.parse_verbosity(parsed_args.verbose)
+    verbose = parse_verbosity(parsed_args.verbose)
     logger.setLevel(verbose)
 
     config = None

@@ -5,8 +5,7 @@ try:
 except BaseException:
     boto3 = None
 
-from .model import parse_verbosity
-from .util import retry
+from .util import retry, parse_verbosity
 from . import logs
 
 

@@ -15,6 +15,7 @@ from requests.exceptions import ChunkedEncodingError
 
 from .experiment import experiment_from_dict
 from .auth import get_and_verify_user, get_auth
+from .util import parse_verbosity
 from . import logs
 
 app = Flask(__name__)
@@ -578,7 +579,7 @@ def main(args=sys.argv[1:]):
     _config = config
     _db_provider = model.get_db_provider(_config)
 
-    getlogger().setLevel(model.parse_verbosity(config.get('verbose')))
+    getlogger().setLevel(parse_verbosity(config.get('verbose')))
 
     global _save_auth_cookie
     _save_auth_cookie = True

@@ -12,20 +12,15 @@ import numpy as np
 
 from datetime import timedelta
 
-from .gcloud_worker import GCloudWorkerManager
-from .ec2cloud_worker import EC2WorkerManager
 from .hyperparameter import HyperparameterParser
 from .util import rand_string, Progbar, rsync_cp
 from .experiment import create_experiment
 from .experiment_submitter import submit_experiments
-
 from . import model
 from . import git_util
 from . import local_worker
 from . import fs_tracker
 from . import logs
-from .auth import get_auth
-
 
 def main(args=sys.argv[1:]):
     logger = logs.getLogger('studio-runner')
@@ -450,41 +445,6 @@ def main(args=sys.argv[1:]):
 
     return
 
-
-def get_worker_manager(config, cloud=None, verbose=10):
-    if cloud is None:
-        return None
-
-    assert cloud in ['gcloud', 'gcspot', 'ec2', 'ec2spot']
-    logger = logs.getLogger('runner.get_worker_manager')
-    logger.setLevel(verbose)
-
-    auth = get_auth(config['database']['authentication'])
-    auth_cookie = auth.get_token_file() if auth else None
-
-    branch = config['cloud'].get('branch')
-
-    logger.info('using branch {}'.format(branch))
-
-    if cloud in ['gcloud', 'gcspot']:
-
-        cloudconfig = config['cloud']['gcloud']
-        worker_manager = GCloudWorkerManager(
-            auth_cookie=auth_cookie,
-            zone=cloudconfig['zone'],
-            branch=branch,
-            user_startup_script=config['cloud'].get('user_startup_script')
-        )
-
-    if cloud in ['ec2', 'ec2spot']:
-        worker_manager = EC2WorkerManager(
-            auth_cookie=auth_cookie,
-            branch=branch,
-            user_startup_script=config['cloud'].get('user_startup_script')
-        )
-    return worker_manager
-
-
 def spin_up_workers(
         runner_args,
         config,
@@ -495,7 +455,7 @@ def spin_up_workers(
     if cloud:
 
         assert cloud in ['gcloud', 'gcspot', 'ec2', 'ec2spot']
-        worker_manager = get_worker_manager(config, cloud, verbose=verbose)
+        worker_manager = model.get_worker_manager(config, cloud, verbose=verbose)
 
         if cloud == 'gcloud' or \
            cloud == 'ec2':

@@ -7,8 +7,8 @@ import re
 import six
 import time
 
-from studio import runner, model, fs_tracker, logs
-from studio.util import rsync_cp
+from studio import experiment_submitter, model, fs_tracker, logs
+from studio.util import rsync_cp, parse_verbosity
 from studio.experiment import create_experiment
 
 DEFAULT_RESOURCES_NEEDED = {
@@ -40,7 +40,7 @@ class CompletionService:
         self.config = model.get_config(studio_config_file)
 
         self.logger = logs.getLogger(self.__class__.__name__)
-        self.verbose_level = model.parse_verbosity(self.config['verbose'])
+        self.verbose_level = parse_verbosity(self.config['verbose'])
         self.logger.setLevel(self.verbose_level)
 
         # Setup Completion Service instance properties
@@ -84,7 +84,7 @@ class CompletionService:
         if queue_name is not None and queue_name.startswith("rmq_"):
             assert self.cloud is None
 
-        self.wm = runner.get_worker_manager(
+        self.wm = model.get_worker_manager(
             self.config, self.cloud)
 
         if queue_name is not None:
@@ -92,7 +92,7 @@ class CompletionService:
                 "CompletionService configured with queue {0}"
                     .format(queue_name))
 
-        self.queue = runner.get_queue(queue_name=queue_name, cloud=self.cloud,
+        self.queue = model.get_queue(queue_name=queue_name, cloud=self.cloud,
                                       config=self.config,
                                       logger=self.logger,
                                       verbose=self.verbose_level)
@@ -153,7 +153,7 @@ class CompletionService:
     def close(self, delete_queue=True):
         self.logger.info("Studioml completion service shutting down")
         request_delete_queue = self.shutdown_del_queue or delete_queue
-        runner.shutdown_queue(self.queue, self.logger, request_delete_queue)
+        model.shutdown_queue(self.queue, self.logger, request_delete_queue)
 
     def submitTaskWithFiles(
             self,
@@ -206,12 +206,11 @@ class CompletionService:
             resources_needed=self.resources_needed)
 
         tic = time.time()
-        runner.submit_experiments(
+        experiment_submitter.submit_experiments(
             [experiment],
             config=self.config,
             logger=self.logger,
-            cloud=self.cloud,
-            queue_name=self.queue_name)
+            queue=self.queue)
 
         self.submitted[experiment.key] = time.time()
         os.chdir(old_cwd)
