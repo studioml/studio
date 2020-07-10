@@ -505,6 +505,26 @@ def parse_duration(duration_str):
     retval = timedelta(**time_params)
     return retval
 
+def parse_verbosity(verbosity=None):
+    if verbosity is None:
+        return parse_verbosity('info')
+
+    if verbosity == 'True':
+        return parse_verbosity('info')
+
+    logger_levels = {
+        'debug': 10,
+        'info': 20,
+        'warn': 30,
+        'error': 40,
+        'crit': 50
+    }
+
+    if isinstance(verbosity, six.string_types) and \
+       verbosity in logger_levels.keys():
+        return logger_levels[verbosity]
+    else:
+        return int(verbosity)
 
 def str2duration(s):
     return parse_duration(s.lower())

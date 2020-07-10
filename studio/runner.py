@@ -12,25 +12,15 @@ import numpy as np
 
 from datetime import timedelta
 
-from .local_queue import LocalQueue
-from .pubsub_queue import PubsubQueue
-from .sqs_queue import SQSQueue
-from .qclient_cache import get_cached_queue, shutdown_cached_queue
-from .gcloud_worker import GCloudWorkerManager
-from .ec2cloud_worker import EC2WorkerManager
 from .hyperparameter import HyperparameterParser
 from .util import rand_string, Progbar, rsync_cp
 from .experiment import create_experiment
-from .unencrypted_payload_builder import UnencryptedPayloadBuilder
-from .encrypted_payload_builder import EncryptedPayloadBuilder
-
+from .experiment_submitter import submit_experiments
 from . import model
 from . import git_util
 from . import local_worker
 from . import fs_tracker
 from . import logs
-from .auth import get_auth
-
 
 def main(args=sys.argv[1:]):
     logger = logs.getLogger('studio-runner')
@@ -306,12 +296,20 @@ def main(args=sys.argv[1:]):
                 resources_needed,
                 logger)
 
+            queue = model.get_queue(
+                queue_name=runner_args.queue,
+                cloud=runner_args.cloud,
+                config=config,
+                close_after=timedelta(
+                    minutes=2),
+                logger=logger,
+                verbose=verbose)
+
             queue_name = submit_experiments(
                 experiments,
                 config=config,
                 logger=logger,
-                queue_name=runner_args.queue,
-                cloud=runner_args.cloud)
+                queue=queue)
 
             spin_up_workers(
                 runner_args,
@@ -359,12 +357,20 @@ def main(args=sys.argv[1:]):
                     optimizer=optimizer,
                     hyperparam_tuples=hyperparam_tuples)
 
+                queue = model.get_queue(
+                    queue_name=queue_name,
+                    cloud=runner_args.cloud,
+                    config=config,
+                    close_after=timedelta(
+                        minutes=2),
+                    logger=logger,
+                    verbose=verbose)
+
                 queue_name = submit_experiments(
                     experiments,
                     config=config,
                     logger=logger,
-                    cloud=runner_args.cloud,
-                    queue_name=queue_name)
+                    queue=queue)
 
                 if not workers_started:
                     spin_up_workers(
@@ -415,12 +421,20 @@ def main(args=sys.argv[1:]):
                 max_duration=runner_args.max_duration,
             )]
 
+        queue = model.get_queue(
+            queue_name=runner_args.queue,
+            cloud=runner_args.cloud,
+            config=config,
+            close_after=timedelta(
+                minutes=2),
+            logger=logger,
+            verbose=verbose)
+
         queue_name = submit_experiments(
             experiments,
             config=config,
             logger=logger,
-            cloud=runner_args.cloud,
-            queue_name=runner_args.queue)
+            queue=queue)
 
         spin_up_workers(
             runner_args,
@@ -430,95 +444,6 @@ def main(args=sys.argv[1:]):
             verbose=verbose)
 
     return
-
-
-def add_experiment(args):
-    try:
-        config, python_pkg, e = args
-
-        e.pythonenv = add_packages(e.pythonenv, python_pkg)
-
-        with model.get_db_provider(config) as db:
-            db.add_experiment(e)
-    except BaseException:
-        traceback.print_exc()
-        raise
-    return e
-
-
-def get_worker_manager(config, cloud=None, verbose=10):
-    if cloud is None:
-        return None
-
-    assert cloud in ['gcloud', 'gcspot', 'ec2', 'ec2spot']
-    logger = logs.getLogger('runner.get_worker_manager')
-    logger.setLevel(verbose)
-
-    auth = get_auth(config['database']['authentication'])
-    auth_cookie = auth.get_token_file() if auth else None
-
-    branch = config['cloud'].get('branch')
-
-    logger.info('using branch {}'.format(branch))
-
-    if cloud in ['gcloud', 'gcspot']:
-
-        cloudconfig = config['cloud']['gcloud']
-        worker_manager = GCloudWorkerManager(
-            auth_cookie=auth_cookie,
-            zone=cloudconfig['zone'],
-            branch=branch,
-            user_startup_script=config['cloud'].get('user_startup_script')
-        )
-
-    if cloud in ['ec2', 'ec2spot']:
-        worker_manager = EC2WorkerManager(
-            auth_cookie=auth_cookie,
-            branch=branch,
-            user_startup_script=config['cloud'].get('user_startup_script')
-        )
-    return worker_manager
-
-
-def get_queue(
-        queue_name=None,
-        cloud=None,
-        config=None,
-        logger=None,
-        close_after=None,
-        verbose=10):
-    if queue_name is None:
-        if cloud in ['gcloud', 'gcspot']:
-            queue_name = 'pubsub_' + str(uuid.uuid4())
-        elif cloud in ['ec2', 'ec2spot']:
-            queue_name = 'sqs_' + str(uuid.uuid4())
-        else:
-            queue_name = 'local'
-
-    if queue_name.startswith('ec2') or \
-       queue_name.startswith('sqs'):
-        return SQSQueue(queue_name, verbose=verbose)
-    elif queue_name.startswith('rmq_'):
-        return get_cached_queue(
-            name=queue_name,
-            route='StudioML.' + queue_name,
-            config=config,
-            close_after=close_after,
-            logger=logger,
-            verbose=verbose)
-    elif queue_name == 'local':
-        return LocalQueue(verbose=verbose)
-    else:
-        return PubsubQueue(queue_name, verbose=verbose)
-
-def shutdown_queue(queue, logger=None, delete_queue=True):
-    if queue is None:
-        return
-    queue_name = queue.get_name()
-    if queue_name.startswith("rmq_"):
-        shutdown_cached_queue(queue, logger, delete_queue)
-    else:
-        queue.shutdown(delete_queue)
 
 def spin_up_workers(
         runner_args,
@@ -530,7 +455,7 @@ def spin_up_workers(
     if cloud:
 
         assert cloud in ['gcloud', 'gcspot', 'ec2', 'ec2spot']
-        worker_manager = get_worker_manager(config, cloud, verbose=verbose)
+        worker_manager = model.get_worker_manager(config, cloud, verbose=verbose)
 
         if cloud == 'gcloud' or \
            cloud == 'ec2':
@@ -582,74 +507,6 @@ def spin_up_workers(
         else:
             raise NotImplementedError("Multiple local workers are not " +
                                       "implemented yet")
-
-
-def submit_experiments(
-        experiments,
-        config,
-        logger,
-        cloud=None,
-        queue_name=None,
-        python_pkg=[]):
-
-    num_experiments = len(experiments)
-    verbose = model.parse_verbosity(config['verbose'])
-
-    payload_builder = UnencryptedPayloadBuilder("simple-payload")
-    # Are we using experiment payload encryption?
-    public_key_path = config.get('public_key_path', None)
-    if public_key_path is not None:
-        logger.info("Using RSA public key path: {0}".format(public_key_path))
-        signing_key_path = config.get('signing_key_path', None)
-        if signing_key_path is not None:
-            logger.info("Using RSA signing key path: {0}".format(signing_key_path))
-        payload_builder = \
-            EncryptedPayloadBuilder(
-                "cs-rsa-encryptor [{0}]".format(public_key_path),
-                public_key_path, signing_key_path)
-
-    start_time = time.time()
-
-    # Update Python environment info for our experiments:
-    for experiment in experiments:
-        experiment.pythonenv = add_packages(experiment.pythonenv, python_pkg)
-
-    # Now add them to experiments database:
-    try:
-        with model.get_db_provider(config) as db:
-            for experiment in experiments:
-                db.add_experiment(experiment)
-    except BaseException:
-        traceback.print_exc()
-        raise
-
-    experiments = [add_experiment(e) for e in
-                   zip([config] * num_experiments,
-                       [python_pkg] *
-                       num_experiments,
-                       experiments)]
-
-
-    queue = get_queue(
-        queue_name=queue_name,
-        cloud=cloud,
-        config=config,
-        close_after=timedelta(
-            minutes=2),
-        logger=logger,
-        verbose=verbose)
-
-    for experiment in experiments:
-        payload = payload_builder.construct(experiment, config, python_pkg)
-
-        print(json.dumps(payload, indent=4))
-
-        queue.enqueue(json.dumps(payload))
-        logger.info("studio run: submitted experiment " + experiment.key)
-
-    logger.info("Added {0} experiment(s) in {1} seconds to queue {2}"
-                .format(num_experiments, int(time.time() - start_time), queue_name))
-    return queue.get_name()
 
 
 def get_experiment_fitnesses(experiments, optimizer, config, logger):
@@ -921,21 +778,6 @@ def add_hyperparam_experiments(
         experiments = create_experiments(hyperparam_tuples)
 
     return experiments
-
-
-def add_packages(list1, list2):
-    # This function dedups the package names which I think could be
-    # functionally not desirable however rather than changing the behavior
-    # instead we will do the dedup in a stable manner that prevents
-    # package re-ordering
-    pkgs = {re.sub('==.+', '', pkg): pkg for pkg in list1 + list2}
-    merged = []
-    for k in list1 + list2:
-        v = pkgs.pop(re.sub('==.+', '', k), None)
-        if v is not None:
-            merged.append(v)
-    return merged
-
 
 if __name__ == "__main__":
     main()

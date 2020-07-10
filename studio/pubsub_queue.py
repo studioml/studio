@@ -4,8 +4,7 @@ import time
 import google
 from google.gax.errors import RetryError
 
-from .model import parse_verbosity
-from .util import sixdecode, retry
+from .util import sixdecode, retry, parse_verbosity
 from . import logs
 
 

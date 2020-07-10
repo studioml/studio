@@ -1,15 +1,9 @@
 """Data providers."""
 import os
 import re
-try:
-    # try-except statement needed because
-    # pip module is not available in google app engine
-    import pip
-except ImportError:
-    pip = None
-
 import yaml
 import six
+import uuid
 
 from .artifact_store import get_artifact_store
 from .http_provider import HTTPProvider
@@ -18,6 +12,15 @@ from .local_artifact_store import LocalArtifactStore
 from .local_db_provider import LocalDbProvider
 from .s3_provider import S3Provider
 from .gs_provider import GSProvider
+from .local_queue import LocalQueue
+from .pubsub_queue import PubsubQueue
+from .sqs_queue import SQSQueue
+from .gcloud_worker import GCloudWorkerManager
+from .ec2cloud_worker import EC2WorkerManager
+from .qclient_cache import get_cached_queue, shutdown_cached_queue
+from .util import parse_verbosity
+from .auth import get_auth
+
 from .model_setup import setup_model, get_model_db_provider
 from . import logs
 
@@ -126,26 +129,78 @@ def get_db_provider(config=None, blocking_auth=True):
     setup_model(db_provider, artifact_store)
     return db_provider
 
-def parse_verbosity(verbosity=None):
-    if verbosity is None:
-        return parse_verbosity('info')
+def get_queue(
+        queue_name=None,
+        cloud=None,
+        config=None,
+        logger=None,
+        close_after=None,
+        verbose=10):
+    if queue_name is None:
+        if cloud in ['gcloud', 'gcspot']:
+            queue_name = 'pubsub_' + str(uuid.uuid4())
+        elif cloud in ['ec2', 'ec2spot']:
+            queue_name = 'sqs_' + str(uuid.uuid4())
+        else:
+            queue_name = 'local'
 
-    if verbosity == 'True':
-        return parse_verbosity('info')
-
-    logger_levels = {
-        'debug': 10,
-        'info': 20,
-        'warn': 30,
-        'error': 40,
-        'crit': 50
-    }
-
-    if isinstance(verbosity, six.string_types) and \
-       verbosity in logger_levels.keys():
-        return logger_levels[verbosity]
+    if queue_name.startswith('ec2') or \
+       queue_name.startswith('sqs'):
+        return SQSQueue(queue_name, verbose=verbose)
+    elif queue_name.startswith('rmq_'):
+        return get_cached_queue(
+            name=queue_name,
+            route='StudioML.' + queue_name,
+            config=config,
+            close_after=close_after,
+            logger=logger,
+            verbose=verbose)
+    elif queue_name == 'local':
+        return LocalQueue(verbose=verbose)
     else:
-        return int(verbosity)
+        return PubsubQueue(queue_name, verbose=verbose)
+
+def shutdown_queue(queue, logger=None, delete_queue=True):
+    if queue is None:
+        return
+    queue_name = queue.get_name()
+    if queue_name.startswith("rmq_"):
+        shutdown_cached_queue(queue, logger, delete_queue)
+    else:
+        queue.shutdown(delete_queue)
+
+def get_worker_manager(config, cloud=None, verbose=10):
+    if cloud is None:
+        return None
+
+    assert cloud in ['gcloud', 'gcspot', 'ec2', 'ec2spot']
+    logger = logs.getLogger('runner.get_worker_manager')
+    logger.setLevel(verbose)
+
+    auth = get_auth(config['database']['authentication'])
+    auth_cookie = auth.get_token_file() if auth else None
+
+    branch = config['cloud'].get('branch')
+
+    logger.info('using branch {}'.format(branch))
+
+    if cloud in ['gcloud', 'gcspot']:
+
+        cloudconfig = config['cloud']['gcloud']
+        worker_manager = GCloudWorkerManager(
+            auth_cookie=auth_cookie,
+            zone=cloudconfig['zone'],
+            branch=branch,
+            user_startup_script=config['cloud'].get('user_startup_script')
+        )
+
+    if cloud in ['ec2', 'ec2spot']:
+        worker_manager = EC2WorkerManager(
+            auth_cookie=auth_cookie,
+            branch=branch,
+            user_startup_script=config['cloud'].get('user_startup_script')
+        )
+    return worker_manager
 
 def add_packages(list1, list2):
     # This function dedups the package names which I think could be
