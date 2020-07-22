@@ -1,13 +1,11 @@
 import sys
 import argparse
-import json
 import re
 import os
 import uuid
 import importlib
 import time
 import six
-import traceback
 import numpy as np
 
 from datetime import timedelta
@@ -609,7 +607,6 @@ def get_experiment_fitnesses(experiments, optimizer, config, logger):
                             break
 
             time.sleep(config['sleep_time'])
-        print
         return fitnesses, behaviors
 
 

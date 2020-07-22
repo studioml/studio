@@ -123,7 +123,6 @@ def get_db_provider(config=None, blocking_auth=True):
         artifact_store = db_provider.get_artifact_store()
 
     else:
-        _model_setup = None
         raise ValueError('Unknown type of the database ' + db_config['type'])
 
     setup_model(db_provider, artifact_store)
