@@ -314,13 +314,6 @@ def download_file_from_qualified(qualified, local_path, logger=None):
     if qualified.startswith('s3://'):
 
         if qualified.endswith('/'):
-            # subprocess.Popen(
-            #    [
-            #        'aws', 's3', 'cp', '--recursive',
-            #        "s3://{}/{}".format(bucket, key),
-            #        local_path
-            #    ]
-            # ).communicate()
             _s3_download_dir(bucket, key, local_path, logger=logger)
         else:
             s3_client = _get_active_s3_client()
@@ -329,12 +322,12 @@ def download_file_from_qualified(qualified, local_path, logger=None):
         raise NotImplementedError
 
 def _get_active_s3_client():
-    artifact_store = model_setup.get_artifact_store()
+    artifact_store = model_setup.get_model_artifact_store()
     if artifact_store is None \
         or not isinstance(artifact_store, BaseArtifactStore):
         raise NotImplementedError("Artifact store is not set up or has the wrong type")
 
-    storage_client = ((BaseArtifactStore)(artifact_store)).get_storage_client()
+    storage_client = artifact_store.get_storage_client()
     if storage_client is None:
         raise NotImplementedError("Expected boto3 storage client for current artifact store")
     return storage_client
