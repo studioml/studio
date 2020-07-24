@@ -21,3 +21,8 @@ def get_model_artifact_store():
     if _model_setup is None:
         return None
     return _model_setup.get(STORE_KEY, None)
+
+def reset_model():
+    global _model_setup
+    _model_setup = None
+
