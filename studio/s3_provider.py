@@ -52,6 +52,8 @@ class S3Provider(KeyValueProvider):
             return suffixes
 
     def _delete(self, key):
+        self.logger.error("S3 PROVIDER DELETE object: {0} {1}".format(self.bucket, key))
+
         response = self.meta_store.client.delete_object(
             Bucket=self.bucket,
             Key=key)
