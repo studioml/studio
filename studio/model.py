@@ -21,7 +21,7 @@ from .qclient_cache import get_cached_queue, shutdown_cached_queue
 from .util import parse_verbosity
 from .auth import get_auth
 
-from .model_setup import setup_model, get_model_db_provider
+from .model_setup import setup_model, get_model_db_provider, reset_model
 from . import logs
 
 def get_config(config_file=None):
@@ -60,6 +60,9 @@ def get_config(config_file=None):
 
     raise ValueError('None of the config paths {} exits!'
                      .format(config_paths))
+
+def reset_model_providers():
+    reset_model()
 
 def get_db_provider(config=None, blocking_auth=True):
 

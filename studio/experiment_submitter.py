@@ -34,6 +34,12 @@ def submit_experiments(
     for experiment in experiments:
         experiment.pythonenv = model.add_packages(experiment.pythonenv, python_pkg)
 
+    # Reset our model setup, which will guarantee
+    # that we rebuild our database and storage provider objects
+    # that's important in the case that previous experiment batch
+    # cleaned up after itself.
+    model.reset_model_providers()
+
     # Now add them to experiments database:
     try:
         with model.get_db_provider(config) as db:
