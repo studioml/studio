@@ -39,5 +39,5 @@ filelock
 pygtail
 pika
 
-tensorflow
+tensorflow==2.2.0
 
