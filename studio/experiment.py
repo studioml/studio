@@ -15,6 +15,7 @@ except ImportError:
 
 from . import fs_tracker
 from .util import shquote
+from .dependencies_policy import DependencyPolicy
 
 
 class Experiment(object):
@@ -139,24 +140,9 @@ def create_experiment(
     key = experiment_name if experiment_name else \
         str(int(time.time())) + "_" + str(uuid.uuid4())
 
-    packages = []
-    for pkg in freeze.freeze():
-
-        if pkg.startswith('-e git+'):
-            # git package
-            packages.append(pkg)
-        elif '==' in pkg:
-            # pypi package
-            pkey = re.search(r'^.*?(?=\=\=)', pkg).group(0)
-            pversion = re.search(r'(?<=\=\=).*\Z', pkg).group(0)
-
-            if resources_needed is not None and \
-                    int(resources_needed.get('gpus')) > 0:
-                if (pkey == 'tensorflow' or key == 'tf-nightly'):
-                    pkey = pkey + '-gpu'
-
-            # TODO add installation logic for torch
-            packages.append(pkey + '==' + pversion)
+    current_packages = freeze.freeze()
+    dep_policy = DependencyPolicy(resources_needed)
+    packages = dep_policy.process(current_packages)
 
     return Experiment(
         key=key,

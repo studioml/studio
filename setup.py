@@ -106,27 +106,27 @@ with open('requirements.txt') as f:
     # python modules but be selective about whether the GPU version is used
     # or the default CPU version.  Not doing this will result in the CPU
     # version taking precedence in many cases.
-    versions = {package.key:
-                package.version for package in
-                pkg_resources.working_set}
-    package_set = {p._key for p in
-                   pkg_resources.working_set}
-
-    tensorflow = 'tensorflow'
-    if 'tf-nightly' in package_set or 'tf-nightly-gpu' in package_set:
-        tensorflow = 'tf-nightly'
-
-    if tensorflow in package_set:
-        try:
-            if platform.system() == "Microsoft":
-                _libcudart = ctypes.windll.LoadLibrary('cudart.dll')
-            else:
-                _libcudart = ctypes.cdll.LoadLibrary('libcudart.so')
-                _libcuda = ctypes.cdll.LoadLibrary('libcuda.so')
-            required.append(tensorflow + '==' + versions[tensorflow])
-            required.append(tensorflow + '-gpu==' + versions[tensorflow])
-        except Exception:
-            required.append(tensorflow + '==' + versions[tensorflow])
+    # versions = {package.key:
+    #             package.version for package in
+    #             pkg_resources.working_set}
+    # package_set = {p._key for p in
+    #                pkg_resources.working_set}
+    #
+    # tensorflow = 'tensorflow'
+    # if 'tf-nightly' in package_set or 'tf-nightly-gpu' in package_set:
+    #     tensorflow = 'tf-nightly'
+    #
+    # if tensorflow in package_set:
+    #     try:
+    #         if platform.system() == "Microsoft":
+    #             _libcudart = ctypes.windll.LoadLibrary('cudart.dll')
+    #         else:
+    #             _libcudart = ctypes.cdll.LoadLibrary('libcudart.so')
+    #             _libcuda = ctypes.cdll.LoadLibrary('libcuda.so')
+    #         required.append(tensorflow + '==' + versions[tensorflow])
+    #         required.append(tensorflow + '-gpu==' + versions[tensorflow])
+    #     except Exception:
+    #         required.append(tensorflow + '==' + versions[tensorflow])
 
 
 with open('test_requirements.txt') as f:
