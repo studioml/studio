@@ -342,10 +342,6 @@ class KeyValueProvider(object):
         if not experiment_keys:
             experiment_keys = []
 
-        # keys = sorted(experiment_keys.keys(),
-        #              key=lambda k: str(experiment_keys[k]),
-        #              reverse=True)
-
         return experiment_keys
 
     def get_project_experiments(self, project):

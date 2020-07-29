@@ -6,7 +6,7 @@ from keras.utils import to_categorical
 from keras.callbacks import ModelCheckpoint, TensorBoard
 
 from studio import fs_tracker
-from studio.multi_gpu import make_parallel
+from . import multi_gpu
 
 # this placeholder will contain our input digits, as flat vectors
 img = Input((784,))
@@ -21,7 +21,7 @@ no_gpus = 2
 batch_size = 128
 
 model = Model(img, preds)
-model = make_parallel(model, no_gpus)
+model = multi_gpu.make_parallel(model, no_gpus)
 model.compile(loss='categorical_crossentropy', optimizer='adam')
 
 (x_train, y_train), (x_test, y_test) = mnist.load_data()
