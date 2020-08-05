@@ -40,6 +40,7 @@ class KeyValueProviderTest(object):
         return 'test_config.yaml'
 
     def get_provider(self, config_name=None):
+
         config_name = config_name if config_name else \
             self.get_default_config_name()
 
@@ -48,7 +49,7 @@ class KeyValueProviderTest(object):
                 os.path.realpath(__file__)),
             config_name)
         with open(config_file) as f:
-            config = yaml.load(f)
+            config = yaml.load(f, Loader=yaml.SafeLoader)
 
         return model.get_db_provider(config)
 
@@ -56,7 +57,7 @@ class KeyValueProviderTest(object):
         with self.get_provider() as fb:
             fb._set("test/hello", "world")
             response = fb._get("test/hello")
-            self.assertEquals(response, "world")
+            self.assertEqual(response, "world")
 
             random_str = str(uuid.uuid4())
             key_path = 'test/randomKey'
@@ -180,7 +181,7 @@ class KeyValueProviderTest(object):
             self.assertTrue(line == random_str)
             fb.delete_experiment(experiment)
 
-
+@unittest.skipIf(True, "Firebase is not expected to be used.")
 class FirebaseProviderTest(unittest.TestCase, KeyValueProviderTest):
     _multiprocess_shared_ = True
 
@@ -229,13 +230,13 @@ class UserIndicatedOnAWSTest(unittest.TestCase):
 
 
 @unittest.skipIf(
-    (not on_aws()) or not has_aws_credentials(),
-    'Skipping due to userinput or AWS Not detected')
+    not isinstance(KeyValueProviderTest().get_provider(), S3Provider),
+    'Skipping due to provider is not S3Provider')
 class S3ProviderTest(unittest.TestCase, KeyValueProviderTest):
     _multiprocess_shared_ = True
 
     def get_default_config_name(self):
-        return 'test_config_s3.yaml'
+        return 'test_config.yaml'
 
 
 @unittest.skipIf(
@@ -247,4 +248,5 @@ class GSProviderTest(unittest.TestCase, KeyValueProviderTest):
 
 
 if __name__ == "__main__":
+    KeyValueProviderTest().get_provider(config_name=None)
     unittest.main()

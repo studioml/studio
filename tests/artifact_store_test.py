@@ -23,6 +23,19 @@ from studio.s3_artifact_store import S3ArtifactStore
 from studio.util import has_aws_credentials
 from env_detect import on_gcp, on_aws
 
+def _get_config():
+    config_name = "test_config.yaml"
+    config_file = os.path.join(
+        os.path.dirname(
+            os.path.realpath(__file__)),
+        config_name)
+    with open(config_file) as f:
+        config = yaml.load(f, Loader=yaml.SafeLoader)
+    return config
+
+def _get_provider():
+    config = _get_config()
+    return model.get_db_provider(config)
 
 class ArtifactStoreTest(object):
     _multiprocess_shared_ = True
@@ -33,7 +46,7 @@ class ArtifactStoreTest(object):
                 os.path.realpath(__file__)),
             config_name)
         with open(config_file) as f:
-            config = yaml.load(f)
+            config = yaml.load(f, Loader=yaml.SafeLoader)
 
         return model.get_db_provider(config).store
 
@@ -114,7 +127,7 @@ class ArtifactStoreTest(object):
         url = fb.get_artifact_url(artifact)
         os.remove(tmp_filename)
         response = requests.get(url)
-        self.assertEquals(response.status_code, 200)
+        self.assertEqual(response.status_code, 200)
         tar_filename = os.path.join(tempfile.gettempdir(),
                                     str(uuid.uuid4()) + '.tgz')
         with open(tar_filename, 'wb') as f:
@@ -126,7 +139,7 @@ class ArtifactStoreTest(object):
         tarout, _ = ptar.communicate()
 
         with open(tmp_filename, 'r') as f:
-            self.assertEquals(f.read(), random_str)
+            self.assertEqual(f.read(), random_str)
 
         os.remove(tmp_filename)
         os.remove(tar_filename)
@@ -166,9 +179,11 @@ class ArtifactStoreTest(object):
         expected_qualified_location = self.get_qualified_location_prefix() + \
             key
 
-        self.assertEquals(qualified_location, expected_qualified_location)
+        self.assertEqual(qualified_location, expected_qualified_location)
 
-
+@unittest.skipIf(
+    not on_gcp(),
+    'User indicated not on gcp')
 class FirebaseArtifactStoreTest(ArtifactStoreTest, unittest.TestCase):
     # Tests of private methods
 
@@ -192,8 +207,8 @@ class FirebaseArtifactStoreTest(ArtifactStoreTest, unittest.TestCase):
 
         url = fb._get_file_url(key)
         response = requests.get(url)
-        self.assertEquals(response.status_code, 200)
-        self.assertEquals(response.content.decode('utf-8'),
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.content.decode('utf-8'),
                           random_str)
         fb._delete_file(key)
         os.remove(tmp_filename)
@@ -213,8 +228,8 @@ class FirebaseArtifactStoreTest(ArtifactStoreTest, unittest.TestCase):
 
         url = fb._get_file_url(key)
         response = requests.get(url)
-        self.assertEquals(response.status_code, 200)
-        self.assertEquals(response.content.decode('utf-8'),
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.content.decode('utf-8'),
                           random_str)
         fb._delete_file(key)
         os.remove(tmp_filename)
@@ -309,7 +324,6 @@ class FirebaseArtifactStoreTest(ArtifactStoreTest, unittest.TestCase):
         fb._download_file(key, tmp_filename)
         self.assertTrue(not os.path.exists(tmp_filename))
 
-
 @unittest.skipIf(
     not on_gcp(),
     'User indicated not on gcp')
@@ -344,20 +358,19 @@ class UserIndicatedOnAWSTest(unittest.TestCase):
 
 
 @unittest.skipIf(
-    (not on_aws()) or not has_aws_credentials(),
+     _get_provider() and not has_aws_credentials(),
     'Skipping due to userinput or AWS Not detected')
 class S3ArtifactStoreTest(ArtifactStoreTest, unittest.TestCase):
 
     def get_store(self, config_name=None):
         store = ArtifactStoreTest.get_store(
-            self, 'test_config_s3_storage.yaml')
+            self, 'test_config.yaml')
         self.assertTrue(isinstance(store, S3ArtifactStore))
         return store
 
     def get_qualified_location_prefix(self):
         store = self.get_store()
-        endpoint = urlparse(boto3.client('s3')._endpoint.host)
-        return "s3://" + endpoint.netloc + "/" + store.bucket + "/"
+        return store.get_qualified_location("")
 
 
 if __name__ == "__main__":

@@ -4,12 +4,12 @@ AWSInstance = "aws" in list(
     yaml.load(
         open(
             "tests/test_config.yaml",
-            "r"))["cloud"].keys())
+            "r"), Loader=yaml.SafeLoader)["cloud"].keys())
 GcloudInstance = "gcloud" in list(
     yaml.load(
         open(
             "tests/test_config.yaml",
-            "r"))["cloud"].keys())
+            "r"), Loader=yaml.SafeLoader)["cloud"].keys())
 
 
 def on_gcp():

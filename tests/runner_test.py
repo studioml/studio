@@ -1,6 +1,6 @@
 import unittest
 
-from studio import runner
+from studio import model
 
 
 class RunnerTest(unittest.TestCase):
@@ -10,7 +10,7 @@ class RunnerTest(unittest.TestCase):
         list1 = ['keras==2.0.5', 'boto3==1.1.3']
         list2 = ['keras==1.0.9', 'h5py==2.7.0', 'abc']
 
-        result = set(runner.add_packages(list1, list2))
+        result = set(model.add_packages(list1, list2))
         expected_result = set(['boto3==1.1.3', 'h5py==2.7.0',
                                'keras==1.0.9', 'abc'])
 

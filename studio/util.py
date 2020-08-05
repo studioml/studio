@@ -381,8 +381,8 @@ def _s3_download_dir(bucket, dist, local, logger=None):
 
 
 def has_aws_credentials():
-    return _get_active_s3_client()._request_signer._credentials is not None
-
+    s3_client = _get_active_s3_client()
+    return s3_client._request_signer._credentials is not None
 
 def retry(f,
           no_retries=5, sleep_time=1,

@@ -1,3 +1,4 @@
 keras
 jupyter
+tensorflow
 

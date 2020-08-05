@@ -1,5 +1,4 @@
 import os
-import re
 import glob
 import uuid
 import sys

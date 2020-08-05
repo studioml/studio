@@ -287,7 +287,7 @@ def main(args=sys.argv[1:]):
     queueLifetime = None
 
     if any(runner_args.hyperparam):
-        if runner_args.optimizer is "grid":
+        if runner_args.optimizer == "grid":
             experiments = add_hyperparam_experiments(
                 exec_filename,
                 other_args,

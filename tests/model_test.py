@@ -1,6 +1,12 @@
 import unittest
 import uuid
-import pip
+try:
+    try:
+        from pip._internal.operations import freeze
+    except Exception:
+        from pip.operations import freeze
+except ImportError:
+    freeze = None
 import os
 
 from studio import model
@@ -22,7 +28,7 @@ class ModelTest(unittest.TestCase):
         experiment = create_experiment(
             filename, args, experiment_name, experiment_project)
 
-        packages = [p for p in pip.operations.freeze.freeze()]
+        packages = [p for p in freeze.freeze()]
 
         self.assertTrue(experiment.key == experiment_name)
         self.assertTrue(experiment.filename == filename)
