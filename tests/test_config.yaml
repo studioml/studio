@@ -1,25 +1,25 @@
+## NOTE: to run unit tests in your environment,
+## please provide your own credentials for S3 and RMQ servers access!
 database:
     type: s3
     authentication: none
-    aws_access_key: MountD00m
-    aws_secret_key: 0rcsAndSpiders
+    aws_access_key: *********
+    aws_secret_key: **************
     bucket: test-database
-    endpoint: http://minio02.geneticfinance.com:9000/
+    endpoint: http://******************************/
 
 env:
-    AWS_ACCESS_KEY_ID: MountD00m
     AWS_DEFAULT_REGION: us-west-2
-    AWS_SECRET_ACCESS_KEY: 0rcsAndSpiders
 
 server:
     authentication: None
 
 storage:
     type: s3
-    aws_access_key: MountD00m
-    aws_secret_key: 0rcsAndSpiders
+    aws_access_key: *********
+    aws_secret_key: **************
     bucket: test-storage
-    endpoint: http://minio02.geneticfinance.com:9000/
+    endpoint: http://******************************/
 
 log:
     name: output.log
@@ -30,7 +30,7 @@ verbose: error
 
 cloud:
     queue:
-        rmq: amqp://user:al9DdqRNfvTT@54.71.90.227:5672/%2f?connection_attempts=30&retry_delay=1&socket_timeout=15
+        rmq: amqp://**********************************
 
 resources_needed:
     cpus: 2
