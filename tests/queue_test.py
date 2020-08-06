@@ -2,14 +2,36 @@ import unittest
 import uuid
 import os
 import time
+import yaml
 
 from studio.pubsub_queue import PubsubQueue
 from studio.sqs_queue import SQSQueue
 from studio.local_queue import LocalQueue, get_local_queue_lock
 
 from studio.util import has_aws_credentials
-from studio import logs
+from studio import logs, model
 
+# Configuration of specific queue instance
+# is driven primarily by queue name itself.
+queue_name = "rmq_test_queue"
+
+def _get_queue_name():
+    global queue_name
+    return queue_name
+
+def _get_config():
+    config_name = "test_config.yaml"
+    config_file = os.path.join(
+        os.path.dirname(
+            os.path.realpath(__file__)),
+        config_name)
+    with open(config_file) as f:
+        config = yaml.load(f, Loader=yaml.SafeLoader)
+    return config
+
+def _get_provider():
+    config = _get_config()
+    return model.get_db_provider(config)
 
 class DummyContextManager(object):
     def __init__(self):
@@ -26,6 +48,16 @@ class QueueTest(object):
     def get_queue(self):
         pass
 
+    def get_queue_data(self, data):
+        if data is None:
+            return None
+        data = data[0]
+        if isinstance(data, str):
+            return data
+        if isinstance(data, bytes):
+            return data.decode('utf-8')
+        raise ValueError("unexpected type of queue data")
+
     def test_simple(self):
         with self.get_lock():
             q = self.get_queue()
@@ -35,7 +67,7 @@ class QueueTest(object):
             q.enqueue(data)
             recv_data = q.dequeue(timeout=self.get_timeout())
 
-            self.assertEquals(data, recv_data)
+            self.assertEqual(data, self.get_queue_data(recv_data))
             self.assertTrue(q.dequeue() is None)
 
     def test_clean(self):
@@ -75,9 +107,9 @@ class DistributedQueueTest(QueueTest):
         q.enqueue(data1)
         q.enqueue(data2)
 
-        recv1 = q.dequeue(timeout=self.get_timeout())
+        recv1 = self.get_queue_data(q.dequeue(timeout=self.get_timeout()))
         time.sleep(15)
-        recv2 = q.dequeue(timeout=self.get_timeout())
+        recv2 = self.get_queue_data(q.dequeue(timeout=self.get_timeout()))
 
         self.assertTrue(data1 == recv1 or data2 == recv1)
         self.assertTrue(data1 == recv2 or data2 == recv2)
@@ -100,14 +132,19 @@ class DistributedQueueTest(QueueTest):
         logger.debug('data2 = ' + data2)
 
         q1.enqueue(data1)
+        recv_data1 = self.get_queue_data(
+            q2.dequeue(timeout=self.get_timeout()))
 
-        self.assertEquals(data1, q2.dequeue(timeout=self.get_timeout()))
+        self.assertEqual(data1, recv_data1)
 
         q1.enqueue(data1)
         q1.enqueue(data2)
 
-        recv1 = q1.dequeue(timeout=self.get_timeout())
-        recv2 = q2.dequeue(timeout=self.get_timeout())
+        recv_data1 = q1.dequeue(timeout=self.get_timeout())
+        recv_data2 = q2.dequeue(timeout=self.get_timeout())
+
+        recv1 = self.get_queue_data(recv_data1)
+        recv2 = self.get_queue_data(recv_data2)
 
         logger.debug('recv1 = ' + recv1)
         logger.debug('recv2 = ' + recv2)
@@ -119,6 +156,8 @@ class DistributedQueueTest(QueueTest):
         self.assertTrue(q1.dequeue() is None)
         self.assertTrue(q2.dequeue() is None)
 
+    # Need to clarify if we need queue.hold() function at all.
+    @unittest.skip
     def test_hold(self):
         q = self.get_queue()
         q.clean()
@@ -135,8 +174,7 @@ class DistributedQueueTest(QueueTest):
         self.assertEquals(data, msg)
 
     def get_timeout(self):
-        return 120
-
+        return 20
 
 @unittest.skipIf(
     'GOOGLE_APPLICATION_CREDENTIALS' not in
@@ -154,8 +192,8 @@ class PubSubQueueTest(DistributedQueueTest, unittest.TestCase):
 
 
 @unittest.skipIf(
-    not has_aws_credentials(),
-    "AWS credentials is not present, cannot use SQSQueue")
+     not _get_queue_name().startswith('sqs'),
+    "Queue name specified is not SQSQueue")
 class SQSQueueTest(DistributedQueueTest, unittest.TestCase):
     _multiprocess_shared_ = True
 
@@ -163,6 +201,16 @@ class SQSQueueTest(DistributedQueueTest, unittest.TestCase):
         return SQSQueue(
             'sqs_queue_test_' + str(uuid.uuid4()) if not name else name)
 
+@unittest.skipIf(
+     not _get_queue_name().startswith('rmq'),
+    "Queue name specified is not RMQ Queue")
+class RMQueueTest(DistributedQueueTest, unittest.TestCase):
+    _multiprocess_shared_ = True
+
+    def get_queue(self, name=None):
+        config = _get_config()
+        name = _get_queue_name()
+        return model.get_queue(queue_name=name, config=config)
 
 if __name__ == '__main__':
     unittest.main()

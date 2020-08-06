@@ -170,7 +170,7 @@ class Progbar(object):
             sys.stdout.write('\b' * prev_total_width)
             sys.stdout.write('\r')
 
-            if self.target is not -1:
+            if self.target != -1:
                 numdigits = int(np.floor(np.log10(self.target))) + 1
                 barstr = '%%%dd/%%%dd [' % (numdigits, numdigits)
                 bar = barstr % (current, self.target)
@@ -193,7 +193,7 @@ class Progbar(object):
                 time_per_unit = 0
             eta = time_per_unit * (self.target - current)
             info = ''
-            if current < self.target and self.target is not -1:
+            if current < self.target and self.target != -1:
                 info += ' - ETA: %ds' % eta
             else:
                 info += ' - %ds' % (now - self.start)
@@ -381,8 +381,8 @@ def _s3_download_dir(bucket, dist, local, logger=None):
 
 
 def has_aws_credentials():
-    return _get_active_s3_client()._request_signer._credentials is not None
-
+    s3_client = _get_active_s3_client()
+    return s3_client._request_signer._credentials is not None
 
 def retry(f,
           no_retries=5, sleep_time=1,

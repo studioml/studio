@@ -24,20 +24,20 @@ TEST_TIMEOUT = 600
 
 class LocalWorkerTest(unittest.TestCase):
 
-    @timeout(TEST_TIMEOUT, use_signals=False)
+    @timeout(TEST_TIMEOUT, use_signals=True)
     def test_runner_local(self):
         with stubtest_worker(
-            self,
-            experiment_name='test_runner_local_' + str(uuid.uuid4()),
-            config_name='test_config_http_client.yaml',
-            test_script='tf_hello_world.py',
-            runner_args=[],
-            script_args=['arg0'],
-            expected_output='[ 2.0 6.0 ]'
+                self,
+                experiment_name='test_runner_local_' + str(uuid.uuid4()),
+                config_name='test_config.yaml',
+                test_script='tf_hello_world.py',
+                runner_args=[],
+                script_args=['arg0'],
+                expected_output='[ 2.0 6.0 ]'
         ):
             pass
 
-    @timeout(TEST_TIMEOUT, use_signals=False)
+    @timeout(TEST_TIMEOUT, use_signals=True)
     def test_args_conflict(self):
         with stubtest_worker(
             self,
@@ -50,13 +50,14 @@ class LocalWorkerTest(unittest.TestCase):
         ):
             pass
 
-    @timeout(TEST_TIMEOUT, use_signals=False)
+
+    @timeout(TEST_TIMEOUT, use_signals=True)
     def test_local_hyperparam(self):
         with stubtest_worker(
             self,
             experiment_name='test_local_hyperparam' + str(uuid.uuid4()),
             runner_args=['--verbose=debug'],
-            config_name='test_config_http_client.yaml',
+            config_name='test_config.yaml',
             test_script='hyperparam_hello_world.py',
             expected_output='0.3'
         ):
@@ -69,15 +70,16 @@ class LocalWorkerTest(unittest.TestCase):
                 '--verbose=debug',
                 '--hyperparam=learning_rate=0.4'
             ],
-            config_name='test_config_http_client.yaml',
+            config_name='test_config.yaml',
             test_script='hyperparam_hello_world.py',
             expected_output='0.4'
         ):
             pass
 
-    @unittest.skip('peterz figure out the failure - happens intermittently ' +
-                   'when running in parallel')
-    @timeout(TEST_TIMEOUT, use_signals=False)
+
+    # @unittest.skip('peterz figure out the failure - happens intermittently ' +
+    #                'when running in parallel')
+    @timeout(TEST_TIMEOUT, use_signals=True)
     def test_local_worker_ce(self):
         tmpfile = os.path.join(tempfile.gettempdir(),
                                'tmpfile_ce_' +
@@ -100,7 +102,7 @@ class LocalWorkerTest(unittest.TestCase):
             experiment_name=experiment_name,
             runner_args=['--capture=' + tmpfile + ':f',
                          '--verbose=debug'],
-            config_name='test_config_http_client.yaml',
+            config_name='test_config.yaml',
             test_script='art_hello_world.py',
             script_args=[random_str2],
             expected_output=random_str1,
@@ -120,7 +122,7 @@ class LocalWorkerTest(unittest.TestCase):
             self,
             experiment_name='test_local_worker_e' + str(uuid.uuid4()),
             runner_args=['--reuse={}/f:f'.format(experiment_name)],
-            config_name='test_config_http_client.yaml',
+            config_name='test_config.yaml',
             test_script='art_hello_world.py',
             script_args=[],
             expected_output=random_str2
@@ -128,7 +130,9 @@ class LocalWorkerTest(unittest.TestCase):
 
             db.delete_experiment(experiment_name)
 
-    @timeout(TEST_TIMEOUT, use_signals=False)
+
+
+    @timeout(TEST_TIMEOUT, use_signals=True)
     def test_local_worker_co(self):
         tmpfile = os.path.join(tempfile.gettempdir(),
                                'tmpfile' +
@@ -143,14 +147,16 @@ class LocalWorkerTest(unittest.TestCase):
             self,
             experiment_name='test_local_worker_co' + str(uuid.uuid4()),
             runner_args=['--capture-once=' + tmpfile + ':f'],
-            config_name='test_config_http_client.yaml',
+            config_name='test_config.yaml',
             test_script='art_hello_world.py',
             script_args=[],
             expected_output=random_str
         ):
             pass
 
-    @timeout(TEST_TIMEOUT, use_signals=False)
+
+    @unittest.skipIf(not on_gcp(), "NOT using GCP")
+    @timeout(TEST_TIMEOUT, use_signals=True)
     def test_local_worker_co_url(self):
         expected_str = 'Zabil zaryad ya v pushku tugo'
         url = 'https://storage.googleapis.com/studio-ed756.appspot.com/' + \
@@ -161,7 +167,7 @@ class LocalWorkerTest(unittest.TestCase):
             self,
             experiment_name='test_local_worker_co_url' + str(uuid.uuid4()),
             runner_args=['--capture-once=' + url + ':f'],
-            config_name='test_config_http_client.yaml',
+            config_name='test_config.yaml',
             test_script='art_hello_world.py',
             script_args=[],
             expected_output=expected_str
@@ -178,7 +184,7 @@ class LocalWorkerTest(unittest.TestCase):
     @unittest.skipIf(
         (not on_aws()) or not has_aws_credentials(),
         'Skipping due to userinput or AWS Not detected')
-    @timeout(TEST_TIMEOUT, use_signals=False)
+    @timeout(TEST_TIMEOUT, use_signals=True)
     def test_local_worker_co_s3(self):
         expected_str = 'No4 ulica fonar apteka, bessmyslennyj i tusklyj svet'
         s3loc = 's3://studioml-artifacts/tests/download_test/download_test.txt'
@@ -188,16 +194,17 @@ class LocalWorkerTest(unittest.TestCase):
             self,
             experiment_name='test_local_worker_co_s3' + str(uuid.uuid4()),
             runner_args=['--capture-once=' + s3loc + ':f'],
-            config_name='test_config_http_client.yaml',
+            config_name='test_config.yaml',
             test_script='art_hello_world.py',
             script_args=[],
             expected_output=expected_str
         ):
             pass
 
+
     @unittest.skipIf(keras is None,
                      'keras is required for this test')
-    @timeout(TEST_TIMEOUT, use_signals=False)
+    @timeout(TEST_TIMEOUT, use_signals=True)
     def test_save_get_model(self):
         experiment_name = 'test_save_get_model' + str(uuid.uuid4())
         # with get_local_queue_lock():
@@ -205,7 +212,7 @@ class LocalWorkerTest(unittest.TestCase):
             self,
             experiment_name=experiment_name,
             runner_args=[],
-            config_name='test_config_http_client.yaml',
+            config_name='test_config.yaml',
             test_script='save_model.py',
             script_args=[],
             expected_output='',
@@ -224,14 +231,15 @@ class LocalWorkerTest(unittest.TestCase):
 
             db.delete_experiment(experiment)
 
-    @timeout(TEST_TIMEOUT, use_signals=False)
+
+    @timeout(TEST_TIMEOUT, use_signals=True)
     def test_stop_experiment(self):
         my_path = os.path.dirname(os.path.realpath(__file__))
 
         logger = logs.getLogger('test_stop_experiment')
         logger.setLevel(10)
 
-        config_name = os.path.join(my_path, 'test_config_http_client.yaml')
+        config_name = os.path.join(my_path, 'test_config.yaml')
         key = 'test_stop_experiment' + str(uuid.uuid4())
 
         with model.get_db_provider(model.get_config(config_name)) as db:
@@ -268,14 +276,15 @@ class LocalWorkerTest(unittest.TestCase):
 
             db.delete_experiment(key)
 
-    @timeout(TEST_TIMEOUT, use_signals=False)
+
+    @timeout(TEST_TIMEOUT, use_signals=True)
     def test_experiment_maxduration(self):
         my_path = os.path.dirname(os.path.realpath(__file__))
 
         logger = logs.getLogger('test_experiment_maxduration')
         logger.setLevel(10)
 
-        config_name = os.path.join(my_path, 'test_config_http_client.yaml')
+        config_name = os.path.join(my_path, 'test_config.yaml')
         key = 'test_experiment_maxduration' + str(uuid.uuid4())
 
         with model.get_db_provider(model.get_config(config_name)) as db:
@@ -301,14 +310,14 @@ class LocalWorkerTest(unittest.TestCase):
 
             db.delete_experiment(key)
 
-    @timeout(TEST_TIMEOUT, use_signals=False)
+    @timeout(TEST_TIMEOUT, use_signals=True)
     def test_experiment_lifetime(self):
         my_path = os.path.dirname(os.path.realpath(__file__))
 
         logger = logs.getLogger('test_experiment_lifetime')
         logger.setLevel(10)
 
-        config_name = os.path.join(my_path, 'test_config_http_client.yaml')
+        config_name = os.path.join(my_path, 'test_config.yaml')
         key = 'test_experiment_lifetime' + str(uuid.uuid4())
 
         with model.get_db_provider(model.get_config(config_name)) as db:
@@ -381,7 +390,7 @@ def stubtest_worker(
         logger.debug("studio run output: \n" + sixdecode(pout))
         splitpout = sixdecode(pout).split('\n')
         experiments = [line.split(' ')[-1] for line in splitpout
-                       if line.startswith('studio run: submitted experiment')]
+                       if 'studio run: submitted experiment' in line]
         logger.debug("added experiments: {}".format(experiments))
 
     db = model.get_db_provider(model.get_config(config_name))
@@ -399,7 +408,7 @@ def stubtest_worker(
                 data = f.read()
                 split_data = data.strip().split('\n')
                 print(data)
-                testclass.assertEquals(split_data[-1], expected_output)
+                testclass.assertEqual(split_data[-1], expected_output)
 
         if test_workspace:
             check_workspace(testclass, db, experiment_name)

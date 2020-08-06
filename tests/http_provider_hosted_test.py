@@ -6,7 +6,8 @@ import uuid
 from studio import model
 from model_test import get_test_experiment
 
-
+# We are not currently working with HTTP providers.
+@unittest.skip
 class HTTPProviderHostedTest(unittest.TestCase):
 
     def get_db_provider(self, config_name):

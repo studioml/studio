@@ -284,8 +284,10 @@ def main(args=sys.argv[1:]):
     if runner_args.lifetime:
         config['experimentLifetime'] = runner_args.lifetime
 
+    queueLifetime = None
+
     if any(runner_args.hyperparam):
-        if runner_args.optimizer is "grid":
+        if runner_args.optimizer == "grid":
             experiments = add_hyperparam_experiments(
                 exec_filename,
                 other_args,
@@ -298,8 +300,7 @@ def main(args=sys.argv[1:]):
                 queue_name=runner_args.queue,
                 cloud=runner_args.cloud,
                 config=config,
-                close_after=timedelta(
-                    minutes=2),
+                close_after=queueLifetime,
                 logger=logger,
                 verbose=verbose)
 
@@ -359,8 +360,7 @@ def main(args=sys.argv[1:]):
                     queue_name=queue_name,
                     cloud=runner_args.cloud,
                     config=config,
-                    close_after=timedelta(
-                        minutes=2),
+                    close_after=queueLifetime,
                     logger=logger,
                     verbose=verbose)
 
@@ -382,10 +382,6 @@ def main(args=sys.argv[1:]):
                 fitnesses, behaviors = get_experiment_fitnesses(
                     experiments, optimizer, config, logger)
 
-                # for i, hh in enumerate(hyperparam_pop):
-                #     print fitnesses[i]
-                #     for hhh in hh:
-                #         print hhh
                 try:
                     optimizer.tell(hyperparam_pop, fitnesses, behaviors)
                 except BaseException:
@@ -423,8 +419,7 @@ def main(args=sys.argv[1:]):
             queue_name=runner_args.queue,
             cloud=runner_args.cloud,
             config=config,
-            close_after=timedelta(
-                minutes=2),
+            close_after=queueLifetime,
             logger=logger,
             verbose=verbose)
 

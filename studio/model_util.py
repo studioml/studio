@@ -135,7 +135,7 @@ class BufferedPipe:
             try:
                 return (x[0], self.func(x[1]))
             except BaseException as e:
-                self.logger.warn('Applying function to {} raised exception {}'
+                self.logger.warning('Applying function to {} raised exception {}'
                                  .format(x[1], str(e)))
                 self.logger.exception(e)
                 return (x[0], None)

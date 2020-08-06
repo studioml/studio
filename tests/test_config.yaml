@@ -1,15 +1,25 @@
+## NOTE: to run unit tests in your environment,
+## please provide your own credentials for S3 and RMQ servers access!
 database:
-    type: FireBase
+    type: s3
+    authentication: none
+    aws_access_key: *********
+    aws_secret_key: **************
+    bucket: test-database
+    endpoint: http://******************************/
 
-    apiKey: AIzaSyCLQbp5X2B4SWzBw-sz9rUnGHNSdMl0Yx8
-    authDomain: "{}.firebaseapp.com"
-    databaseURL: "https://{}.firebaseio.com"
-    projectId: studio-ed756
-    storageBucket: "{}.appspot.com"
-    messagingSenderId: 81790704397
+env:
+    AWS_DEFAULT_REGION: us-west-2
 
-    guest: true
-    max_keys: -1
+server:
+    authentication: None
+
+storage:
+    type: s3
+    aws_access_key: *********
+    aws_secret_key: **************
+    bucket: test-storage
+    endpoint: http://******************************/
 
 log:
     name: output.log
@@ -19,8 +29,8 @@ saveMetricsFrequency: 1m
 verbose: error
 
 cloud:
-    aws:
-        zone: us-west-2
+    queue:
+        rmq: amqp://**********************************
 
 resources_needed:
     cpus: 2

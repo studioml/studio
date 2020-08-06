@@ -1,3 +1,5 @@
+pillow
 keras
 jupyter
+tensorflow
 

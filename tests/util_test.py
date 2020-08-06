@@ -37,8 +37,8 @@ class UtilTest(unittest.TestCase):
                             sleep_time=1,
                             exception_class=ValueError)
 
-        self.assertEquals(retval, value)
-        self.assertEquals(attempts, [2])
+        self.assertEqual(retval, value)
+        self.assertEqual(attempts, [2])
 
         # test out for catching different exception class
         try:

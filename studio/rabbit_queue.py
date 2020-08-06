@@ -56,7 +56,7 @@ class RMQueue(object):
                 if 'queue' in config['cloud']:
                     if 'rmq' in config['cloud']['queue']:
                         self._url = config['cloud']['queue']['rmq']
-                        self._logger.warn('url {}'
+                        self._logger.warning('url {}'
                                           .format(self._url))
 
         self._queue = queue
@@ -440,7 +440,7 @@ class RMQueue(object):
     def clean(self, timeout=0):
         while True:
             msg = self.dequeue(timeout=timeout)
-            if not msg:
+            if msg is None:
                 break
         return
 
@@ -541,19 +541,23 @@ class RMQueue(object):
                 if self._rmq_msg is not None:
                     self._logger.info('message {0} from {1} '
                                       .format(self._rmq_msg, self._url))
-                    return self._rmq_msg, self._rmq_id
+                    rec_msg = self._rmq_msg
+                    rec_id = self._rmq_id
+                    if acknowledge:
+                        self.acknowledge(self._rmq_id)
+                    return rec_msg, rec_id
                 else:
                     self._logger.info('idle {0} {1}'
                                       .format(self._url, self._queue))
 
             if i >= timeout:
-                self._logger.info('timed-out')
-
+                self._logger.info('timed-out trying to dequeue from {0}'
+                                  .format(self._url))
                 return None
 
             time.sleep(1)
 
-        self._logger.info('dequeue done')
+        self._logger.debug('dequeue done from {0}'.format(self._url))
 
     def on_message(self, unused_channel, basic_deliver, properties, body):
 
@@ -584,6 +588,7 @@ class RMQueue(object):
             if self._channel is None:
                 return None
             result = self._channel.basic_ack(delivery_tag=ack_id)
+            return result
 
     def hold(self, ack_id, minutes):
         # Nothing is needed here as the message will remain while the channel

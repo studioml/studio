@@ -68,6 +68,7 @@ class LocalQueue:
 
     def dequeue(self, acknowledge=True, timeout=0):
         sleep_in_seconds = 1
+        total_wait_time = 0
         while True:
             with _local_queue_lock:
                 is_active, files = self._get_queue_status()
@@ -80,16 +81,19 @@ class LocalQueue:
                     with open(first_file, 'r') as f:
                         data = f.read()
 
-                    self.acknowledge(first_file)
-                    if not acknowledge:
-                        return data, first_file
+                    if acknowledge:
+                        self.acknowledge(first_file)
+                        return data, None
                     else:
-                        return data
+                        return data, first_file
 
+            if total_wait_time >= timeout:
+                return None
             # self.logger.info(
             #    ('No messages found, sleeping for {0} sec'
             #      .format(sleep_in_seconds))
             time.sleep(sleep_in_seconds)
+            total_wait_time += sleep_in_seconds
 
     def enqueue(self, data):
         with _local_queue_lock:

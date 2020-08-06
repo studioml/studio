@@ -19,8 +19,8 @@ def get_git_info(path='.', abort_dirty=True):
 def is_git(path='.'):
     p = subprocess.Popen(
         ['git', 'status'],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
         cwd=path)
 
     p.wait()
