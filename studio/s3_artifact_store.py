@@ -46,11 +46,20 @@ class S3ArtifactStore(TartifactStore):
 
 
     def _upload_file(self, key, local_path):
-        self.client.upload_file(local_path, self.bucket, key)
+        try:
+            self.client.upload_file(local_path, self.bucket, key)
+        except Exception as exc:
+            self._report_fatal("FAILED to upload file {0} to {1}/{2}: {3}"
+                               .format(local_path, self.bucket, key, exc))
 
     def _download_file(self, key, local_path, bucket=None):
         bucket = bucket or self.bucket
-        self.client.download_file(bucket, key, local_path)
+        try:
+            self.client.download_file(bucket, key, local_path)
+        except Exception as exc:
+            self._report_fatal("FAILED to download file {0} from {1}/{2}: {3}"
+                               .format(local_path, self.bucket, key, exc))
+
 
     def _delete_file(self, key):
         self.client.delete_object(Bucket=self.bucket, Key=key)
@@ -63,7 +72,7 @@ class S3ArtifactStore(TartifactStore):
             return self.client.generate_presigned_url(
                 'put_object', Params={'Bucket': self.bucket, 'Key': key})
         else:
-            raise ValueError('Unknown method ' + method)
+            raise ValueError('Unknown method {0} in get_file_url()'.format(method))
 
     def _get_file_post(self, key):
         return self.client.generate_presigned_post(

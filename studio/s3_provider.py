@@ -1,4 +1,3 @@
-import botocore
 import json
 import re
 from .keyvalue_provider import KeyValueProvider

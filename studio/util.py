@@ -39,6 +39,9 @@ def remove_backspaces(line):
 
     return buf.getvalue()
 
+def _report_fatal(msg: str, logger):
+    logger.error(msg)
+    raise ValueError(msg)
 
 def sha256_checksum(filename, block_size=65536):
     return filehash(filename, block_size, hashobj=hashlib.sha256())
@@ -246,34 +249,48 @@ def download_file(url, local_path, logger=None):
         url,
         stream=True)
     if logger:
-        logger.info(("Trying to download file at url {} to " +
-                     "local path {}").format(url, local_path))
+        logger.info(("Trying to download file at url {0} to " +
+                     "local path {1}").format(url, local_path))
 
     if response.status_code == 200:
-        with open(local_path, 'wb') as f:
-            for chunk in response:
-                f.write(chunk)
+        try:
+            with open(local_path, 'wb') as f:
+                for chunk in response:
+                    f.write(chunk)
+        except Exception as exc:
+            msg: str = 'Download/write {0} from {1} FAILED: {2}. Aborting.'\
+                .format(local_path, url, exc)
+            _report_fatal(msg, logger)
+
     elif logger:
-        logger.info("Response error with code {}"
-                    .format(response.status_code))
+        msg: str = 'Download {0} from {1}: Response error with code {2}. Aborting.'\
+            .format(local_path, url, response.status_code)
+        _report_fatal(msg, logger)
 
     return response
 
 
 def upload_file(url, local_path, logger=None):
     if logger:
-        logger.info(("Trying to upload file {} to " +
-                     "url {}").format(local_path, url))
+        logger.info(("Trying to upload file {0} to " +
+                     "url {1}").format(local_path, url))
     tic = time.time()
-    with open(local_path, 'rb') as f:
-        resp = requests.put(url, data=f)
+    try:
+        with open(local_path, 'rb') as f:
+            resp = requests.put(url, data=f)
+    except Exception as exc:
+        msg: str = 'Upload {0} to {1} FAILED: {2}. Aborting.'\
+            .format(local_path, url, exc)
+        _report_fatal(msg, logger)
 
     if resp.status_code != 200 and logger:
-        logger.error(str(resp.reason))
+        msg: str = 'Upload {0} to {1}: Response error {2}:{3}. Aborting.'\
+            .format(local_path, url, resp.status_code, resp.reason)
+        _report_fatal(msg, logger)
 
     if logger:
-        logger.debug('File upload done in {} s'
-                     .format(time.time() - tic))
+        logger.debug('File {0} upload to {1} done in {2} s'
+                     .format(local_path, url, time.time() - tic))
 
 def _looks_like_url(name):
     """
@@ -289,6 +306,13 @@ def _looks_like_url(name):
         # Assume it is port number
         return True
     return False
+
+def _s3_download_file(client, bucket, key, local_path):
+    try:
+        client.download_file(bucket, key, local_path)
+    except Exception as exc:
+        _report_fatal("FAILED to download file {0} from {1}/{2}: {3}"
+                      .format(local_path, bucket, key, exc))
 
 def download_file_from_qualified(qualified, local_path, logger=None):
     if qualified.startswith('dockerhub://') or \
@@ -307,17 +331,16 @@ def download_file_from_qualified(qualified, local_path, logger=None):
         key = '/'.join(qualified_split[3:])
 
     if logger is not None:
-        logger.debug(('Downloading file from bucket {} ' +
-                      ' and key {} to local path {}')
+        logger.debug(('Downloading file from bucket {0} ' +
+                      ' and key {1} to local path {2}')
                      .format(bucket, key, local_path))
 
     if qualified.startswith('s3://'):
-
         if qualified.endswith('/'):
             _s3_download_dir(bucket, key, local_path, logger=logger)
         else:
             s3_client = _get_active_s3_client()
-            s3_client.download_file(bucket, key, local_path)
+            _s3_download_file(s3_client, bucket, key, local_path)
     else:
         raise NotImplementedError
 
@@ -350,34 +373,19 @@ def _s3_download_dir(bucket, dist, local, logger=None):
 
         if result.get('Contents') is not None:
             for file in result.get('Contents'):
-                if not os.path.exists(
-                    os.path.dirname(
-                        local +
-                        os.sep +
-                        file.get('Key'))):
-                    os.makedirs(
-                        os.path.dirname(
-                            local +
-                            os.sep +
-                            file.get('Key')))
+                key = file.get('Key')
+                local_dir_path: str = os.path.dirname(local + os.sep + key)
+                if not os.path.exists(local_dir_path):
+                    os.makedirs(local_dir_path)
 
-                try:
-                    key = file.get('Key')
-                    local_path = os.path.join(
-                        local,
-                        re.sub('^' + dist, '', file.get('Key'))
-                    )
+                local_path = os.path.join(local, re.sub('^'+dist, '', key))
 
-                    if logger:
-                        logger.debug(
-                            'Downloading {}/{} to {}'
-                            .format(bucket, key, local_path))
+                if logger:
+                    logger.debug(
+                        'Downloading {0}/{1} to {2}'
+                        .format(bucket, key, local_path))
 
-                    s3_client.download_file(bucket, key, local_path)
-                except ClientError as e:
-                    if logger:
-                        logger.debug(
-                            'Download failed with exception {}'.format(e))
+                _s3_download_file(s3_client, bucket, key, local_path)
 
 
 def has_aws_credentials():
@@ -396,8 +404,8 @@ def retry(f,
 
             if logger:
                 logger.info(
-                    ('Exception {} is caught, ' +
-                     'sleeping {}s and retrying (attempt {} of {})')
+                    ('Exception {0} is caught, ' +
+                     'sleeping {1}s and retrying (attempt {2} of {3})')
                     .format(e, sleep_time, i, no_retries))
             time.sleep(sleep_time)
 
@@ -535,7 +543,7 @@ def rm_rf(path):
     elif os.path.isdir(path):
         shutil.rmtree(path)  # remove dir and all contains
     else:
-        raise ValueError("file {} is not a file or dir.".format(path))
+        raise ValueError("file {0} is not a file or dir.".format(path))
 
 class LogReprinter(object):
     def __init__(self, log_path):
