@@ -2,7 +2,6 @@ import os
 import json
 
 from .keyvalue_provider import KeyValueProvider
-from .local_artifact_store import LocalArtifactStore
 
 class LocalDbProvider(KeyValueProvider):
 
@@ -14,7 +13,7 @@ class LocalDbProvider(KeyValueProvider):
         self.db_root = os.path.realpath(os.path.expanduser(self.endpoint))
         if not os.path.exists(self.db_root) \
             or not os.path.isdir(self.db_root):
-            raise ValueError("Local DB root {} doesn't exist or not a directory!".format(self.db_root))
+            raise ValueError("Local DB root {0} doesn't exist or not a directory!".format(self.db_root))
 
         self.bucket = config.get('bucket')
         self.db_root = os.path.join(self.db_root, self.bucket)

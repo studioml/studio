@@ -18,7 +18,9 @@ class LocalArtifactStore(TartifactStore):
         self.store_root = os.path.realpath(os.path.expanduser(self.endpoint))
         if not os.path.exists(self.store_root) \
             or not os.path.isdir(self.store_root):
-            raise ValueError()
+            msg: str = "Store root {0} doesn't exist or not a directory. Aborting."\
+                .format(self.store_root)
+            self._report_fatal(msg)
 
         self.bucket = bucket_name
         if self.bucket is None:
@@ -35,15 +37,23 @@ class LocalArtifactStore(TartifactStore):
         dirs = os.path.dirname(path)
         os.makedirs(dirs, mode = 0o777, exist_ok = True)
 
+    def _copy_file(self, from_path, to_path):
+        try:
+            shutil.copyfile(from_path, to_path)
+        except Exception as exc:
+            msg: str = "FAILED to copy '{0}' to '{1}': {2}. Aborting."\
+                .format(from_path, to_path,exc)
+            self._report_fatal(msg)
+
     def _upload_file(self, key, local_path):
         target_path = os.path.join(self.store_root, key)
         self._ensure_path_dirs_exist(target_path)
-        shutil.copyfile(local_path, target_path)
+        self._copy_file(local_path, target_path)
 
     def _download_file(self, key, local_path, bucket=None):
         source_path = os.path.join(self.store_root, key)
         self._ensure_path_dirs_exist(local_path)
-        shutil.copyfile(source_path, local_path)
+        self._copy_file(source_path, local_path)
 
     def _delete_file(self, key):
         os.remove(os.path.join(self.store_root, key))
