@@ -1,17 +1,9 @@
 import calendar
 
-try:
-    from urlparse import urlparse
-except ImportError:
-    from urllib.parse import urlparse
-
-try:
-    import boto3
-except ImportError:
-    boto3 = None
+from urllib.parse import urlparse
+import boto3
 
 from .tartifact_store import TartifactStore
-from . import logs
 
 class S3ArtifactStore(TartifactStore):
     def __init__(self, config,
@@ -31,12 +23,21 @@ class S3ArtifactStore(TartifactStore):
         self.endpoint = self.client._endpoint.host
 
         self.bucket = config['bucket']
-        buckets = self.client.list_buckets()
+        try:
+            buckets = self.client.list_buckets()
+        except Exception as exc:
+            msg: str = "FAILED to list buckets for {0}: {1}"\
+                .format(self.endpoint, exc)
+            self._report_fatal(msg)
 
         if self.bucket not in [b['Name'] for b in buckets['Buckets']]:
-            self.client.create_bucket(
-                Bucket=self.bucket
-            )
+            try:
+                self.client.create_bucket(Bucket=self.bucket)
+            except Exception as exc:
+                msg: str = "FAILED to create bucket {0} for {1}: {2}"\
+                    .format(self.bucket, self.endpoint, exc)
+                self._report_fatal(msg)
+
         super(S3ArtifactStore, self).__init__(
             measure_timestamp_diff,
             compression=compression,
@@ -85,6 +86,8 @@ class S3ArtifactStore(TartifactStore):
             obj = self.client.head_object(Bucket=self.bucket, Key=key)
             time_updated = obj.get('LastModified', None)
         except BaseException:
+            self.logger.error("FAILED to get timestamp for S3 object {0}/{1}"
+                              .format(self.bucket, key))
             return None
 
         if time_updated:

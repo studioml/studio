@@ -4,7 +4,6 @@ import uuid
 import time
 import tempfile
 import re
-from threading import Thread
 import subprocess
 
 import tarfile
@@ -140,6 +139,7 @@ class TartifactStore(BaseArtifactStore):
         else:
             self.logger.debug(("Local path {0} does not exist. " +
                                "Not uploading anything.").format(local_path))
+            return None
 
     def get_artifact(
             self,

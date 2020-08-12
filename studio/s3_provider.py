@@ -19,13 +19,18 @@ class S3Provider(KeyValueProvider):
             store)
 
     def _get(self, key, shallow=False):
-        response = self.meta_store.client.list_objects_v2(
-            Bucket=self.bucket,
-            Prefix=key,
-            Delimiter='/'
-        )
+        try:
+            response = self.meta_store.client.list_objects_v2(
+                Bucket=self.bucket,
+                Prefix=key,
+                Delimiter='/'
+            )
+        except Exception as exc:
+            msg: str = "FAILED to list objects in bucket {0}: {1}"\
+                .format(self.bucket, exc)
+            self._report_fatal(msg)
 
-        if response['KeyCount'] == 0:
+        if response is None or response['KeyCount'] == 0:
             return None
 
         if response['KeyCount'] == 1 and \
@@ -53,24 +58,38 @@ class S3Provider(KeyValueProvider):
     def _delete(self, key):
         self.logger.info("S3 deleting object: {0}/{1}".format(self.bucket, key))
 
-        response = self.meta_store.client.delete_object(
-            Bucket=self.bucket,
-            Key=key)
+        try:
+            response = self.meta_store.client.delete_object(
+                Bucket=self.bucket,
+                Key=key)
+        except Exception as exc:
+            msg: str = "FAILED to delete object {0} in bucket {1}: {2}"\
+                .format(key, self.bucket, exc)
+            self._report_fatal(msg)
 
-        if response['ResponseMetadata']['HTTPStatusCode'] != 204:
-            raise ValueError(
-                ('attempt to delete write key {} ' +
-                 'returned response {}')
-                .format(key, response['ResponseMetadata']))
+        reason = response['ResponseMetadata'] if response else "None"
+        if response is None or\
+            response['ResponseMetadata']['HTTPStatusCode'] != 204:
+            msg: str = 'attempt to delete key {0} in bucket {1}' +\
+                       ' returned response {2}'\
+                           .format(key, self.bucket, reason)
+            self._report_fatal(msg)
 
     def _set(self, key, value):
-        response = self.meta_store.client.put_object(
-            Bucket=self.bucket,
-            Key=key,
-            Body=json.dumps(value))
+        try:
+            response = self.meta_store.client.put_object(
+                Bucket=self.bucket,
+                Key=key,
+                Body=json.dumps(value))
+        except Exception as exc:
+            msg: str = "FAILED to write object {0} in bucket {1}: {2}"\
+                .format(key, self.bucket, exc)
+            self._report_fatal(msg)
 
-        if response['ResponseMetadata']['HTTPStatusCode'] != 200:
-            raise ValueError(
-                ('attempt to read write key {}  with value {} ' +
-                 'returned response {}')
-                .format(key, value, response['ResponseMetadata']))
+        reason = response['ResponseMetadata'] if response else "None"
+        if response is None or \
+                response['ResponseMetadata']['HTTPStatusCode'] != 200:
+            msg: str = 'attempt to write key {0} in bucket {1}' +\
+                       ' returned response {2}'\
+                           .format(key, self.bucket, reason)
+            self._report_fatal(msg)
