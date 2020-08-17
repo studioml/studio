@@ -228,7 +228,9 @@ class TartifactStore(BaseArtifactStore):
 
         def finish_download():
             try:
-                self._download_file(key, tar_filename)
+                result = self._download_file(key, tar_filename)
+                if not result:
+                    return local_path
             except BaseException as exc:
                 msg: str =\
                     "FAILED to download {0}: {1}. Aborting.".format(key, exc)

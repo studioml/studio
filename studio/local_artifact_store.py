@@ -47,24 +47,43 @@ class LocalArtifactStore(TartifactStore):
 
     def _upload_file(self, key, local_path):
         target_path = os.path.join(self.store_root, key)
+        if not os.path.exists(local_path):
+            self.logger.warning(
+                "Local path {0} does not exist. SKIPPING upload to {1}"
+                    .format(local_path, target_path))
+            return False
         self._ensure_path_dirs_exist(target_path)
         self._copy_file(local_path, target_path)
+        return True
 
     def _download_file(self, key, local_path, bucket=None):
         source_path = os.path.join(self.store_root, key)
+        if not os.path.exists(source_path):
+            self.logger.warning(
+                "Source path {0} does not exist. SKIPPING download to {1}"
+                    .format(source_path, local_path))
+            return False
         self._ensure_path_dirs_exist(local_path)
         self._copy_file(source_path, local_path)
+        return True
 
     def _delete_file(self, key):
         os.remove(os.path.join(self.store_root, key))
 
-    def _get_file_url(self, key, method='GET'):
+    def _get_file_path_from_key(self, key: str):
         return str(os.path.join(self.store_root, key))
+
+    def _get_file_url(self, key, method='GET'):
+        return self._get_file_path_from_key(key)
 
     def _get_file_post(self, key):
-        return str(os.path.join(self.store_root, key))
+        return self._get_file_path_from_key(key)
 
     def _get_file_timestamp(self, key):
+        key_path: str = self._get_file_path_from_key(key)
+        if os.path.exists(key_path):
+            return os.path.getmtime(key_path)
+        else:
             return None
 
     def get_qualified_location(self, key):

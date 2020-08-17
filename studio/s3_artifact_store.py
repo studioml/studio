@@ -1,5 +1,6 @@
 import calendar
 
+import os
 from urllib.parse import urlparse
 import boto3
 
@@ -47,20 +48,33 @@ class S3ArtifactStore(TartifactStore):
 
 
     def _upload_file(self, key, local_path):
+        if not os.path.exists(local_path):
+            self.logger.warning(
+                "Local path {0} does not exist. SKIPPING upload to {1}/{2}"
+                    .format(local_path, self.bucket, key))
+            return False
         try:
             self.client.upload_file(local_path, self.bucket, key)
+            return True
         except Exception as exc:
             self._report_fatal("FAILED to upload file {0} to {1}/{2}: {3}"
                                .format(local_path, self.bucket, key, exc))
+            return False
 
     def _download_file(self, key, local_path, bucket=None):
         bucket = bucket or self.bucket
         try:
             self.client.download_file(bucket, key, local_path)
+            return True
+        except self.client.exceptions.NoSuchKey:
+            self.logger.warning(
+                "No key found: {0}/{1}. SKIPPING download to {2}"
+                    .format(bucket, key, local_path))
+            return False
         except Exception as exc:
             self._report_fatal("FAILED to download file {0} from {1}/{2}: {3}"
                                .format(local_path, self.bucket, key, exc))
-
+            return False
 
     def _delete_file(self, key):
         self.client.delete_object(Bucket=self.bucket, Key=key)

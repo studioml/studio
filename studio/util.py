@@ -307,9 +307,14 @@ def _looks_like_url(name):
         return True
     return False
 
-def _s3_download_file(client, bucket, key, local_path):
+def _s3_download_file(client, bucket, key, local_path, logger=None):
     try:
         client.download_file(bucket, key, local_path)
+    except client.exceptions.NoSuchKey:
+        logger.warning(
+            "No key found: {0}/{1}. SKIPPING download to {2}"
+                .format(bucket, key, local_path))
+        return
     except Exception as exc:
         _report_fatal("FAILED to download file {0} from {1}/{2}: {3}"
                       .format(local_path, bucket, key, exc))
@@ -340,7 +345,7 @@ def download_file_from_qualified(qualified, local_path, logger=None):
             _s3_download_dir(bucket, key, local_path, logger=logger)
         else:
             s3_client = _get_active_s3_client()
-            _s3_download_file(s3_client, bucket, key, local_path)
+            _s3_download_file(s3_client, bucket, key, local_path, logger=logger)
     else:
         raise NotImplementedError
 
@@ -385,7 +390,7 @@ def _s3_download_dir(bucket, dist, local, logger=None):
                         'Downloading {0}/{1} to {2}'
                         .format(bucket, key, local_path))
 
-                _s3_download_file(s3_client, bucket, key, local_path)
+                _s3_download_file(s3_client, bucket, key, local_path, logger=logger)
 
 
 def has_aws_credentials():
