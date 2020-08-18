@@ -1,4 +1,3 @@
-import calendar
 import os
 import shutil
 
@@ -48,7 +47,7 @@ class LocalArtifactStore(TartifactStore):
     def _upload_file(self, key, local_path):
         target_path = os.path.join(self.store_root, key)
         if not os.path.exists(local_path):
-            self.logger.warning(
+            self.logger.info(
                 "Local path {0} does not exist. SKIPPING upload to {1}"
                     .format(local_path, target_path))
             return False
@@ -59,7 +58,7 @@ class LocalArtifactStore(TartifactStore):
     def _download_file(self, key, local_path, bucket=None):
         source_path = os.path.join(self.store_root, key)
         if not os.path.exists(source_path):
-            self.logger.warning(
+            self.logger.info(
                 "Source path {0} does not exist. SKIPPING download to {1}"
                     .format(source_path, local_path))
             return False
