@@ -63,7 +63,7 @@ class ArtifactStoreTest(object):
             f.write(random_str)
 
         artifact = {'key': 'tests/' + str(uuid.uuid4()) + '.tar'}
-        fb.put_artifact(artifact, tmp_dir, cache=False)
+        fb.put_artifact(artifact, tmp_dir)
         shutil.rmtree(tmp_dir)
         fb.get_artifact(artifact, tmp_dir)
 
@@ -91,7 +91,7 @@ class ArtifactStoreTest(object):
 
         artifact = {'key': 'tests/' + str(uuid.uuid4()) + '.tgz'}
 
-        fb.put_artifact(artifact, tmp_dir, cache=False)
+        fb.put_artifact(artifact, tmp_dir)
         shutil.rmtree(tmp_dir)
 
         tic1 = time.clock()
@@ -123,7 +123,7 @@ class ArtifactStoreTest(object):
 
         artifact_key = 'tests/test_' + str(uuid.uuid4())
         artifact = {'key': artifact_key}
-        fb.put_artifact(artifact, tmp_filename, cache=False)
+        fb.put_artifact(artifact, tmp_filename)
         url = fb.get_artifact_url(artifact)
         os.remove(tmp_filename)
         response = requests.get(url)
@@ -158,7 +158,7 @@ class ArtifactStoreTest(object):
 
         artifact_key = 'tests/test_' + str(uuid.uuid4())
         artifact = {'key': artifact_key}
-        fb.put_artifact(artifact, tmp_filename, cache=False)
+        fb.put_artifact(artifact, tmp_filename)
         shutil.rmtree(tmp_dir)
         fb.delete_artifact(artifact)
         fb.get_artifact(artifact, tmp_dir)

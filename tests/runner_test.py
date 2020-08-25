@@ -14,7 +14,7 @@ class RunnerTest(unittest.TestCase):
         expected_result = set(['boto3==1.1.3', 'h5py==2.7.0',
                                'keras==1.0.9', 'abc'])
 
-        self.assertEquals(result, expected_result)
+        self.assertEqual(result, expected_result)
 
 
 if __name__ == '__main__':

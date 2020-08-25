@@ -45,8 +45,8 @@ class ModelTest(unittest.TestCase):
         config = model.get_config(
             os.path.join(os.path.dirname(os.path.realpath(__file__)),
                          'test_config_env.yaml'))
-        self.assertEquals(config['test_key'], value1)
-        self.assertEquals(config['test_section']['test_key'], value2)
+        self.assertEqual(config['test_key'], value1)
+        self.assertEqual(config['test_section']['test_key'], value2)
 
 
 if __name__ == "__main__":

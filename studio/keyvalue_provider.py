@@ -2,14 +2,14 @@ import time
 import os
 import six
 import re
-from threading import Thread
+from concurrent.futures import ThreadPoolExecutor, wait
 
 from . import util, git_util, logs
 from .firebase_artifact_store import FirebaseArtifactStore
 from .auth import get_auth
 from .experiment import experiment_from_dict
 from .tartifact_store import get_immutable_artifact_key
-from .util import timeit, retry
+from .util import retry
 
 
 class KeyValueProvider(object):
@@ -50,6 +50,10 @@ class KeyValueProvider(object):
 
         self.max_keys = db_config.get('max_keys', 100)
 
+    def _report_fatal(self, msg: str):
+        self.logger.error(msg)
+        raise ValueError(msg)
+
     def _get_userid(self):
         userid = None
         if self.auth:
@@ -68,6 +72,13 @@ class KeyValueProvider(object):
 
     def _get_projects_keybase(self):
         return "projects/"
+
+    def _experiment_key(self, experiment):
+        if not isinstance(experiment, six.string_types):
+            key = experiment.key
+        else:
+            key = experiment
+        return key
 
     def add_experiment(self, experiment, userid=None, compression=None):
         self._delete(self._get_experiments_keybase() + experiment.key)
@@ -152,14 +163,13 @@ class KeyValueProvider(object):
                   experiment.key,
                   experiment_dict)
 
-        self.checkpoint_experiment(experiment)
+        self.checkpoint_experiment(experiment, blocking=True)
 
     def stop_experiment(self, key):
         # can be called remotely (the assumption is
         # that remote worker checks experiments status periodically,
         # and if it is 'stopped', kills the experiment)
-        if not isinstance(key, six.string_types):
-            key = key.key
+        key = self._experiment_key(key)
 
         experiment_data = self._get(self._get_experiments_keybase() +
                                     key)
@@ -171,12 +181,10 @@ class KeyValueProvider(object):
 
     def finish_experiment(self, experiment):
         time_finished = time.time()
+        key = self._experiment_key(experiment)
         if not isinstance(experiment, six.string_types):
-            key = experiment.key
             experiment.status = 'finished'
             experiment.time_finished = time_finished
-        else:
-            key = experiment
 
         experiment_dict = self._get(
             self._get_experiments_keybase() + key)
@@ -221,25 +229,27 @@ class KeyValueProvider(object):
         self._delete(self._get_experiments_keybase() + experiment_key)
 
     def checkpoint_experiment(self, experiment, blocking=False):
-        if not isinstance(experiment, six.string_types):
-            key = experiment.key
-        else:
-            key = experiment
+        key = self._experiment_key(experiment)
 
-        self.logger.debug(('checkpointing {}'.format(
+        self.logger.debug(('checkpointing {0}'.format(
             self._get_experiments_keybase() + key)))
 
         experiment_dict = self._get(self._get_experiments_keybase() + key)
 
-        checkpoint_threads = [
-            Thread(
-                target=self.store.put_artifact,
-                args=(art,))
-            for _, art in six.iteritems(experiment.artifacts)
-            if art['mutable'] and art.get('local')]
+        workers = []
+        with ThreadPoolExecutor(max_workers=8) as executor:
+            for _, art in six.iteritems(experiment.artifacts):
+                if art['mutable'] and art.get('local'):
+                    workers.append(executor.submit(self.store.put_artifact, art))
+            wait(workers)
 
-        for t in checkpoint_threads:
-            t.start()
+        for worker in workers:
+            try:
+                worker.result()
+            except Exception as exc:
+                # If any of artifact savers failed and threw an exception,
+                # rethrow it to signal overall checkpoint failure
+                raise exc
 
         checkpoint_time = time.time()
         experiment.time_last_checkpoint = checkpoint_time
@@ -247,12 +257,6 @@ class KeyValueProvider(object):
 
         self._set(self._get_experiments_keybase() +
                   key, experiment_dict)
-
-        if blocking:
-            for t in checkpoint_threads:
-                t.join()
-        else:
-            return checkpoint_threads
 
     def _get_experiment_info(self, experiment):
         info = {}
@@ -320,11 +324,10 @@ class KeyValueProvider(object):
         if getinfo:
             try:
                 expinfo = self._get_experiment_info(experiment_stub)
-
             except Exception as e:
                 self.logger.info(
-                    "Exception {0} while info download for {1}".format(
-                        e, key))
+                    "Exception {0} while info download for {1}"
+                        .format(e, key))
 
         return experiment_from_dict(data, expinfo)
 

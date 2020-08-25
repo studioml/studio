@@ -1,17 +1,11 @@
 import calendar
 
-try:
-    from urlparse import urlparse
-except ImportError:
-    from urllib.parse import urlparse
-
-try:
-    import boto3
-except ImportError:
-    boto3 = None
+import os
+from urllib.parse import urlparse
+import boto3
+import botocore
 
 from .tartifact_store import TartifactStore
-from . import logs
 
 class S3ArtifactStore(TartifactStore):
     def __init__(self, config,
@@ -31,12 +25,21 @@ class S3ArtifactStore(TartifactStore):
         self.endpoint = self.client._endpoint.host
 
         self.bucket = config['bucket']
-        buckets = self.client.list_buckets()
+        try:
+            buckets = self.client.list_buckets()
+        except Exception as exc:
+            msg: str = "FAILED to list buckets for {0}: {1}"\
+                .format(self.endpoint, exc)
+            self._report_fatal(msg)
 
         if self.bucket not in [b['Name'] for b in buckets['Buckets']]:
-            self.client.create_bucket(
-                Bucket=self.bucket
-            )
+            try:
+                self.client.create_bucket(Bucket=self.bucket)
+            except Exception as exc:
+                msg: str = "FAILED to create bucket {0} for {1}: {2}"\
+                    .format(self.bucket, self.endpoint, exc)
+                self._report_fatal(msg)
+
         super(S3ArtifactStore, self).__init__(
             measure_timestamp_diff,
             compression=compression,
@@ -44,13 +47,44 @@ class S3ArtifactStore(TartifactStore):
 
         self.set_storage_client(self.client)
 
+    def _not_found(self, response):
+        try:
+            return response['Error']['Code'] == '404'
+        except Exception:
+            return False
 
     def _upload_file(self, key, local_path):
-        self.client.upload_file(local_path, self.bucket, key)
+        if not os.path.exists(local_path):
+            self.logger.info(
+                "Local path {0} does not exist. SKIPPING upload to {1}/{2}"
+                    .format(local_path, self.bucket, key))
+            return False
+        try:
+            self.client.upload_file(local_path, self.bucket, key)
+            return True
+        except Exception as exc:
+            self._report_fatal("FAILED to upload file {0} to {1}/{2}: {3}"
+                               .format(local_path, self.bucket, key, exc))
+            return False
 
     def _download_file(self, key, local_path, bucket=None):
         bucket = bucket or self.bucket
-        self.client.download_file(bucket, key, local_path)
+        try:
+            self.client.download_file(bucket, key, local_path)
+            return True
+        except botocore.exceptions.ClientError as exc:
+            if self._not_found(exc.response):
+                self.logger.info(
+                    "No key found: {0}/{1}. SKIPPING download to {2}"
+                    .format(bucket, key, local_path))
+            else:
+                self._report_fatal("FAILED to download file {0} from {1}/{2}: {3}"
+                                   .format(local_path, self.bucket, key, exc))
+            return False
+        except Exception as exc:
+            self._report_fatal("FAILED to download file {0} from {1}/{2}: {3}"
+                               .format(local_path, self.bucket, key, exc))
+            return False
 
     def _delete_file(self, key):
         self.client.delete_object(Bucket=self.bucket, Key=key)
@@ -63,7 +97,7 @@ class S3ArtifactStore(TartifactStore):
             return self.client.generate_presigned_url(
                 'put_object', Params={'Bucket': self.bucket, 'Key': key})
         else:
-            raise ValueError('Unknown method ' + method)
+            raise ValueError('Unknown method {0} in get_file_url()'.format(method))
 
     def _get_file_post(self, key):
         return self.client.generate_presigned_post(
@@ -71,11 +105,22 @@ class S3ArtifactStore(TartifactStore):
             Key=key)
 
     def _get_file_timestamp(self, key):
-
+        time_updated = False
         try:
             obj = self.client.head_object(Bucket=self.bucket, Key=key)
             time_updated = obj.get('LastModified', None)
+        except botocore.exceptions.ClientError as exc:
+            if self._not_found(exc.response):
+                self.logger.info(
+                    "No key found: {0}/{1}. Cannot get timestamp."
+                        .format(self.bucket, key))
+            else:
+                self.logger.error("FAILED to get timestamp for S3 object {0}/{1}"
+                        .format(self.bucket, key))
+            return None
         except BaseException:
+            self.logger.error("FAILED to get timestamp for S3 object {0}/{1}"
+                              .format(self.bucket, key))
             return None
 
         if time_updated:

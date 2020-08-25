@@ -4,7 +4,6 @@ import uuid
 import time
 import tempfile
 import re
-from threading import Thread
 import subprocess
 
 import tarfile
@@ -43,6 +42,10 @@ class TartifactStore(BaseArtifactStore):
 
         self.logger = logs.getLogger(self.__class__.__name__)
         self.logger.setLevel(verbose)
+
+    def _report_fatal(self, msg: str):
+        self.logger.error(msg)
+        raise ValueError(msg)
 
     def _measure_timestamp_diff(self):
 
@@ -92,10 +95,10 @@ class TartifactStore(BaseArtifactStore):
             retval = util.sha256_checksum(tar_filename)
             os.remove(tar_filename)
             self.logger.debug(
-                'deleted local artifact file {}'.format(tar_filename))
+                'deleted local artifact file {0}'.format(tar_filename))
             return retval
         except BaseException as e:
-            self.logger.info(
+            self.logger.error(
                 'error generating a hash for {0}: {1}'
                     .format(tar_filename, repr(e)))
 
@@ -104,9 +107,7 @@ class TartifactStore(BaseArtifactStore):
     def put_artifact(
             self,
             artifact,
-            local_path=None,
-            cache=True,
-            background=False):
+            local_path=None):
         if local_path is None:
             local_path = artifact.get('local')
 
@@ -132,30 +133,21 @@ class TartifactStore(BaseArtifactStore):
                     os.remove(tar_filename)
                     return key
 
-            def finish_upload():
-                self._upload_file(key, tar_filename)
-                os.remove(tar_filename)
-
-            if background:
-                t = Thread(target=finish_upload)
-                t.start()
-                return (key, t)
-            else:
-                finish_upload()
-                return key
+            self._upload_file(key, tar_filename)
+            os.remove(tar_filename)
+            return key
         else:
-            self.logger.debug(("Local path {} does not exist. " +
+            self.logger.debug(("Local path {0} does not exist. " +
                                "Not uploading anything.").format(local_path))
+            return None
 
     def get_artifact(
             self,
             artifact,
             local_path=None,
-            only_newer=True,
-            background=False):
+            only_newer=True):
 
         key = artifact.get('key')
-        bucket = artifact.get('bucket')
 
         if key is None:
             assert not artifact['mutable']
@@ -170,7 +162,7 @@ class TartifactStore(BaseArtifactStore):
             local_path = fs_tracker.get_blob_cache(key)
             if os.path.exists(local_path):
                 self.logger.debug((
-                    'Immutable artifact exists at local_path {},' +
+                    'Immutable artifact exists at local_path {0},' +
                     ' skipping the download').format(local_path))
                 return local_path
 
@@ -180,14 +172,14 @@ class TartifactStore(BaseArtifactStore):
                 if remote_path.startswith('dockerhub://') or \
                    remote_path.startswith('shub://'):
                     self.logger.debug((
-                        'Qualified {} points to a shub or dockerhub,' +
-                        ' skipping the download'))
+                        'Qualified {0} points to a shub or dockerhub,' +
+                        ' skipping the download'.format(remote_path)))
                     return remote_path
 
                 download_file_from_qualified(
                     remote_path, local_path, self.logger)
 
-            self.logger.debug('Downloaded file {} from external source {}'
+            self.logger.debug('Downloaded file {0} from external source {1}'
                               .format(local_path, remote_path))
             return local_path
 
@@ -202,7 +194,7 @@ class TartifactStore(BaseArtifactStore):
                     local_path = fs_tracker.get_blob_cache(key)
                     if os.path.exists(local_path):
                         self.logger.debug((
-                            'Immutable artifact exists at local_path {},' +
+                            'Immutable artifact exists at local_path {0},' +
                             ' skipping the download').format(local_path))
                         return local_path
 
@@ -214,33 +206,40 @@ class TartifactStore(BaseArtifactStore):
 
         if only_newer and os.path.exists(local_path):
             self.logger.debug(
-                'Comparing date of the artifact in storage with local')
+                'Comparing date of the artifact {0} in storage with local {1}'
+                    .format(key, local_path))
             storage_time = self._get_file_timestamp(key)
             local_time = os.path.getmtime(local_path)
             if storage_time is None:
-                self.logger.debug(
-                    "Unable to get storage timestamp, storage is either " +
-                    "corrupted or has not finished uploading")
+                msg: str =\
+                    "Unable to get storage timestamp for {0}, storage is either " +\
+                    "corrupted or has not finished uploading".format(key)
+                self._report_fatal(msg)
                 return local_path
 
             if local_time > storage_time - self.timestamp_shift:
                 self.logger.debug(
-                    "Local path is younger than stored, skipping the download")
+                    "Local path {0} is younger than stored {1}, skipping the download"
+                        .format(local_path, key))
                 return local_path
 
         tar_filename = os.path.join(tempfile.gettempdir(), str(uuid.uuid4()))
-        self.logger.debug("tar_filename = {} ".format(tar_filename))
+        self.logger.debug("tar_filename = {0} ".format(tar_filename))
 
         def finish_download():
             try:
-                self._download_file(key, tar_filename)
-            except BaseException as e:
-                self.logger.debug(e)
+                result = self._download_file(key, tar_filename)
+                if not result:
+                    return local_path
+            except BaseException as exc:
+                msg: str =\
+                    "FAILED to download {0}: {1}. Aborting.".format(key, exc)
+                self._report_fatal(msg)
 
             if os.path.exists(tar_filename):
                 # first, figure out if the tar file has a base path of .
                 # or not
-                self.logger.debug("Untarring {}".format(tar_filename))
+                self.logger.debug("Untarring {0}".format(tar_filename))
                 listtar, _ = subprocess.Popen(['tar', '-tf', tar_filename],
                                               stdout=subprocess.PIPE,
                                               stderr=subprocess.PIPE,
@@ -263,7 +262,7 @@ class TartifactStore(BaseArtifactStore):
                           'tar -xf {} -C {} --keep-newer-files') \
                     .format(basepath, tar_filename, basepath)
 
-                self.logger.debug('Tar cmd = {}'.format(tarcmd))
+                self.logger.debug('Tar cmd = {0}'.format(tarcmd))
 
                 tarp = subprocess.Popen(
                     ['/bin/bash', '-c', tarcmd],
@@ -273,13 +272,12 @@ class TartifactStore(BaseArtifactStore):
 
                 tarout, tarerr = tarp.communicate()
                 if tarp.returncode != 0:
-                    self.logger.error(
-                        'tar had a non-zero return code ! (' +
-                        str(tarp.returncode) + ')')
-
-                    self.logger.error('tar cmd = ' + tarcmd)
-                    self.logger.info('tar stdout output: \n ' + str(tarout))
-                    self.logger.info('tar stderr output: \n ' + str(tarerr))
+                    msg: str = 'tar {0} had a non-zero return code! {1}'\
+                        .format(tar_filename, tarp.returncode)
+                    msg += 'tar cmd = {0}'.format(tarcmd)
+                    msg = msg + 'tar stdout output: \n ' + str(tarout)
+                    msg = msg + 'tar stderr output: \n ' + str(tarerr)
+                    self._report_fatal(msg)
 
                 if len(listtar) == 1 and not isTarFromDotDir:
                     # Here we protect ourselves from the corner case,
@@ -287,7 +285,7 @@ class TartifactStore(BaseArtifactStore):
                     # os.rename() will fail to do that.
                     actual_path = os.path.join(basepath, listtar[0])
                     self.logger.debug(
-                        'Renaming {} into {}'.format(
+                        'Renaming {0} into {1}'.format(
                             actual_path, local_path))
                     retry(lambda: os.rename(actual_path, local_path),
                           no_retries=5,
@@ -297,16 +295,11 @@ class TartifactStore(BaseArtifactStore):
 
                 os.remove(tar_filename)
             else:
-                self.logger.debug(
-                    'file {0} download failed'.format(tar_filename))
+                self._report_fatal('file {0} download failed'
+                                   .format(tar_filename))
 
-        if background:
-            t = Thread(target=finish_download)
-            t.start()
-            return (local_path, t)
-        else:
-            finish_download()
-            return local_path
+        finish_download()
+        return local_path
 
     def get_artifact_url(self, artifact, method='GET', get_timestamp=False):
         if 'key' in artifact.keys():
@@ -343,9 +336,10 @@ class TartifactStore(BaseArtifactStore):
             try:
                 retval = tarfile.open(fileobj=fileobj, mode='r|*')
                 return retval
-            except BaseException as e:
+            except BaseException as exc:
                 fileobj.close()
-                self.logger.error('Streaming artifact error:\n' + e.message)
+                msg: str = 'FAILED to stream artifact {0}: {1}'.format(url, exc)
+                self._report_fatal(msg)
         return None
 
     def __enter__(self):
@@ -372,18 +366,18 @@ class TartifactStore(BaseArtifactStore):
         if os.path.exists(ignore_filepath) and \
                 not os.path.isdir(ignore_filepath):
             ignore_arg = "--exclude-from=%s" % ignore_filepath
-            self.logger.debug('.studioml_ignore found: %s,'
+            self.logger.debug('.studioml_ignore found: {0},'
                               ' files listed inside will'
                               ' not be tarred or uploaded'
-                              % ignore_filepath)
+                              .format(ignore_filepath))
 
         if cache and key:
             cache_dir = fs_tracker.get_artifact_cache(key)
             if cache_dir != local_path:
-                debug_str = "Copying local path {} to cache {}" \
+                debug_str = "Copying local path {0} to cache {1}" \
                     .format(local_path, cache_dir)
                 if ignore_arg != '':
-                    debug_str += ", excluding files in {}" \
+                    debug_str += ", excluding files in {0}" \
                         .format(ignore_filepath)
                 self.logger.debug(debug_str)
 
@@ -391,24 +385,21 @@ class TartifactStore(BaseArtifactStore):
                               self.logger)
 
         debug_str = ("Tarring artifact. " +
-                     "tar_filename = {}, " +
-                     "local_path = {}, " +
-                     "key = {}").format(
-            tar_filename,
-            local_path,
-            key)
+                     "tar_filename = {0}, " +
+                     "local_path = {1}, " +
+                     "key = {2}").format(tar_filename, local_path, key)
 
         if ignore_arg != '':
-            debug_str += ", exclude = {}".format(ignore_filepath)
+            debug_str += ", exclude = {0}".format(ignore_filepath)
         self.logger.debug(debug_str)
 
-        tarcmd = 'tar {} {} -cf {} -C {} {}'.format(
+        tarcmd = 'tar {0} {1} -cf {2} -C {3} {4}'.format(
             ignore_arg,
             compression_to_taropt(self.compression),
             tar_filename,
             local_basepath,
             local_nameonly)
-        self.logger.debug("Tar cmd = {}".format(tarcmd))
+        self.logger.debug("Tar cmd = {0}".format(tarcmd))
 
         tic = time.time()
         tarp = subprocess.Popen(['/bin/bash', '-c', tarcmd],
@@ -420,14 +411,14 @@ class TartifactStore(BaseArtifactStore):
         toc = time.time()
 
         if tarp.returncode != 0:
-            self.logger.error(
-                'tar had a non-zero return code ! (' +
-                str(tarp.returncode) + ')')
+            msg: str = 'tar {0} had a non-zero return code! {1}' \
+                .format(tar_filename, tarp.returncode)
+            msg += 'tar cmd = {0}'.format(tarcmd)
+            msg = msg + 'tar stdout output: \n ' + sixdecode(tarout)
+            msg = msg + 'tar stderr output: \n ' + str(tarerr)
+            self._report_fatal(msg)
 
-            self.logger.info('tar output: \n ' + sixdecode(tarout))
-            self.logger.info('tar stderr output: \n ' + str(tarerr))
-
-        self.logger.debug('tar finished in {}s'.format(toc - tic))
+        self.logger.debug('tar finished in {0}s'.format(toc - tic))
         return tar_filename
 
 
