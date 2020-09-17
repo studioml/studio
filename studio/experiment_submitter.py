@@ -2,6 +2,7 @@ import json
 import time
 import traceback
 
+from .payload_builder import PayloadBuilder
 from .unencrypted_payload_builder import UnencryptedPayloadBuilder
 from .encrypted_payload_builder import EncryptedPayloadBuilder
 from . import model
@@ -11,22 +12,26 @@ def submit_experiments(
         config=None,
         logger=None,
         queue=None,
-        python_pkg=[]):
+        python_pkg=[],
+        external_payload_builder: PayloadBuilder=None):
 
     num_experiments = len(experiments)
 
-    payload_builder = UnencryptedPayloadBuilder("simple-payload")
-    # Are we using experiment payload encryption?
-    public_key_path = config.get('public_key_path', None)
-    if public_key_path is not None:
-        logger.info("Using RSA public key path: {0}".format(public_key_path))
-        signing_key_path = config.get('signing_key_path', None)
-        if signing_key_path is not None:
-            logger.info("Using RSA signing key path: {0}".format(signing_key_path))
-        payload_builder = \
-            EncryptedPayloadBuilder(
-                "cs-rsa-encryptor [{0}]".format(public_key_path),
-                public_key_path, signing_key_path)
+    payload_builder = external_payload_builder
+    if payload_builder is None:
+        # Setup our own payload builder
+        payload_builder = UnencryptedPayloadBuilder("simple-payload")
+        # Are we using experiment payload encryption?
+        public_key_path = config.get('public_key_path', None)
+        if public_key_path is not None:
+            logger.info("Using RSA public key path: {0}".format(public_key_path))
+            signing_key_path = config.get('signing_key_path', None)
+            if signing_key_path is not None:
+                logger.info("Using RSA signing key path: {0}".format(signing_key_path))
+            payload_builder = \
+                EncryptedPayloadBuilder(
+                    "cs-rsa-encryptor [{0}]".format(public_key_path),
+                    public_key_path, signing_key_path)
 
     start_time = time.time()
 
