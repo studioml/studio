@@ -1,21 +1,13 @@
-import os
 import glob
+import os
 import uuid
 import sys
 import time
 
-try:
-    try:
-        from pip._internal.operations import freeze
-    except Exception:
-        from pip.operations import freeze
-except ImportError:
-    freeze = None
-
 from . import fs_tracker
 from .util import shquote
 from .dependencies_policy import DependencyPolicy
-
+from .studio_dependencies_policy import StudioDependencyPolicy
 
 class Experiment(object):
     """Experiment information."""
@@ -126,7 +118,6 @@ class Experiment(object):
 
         raise ValueError("Experiment type is unknown!")
 
-
 def create_experiment(
         filename,
         args,
@@ -135,13 +126,15 @@ def create_experiment(
         artifacts={},
         resources_needed=None,
         metric=None,
-        max_duration=None):
+        max_duration=None,
+        dependency_policy: DependencyPolicy=None):
+
     key = experiment_name if experiment_name else \
         str(int(time.time())) + "_" + str(uuid.uuid4())
 
-    current_packages = freeze.freeze()
-    dep_policy = DependencyPolicy(resources_needed)
-    packages = dep_policy.process(current_packages)
+    if dependency_policy is None:
+        dependency_policy = StudioDependencyPolicy()
+    packages = dependency_policy.generate(resources_needed)
 
     return Experiment(
         key=key,
@@ -177,5 +170,4 @@ def experiment_from_dict(data, info={}):
             max_duration=data.get('max_duration')
         )
     except KeyError as e:
-        logger.error(data)
         raise e

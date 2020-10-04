@@ -35,26 +35,24 @@ def submit_experiments(
 
     start_time = time.time()
 
-    # Update Python environment info for our experiments:
-    for experiment in experiments:
-        experiment.pythonenv = model.add_packages(experiment.pythonenv, python_pkg)
-
     # Reset our model setup, which will guarantee
     # that we rebuild our database and storage provider objects
     # that's important in the case that previous experiment batch
     # cleaned up after itself.
     model.reset_model_providers()
 
-    # Now add them to experiments database:
-    try:
-        with model.get_db_provider(config) as db:
-            for experiment in experiments:
-                db.add_experiment(experiment)
-    except BaseException:
-        traceback.print_exc()
-        raise
-
     for experiment in experiments:
+        # Update Python environment info for our experiments:
+        experiment.pythonenv = model.add_packages(experiment.pythonenv, python_pkg)
+
+        # Add experiment to database:
+        try:
+            with model.get_db_provider(config) as db:
+                db.add_experiment(experiment)
+        except BaseException:
+            traceback.print_exc()
+            raise
+
         payload = payload_builder.construct(experiment, config, python_pkg)
 
         logger.debug("Submitting experiment: {0}"
