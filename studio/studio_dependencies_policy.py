@@ -28,8 +28,8 @@ class StudioDependencyPolicy(DependencyPolicy):
         packages = freeze.freeze()
         result = []
         for pkg in packages:
-            if pkg.startswith('-e git+'):
-                # git package
+            if self._is_special_reference(pkg):
+                # git repo or directly installed package
                 result.append(pkg)
             elif '==' in pkg:
                 # pypi package
@@ -43,6 +43,13 @@ class StudioDependencyPolicy(DependencyPolicy):
                 # TODO add installation logic for torch
                 result.append(pkey + '==' + pversion)
         return result
+
+    def _is_special_reference(self, pkg: str):
+        if pkg.startswith('-e git+'):
+            return True
+        if 'git+https://' in pkg or 'file://' in pkg:
+            return True
+        return False
 
     def _needs_gpu(self, resources_needed):
         return resources_needed is not None and \

@@ -1,3 +1,4 @@
+import glob
 import os
 import uuid
 import sys
@@ -98,6 +99,24 @@ class Experiment(object):
         self.git = git
         self.metric = metric
         self.max_duration = max_duration
+
+    def get_model(self, db):
+        modeldir = db.get_artifact(self.artifacts['modeldir'])
+        hdf5_files = [
+            (p, os.path.getmtime(p))
+            for p in
+            glob.glob(modeldir + '/*.hdf*') +
+            glob.glob(modeldir + '/*.h5')]
+        if any(hdf5_files):
+            # experiment type - keras
+            import keras
+            last_checkpoint = max(hdf5_files, key=lambda t: t[1])[0]
+            return keras.models.load_model(last_checkpoint)
+
+        if self.info.get('type') == 'tensorflow':
+            raise NotImplementedError
+
+        raise ValueError("Experiment type is unknown!")
 
 def create_experiment(
         filename,
