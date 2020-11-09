@@ -12,7 +12,7 @@ class S3Provider(KeyValueProvider):
 
         self.meta_store = S3ArtifactStore(config, verbose)
 
-        super(S3Provider, self).__init__(
+        super().__init__(
             config,
             blocking_auth,
             verbose,

@@ -14,7 +14,8 @@ import threading
 import numpy as np
 import requests
 import six
-from botocore.exceptions import ClientError
+import tempfile
+import uuid
 from pygtail import Pygtail
 from . import model_setup
 from .base_artifact_store import BaseArtifactStore
@@ -22,6 +23,7 @@ from .base_artifact_store import BaseArtifactStore
 DAY = 86400
 HOUR = 3600
 MINUTE = 60
+
 
 def remove_backspaces(line):
     splitline = re.split('(\x08+)', line)
@@ -39,9 +41,11 @@ def remove_backspaces(line):
 
     return buf.getvalue()
 
-def _report_fatal(msg: str, logger):
+
+def report_fatal(msg: str, logger):
     logger.error(msg)
     raise ValueError(msg)
+
 
 def sha256_checksum(filename, block_size=65536):
     return filehash(filename, block_size, hashobj=hashlib.sha256())
@@ -258,14 +262,14 @@ def download_file(url, local_path, logger=None):
                 for chunk in response:
                     f.write(chunk)
         except Exception as exc:
-            msg: str = 'Download/write {0} from {1} FAILED: {2}. Aborting.'\
+            msg: str = 'Download/write {0} from {1} FAILED: {2}. Aborting.' \
                 .format(local_path, url, exc)
-            _report_fatal(msg, logger)
+            report_fatal(msg, logger)
 
     elif logger:
-        msg: str = 'Download {0} from {1}: Response error with code {2}. Aborting.'\
+        msg: str = 'Download {0} from {1}: Response error with code {2}. Aborting.' \
             .format(local_path, url, response.status_code)
-        _report_fatal(msg, logger)
+        report_fatal(msg, logger)
 
     return response
 
@@ -279,18 +283,19 @@ def upload_file(url, local_path, logger=None):
         with open(local_path, 'rb') as f:
             resp = requests.put(url, data=f)
     except Exception as exc:
-        msg: str = 'Upload {0} to {1} FAILED: {2}. Aborting.'\
+        msg: str = 'Upload {0} to {1} FAILED: {2}. Aborting.' \
             .format(local_path, url, exc)
-        _report_fatal(msg, logger)
+        report_fatal(msg, logger)
 
     if resp.status_code != 200 and logger:
-        msg: str = 'Upload {0} to {1}: Response error {2}:{3}. Aborting.'\
+        msg: str = 'Upload {0} to {1}: Response error {2}:{3}. Aborting.' \
             .format(local_path, url, resp.status_code, resp.reason)
-        _report_fatal(msg, logger)
+        report_fatal(msg, logger)
 
     if logger:
         logger.debug('File {0} upload to {1} done in {2} s'
                      .format(local_path, url, time.time() - tic))
+
 
 def _looks_like_url(name):
     """
@@ -307,6 +312,7 @@ def _looks_like_url(name):
         return True
     return False
 
+
 def _s3_download_file(client, bucket, key, local_path, logger=None):
     try:
         client.download_file(bucket, key, local_path)
@@ -316,16 +322,17 @@ def _s3_download_file(client, bucket, key, local_path, logger=None):
                 .format(bucket, key, local_path))
         return
     except Exception as exc:
-        _report_fatal("FAILED to download file {0} from {1}/{2}: {3}"
-                      .format(local_path, bucket, key, exc))
+        report_fatal("FAILED to download file {0} from {1}/{2}: {3}"
+                     .format(local_path, bucket, key, exc))
+
 
 def download_file_from_qualified(qualified, local_path, logger=None):
     if qualified.startswith('dockerhub://') or \
-       qualified.startswith('shub://'):
+            qualified.startswith('shub://'):
         return
 
     assert qualified.startswith('s3://') or \
-        qualified.startswith('gs://')
+           qualified.startswith('gs://')
 
     qualified_split = qualified.split('/')
     if _looks_like_url(qualified_split[2]):
@@ -349,16 +356,18 @@ def download_file_from_qualified(qualified, local_path, logger=None):
     else:
         raise NotImplementedError
 
+
 def _get_active_s3_client():
     artifact_store = model_setup.get_model_artifact_store()
     if artifact_store is None \
-        or not isinstance(artifact_store, BaseArtifactStore):
+            or not isinstance(artifact_store, BaseArtifactStore):
         raise NotImplementedError("Artifact store is not set up or has the wrong type")
 
     storage_client = artifact_store.get_storage_client()
     if storage_client is None:
         raise NotImplementedError("Expected boto3 storage client for current artifact store")
     return storage_client
+
 
 def _s3_download_dir(bucket, dist, local, logger=None):
     s3_client = _get_active_s3_client()
@@ -383,12 +392,12 @@ def _s3_download_dir(bucket, dist, local, logger=None):
                 if not os.path.exists(local_dir_path):
                     os.makedirs(local_dir_path)
 
-                local_path = os.path.join(local, re.sub('^'+dist, '', key))
+                local_path = os.path.join(local, re.sub('^' + dist, '', key))
 
                 if logger:
                     logger.debug(
                         'Downloading {0}/{1} to {2}'
-                        .format(bucket, key, local_path))
+                            .format(bucket, key, local_path))
 
                 _s3_download_file(s3_client, bucket, key, local_path, logger=logger)
 
@@ -396,6 +405,7 @@ def _s3_download_dir(bucket, dist, local, logger=None):
 def has_aws_credentials():
     s3_client = _get_active_s3_client()
     return s3_client._request_signer._credentials is not None
+
 
 def retry(f,
           no_retries=5, sleep_time=1,
@@ -411,7 +421,7 @@ def retry(f,
                 logger.info(
                     ('Exception {0} is caught, ' +
                      'sleeping {1}s and retrying (attempt {2} of {3})')
-                    .format(e, sleep_time, i, no_retries))
+                        .format(e, sleep_time, i, no_retries))
             time.sleep(sleep_time)
 
 
@@ -453,14 +463,13 @@ def _compression_to_extension_taropt(compression):
 
 
 def timeit(method):
-
     def timed(*args, **kw):
         ts = time.time()
         result = method(*args, **kw)
         te = time.time()
 
         line = '%r (%r, %r) %2.2f sec' % \
-            (method.__name__, args, kw, te - ts)
+               (method.__name__, args, kw, te - ts)
 
         try:
             logger = args[0].logger
@@ -478,7 +487,6 @@ def sixdecode(s):
         return s
     if isinstance(s, six.binary_type):
         return s.decode('utf8')
-
     raise TypeError("Unknown type of " + str(s))
 
 
@@ -493,6 +501,7 @@ def shquote(s):
 
 duration_regex = re.compile(
     r'((?P<hours>-?\d+?)h)?((?P<minutes>-?\d+?)m)?((?P<seconds>-?\d+?)s)?')
+
 
 # parse_duration parses strings into time delta values that python can
 # deal with.  Examples include 12h, 11h60m, 719m60s, 11h3600s
@@ -511,6 +520,7 @@ def parse_duration(duration_str):
     retval = timedelta(**time_params)
     return retval
 
+
 def parse_verbosity(verbosity=None):
     if verbosity is None:
         return parse_verbosity('info')
@@ -527,13 +537,18 @@ def parse_verbosity(verbosity=None):
     }
 
     if isinstance(verbosity, six.string_types) and \
-       verbosity in logger_levels.keys():
+            verbosity in logger_levels.keys():
         return logger_levels[verbosity]
     else:
         return int(verbosity)
 
+
 def str2duration(s):
     return parse_duration(s.lower())
+
+
+def get_temp_filename() -> str:
+    return os.path.join(tempfile.gettempdir(), str(uuid.uuid4()))
 
 
 def rm_rf(path):
@@ -550,6 +565,7 @@ def rm_rf(path):
     else:
         raise ValueError("file {0} is not a file or dir.".format(path))
 
+
 class LogReprinter(object):
     def __init__(self, log_path):
         self.logpath = log_path
@@ -558,7 +574,7 @@ class LogReprinter(object):
         self.tail_thread = None
 
     def run(self):
-        self.tail_thread =\
+        self.tail_thread = \
             threading.Thread(target=self.tail_func, daemon=True)
         self.is_running = True
         self.tail_thread.start()
@@ -576,4 +592,3 @@ class LogReprinter(object):
                 else:
                     return
             time.sleep(0.1)
-

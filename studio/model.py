@@ -67,10 +67,10 @@ def reset_model_providers():
 def get_db_provider(config=None, blocking_auth=True):
 
     db_provider = get_model_db_provider()
-    if not db_provider is None:
+    if db_provider is not None:
         return db_provider
 
-    if not config:
+    if config is None:
         config = get_config()
     verbose = parse_verbosity(config.get('verbose'))
 

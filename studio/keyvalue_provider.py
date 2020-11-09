@@ -5,11 +5,11 @@ import re
 from concurrent.futures import ThreadPoolExecutor, wait
 
 from . import util, git_util, logs
-from .firebase_artifact_store import FirebaseArtifactStore
+from .s3_artifact_store import S3ArtifactStore
 from .auth import get_auth
 from .experiment import experiment_from_dict
 from .tartifact_store import get_immutable_artifact_key
-from .util import retry
+from .util import retry, report_fatal
 
 
 class KeyValueProvider(object):
@@ -38,12 +38,9 @@ class KeyValueProvider(object):
                 blocking_auth
             )
 
-        self.store = store if store else FirebaseArtifactStore(
+        self.store = store if store else S3ArtifactStore(
             db_config,
-            verbose=verbose,
-            blocking_auth=blocking_auth,
-            compression=self.compression
-        )
+            verbose=verbose)
 
         if self.auth and not self.auth.is_expired():
             self.register_user(None, self.auth.get_user_email())
@@ -51,8 +48,7 @@ class KeyValueProvider(object):
         self.max_keys = db_config.get('max_keys', 100)
 
     def _report_fatal(self, msg: str):
-        self.logger.error(msg)
-        raise ValueError(msg)
+        report_fatal(msg, self.logger)
 
     def _get_userid(self):
         userid = None
