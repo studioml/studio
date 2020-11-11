@@ -1,31 +1,31 @@
 import time
 import os
 import six
-import re
 from concurrent.futures import ThreadPoolExecutor, wait
 
 from . import util, git_util, logs
-from .s3_artifact_store import S3ArtifactStore
+from .storage_handler import StorageHandler
 from .auth import get_auth
-from .experiment import experiment_from_dict
-from .tartifact_store import get_immutable_artifact_key
+from .tartifact_store import TartifactStore, get_immutable_artifact_key
+from .artifact import Artifact
+from .experiment import Experiment, experiment_from_dict
+from .model_setup import get_model_verbose_level
 from .util import retry, report_fatal
 
 
 class KeyValueProvider(object):
-    """Data provider for Firebase."""
+    """Data provider for managing experiment lifecycle."""
 
     def __init__(
             self,
             db_config,
+            handler: StorageHandler,
             blocking_auth=True,
-            verbose=10,
-            store=None,
             compression=None):
         guest = db_config.get('guest')
 
         self.logger = logs.getLogger(self.__class__.__name__)
-        self.logger.setLevel(verbose)
+        self.logger.setLevel(get_model_verbose_level())
 
         self.compression = compression
         if self.compression is None:
@@ -38,9 +38,7 @@ class KeyValueProvider(object):
                 blocking_auth
             )
 
-        self.store = store if store else S3ArtifactStore(
-            db_config,
-            verbose=verbose)
+        self.store = TartifactStore(handler, self.logger)
 
         if self.auth and not self.auth.is_expired():
             self.register_user(None, self.auth.get_user_email())
@@ -76,56 +74,43 @@ class KeyValueProvider(object):
             key = experiment
         return key
 
-    def add_experiment(self, experiment, userid=None, compression=None):
+    def add_experiment(self, experiment: Experiment,
+                       userid=None, compression=None):
         self._delete(self._get_experiments_keybase() + experiment.key)
         experiment.time_added = time.time()
         experiment.status = 'waiting'
 
         compression = compression if compression else self.compression
 
-        if 'local' in experiment.artifacts['workspace'].keys() and \
-                os.path.exists(experiment.artifacts['workspace']['local']):
-            self.logger.info("git location for experiment " +
-                             experiment.artifacts['workspace']['local'])
-            experiment.git = git_util.get_git_info(
-                experiment.artifacts['workspace']['local'])
+        wrk_space: Artifact = experiment.artifacts.get('workspace', None)
+        if wrk_space is not None:
+            if wrk_space.local_path is not None and \
+                    os.path.exists(wrk_space.local_path):
+                self.logger.info("git location for experiment %s", wrk_space.local_path)
+            experiment.git = git_util.get_git_info(wrk_space.local_path)
 
-        for tag, art in six.iteritems(experiment.artifacts):
-            if art['mutable']:
-                art['key'] = self._get_experiments_keybase() + \
+        for tag, art in experiment.artifacts.items():
+            if art.is_mutable:
+                art.key = self._get_experiments_keybase() + \
                     experiment.key + '/' + tag + '.tar' + \
                     util.compression_to_extension(compression)
             else:
-                if 'local' in art.keys():
+                if art.local_path is not None:
                     # upload immutable artifacts
-                    art['key'] = self.store.put_artifact(art)
-                elif 'hash' in art.keys():
-                    art['key'] = get_immutable_artifact_key(
-                        art['hash'],
+                    art.key = art.upload(art.local_path)
+                elif art.hash is not None:
+                    art.key = get_immutable_artifact_key(
+                        art.hash,
                         compression=compression
                     )
 
-            key = art.get('key')
-            if key is not None:
-                art['qualified'] = self.store.get_qualified_location(key)
-                art['bucket'] = self.store.get_bucket()
-            elif art.get('qualified'):
-                qualified = art.get('qualified')
-                bucket = re.search('(?<=://)[^/]+(?=/)', qualified).group(0)
-                if bucket.endswith('.com'):
-                    bucket = re.search(
-                        '(?<=' + re.escape(bucket) + '/)[^/]+(?=/)',
-                        qualified
-                    ).group(0)
-
-                key = re.search('(?<=' + bucket + '/).+\Z', qualified).group(0)
-                # art['bucket'] = bucket
-                # art['key'] = key
+            if art.key is not None and art.remote_path is None:
+                art.remote_path = self.store.get_qualified_location(art.key)
 
         userid = userid if userid else self._get_userid()
         experiment.owner = userid
 
-        experiment_dict = experiment.__dict__.copy()
+        experiment_dict = experiment.to_dict()
 
         self._set(self._get_experiments_keybase() + experiment.key,
                   experiment_dict)
@@ -208,34 +193,32 @@ class KeyValueProvider(object):
         self._delete(self._get_user_keybase(experiment_owner) +
                      'experiments/' + experiment_key)
         if experiment is not None:
-            for tag, art in six.iteritems(experiment.artifacts):
-                if art.get('key') is not None and art['mutable']:
+            for tag, art in experiment.artifacts.items():
+                if art.key is not None and art.is_mutable:
                     self.logger.debug(
-                        ('Deleting artifact {} from the store, ' +
-                         'artifact key {}').format(tag, art['key']))
-                    self.store.delete_artifact(art)
+                        ('Deleting artifact {0} from the store, ' +
+                         'artifact key {1}').format(tag, art.key))
+                    art.delete()
 
             if experiment.project is not None:
                 self._delete(
                     self._get_projects_keybase() +
-                    experiment.project +
-                    "/" +
-                    experiment_key)
+                    experiment.project + "/" + experiment_key)
 
         self._delete(self._get_experiments_keybase() + experiment_key)
 
     def checkpoint_experiment(self, experiment, blocking=False):
         key = self._experiment_key(experiment)
+        key_path = self._get_experiments_keybase() + key
 
-        self.logger.debug(('checkpointing {0}'.format(
-            self._get_experiments_keybase() + key)))
+        self.logger.debug('checkpointing {0}'.format(key_path))
 
-        experiment_dict = self._get(self._get_experiments_keybase() + key)
+        experiment_dict = self._get(key_path)
 
         workers = []
         with ThreadPoolExecutor(max_workers=8) as executor:
-            for _, art in six.iteritems(experiment.artifacts):
-                if art['mutable'] and art.get('local'):
+            for _, art in experiment.artifacts.items():
+                if art.is_mutable and art.local_path is not None:
                     workers.append(executor.submit(self.store.put_artifact, art))
             wait(workers)
 
@@ -251,10 +234,9 @@ class KeyValueProvider(object):
         experiment.time_last_checkpoint = checkpoint_time
         experiment_dict['time_last_checkpoint'] = checkpoint_time
 
-        self._set(self._get_experiments_keybase() +
-                  key, experiment_dict)
+        self._set(key_path, experiment_dict)
 
-    def _get_experiment_info(self, experiment):
+    def _get_experiment_info(self, experiment: Experiment):
         info = {}
         type_found = False
 
@@ -290,7 +272,7 @@ class KeyValueProvider(object):
 
         return info
 
-    def _get_experiment_logtail(self, experiment):
+    def _get_experiment_logtail(self, experiment: Experiment):
         try:
             tarf = self.store.stream_artifact(experiment.artifacts['output'])
             if not tarf:
@@ -307,7 +289,7 @@ class KeyValueProvider(object):
                               .format(repr(e)))
             return None
 
-    def get_experiment(self, key, getinfo=True):
+    def get_experiment(self, key, getinfo=True) -> Experiment:
         data = self._get(self._get_experiments_keybase() + key)
         if data is None:
             return None
@@ -320,10 +302,10 @@ class KeyValueProvider(object):
         if getinfo:
             try:
                 expinfo = self._get_experiment_info(experiment_stub)
-            except Exception as e:
+            except Exception as exc:
                 self.logger.info(
                     "Exception {0} while info download for {1}"
-                        .format(e, key))
+                        .format(exc, key))
 
         return experiment_from_dict(data, expinfo)
 
@@ -358,11 +340,10 @@ class KeyValueProvider(object):
             experiment = key
 
         retval = {}
-        if experiment.artifacts is not None:
-            for tag, art in six.iteritems(experiment.artifacts):
-                url = self.store.get_artifact_url(art)
-                if url is not None:
-                    retval[tag] = url
+        for tag, art in experiment.artifacts.items():
+            url = art.get_url()
+            if url is not None:
+                retval[tag] = url
 
         return retval
 

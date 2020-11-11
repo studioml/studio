@@ -8,20 +8,26 @@ try:
 except ImportError:
     from urllib import urlopen
 
-from . import fs_tracker
+from . import fs_tracker, util, logs
+from . import model_setup
 from .storage_type import StorageType
 from .storage_handler import StorageHandler
 from .storage_util import tar_artifact, untar_artifact
-from . import util
 
 class Artifact:
 
-    def __init__(self, logger):
+    def __init__(self, art_name, art_dict, logger=None):
         self.key: str = None
         self.local_path: str = None
         self.remote_path: str = None
         self.credentials = None
+        self.hash = None
+
         self.logger = logger
+        if self.logger is None:
+            self.logger = logs.getLogger(self.__class__.__name__)
+            self.logger.setLevel(model_setup.get_model_verbose_level())
+
         self.storage_handler: StorageHandler = None
         self.compression: str = None
         self.is_mutable: bool = False
@@ -222,6 +228,14 @@ class Artifact:
                 'error generating a hash for {0}: {1}'
                     .format(tar_filename, repr(exc)))
         return None
+
+
+    def _setup_storage_handler(self):
+        raise NotImplementedError("_setup_storage_handler")
+
+
+    def to_dict(self):
+        raise NotImplementedError("to_dict")
 
 
     @property

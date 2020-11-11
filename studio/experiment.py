@@ -5,6 +5,7 @@ import sys
 import time
 
 from . import fs_tracker
+from .artifact import Artifact
 from .util import shquote
 from .dependencies_policy import DependencyPolicy
 from .studio_dependencies_policy import StudioDependencyPolicy
@@ -54,7 +55,7 @@ class Experiment(object):
         except BaseException:
             model_dir = None
 
-        self.artifacts = {
+        std_artifacts_dict = {
             'workspace': {
                 'local': workspace_path,
                 'mutable': False,
@@ -87,7 +88,12 @@ class Experiment(object):
             }
         }
         if artifacts is not None:
-            self.artifacts.update(artifacts)
+            std_artifacts_dict.update(artifacts)
+
+        # Build table of experiment artifacts:
+        self.artifacts = dict()
+        for tag, art in std_artifacts_dict.items():
+            self.artifacts[tag] = Artifact(tag, art)
 
         self.resources_needed = resources_needed
         self.status = status
@@ -99,6 +105,9 @@ class Experiment(object):
         self.git = git
         self.metric = metric
         self.max_duration = max_duration
+
+    def to_dict(self):
+        raise NotImplementedError("to_dict")
 
     def get_model(self, db):
         modeldir = db.get_artifact(self.artifacts['modeldir'])
