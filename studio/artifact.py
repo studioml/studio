@@ -17,6 +17,7 @@ from .storage_util import tar_artifact, untar_artifact
 class Artifact:
 
     def __init__(self, art_name, art_dict, logger=None):
+        self.name = art_name
         self.key: str = None
         self.local_path: str = None
         self.remote_path: str = None
@@ -30,7 +31,18 @@ class Artifact:
 
         self.storage_handler: StorageHandler = None
         self.compression: str = None
-        self.is_mutable: bool = False
+
+        self.storage_handler = model_setup.get_model_artifact_store()\
+            .get_storage_handler()
+        self.unpack = art_dict.get('unpack')
+        self.is_mutable = art_dict.get('mutable')
+        if 'local' in art_dict.keys():
+            self.local_path = art_dict['local']
+        if 'qualified' in art_dict.keys():
+            self.remote_path = art_dict['qualified']
+        if 'url' in art_dict.keys():
+            self.remote_path = art_dict['url']
+
 
     def upload(self, local_path=None):
         if self.storage_handler is None:

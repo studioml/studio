@@ -58,6 +58,9 @@ class TartifactStore(BaseArtifactStore):
 
         return artifact.stream()
 
+    def get_storage_handler(self):
+        return self.storage_handler
+
     def __enter__(self):
         return self
 
