@@ -13,7 +13,7 @@ class LocalDbProvider(KeyValueProvider):
         self.meta_store = LocalStorageHandler(config)
 
         self.endpoint = self.meta_store.get_endpoint()
-        self.db_root = os.path.join(self.db_root, self.bucket)
+        self.db_root = os.path.join(self.endpoint, self.bucket)
         self._ensure_path_dirs_exist(self.db_root)
 
         super().__init__(config, self.meta_store, blocking_auth)

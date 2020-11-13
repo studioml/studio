@@ -66,6 +66,11 @@ class Experiment(object):
                 'mutable': True,
                 'unpack': True
             },
+            'retval': {
+                'local': fs_tracker.get_artifact_cache('retval', key),
+                'mutable': True,
+                'unpack': True
+            },
             'output': {
                 'local': fs_tracker.get_artifact_cache('output', key),
                 'mutable': True,
@@ -90,6 +95,13 @@ class Experiment(object):
         if artifacts is not None:
             std_artifacts_dict.update(artifacts)
 
+        # Semi-hack: make sure 'retval' artifact does have
+        # local path setup
+        # (it could be overwritten by experiment artifacts provided
+        # by constuctor parameters.)
+        std_artifacts_dict['retval']['local'] =\
+            fs_tracker.get_artifact_cache('retval', key)
+
         # Build table of experiment artifacts:
         self.artifacts = dict()
         for tag, art in std_artifacts_dict.items():
@@ -107,7 +119,31 @@ class Experiment(object):
         self.max_duration = max_duration
 
     def to_dict(self):
-        raise NotImplementedError("to_dict")
+        result = dict()
+        result['key'] = self.key
+        result['args'] = self.args
+        result['filename'] = self.filename
+        result['pythonenv'] = self.pythonenv
+        result['project'] = self.project
+        result['pythonver'] = self.pythonver
+        result['resources_needed'] = self.resources_needed
+        result['status'] = self.status
+        result['time_added'] = self.time_added
+        result['time_started'] = self.time_started
+        result['time_last_checkpoint'] = self.time_last_checkpoint
+        result['time_finished'] = self.time_finished
+        result['info'] = self.info
+        result['git'] = self.git
+        result['metric'] = self.metric
+        result['max_duration'] = self.max_duration
+
+        # Process artifacts:
+        artifacts_dict = dict()
+        for art_name, art in self.artifacts.items():
+            artifacts_dict[art_name] = art.to_dict()
+        result['artifacts'] = artifacts_dict
+
+        return result
 
     def get_model(self, db):
         modeldir = db.get_artifact(self.artifacts['modeldir'])

@@ -38,7 +38,8 @@ class KeyValueProvider(object):
                 blocking_auth
             )
 
-        self.store = TartifactStore(handler, self.logger)
+        self.storage_handler = handler
+        self.store = TartifactStore(self.storage_handler, self.logger)
 
         if self.auth and not self.auth.is_expired():
             self.register_user(None, self.auth.get_user_email())
@@ -105,7 +106,7 @@ class KeyValueProvider(object):
                     )
 
             if art.key is not None and art.remote_path is None:
-                art.remote_path = self.store.get_qualified_location(art.key)
+                art.remote_path = self.storage_handler.get_qualified_location(art.key)
 
         userid = userid if userid else self._get_userid()
         experiment.owner = userid

@@ -42,8 +42,9 @@ def setup_experiment(env, experiment, clean=True):
 
     amapping = {}
     for tag, art in six.iteritems(artifacts):
-        if art.get('local') is not None:
-            amapping[tag] = art['local']
+        # art is of type Artifact:
+        if art.local_path is not None:
+            amapping[tag] = art.local_path
 
         with open(artifact_mapping_path, 'w') as f:
             json.dump(amapping, f)

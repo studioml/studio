@@ -50,7 +50,7 @@ class S3StorageHandler(StorageHandler):
             measure_timestamp_diff,
             compression=compression)
 
-        self.set_storage_client(self.client)
+        #self.set_storage_client(self.client)
 
     def _not_found(self, response):
         try:

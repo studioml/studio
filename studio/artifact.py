@@ -2,6 +2,9 @@ import hashlib
 import os
 import re
 
+import json
+import traceback
+
 import tarfile
 try:
     from urllib.request import urlopen
@@ -34,15 +37,20 @@ class Artifact:
 
         self.storage_handler = model_setup.get_model_artifact_store()\
             .get_storage_handler()
-        self.unpack = art_dict.get('unpack')
-        self.is_mutable = art_dict.get('mutable')
+        self.unpack: bool = art_dict.get('unpack')
+        self.is_mutable: bool = art_dict.get('mutable')
+        if 'key' in art_dict.keys():
+            self.key = art_dict['key']
         if 'local' in art_dict.keys():
             self.local_path = art_dict['local']
         if 'qualified' in art_dict.keys():
             self.remote_path = art_dict['qualified']
         if 'url' in art_dict.keys():
             self.remote_path = art_dict['url']
+        if 'hash' in art_dict.keys():
+            self.hash = art_dict['hash']
 
+        #print("Init artifact: {0} {1}".format(self.name, json.dumps(art_dict, indent=4)))
 
     def upload(self, local_path=None):
         if self.storage_handler is None:
@@ -88,9 +96,19 @@ class Artifact:
                 .format(self.key)
             util.report_fatal(msg, self.logger)
 
+        timestamp_shift = self.storage_handler.get_timestamp_shift()
+
         if self.key is None:
-            assert not self.is_mutable
-            assert self.remote_path is not None
+            if self.is_mutable:
+                self.logger.info("Downloading mutable artifact: {0}"
+                                  .format(self.name))
+                #traceback.print_stack()
+                #assert(False)
+            if self.remote_path is None:
+                self.logger.error(
+                    "CANNOT download artifact without remote path: {0}"
+                        .format(self.name))
+                assert(False)
 
             key = self._generate_key()
             local_path = fs_tracker.get_blob_cache(key)
@@ -108,7 +126,7 @@ class Artifact:
                 return self.remote_path
 
             self.storage_handler.download_file(
-                self.remote_path, local_path, self.logger)
+                self.remote_path, local_path)
 
             self.logger.debug('Downloaded file {0} from external source {1}'
                               .format(local_path, self.remote_path))
@@ -147,7 +165,7 @@ class Artifact:
                 util.report_fatal(msg)
                 return local_path
 
-            if local_time > storage_time - self.timestamp_shift:
+            if local_time > storage_time - timestamp_shift:
                 self.logger.debug(
                     "Local path {0} is younger than stored {1}, skipping the download"
                         .format(local_path, self.key))
@@ -247,7 +265,20 @@ class Artifact:
 
 
     def to_dict(self):
-        raise NotImplementedError("to_dict")
+        result = dict()
+        result['unpack'] = self.unpack
+        result['mutable'] = self.is_mutable
+        if self.key is not None:
+            result['key'] = self.key
+        if self.local_path is not None:
+            result['local'] = self.local_path
+        if self.remote_path is not None:
+            if self.storage_handler.type == StorageType.storageHTTP:
+                result['url'] = self.remote_path
+            else:
+                result['qualified'] = self.remote_path
+
+        return result
 
 
     @property
