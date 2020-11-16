@@ -90,7 +90,8 @@ class KeyValueProvider(object):
                 self.logger.info("git location for experiment %s", wrk_space.local_path)
             experiment.git = git_util.get_git_info(wrk_space.local_path)
 
-        for tag, art in experiment.artifacts.items():
+        for tag, item in experiment.artifacts.items():
+            art: Artifact = item
             if art.is_mutable:
                 art.key = self._get_experiments_keybase() + \
                     experiment.key + '/' + tag + '.tar' + \
@@ -106,7 +107,7 @@ class KeyValueProvider(object):
                     )
 
             if art.key is not None and art.remote_path is None:
-                art.remote_path = self.storage_handler.get_qualified_location(art.key)
+                art.remote_path = art.storage_handler.get_qualified_location(art.key)
 
         userid = userid if userid else self._get_userid()
         experiment.owner = userid

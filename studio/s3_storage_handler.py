@@ -130,7 +130,11 @@ class S3StorageHandler(StorageHandler):
 
     def get_qualified_location(self, key):
         url = urlparse(self.endpoint)
-        return 's3://' + url.netloc + '/' + self.bucket + '/' + key
+        location: str = 's3://' + url.netloc + '/' + self.bucket + '/' + key
+
+        print("==================== LOCATION: {0}".format(location))
+
+        return location
 
     def get_bucket(self):
         return self.bucket

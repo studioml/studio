@@ -278,6 +278,9 @@ class Artifact:
             else:
                 result['qualified'] = self.remote_path
 
+        if self.storage_handler.type == StorageType.storageS3:
+            result['bucket'] = self.storage_handler.get_bucket()
+
         return result
 
 
