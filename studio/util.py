@@ -325,6 +325,17 @@ def _s3_download_file(client, bucket, key, local_path, logger=None):
         report_fatal("FAILED to download file {0} from {1}/{2}: {3}"
                      .format(local_path, bucket, key, exc))
 
+def parse_s3_path(qualified: str):
+    qualified_split = qualified.split('/')
+    if _looks_like_url(qualified_split[2]):
+        url = qualified_split[2]
+        bucket = qualified_split[3]
+        key = '/'.join(qualified_split[4:])
+    else:
+        url = None
+        bucket = qualified_split[2]
+        key = '/'.join(qualified_split[3:])
+    return url, bucket, key
 
 def download_file_from_qualified(qualified, local_path, logger=None):
     if qualified.startswith('dockerhub://') or \
@@ -334,13 +345,7 @@ def download_file_from_qualified(qualified, local_path, logger=None):
     assert qualified.startswith('s3://') or \
            qualified.startswith('gs://')
 
-    qualified_split = qualified.split('/')
-    if _looks_like_url(qualified_split[2]):
-        bucket = qualified_split[3]
-        key = '/'.join(qualified_split[4:])
-    else:
-        bucket = qualified_split[2]
-        key = '/'.join(qualified_split[3:])
+    _, bucket, key = parse_s3_path(qualified)
 
     if logger is not None:
         logger.debug(('Downloading file from bucket {0} ' +

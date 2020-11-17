@@ -2,9 +2,6 @@ import hashlib
 import os
 import re
 
-import json
-import traceback
-
 import tarfile
 try:
     from urllib.request import urlopen
@@ -49,8 +46,6 @@ class Artifact:
             self.remote_path = art_dict['url']
         if 'hash' in art_dict.keys():
             self.hash = art_dict['hash']
-
-        #print("Init artifact: {0} {1}".format(self.name, json.dumps(art_dict, indent=4)))
 
     def upload(self, local_path=None):
         if self.storage_handler is None:
@@ -102,8 +97,6 @@ class Artifact:
             if self.is_mutable:
                 self.logger.info("Downloading mutable artifact: {0}"
                                   .format(self.name))
-                #traceback.print_stack()
-                #assert(False)
             if self.remote_path is None:
                 self.logger.error(
                     "CANNOT download artifact without remote path: {0}"
@@ -279,7 +272,9 @@ class Artifact:
                 result['qualified'] = self.remote_path
 
         if self.storage_handler.type == StorageType.storageS3:
-            result['bucket'] = self.storage_handler.get_bucket()
+            # Get artifact bucket directly from remote_path:
+            _, bucket, _ = util.parse_s3_path(self.remote_path)
+            result['bucket'] = bucket
 
         return result
 
