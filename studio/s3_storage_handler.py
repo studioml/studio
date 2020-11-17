@@ -132,8 +132,6 @@ class S3StorageHandler(StorageHandler):
         url = urlparse(self.endpoint)
         location: str = 's3://' + url.netloc + '/' + self.bucket + '/' + key
 
-        print("==================== LOCATION: {0}".format(location))
-
         return location
 
     def get_bucket(self):

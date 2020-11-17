@@ -58,11 +58,6 @@ def submit_experiments(
         logger.debug("Submitting experiment: {0}"
                      .format(json.dumps(payload, indent=4)))
 
-        fname: str = "/Users/m_811862/work/deepbilevel/experimenthost/experiment_{0}.json".format(experiment.key)
-        with open(fname, "w") as write_file:
-            print(">>>>>>>>>>>>>>> Write experiment to {0}".format(fname))
-            write_file.write(json.dumps(payload, indent=4))
-
         queue.enqueue(json.dumps(payload))
         logger.info("studio run: submitted experiment " + experiment.key)
 
