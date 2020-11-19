@@ -17,9 +17,9 @@ except ImportError:
 from studio import model
 from studio.auth import remove_all_keys
 
+from studio.artifact import Artifact
 from studio.gcloud_artifact_store import GCloudArtifactStore
-from studio.s3_artifact_store import S3ArtifactStore
-
+from studio.tartifact_store import TartifactStore
 from studio.util import has_aws_credentials
 from env_detect import on_gcp, on_aws
 
@@ -36,6 +36,10 @@ def _get_config():
 def _get_provider():
     config = _get_config()
     return model.get_db_provider(config)
+
+def _build(art_dict) -> Artifact:
+    art = Artifact("artifact", art_dict)
+    return art
 
 class ArtifactStoreTest(object):
     _multiprocess_shared_ = True
@@ -62,7 +66,7 @@ class ArtifactStoreTest(object):
         with open(tmp_filename, 'w') as f:
             f.write(random_str)
 
-        artifact = {'key': 'tests/' + str(uuid.uuid4()) + '.tar'}
+        artifact = _build({'key': 'tests/' + str(uuid.uuid4()) + '.tar'})
         fb.put_artifact(artifact, tmp_dir)
         shutil.rmtree(tmp_dir)
         fb.get_artifact(artifact, tmp_dir)
@@ -89,7 +93,7 @@ class ArtifactStoreTest(object):
         with open(tmp_filename, 'w') as f:
             f.write(random_str)
 
-        artifact = {'key': 'tests/' + str(uuid.uuid4()) + '.tgz'}
+        artifact = _build({'key': 'tests/' + str(uuid.uuid4()) + '.tgz'})
 
         fb.put_artifact(artifact, tmp_dir)
         shutil.rmtree(tmp_dir)
@@ -122,7 +126,7 @@ class ArtifactStoreTest(object):
             f.write(random_str)
 
         artifact_key = 'tests/test_' + str(uuid.uuid4())
-        artifact = {'key': artifact_key}
+        artifact = _build({'key': artifact_key})
         fb.put_artifact(artifact, tmp_filename)
         url = fb.get_artifact_url(artifact)
         os.remove(tmp_filename)
@@ -157,7 +161,7 @@ class ArtifactStoreTest(object):
             f.write(random_str)
 
         artifact_key = 'tests/test_' + str(uuid.uuid4())
-        artifact = {'key': artifact_key}
+        artifact = _build({'key': artifact_key})
         fb.put_artifact(artifact, tmp_filename)
         shutil.rmtree(tmp_dir)
         fb.delete_artifact(artifact)
@@ -365,7 +369,7 @@ class S3ArtifactStoreTest(ArtifactStoreTest, unittest.TestCase):
     def get_store(self, config_name=None):
         store = ArtifactStoreTest.get_store(
             self, 'test_config.yaml')
-        self.assertTrue(isinstance(store, S3ArtifactStore))
+        self.assertTrue(isinstance(store, TartifactStore))
         return store
 
     def get_qualified_location_prefix(self):

@@ -264,15 +264,15 @@ def main(args=sys.argv[1:]):
                 'Specify --force-git to run experiment from dirty git repo')
             sys.exit(1)
 
-    resources_needed = parse_hardware(runner_args, config['resources_needed'])
+    resources_needed = _parse_hardware(runner_args, config['resources_needed'])
     logger.debug('resources requested: ')
     logger.debug(str(resources_needed))
 
     artifacts = {}
-    artifacts.update(parse_artifacts(runner_args.capture, mutable=True))
-    artifacts.update(parse_artifacts(runner_args.capture_once, mutable=False))
+    artifacts.update(_parse_artifacts(runner_args.capture, mutable=True))
+    artifacts.update(_parse_artifacts(runner_args.capture_once, mutable=False))
     with model.get_db_provider(config) as db:
-        artifacts.update(parse_external_artifacts(runner_args.reuse, db))
+        artifacts.update(_parse_external_artifacts(runner_args.reuse, db))
 
     if runner_args.branch:
         config['cloud']['branch'] = runner_args.branch
@@ -288,7 +288,7 @@ def main(args=sys.argv[1:]):
 
     if any(runner_args.hyperparam):
         if runner_args.optimizer == "grid":
-            experiments = add_hyperparam_experiments(
+            experiments = _add_hyperparam_experiments(
                 exec_filename,
                 other_args,
                 runner_args,
@@ -346,7 +346,7 @@ def main(args=sys.argv[1:]):
                 hyperparam_pop = optimizer.ask()
                 hyperparam_tuples = h.convert_to_tuples(hyperparam_pop)
 
-                experiments = add_hyperparam_experiments(
+                experiments = _add_hyperparam_experiments(
                     exec_filename,
                     other_args,
                     runner_args,
@@ -605,7 +605,7 @@ def get_experiment_fitnesses(experiments, optimizer, config, logger):
         return fitnesses, behaviors
 
 
-def parse_artifacts(art_list, mutable):
+def _parse_artifacts(art_list, mutable):
     retval = {}
     url_schema = re.compile('^https{0,1}://')
     s3_schema = re.compile('s3://')
@@ -648,7 +648,7 @@ def parse_artifacts(art_list, mutable):
     return retval
 
 
-def parse_external_artifacts(art_list, db):
+def _parse_external_artifacts(art_list, db):
     retval = {}
     for entry in art_list:
         external = re.sub(':.*', '', entry)
@@ -659,13 +659,13 @@ def parse_external_artifacts(art_list, db):
         experiment = db.get_experiment(experiment_key, getinfo=False)
 
         retval[tag] = {
-            'key': experiment.artifacts[external_tag]['key'],
+            'key': experiment.artifacts[external_tag].key,
             'mutable': False
         }
     return retval
 
 
-def parse_hardware(runner_args, config={}):
+def _parse_hardware(runner_args, config={}):
     resources_needed = {}
     parse_list = ['gpus', 'cpus', 'ram', 'hdd', 'gpuMem']
     for key in parse_list:
@@ -679,7 +679,7 @@ def parse_hardware(runner_args, config={}):
     return resources_needed
 
 
-def add_hyperparam_experiments(
+def _add_hyperparam_experiments(
         exec_filename,
         other_args,
         runner_args,

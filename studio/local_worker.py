@@ -14,6 +14,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from . import fs_tracker, model, logs
 from .local_queue import LocalQueue
 from .gpu_util import get_available_gpus, get_gpu_mapping, get_gpus_summary
+from .artifact import Artifact
 from .experiment import Experiment
 from .util import sixdecode, str2duration, retry, LogReprinter, parse_verbosity
 
@@ -77,7 +78,7 @@ class LocalExecutor(object):
                 python = which(python)
 
                 cmd = [python, experiment.filename] + experiment.args
-                cwd = experiment.artifacts['workspace']['local']
+                cwd = experiment.artifacts['workspace'].local_path
                 container_artifact = experiment.artifacts.get('_singularity')
                 if container_artifact:
                     container = container_artifact.get('local')
@@ -388,21 +389,23 @@ def worker_loop(queue, parsed_args,
                                 for pkg in pip_diff:
                                     pip_install_packages([pkg], python, logger)
 
-                    for tag, art in six.iteritems(experiment.artifacts):
-                        if fetch_artifacts or 'local' not in art.keys():
-                            logger.info('Fetching artifact ' + tag)
+                    for tag, item in experiment.artifacts.items():
+                        art: Artifact = item
+                        if fetch_artifacts or art.local_path is None:
+                            get_only_newer: bool = True
                             if tag == 'workspace':
-                                art['local'] = retry(lambda: db.get_artifact(
-                                    art,
-                                    only_newer=False),
-                                    sleep_time=10,
-                                    logger=logger)
-                            else:
-                                art['local'] = retry(
-                                    lambda: db.get_artifact(art),
+                                get_only_newer = False
+
+                            if not art.is_mutable:
+                                logger.info('Fetching artifact ' + tag)
+                                art.local_path = retry(
+                                    lambda: db.get_artifact(art, only_newer=get_only_newer),
                                     sleep_time=10,
                                     logger=logger
                                 )
+                            else:
+                                logger.info('Skipping mutable artifact ' + tag)
+
 
                     returncode = executor.run(experiment)
                     if returncode != 0:

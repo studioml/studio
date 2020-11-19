@@ -1,22 +1,21 @@
 import json
 import re
 from .keyvalue_provider import KeyValueProvider
-from .s3_artifact_store import S3ArtifactStore
+from .s3_storage_handler import S3StorageHandler
 
 
 class S3Provider(KeyValueProvider):
 
-    def __init__(self, config, blocking_auth=True, verbose=10, store=None):
+    def __init__(self, config, blocking_auth=True):
         self.config = config
         self.bucket = config.get('bucket', 'studioml-meta')
 
-        self.meta_store = S3ArtifactStore(config, verbose)
+        self.meta_store = S3StorageHandler(config)
 
-        super(S3Provider, self).__init__(
+        super().__init__(
             config,
-            blocking_auth,
-            verbose,
-            store)
+            self.meta_store,
+            blocking_auth)
 
     def _get(self, key, shallow=False):
         try:

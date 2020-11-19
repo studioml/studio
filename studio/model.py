@@ -5,23 +5,24 @@ import yaml
 import six
 import uuid
 
-from .artifact_store import get_artifact_store
-from .http_provider import HTTPProvider
 from .firebase_provider import FirebaseProvider
-from .local_artifact_store import LocalArtifactStore
+from .http_provider import HTTPProvider
 from .local_db_provider import LocalDbProvider
 from .s3_provider import S3Provider
-from .gs_provider import GSProvider
 from .local_queue import LocalQueue
 from .pubsub_queue import PubsubQueue
 from .sqs_queue import SQSQueue
+from .local_storage_handler import LocalStorageHandler
+from .s3_storage_handler import S3StorageHandler
+from .tartifact_store import TartifactStore
 from .gcloud_worker import GCloudWorkerManager
 from .ec2cloud_worker import EC2WorkerManager
 from .qclient_cache import get_cached_queue, shutdown_cached_queue
 from .util import parse_verbosity
 from .auth import get_auth
 
-from .model_setup import setup_model, get_model_db_provider, reset_model
+from .model_setup import setup_model, get_model_db_provider,\
+    reset_model, set_model_verbose_level
 from . import logs
 
 def get_config(config_file=None):
@@ -64,15 +65,28 @@ def get_config(config_file=None):
 def reset_model_providers():
     reset_model()
 
+def get_artifact_store(config):
+    storage_type: str = config['type'].lower()
+
+    if storage_type == 's3':
+        return TartifactStore(S3StorageHandler(config))
+    elif storage_type == 'local':
+        return TartifactStore(LocalStorageHandler(config))
+    else:
+        raise ValueError('Unknown storage type: ' + storage_type)
+
 def get_db_provider(config=None, blocking_auth=True):
 
     db_provider = get_model_db_provider()
-    if not db_provider is None:
+    if db_provider is not None:
         return db_provider
 
-    if not config:
+    if config is None:
         config = get_config()
     verbose = parse_verbosity(config.get('verbose'))
+
+    # Save this verbosity level as global for the whole experiment job:
+    set_model_verbose_level(verbose)
 
     logger = logs.getLogger("get_db_provider")
     logger.setLevel(verbose)
@@ -80,50 +94,35 @@ def get_db_provider(config=None, blocking_auth=True):
     logger.debug(config)
 
     if 'storage' in config.keys():
-        artifact_store = get_artifact_store(
-            config['storage'],
-            blocking_auth=blocking_auth,
-            verbose=verbose)
+        artifact_store = get_artifact_store(config['storage'])
     else:
         artifact_store = None
 
     assert 'database' in config.keys()
-    db_provider = None
     db_config = config['database']
     if db_config['type'].lower() == 'firebase':
-        db_provider = FirebaseProvider(
-            db_config,
-            blocking_auth,
-            verbose=verbose,
-            store=artifact_store)
-        artifact_store = db_provider.get_artifact_store()
+        db_provider = FirebaseProvider(db_config,
+                            blocking_auth=blocking_auth)
+
     elif db_config['type'].lower() == 'http':
         db_provider = HTTPProvider(db_config,
                             verbose=verbose,
                             blocking_auth=blocking_auth)
+
     elif db_config['type'].lower() == 's3':
         db_provider = S3Provider(db_config,
-                          verbose=verbose,
-                          store=artifact_store,
                           blocking_auth=blocking_auth)
-        artifact_store = db_provider.get_artifact_store()
+        if artifact_store is None:
+            artifact_store = db_provider.get_artifact_store()
 
     elif db_config['type'].lower() == 'gs':
-        db_provider = GSProvider(db_config,
-                          verbose=verbose,
-                          store=artifact_store,
-                          blocking_auth=blocking_auth)
-        artifact_store = db_provider.get_artifact_store()
+        raise NotImplementedError("GS is not supported.")
 
     elif db_config['type'].lower() == 'local':
-        if artifact_store is None:
-            artifact_store = LocalArtifactStore(db_config, "storage", verbose)
-
         db_provider = LocalDbProvider(db_config,
-                          verbose=verbose,
-                          store=artifact_store,
                           blocking_auth=blocking_auth)
-        artifact_store = db_provider.get_artifact_store()
+        if artifact_store is None:
+            artifact_store = db_provider.get_artifact_store()
 
     else:
         raise ValueError('Unknown type of the database ' + db_config['type'])

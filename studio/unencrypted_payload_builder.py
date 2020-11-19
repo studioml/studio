@@ -1,4 +1,5 @@
 from .payload_builder import PayloadBuilder
+from .experiment import Experiment
 
 class UnencryptedPayloadBuilder(PayloadBuilder):
     """
@@ -6,10 +7,10 @@ class UnencryptedPayloadBuilder(PayloadBuilder):
     unencrypted experiment payloads.
     """
     def __init__(self, name: str):
-        super(UnencryptedPayloadBuilder, self).__init__(name)
+        super().__init__(name)
 
-    def construct(self, experiment, config, packages):
-        return { 'experiment': experiment.__dict__,
+    def construct(self, experiment: Experiment, config, packages):
+        return { 'experiment': experiment.to_dict(),
                  'config': config}
 
 

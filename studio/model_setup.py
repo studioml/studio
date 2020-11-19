@@ -1,3 +1,4 @@
+from .logs import INFO
 
 DB_KEY = "database"
 STORE_KEY = "store"
@@ -5,6 +6,8 @@ STORE_KEY = "store"
 # Global dictionary which keeps Database Provider
 # and Artifact Store objects created from experiment configuration.
 _model_setup = None
+
+_model_verbose_level = INFO
 
 def setup_model(db_provider, artifact_store):
     global _model_setup
@@ -25,4 +28,12 @@ def get_model_artifact_store():
 def reset_model():
     global _model_setup
     _model_setup = None
+
+def get_model_verbose_level():
+    global _model_verbose_level
+    return _model_verbose_level
+
+def set_model_verbose_level(level: int):
+    global _model_verbose_level
+    _model_verbose_level = level
 
