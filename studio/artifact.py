@@ -14,6 +14,14 @@ from .storage_type import StorageType
 from .storage_handler import StorageHandler
 from .storage_util import tar_artifact, untar_artifact
 
+# The purpose of this class is to encapsulate the logic
+# of handling artifact's state and it's transition between
+# being local on client's side, cached in shared storage location,
+# downloaded into payload execution environment etc.
+# Part of artifact is a reference to StorageHandler instance,
+# potentially unique for each Artifact instance.
+# This StorageHandler defines where artifact is currently stored
+# and how it is accessed.
 class Artifact:
 
     def __init__(self, art_name, art_dict, logger=None):
@@ -32,8 +40,9 @@ class Artifact:
         self.storage_handler: StorageHandler = None
         self.compression: str = None
 
-        self.storage_handler = model_setup.get_model_artifact_store()\
-            .get_storage_handler()
+        artifact_store = model_setup.get_model_artifact_store()
+        self.storage_handler =\
+            artifact_store.get_storage_handler() if artifact_store else None
         self.unpack: bool = art_dict.get('unpack')
         self.is_mutable: bool = art_dict.get('mutable')
         if 'key' in art_dict.keys():

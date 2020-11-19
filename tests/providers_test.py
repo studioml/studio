@@ -90,11 +90,10 @@ class KeyValueProviderTest(object):
 
             self.assertTrue(experiment.status == 'waiting')
             self.assertTrue(experiment.time_added <= time.time())
+
             actual_experiment_dict = fb._get(
                 fb._get_experiments_keybase() + experiment_name)
-            for key, value in six.iteritems(experiment.__dict__):
-                if value:
-                    self.assertTrue(actual_experiment_dict[key] == value)
+            self._compare_experiment_data(experiment, actual_experiment_dict)
 
             fb.finish_experiment(experiment)
             fb.delete_experiment(experiment)
@@ -113,9 +112,7 @@ class KeyValueProviderTest(object):
 
             actual_experiment_dict = fb._get(
                 fb._get_experiments_keybase() + experiment_name)
-            for key, value in six.iteritems(experiment.__dict__):
-                if value:
-                    self.assertTrue(actual_experiment_dict[key] == value)
+            self._compare_experiment_data(experiment, actual_experiment_dict)
 
             fb.finish_experiment(experiment)
             fb.delete_experiment(experiment)
@@ -136,9 +133,7 @@ class KeyValueProviderTest(object):
 
             actual_experiment_dict = fb._get(
                 fb._get_experiments_keybase() + experiment_name)
-            for key, value in six.iteritems(experiment.__dict__):
-                if value:
-                    self.assertTrue(actual_experiment_dict[key] == value)
+            self._compare_experiment_data(experiment, actual_experiment_dict)
 
             fb.delete_experiment(experiment)
 
@@ -146,7 +141,7 @@ class KeyValueProviderTest(object):
         with self.get_provider() as fb:
             experiment, experiment_name, _, _, = get_test_experiment()
 
-            modeldir = experiment.artifacts['modeldir']['local']
+            modeldir = experiment.artifacts['modeldir'].local_path
             if os.path.exists(modeldir):
                 shutil.rmtree(modeldir)
 
@@ -180,6 +175,18 @@ class KeyValueProviderTest(object):
 
             self.assertTrue(line == random_str)
             fb.delete_experiment(experiment)
+
+    def _compare_experiment_data(self, experiment, actual_experiment_dict):
+        for key, value in experiment.__dict__.items():
+            if value:
+                if key != 'artifacts':
+                    self.assertTrue(
+                        actual_experiment_dict[key] == value)
+                else:
+                    for art_name, art in value.items():
+                        self.assertTrue(
+                            actual_experiment_dict[key][art_name] ==
+                            value[art_name].to_dict())
 
 @unittest.skipIf(True, "Firebase is not expected to be used.")
 class FirebaseProviderTest(unittest.TestCase, KeyValueProviderTest):

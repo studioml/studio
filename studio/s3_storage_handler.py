@@ -137,5 +137,8 @@ class S3StorageHandler(StorageHandler):
     def get_bucket(self):
         return self.bucket
 
+    def get_client(self):
+        return self.client
+
     def _report_fatal(self, msg: str):
         util.report_fatal(msg, self.logger)

@@ -5,6 +5,7 @@ import yaml
 import six
 import uuid
 
+from .firebase_provider import FirebaseProvider
 from .http_provider import HTTPProvider
 from .local_db_provider import LocalDbProvider
 from .s3_provider import S3Provider
@@ -100,7 +101,8 @@ def get_db_provider(config=None, blocking_auth=True):
     assert 'database' in config.keys()
     db_config = config['database']
     if db_config['type'].lower() == 'firebase':
-        raise NotImplementedError("Firebase is not supported.")
+        db_provider = FirebaseProvider(db_config,
+                            blocking_auth=blocking_auth)
 
     elif db_config['type'].lower() == 'http':
         db_provider = HTTPProvider(db_config,

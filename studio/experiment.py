@@ -31,6 +31,7 @@ class Experiment(object):
         self.key = key
         self.args = []
         self.filename = filename
+        self.owner = ""
 
         if filename and '::' in filename:
             self.filename = '-m'
@@ -98,7 +99,7 @@ class Experiment(object):
         # Semi-hack: make sure 'retval' artifact does have
         # local path setup
         # (it could be overwritten by experiment artifacts provided
-        # by constuctor parameters.)
+        # by constructor parameters.)
         std_artifacts_dict['retval']['local'] =\
             fs_tracker.get_artifact_cache('retval', key)
 
@@ -136,6 +137,7 @@ class Experiment(object):
         result['git'] = self.git
         result['metric'] = self.metric
         result['max_duration'] = self.max_duration
+        result['owner'] = self.owner
 
         # Process artifacts:
         artifacts_dict = dict()

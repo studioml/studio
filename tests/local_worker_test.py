@@ -21,6 +21,8 @@ from env_detect import on_gcp, on_aws
 
 TEST_TIMEOUT = 600
 
+EXPERIMENT_VERBOSE_LEVEL = 'debug'
+
 
 class LocalWorkerTest(unittest.TestCase):
 
@@ -56,7 +58,7 @@ class LocalWorkerTest(unittest.TestCase):
         with stubtest_worker(
             self,
             experiment_name='test_local_hyperparam' + str(uuid.uuid4()),
-            runner_args=['--verbose=debug'],
+            runner_args=['--verbose='+EXPERIMENT_VERBOSE_LEVEL],
             config_name='test_config.yaml',
             test_script='hyperparam_hello_world.py',
             expected_output='0.3'
@@ -67,7 +69,7 @@ class LocalWorkerTest(unittest.TestCase):
             self,
             experiment_name='test_local_hyperparam' + str(uuid.uuid4()),
             runner_args=[
-                '--verbose=debug',
+                '--verbose='+EXPERIMENT_VERBOSE_LEVEL,
                 '--hyperparam=learning_rate=0.4'
             ],
             config_name='test_config.yaml',
@@ -101,7 +103,7 @@ class LocalWorkerTest(unittest.TestCase):
             self,
             experiment_name=experiment_name,
             runner_args=['--capture=' + tmpfile + ':f',
-                         '--verbose=debug'],
+                         '--verbose='+EXPERIMENT_VERBOSE_LEVEL],
             config_name='test_config.yaml',
             test_script='art_hello_world.py',
             script_args=[random_str2],
@@ -252,7 +254,7 @@ class LocalWorkerTest(unittest.TestCase):
                                   '--config=' + config_name,
                                   '--experiment=' + key,
                                   '--force-git',
-                                  '--verbose=debug',
+                                  '--verbose='+EXPERIMENT_VERBOSE_LEVEL,
                                   'stop_experiment.py'],
                                  stdout=subprocess.PIPE,
                                  stderr=subprocess.STDOUT,
@@ -297,7 +299,7 @@ class LocalWorkerTest(unittest.TestCase):
                                   '--config=' + config_name,
                                   '--experiment=' + key,
                                   '--force-git',
-                                  '--verbose=debug',
+                                  '--verbose='+EXPERIMENT_VERBOSE_LEVEL,
                                   '--max-duration=10s',
                                   'stop_experiment.py'],
                                  stdout=subprocess.PIPE,
@@ -330,7 +332,7 @@ class LocalWorkerTest(unittest.TestCase):
                                   '--config=' + config_name,
                                   '--experiment=' + key,
                                   '--force-git',
-                                  '--verbose=debug',
+                                  '--verbose='+EXPERIMENT_VERBOSE_LEVEL,
                                   '--lifetime=-10m',
                                   'stop_experiment.py'],
                                  stdout=subprocess.PIPE,
@@ -375,7 +377,7 @@ def stubtest_worker(
     os.environ['PYTHONUNBUFFERED'] = 'True'
     p = subprocess.Popen(['studio', 'run'] + runner_args +
                          ['--config=' + config_name,
-                          '--verbose=debug',
+                          '--verbose='+EXPERIMENT_VERBOSE_LEVEL,
                           '--force-git',
                           '--experiment=' + experiment_name,
                           test_script] + script_args,

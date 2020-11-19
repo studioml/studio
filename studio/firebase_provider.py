@@ -1,16 +1,15 @@
 from .keyvalue_provider import KeyValueProvider
-
+from .firebase_storage_handler import FirebaseStorageHandler
 
 class FirebaseProvider(KeyValueProvider):
 
-    def __init__(self, db_config, blocking_auth=True, verbose=10, store=None):
-        super(
-            FirebaseProvider,
-            self).__init__(
+    def __init__(self, db_config, blocking_auth=True):
+        self.meta_store = FirebaseStorageHandler(db_config)
+
+        super().__init__(
             db_config,
-            blocking_auth,
-            verbose,
-            store)
+            self.meta_store,
+            blocking_auth)
 
     def _get(self, key, shallow=False):
         try:

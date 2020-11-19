@@ -398,7 +398,6 @@ def worker_loop(queue, parsed_args,
 
                             if not art.is_mutable:
                                 logger.info('Fetching artifact ' + tag)
-                                print("IMMUTABLE: {0} {1}".format(tag, json.dumps(art.to_dict(), indent=4)))
                                 art.local_path = retry(
                                     lambda: db.get_artifact(art, only_newer=get_only_newer),
                                     sleep_time=10,
@@ -406,7 +405,6 @@ def worker_loop(queue, parsed_args,
                                 )
                             else:
                                 logger.info('Skipping mutable artifact ' + tag)
-                                print("MUTABLE: {0} {1}".format(tag, json.dumps(art.to_dict(), indent=4)))
 
 
                     returncode = executor.run(experiment)

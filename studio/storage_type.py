@@ -4,7 +4,8 @@ class StorageType(Enum):
     storageHTTP = 1
     storageS3 = 2
     storageLocal = 3
-    storageDockerHub = 4
-    storageSHub = 5
+    storageFirebase = 4
+    storageDockerHub = 5
+    storageSHub = 6
 
     storageInvalid = 99

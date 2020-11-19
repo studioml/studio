@@ -5,6 +5,9 @@ import time
 from .storage_type import StorageType
 from .util import get_temp_filename
 
+# StorageHandler encapsulates the logic of basic storage operations
+# for specific storage endpoint (S3, http, local etc.)
+# together with access credentials for this endpoint.
 class StorageHandler(object):
     def __init__(self, storage_type: StorageType,
                  logger,

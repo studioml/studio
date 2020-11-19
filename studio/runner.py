@@ -659,7 +659,7 @@ def _parse_external_artifacts(art_list, db):
         experiment = db.get_experiment(experiment_key, getinfo=False)
 
         retval[tag] = {
-            'key': experiment.artifacts[external_tag]['key'],
+            'key': experiment.artifacts[external_tag].key,
             'mutable': False
         }
     return retval

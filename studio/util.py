@@ -19,6 +19,7 @@ import uuid
 from pygtail import Pygtail
 from . import model_setup
 from .base_artifact_store import BaseArtifactStore
+from .storage_type import StorageType
 
 DAY = 86400
 HOUR = 3600
@@ -368,7 +369,11 @@ def _get_active_s3_client():
             or not isinstance(artifact_store, BaseArtifactStore):
         raise NotImplementedError("Artifact store is not set up or has the wrong type")
 
-    storage_client = artifact_store.get_storage_client()
+    storage_handler = artifact_store.get_storage_handler()
+    if storage_handler.type == StorageType.storageS3:
+        storage_client = storage_handler.get_client()
+    else:
+        storage_client = None
     if storage_client is None:
         raise NotImplementedError("Expected boto3 storage client for current artifact store")
     return storage_client

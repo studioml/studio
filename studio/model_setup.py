@@ -1,3 +1,4 @@
+from .logs import INFO
 
 DB_KEY = "database"
 STORE_KEY = "store"
@@ -6,7 +7,7 @@ STORE_KEY = "store"
 # and Artifact Store objects created from experiment configuration.
 _model_setup = None
 
-_model_verbose_level = None
+_model_verbose_level = INFO
 
 def setup_model(db_provider, artifact_store):
     global _model_setup

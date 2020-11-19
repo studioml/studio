@@ -61,6 +61,12 @@ class TartifactStore(BaseArtifactStore):
     def get_storage_handler(self):
         return self.storage_handler
 
+    def get_qualified_location(self, key: str):
+        if self.storage_handler is not None:
+            return self.storage_handler.get_qualified_location(key)
+        else:
+            return None
+
     def __enter__(self):
         return self
 
