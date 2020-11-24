@@ -2,8 +2,12 @@ import calendar
 
 import os
 from urllib.parse import urlparse
-import boto3
+from boto3.s3.transfer import TransferConfig
+from boto3.session import Session
 import botocore
+from botocore.client import Config
+from botocore.handlers import set_list_objects_encoding_type_url
+
 
 from . import logs
 from . import util
@@ -17,12 +21,18 @@ class S3StorageHandler(StorageHandler):
                  compression=None):
         self.logger = logs.getLogger(self.__class__.__name__)
         self.logger.setLevel(get_model_verbose_level())
-        self.client = boto3.client(
-            's3',
-            aws_access_key_id=config.get('aws_access_key'),
+
+        session = Session(aws_access_key_id=config.get('aws_access_key'),
             aws_secret_access_key=config.get('aws_secret_key'),
-            endpoint_url=config.get('endpoint'),
             region_name=config.get('region'))
+
+        session.events.unregister('before-parameter-build.s3.ListObjects',
+                          set_list_objects_encoding_type_url)
+
+        self.client = session.client(
+            's3',
+            endpoint_url=config.get('endpoint'),
+            config=Config(signature_version='s3v4'))
 
         if compression is None:
             compression = config.get('compression')
@@ -65,7 +75,9 @@ class S3StorageHandler(StorageHandler):
                     .format(local_path, self.bucket, key))
             return False
         try:
-            self.client.upload_file(local_path, self.bucket, key)
+            config = TransferConfig(multipart_threshold=2 * 1024 * 1024 * 1024)
+            with open(local_path, 'rb') as data:
+                self.client.upload_fileobj(data, self.bucket, key, Config=config)
             return True
         except Exception as exc:
             self._report_fatal("FAILED to upload file {0} to {1}/{2}: {3}"
