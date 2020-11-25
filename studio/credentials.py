@@ -36,6 +36,14 @@ class Credentials(object):
     def get_secret_key(self):
         return self.secret_key
 
+    def to_dict(self):
+        result = dict()
+        if self.key is not None:
+            result[ACCESS_USER] = self.key
+        if self.secret_key is not None:
+            result[ACCESS_PASSWORD] = self.secret_key
+        return result
+
     @classmethod
     def getCredentials(cls, config):
         config_dict = config if config else dict()

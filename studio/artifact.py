@@ -9,10 +9,12 @@ except ImportError:
     from urllib import urlopen
 
 from . import fs_tracker, util, logs
+from . import credentials
 from . import model_setup
 from .storage_type import StorageType
 from .storage_handler import StorageHandler
 from .http_storage_handler import HTTPStorageHandler
+from .s3_storage_handler import S3StorageHandler
 from .storage_util import tar_artifact, untar_artifact
 
 # The purpose of this class is to encapsulate the logic
@@ -261,6 +263,23 @@ class Artifact:
                     .format(tar_filename, repr(exc)))
         return None
 
+    def _build_s3_config(self, art_dict):
+        """
+        For art_dict representing external S3-based artifact,
+        build configuration suitable for constructing
+        S3-based storage handler for this artifact.
+        Returns: (configuration dictionary, artifact's S3 key)
+        """
+        url, bucket, key = util.parse_s3_path(self.remote_path)
+        config = dict()
+        config['endpoint'] = url
+        config['bucket'] = bucket
+        config[credentials.KEY_CREDENTIALS] =\
+            credentials.Credentials.getCredentials(art_dict).to_dict()
+        if 'region' in art_dict.keys():
+            config['region'] = art_dict['region']
+
+        return config, key
 
     def _setup_storage_handler(self, art_dict):
         if self.key is not None:
@@ -274,6 +293,11 @@ class Artifact:
             if self.remote_path.startswith('http://') or \
                self.remote_path.startswith('https://'):
                 self.storage_handler = HTTPStorageHandler(self.remote_path)
+                return
+
+            if self.remote_path.startswith('s3://'):
+                s3_config_dict = self._build_s3_config(art_dict)
+                self.storage_handler = S3StorageHandler(s3_config_dict)
                 return
 
         if self.local_path is not None:
