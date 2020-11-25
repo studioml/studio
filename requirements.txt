@@ -37,5 +37,5 @@ rsa
 
 filelock
 pygtail
-pika
+pika >= 1.1.0
 

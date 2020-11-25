@@ -7,6 +7,7 @@ import botocore
 
 from . import logs
 from . import util
+from .credentials import Credentials
 from .storage_handler import StorageHandler
 from .storage_type import StorageType
 from .model_setup import get_model_verbose_level
@@ -17,10 +18,12 @@ class S3StorageHandler(StorageHandler):
                  compression=None):
         self.logger = logs.getLogger(self.__class__.__name__)
         self.logger.setLevel(get_model_verbose_level())
+        self.credentials: Credentials =\
+            Credentials.getCredentials(config)
         self.client = boto3.client(
             's3',
-            aws_access_key_id=config.get('aws_access_key'),
-            aws_secret_access_key=config.get('aws_secret_key'),
+            aws_access_key_id=self.credentials.get_key(),
+            aws_secret_access_key=self.credentials.get_secret_key(),
             endpoint_url=config.get('endpoint'),
             region_name=config.get('region'))
 

@@ -12,6 +12,7 @@ from . import fs_tracker, util, logs
 from . import model_setup
 from .storage_type import StorageType
 from .storage_handler import StorageHandler
+from .http_storage_handler import HTTPStorageHandler
 from .storage_util import tar_artifact, untar_artifact
 
 # The purpose of this class is to encapsulate the logic
@@ -40,9 +41,6 @@ class Artifact:
         self.storage_handler: StorageHandler = None
         self.compression: str = None
 
-        artifact_store = model_setup.get_model_artifact_store()
-        self.storage_handler =\
-            artifact_store.get_storage_handler() if artifact_store else None
         self.unpack: bool = art_dict.get('unpack')
         self.is_mutable: bool = art_dict.get('mutable')
         if 'key' in art_dict.keys():
@@ -55,6 +53,8 @@ class Artifact:
             self.remote_path = art_dict['url']
         if 'hash' in art_dict.keys():
             self.hash = art_dict['hash']
+
+        self._setup_storage_handler(art_dict)
 
     def upload(self, local_path=None):
         if self.storage_handler is None:
@@ -262,9 +262,29 @@ class Artifact:
         return None
 
 
-    def _setup_storage_handler(self):
-        raise NotImplementedError("_setup_storage_handler")
+    def _setup_storage_handler(self, art_dict):
+        if self.key is not None:
+            # Artifact is already stored in our shared blob-cache:
+            artifact_store = model_setup.get_model_artifact_store()
+            self.storage_handler = \
+                artifact_store.get_storage_handler() if artifact_store else None
+            return
 
+        if self.remote_path is not None:
+            if self.remote_path.startswith('http://') or \
+               self.remote_path.startswith('https://'):
+                self.storage_handler = HTTPStorageHandler(self.remote_path)
+                return
+
+        if self.local_path is not None:
+            artifact_store = model_setup.get_model_artifact_store()
+            self.storage_handler = \
+                artifact_store.get_storage_handler() if artifact_store else None
+            return
+
+        raise NotImplementedError(
+            "FAILED to setup storage handler for artifact: {0} {1}"
+                .format(self.name, repr(art_dict)))
 
     def to_dict(self):
         result = dict()

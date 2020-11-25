@@ -64,7 +64,8 @@ class S3Provider(KeyValueProvider):
         except Exception as exc:
             msg: str = "FAILED to delete object {0} in bucket {1}: {2}"\
                 .format(key, self.bucket, exc)
-            self._report_fatal(msg)
+            self.logger.info(msg)
+            return
 
         reason = response['ResponseMetadata'] if response else "None"
         if response is None or\
@@ -72,7 +73,7 @@ class S3Provider(KeyValueProvider):
             msg: str = 'attempt to delete key {0} in bucket {1}' +\
                        ' returned response {2}'\
                            .format(key, self.bucket, reason)
-            self._report_fatal(msg)
+            self.logger.info(msg)
 
     def _set(self, key, value):
         try:
