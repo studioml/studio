@@ -20,6 +20,7 @@ class S3StorageHandler(StorageHandler):
         self.logger.setLevel(get_model_verbose_level())
         self.credentials: Credentials =\
             Credentials.getCredentials(config)
+
         self.client = boto3.client(
             's3',
             aws_access_key_id=self.credentials.get_key(),
@@ -52,8 +53,6 @@ class S3StorageHandler(StorageHandler):
             self.logger,
             measure_timestamp_diff,
             compression=compression)
-
-        #self.set_storage_client(self.client)
 
     def _not_found(self, response):
         try:
@@ -92,6 +91,11 @@ class S3StorageHandler(StorageHandler):
             self._report_fatal("FAILED to download file {0} from {1}/{2}: {3}"
                                .format(local_path, self.bucket, key, exc))
             return False
+
+    def download_remote_path(self, remote_path, local_path):
+        # remote_path is full S3-formatted file reference
+        _, _, key = util.parse_s3_path(remote_path)
+        return self.download_file(key, local_path)
 
     def delete_file(self, key):
         self.client.delete_object(Bucket=self.bucket, Key=key)

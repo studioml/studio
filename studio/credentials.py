@@ -1,4 +1,4 @@
-import logs
+from . import logs
 from .model_setup import get_model_verbose_level
 
 AWS_KEY = 'aws_access_key'
@@ -46,10 +46,11 @@ class Credentials(object):
 
     @classmethod
     def getCredentials(cls, config):
-        config_dict = config if config else dict()
-        cred_dict = config_dict.get(KEY_CREDENTIALS, None)
+        if config is None:
+            return None
+        cred_dict = config.get(KEY_CREDENTIALS, None)
         if cred_dict is None:
-            cred_dict = config_dict.get(KEY_AUTHENTICATION, None)
+            cred_dict = config.get(KEY_AUTHENTICATION, None)
 
-        return Credentials(cred_dict)
+        return Credentials(cred_dict) if cred_dict else None
 

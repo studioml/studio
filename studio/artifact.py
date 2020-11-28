@@ -55,6 +55,7 @@ class Artifact:
             self.remote_path = art_dict['url']
         if 'hash' in art_dict.keys():
             self.hash = art_dict['hash']
+        self.credentials = credentials.Credentials.getCredentials(art_dict)
 
         self._setup_storage_handler(art_dict)
 
@@ -129,12 +130,13 @@ class Artifact:
                         ' skipping the download'.format(self.remote_path))
                 return self.remote_path
 
-            self.storage_handler.download_file(
+            self.storage_handler.download_remote_path(
                 self.remote_path, local_path)
 
             self.logger.debug('Downloaded file {0} from external source {1}'
                               .format(local_path, self.remote_path))
             self.local_path = local_path
+            self.key = key
             return self.local_path
 
         if local_path is None:
@@ -272,10 +274,10 @@ class Artifact:
         """
         url, bucket, key = util.parse_s3_path(self.remote_path)
         config = dict()
-        config['endpoint'] = url
+        config['endpoint'] = "http://{0}".format(url)
         config['bucket'] = bucket
         config[credentials.KEY_CREDENTIALS] =\
-            credentials.Credentials.getCredentials(art_dict).to_dict()
+            self.credentials.to_dict() if self.credentials else dict()
         if 'region' in art_dict.keys():
             config['region'] = art_dict['region']
 
@@ -296,7 +298,7 @@ class Artifact:
                 return
 
             if self.remote_path.startswith('s3://'):
-                s3_config_dict = self._build_s3_config(art_dict)
+                s3_config_dict, art_key = self._build_s3_config(art_dict)
                 self.storage_handler = S3StorageHandler(s3_config_dict)
                 return
 
@@ -328,6 +330,9 @@ class Artifact:
             # Get artifact bucket directly from remote_path:
             _, bucket, _ = util.parse_s3_path(self.remote_path)
             result['bucket'] = bucket
+
+        if self.credentials is not None:
+            result[credentials.KEY_CREDENTIALS] = self.credentials.to_dict()
 
         return result
 

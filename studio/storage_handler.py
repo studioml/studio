@@ -29,6 +29,9 @@ class StorageHandler(object):
     def download_file(self, key, local_path):
         raise NotImplementedError("Not implemented: download_file")
 
+    def download_remote_path(self, remote_path, local_path):
+        raise NotImplementedError("Not implemented: download_remote_path")
+
     def delete_file(self, key):
         raise NotImplementedError("Not implemented: delete_file")
 
