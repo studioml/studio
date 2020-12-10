@@ -7,6 +7,7 @@ try:
     from urllib.request import urlopen
 except ImportError:
     from urllib import urlopen
+from urllib.parse import urlparse
 
 from . import fs_tracker, util, logs
 from . import credentials
@@ -117,6 +118,8 @@ class Artifact:
 
             key = self._generate_key()
             local_path = fs_tracker.get_blob_cache(key)
+            local_path =\
+                self._get_target_local_path(local_path, self.remote_path)
             if os.path.exists(local_path):
                 self.logger.debug(('Immutable artifact exists at local_path {0},' +
                                    ' skipping the download').format(local_path))
@@ -136,7 +139,7 @@ class Artifact:
             self.logger.debug('Downloaded file {0} from external source {1}'
                               .format(local_path, self.remote_path))
             self.local_path = local_path
-            self.key = key
+            #self.key = key
             return self.local_path
 
         if local_path is None:
@@ -184,10 +187,10 @@ class Artifact:
         try:
             result: bool =\
                 self.storage_handler.download_file(self.key, tar_filename)
-            # TODO: why we do this here? local_path is bogus
-            # if download failed.
             if not result:
-                return local_path
+                msg: str = \
+                    "FAILED to download {0}. ABORTING.".format(self.key)
+                util.report_fatal(msg, self.logger)
         except BaseException as exc:
             msg: str = \
                 "FAILED to download {0}: {1}. ABORTING.".format(self.key, exc)
@@ -201,6 +204,16 @@ class Artifact:
                               .format(tar_filename), self.logger)
         self.local_path = local_path
         return local_path
+
+    def _get_target_local_path(self, local_path: str, remote_path: str):
+        result: str = local_path
+        dir_name, file_name = \
+            self.storage_handler.get_local_destination(remote_path)
+        if dir_name is not None:
+            result = os.path.join(result, dir_name)
+        if file_name is not None:
+            result = os.path.join(result, file_name)
+        return result
 
     def delete(self):
         if self.key is not None:
@@ -294,7 +307,8 @@ class Artifact:
         if self.remote_path is not None:
             if self.remote_path.startswith('http://') or \
                self.remote_path.startswith('https://'):
-                self.storage_handler = HTTPStorageHandler(self.remote_path)
+                creds_dict = self.credentials.to_dict() if self.credentials else dict()
+                self.storage_handler = HTTPStorageHandler(self.remote_path, creds_dict)
                 return
 
             if self.remote_path.startswith('s3://'):

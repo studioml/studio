@@ -19,28 +19,37 @@ class S3Provider(KeyValueProvider):
 
     def _get(self, key, shallow=False):
         try:
-            response = self.meta_store.client.list_objects_v2(
+            response = self.meta_store.client.list_objects(
                 Bucket=self.bucket,
                 Prefix=key,
-                Delimiter='/'
+                Delimiter='/',
+                MaxKeys=1024*16
             )
         except Exception as exc:
             msg: str = "FAILED to list objects in bucket {0}: {1}"\
                 .format(self.bucket, exc)
             self._report_fatal(msg)
+            return
 
-        if response is None or response['KeyCount'] == 0:
+        if response is None:
             return None
 
-        if response['KeyCount'] == 1 and \
-            'Contents' in response.keys() and \
+        if 'Contents' not in response.keys():
+            return None
+
+        keyCount = len(response['Contents'])
+
+        if keyCount == 0:
+            return None
+
+        if keyCount == 1 and \
                 response['Contents'][0]['Key'] == key:
             response = self.meta_store.client.get_object(
                 Bucket=self.bucket,
                 Key=key)
             return json.loads(response['Body'].read().decode("utf-8"))
         else:
-            if response['KeyCount'] > 1:
+            if keyCount > 1:
                 assert shallow, \
                     'multiple-object reads ' + \
                     'are not supported for s3 provider yet {} {}'.format(

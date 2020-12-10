@@ -44,6 +44,9 @@ class StorageHandler(object):
     def get_qualified_location(self, key):
         raise NotImplementedError("Not implemented: get_qualified_location")
 
+    def get_local_destination(self, remote_path: str):
+        raise NotImplementedError("Not implemented: get_local_destination")
+
     def get_timestamp_shift(self):
         return self._timestamp_shift
 
