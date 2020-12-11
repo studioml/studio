@@ -1,4 +1,4 @@
-from . import logs
+from . import logs, util
 from .model_setup import get_model_verbose_level
 
 AWS_KEY = 'aws_access_key'
@@ -15,6 +15,14 @@ class Credentials(object):
     def __init__(self, cred_dict):
         self.logger = logs.getLogger(self.__class__.__name__)
         self.logger.setLevel(get_model_verbose_level())
+
+        if cred_dict is not None and isinstance(cred_dict, str):
+            if cred_dict == 'none':
+                cred_dict = None
+            else:
+                msg: str =\
+                    "NOT SUPPORTED credentials format {0}".format(cred_dict)
+                util.report_fatal(msg, self.logger)
 
         self.key = None
         self.secret_key = None
