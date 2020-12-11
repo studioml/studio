@@ -25,8 +25,12 @@ class S3StorageHandler(StorageHandler):
         self.credentials: Credentials =\
             Credentials.getCredentials(config)
 
-        session = Session(aws_access_key_id=self.credentials.get_key(),
-            aws_secret_access_key=self.credentials.get_secret_key(),
+        aws_key: str =\
+            self.credentials.get_key() if self.credentials else None
+        aws_secret_key =\
+            self.credentials.get_secret_key() if self.credentials else None
+        session = Session(aws_access_key_id=aws_key,
+            aws_secret_access_key=aws_secret_key,
             region_name=config.get('region'))
 
         session.events.unregister('before-parameter-build.s3.ListObjects',
