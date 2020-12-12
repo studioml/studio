@@ -123,6 +123,7 @@ class S3StorageHandler(StorageHandler):
         self.logger.debug("s3 download dir.: bucket: {0} key: {1} to {2}"
                           .format(self.bucket, key, local))
 
+        success: bool = True
         paginator = self.client.get_paginator('list_objects')
         for result in paginator.paginate(
                 Bucket=self.bucket,
@@ -132,10 +133,11 @@ class S3StorageHandler(StorageHandler):
                 for subdir in result.get('CommonPrefixes'):
                     prefix: str = subdir.get('Prefix')
                     local_prefix: str = re.sub('^'+key, '', prefix)
-                    self._download_dir(
+                    dir_success: bool = self._download_dir(
                         prefix,
                         os.path.join(local, local_prefix)
                     )
+                    success = success and dir_success
 
             if result.get('Contents') is not None:
                 for file in result.get('Contents'):
@@ -149,8 +151,9 @@ class S3StorageHandler(StorageHandler):
                     self.logger.debug(
                             'Downloading {0}/{1} to {2}'
                                 .format(self.bucket, file_key, local_path))
-                    self.download_file(file_key, local_path)
-        return True
+                    success = self.download_file(file_key, local_path)\
+                              and success
+        return success
 
     def get_local_destination(self, remote_path: str):
         if remote_path.endswith('/'):

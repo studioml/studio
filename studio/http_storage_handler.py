@@ -32,13 +32,13 @@ class HTTPStorageHandler(StorageHandler):
         util.upload_file(self.url, local_path, self.logger)
 
     def download_file(self, key, local_path):
-        util.download_file(self.url, local_path, self.logger)
+        return util.download_file(self.url, local_path, self.logger)
 
     def download_remote_path(self, remote_path, local_path):
         head, _ = os.path.split(local_path)
         if head is not None:
             os.makedirs(head, exist_ok=True)
-        util.download_file(remote_path, local_path, self.logger)
+        return util.download_file(remote_path, local_path, self.logger)
 
     def get_local_destination(self, remote_path: str):
         parsed_url = urlparse(remote_path)

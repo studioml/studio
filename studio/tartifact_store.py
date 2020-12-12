@@ -2,12 +2,8 @@ from .artifact import Artifact
 from . import logs
 from .model_setup import get_model_verbose_level
 from .storage_handler import StorageHandler
-from .util import compression_to_extension
 
-from .base_artifact_store import BaseArtifactStore
-
-
-class TartifactStore(BaseArtifactStore):
+class TartifactStore:
 
     def __init__(self, handler: StorageHandler,
                  logger=None):
@@ -67,14 +63,3 @@ class TartifactStore(BaseArtifactStore):
         else:
             return None
 
-    def __enter__(self):
-        return self
-
-    def __exit__(self, *args):
-        pass
-
-
-def get_immutable_artifact_key(arthash, compression=None):
-    retval = "blobstore/" + arthash + ".tar" + \
-             compression_to_extension(compression)
-    return retval

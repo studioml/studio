@@ -111,10 +111,10 @@ class Artifact:
                 self.logger.info("Downloading mutable artifact: {0}"
                                   .format(self.name))
             if self.remote_path is None:
-                self.logger.error(
-                    "CANNOT download artifact without remote path: {0}"
-                        .format(self.name))
-                assert(False)
+                msg: str =\
+                    "CANNOT download artifact without remote path: {0}"\
+                        .format(self.name)
+                util.report_fatal(msg, self.logger)
 
             key = self._generate_key()
             local_path = fs_tracker.get_blob_cache(key)
@@ -189,21 +189,24 @@ class Artifact:
                 self.storage_handler.download_file(self.key, tar_filename)
             if not result:
                 msg: str = \
-                    "FAILED to download {0}. ABORTING.".format(self.key)
-                util.report_fatal(msg, self.logger)
+                    "FAILED to download {0}.".format(self.key)
+                self.logger.info(msg)
+                return None
         except BaseException as exc:
             msg: str = \
-                "FAILED to download {0}: {1}. ABORTING.".format(self.key, exc)
-            util.report_fatal(msg, self.logger)
+                "FAILED to download {0}: {1}.".format(self.key, exc)
+            self.logger.info(msg)
+            return None
 
         if os.path.exists(tar_filename):
             untar_artifact(local_path, tar_filename, self.logger)
             os.remove(tar_filename)
+            self.local_path = local_path
+            return local_path
         else:
-            util.report_fatal('file {0} download failed'
-                              .format(tar_filename), self.logger)
-        self.local_path = local_path
-        return local_path
+            msg: str = 'file {0} download failed'.format(tar_filename)
+            self.logger.info(msg)
+            return None
 
     def _get_target_local_path(self, local_path: str, remote_path: str):
         result: str = local_path
