@@ -42,26 +42,14 @@ class S3Provider(KeyValueProvider):
         if keyCount == 0:
             return None
 
-        if keyCount == 1 and \
-                response['Contents'][0]['Key'] == key:
-            response = self.meta_store.client.get_object(
-                Bucket=self.bucket,
-                Key=key)
-            return json.loads(response['Body'].read().decode("utf-8"))
-        else:
-            if keyCount > 1:
-                assert shallow, \
-                    'multiple-object reads ' + \
-                    'are not supported for s3 provider yet {} {}'.format(
-                        key, response)
+        for key_item in response['Contents']:
+            if 'Key' in key_item.keys() and key_item['Key'] == key:
+                response = self.meta_store.client.get_object(
+                    Bucket=self.bucket,
+                    Key=key)
+                return json.loads(response['Body'].read().decode("utf-8"))
 
-            keys = []
-            keys += [c['Key'] for c in response.get('Contents', [])]
-            keys += [c['Prefix'][:-1]
-                     for c in response.get('CommonPrefixes', [])]
-            suffixes = [re.sub('^' + key, '', k) for k in keys]
-
-            return suffixes
+        return None
 
     def _delete(self, key):
         self.logger.info("S3 deleting object: {0}/{1}".format(self.bucket, key))
