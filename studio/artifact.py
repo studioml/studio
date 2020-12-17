@@ -7,11 +7,15 @@ try:
     from urllib.request import urlopen
 except ImportError:
     from urllib import urlopen
+from urllib.parse import urlparse
 
 from . import fs_tracker, util, logs
+from . import credentials
 from . import model_setup
 from .storage_type import StorageType
 from .storage_handler import StorageHandler
+from .http_storage_handler import HTTPStorageHandler
+from .s3_storage_handler import S3StorageHandler
 from .storage_util import tar_artifact, untar_artifact
 
 # The purpose of this class is to encapsulate the logic
@@ -40,9 +44,6 @@ class Artifact:
         self.storage_handler: StorageHandler = None
         self.compression: str = None
 
-        artifact_store = model_setup.get_model_artifact_store()
-        self.storage_handler =\
-            artifact_store.get_storage_handler() if artifact_store else None
         self.unpack: bool = art_dict.get('unpack')
         self.is_mutable: bool = art_dict.get('mutable')
         if 'key' in art_dict.keys():
@@ -55,6 +56,9 @@ class Artifact:
             self.remote_path = art_dict['url']
         if 'hash' in art_dict.keys():
             self.hash = art_dict['hash']
+        self.credentials = credentials.Credentials.getCredentials(art_dict)
+
+        self._setup_storage_handler(art_dict)
 
     def upload(self, local_path=None):
         if self.storage_handler is None:
@@ -107,13 +111,15 @@ class Artifact:
                 self.logger.info("Downloading mutable artifact: {0}"
                                   .format(self.name))
             if self.remote_path is None:
-                self.logger.error(
-                    "CANNOT download artifact without remote path: {0}"
-                        .format(self.name))
-                assert(False)
+                msg: str =\
+                    "CANNOT download artifact without remote path: {0}"\
+                        .format(self.name)
+                util.report_fatal(msg, self.logger)
 
             key = self._generate_key()
             local_path = fs_tracker.get_blob_cache(key)
+            local_path =\
+                self._get_target_local_path(local_path, self.remote_path)
             if os.path.exists(local_path):
                 self.logger.debug(('Immutable artifact exists at local_path {0},' +
                                    ' skipping the download').format(local_path))
@@ -127,12 +133,13 @@ class Artifact:
                         ' skipping the download'.format(self.remote_path))
                 return self.remote_path
 
-            self.storage_handler.download_file(
+            self.storage_handler.download_remote_path(
                 self.remote_path, local_path)
 
             self.logger.debug('Downloaded file {0} from external source {1}'
                               .format(local_path, self.remote_path))
             self.local_path = local_path
+            #self.key = key
             return self.local_path
 
         if local_path is None:
@@ -180,23 +187,36 @@ class Artifact:
         try:
             result: bool =\
                 self.storage_handler.download_file(self.key, tar_filename)
-            # TODO: why we do this here? local_path is bogus
-            # if download failed.
             if not result:
-                return local_path
+                msg: str = \
+                    "FAILED to download {0}.".format(self.key)
+                self.logger.info(msg)
+                return None
         except BaseException as exc:
             msg: str = \
-                "FAILED to download {0}: {1}. ABORTING.".format(self.key, exc)
-            util.report_fatal(msg, self.logger)
+                "FAILED to download {0}: {1}.".format(self.key, exc)
+            self.logger.info(msg)
+            return None
 
         if os.path.exists(tar_filename):
             untar_artifact(local_path, tar_filename, self.logger)
             os.remove(tar_filename)
+            self.local_path = local_path
+            return local_path
         else:
-            util.report_fatal('file {0} download failed'
-                              .format(tar_filename), self.logger)
-        self.local_path = local_path
-        return local_path
+            msg: str = 'file {0} download failed'.format(tar_filename)
+            self.logger.info(msg)
+            return None
+
+    def _get_target_local_path(self, local_path: str, remote_path: str):
+        result: str = local_path
+        dir_name, file_name = \
+            self.storage_handler.get_local_destination(remote_path)
+        if dir_name is not None:
+            result = os.path.join(result, dir_name)
+        if file_name is not None:
+            result = os.path.join(result, file_name)
+        return result
 
     def delete(self):
         if self.key is not None:
@@ -261,10 +281,53 @@ class Artifact:
                     .format(tar_filename, repr(exc)))
         return None
 
+    def _build_s3_config(self, art_dict):
+        """
+        For art_dict representing external S3-based artifact,
+        build configuration suitable for constructing
+        S3-based storage handler for this artifact.
+        Returns: (configuration dictionary, artifact's S3 key)
+        """
+        url, bucket, key = util.parse_s3_path(self.remote_path)
+        config = dict()
+        config['endpoint'] = "http://{0}".format(url)
+        config['bucket'] = bucket
+        config[credentials.KEY_CREDENTIALS] =\
+            self.credentials.to_dict() if self.credentials else dict()
+        if 'region' in art_dict.keys():
+            config['region'] = art_dict['region']
 
-    def _setup_storage_handler(self):
-        raise NotImplementedError("_setup_storage_handler")
+        return config, key
 
+    def _setup_storage_handler(self, art_dict):
+        if self.key is not None:
+            # Artifact is already stored in our shared blob-cache:
+            artifact_store = model_setup.get_model_artifact_store()
+            self.storage_handler = \
+                artifact_store.get_storage_handler() if artifact_store else None
+            return
+
+        if self.remote_path is not None:
+            if self.remote_path.startswith('http://') or \
+               self.remote_path.startswith('https://'):
+                creds_dict = self.credentials.to_dict() if self.credentials else dict()
+                self.storage_handler = HTTPStorageHandler(self.remote_path, creds_dict)
+                return
+
+            if self.remote_path.startswith('s3://'):
+                s3_config_dict, art_key = self._build_s3_config(art_dict)
+                self.storage_handler = S3StorageHandler(s3_config_dict)
+                return
+
+        if self.local_path is not None:
+            artifact_store = model_setup.get_model_artifact_store()
+            self.storage_handler = \
+                artifact_store.get_storage_handler() if artifact_store else None
+            return
+
+        raise NotImplementedError(
+            "FAILED to setup storage handler for artifact: {0} {1}"
+                .format(self.name, repr(art_dict)))
 
     def to_dict(self):
         result = dict()
@@ -284,6 +347,9 @@ class Artifact:
             # Get artifact bucket directly from remote_path:
             _, bucket, _ = util.parse_s3_path(self.remote_path)
             result['bucket'] = bucket
+
+        if self.credentials is not None:
+            result[credentials.KEY_CREDENTIALS] = self.credentials.to_dict()
 
         return result
 

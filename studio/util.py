@@ -18,7 +18,6 @@ import tempfile
 import uuid
 from pygtail import Pygtail
 from . import model_setup
-from .base_artifact_store import BaseArtifactStore
 from .storage_type import StorageType
 
 DAY = 86400
@@ -247,8 +246,8 @@ class Progbar(object):
 
 
 def download_file(url, local_path, logger=None):
-    if url.startswith('s3://') or url.startswith('gs://'):
-        return download_file_from_qualified(url, local_path, logger)
+    if url.startswith('s3://'):
+        raise NotImplementedError('util.download_file() NOT implemented for s3 endpoints.')
 
     response = requests.get(
         url,
@@ -262,18 +261,19 @@ def download_file(url, local_path, logger=None):
             with open(local_path, 'wb') as f:
                 for chunk in response:
                     f.write(chunk)
+            return True
         except Exception as exc:
-            msg: str = 'Download/write {0} from {1} FAILED: {2}. Aborting.' \
+            msg: str = 'Download/write {0} from {1} FAILED: {2}.' \
                 .format(local_path, url, exc)
-            report_fatal(msg, logger)
+            if logger:
+                logger.error(msg)
+            return False
 
     elif logger:
-        msg: str = 'Download {0} from {1}: Response error with code {2}. Aborting.' \
+        msg: str = 'Download {0} from {1}: Response error with code {2}.' \
             .format(local_path, url, response.status_code)
-        report_fatal(msg, logger)
-
-    return response
-
+        logger.error(msg)
+        return False
 
 def upload_file(url, local_path, logger=None):
     if logger:
@@ -314,18 +314,6 @@ def _looks_like_url(name):
     return False
 
 
-def _s3_download_file(client, bucket, key, local_path, logger=None):
-    try:
-        client.download_file(bucket, key, local_path)
-    except client.exceptions.NoSuchKey:
-        logger.warning(
-            "No key found: {0}/{1}. SKIPPING download to {2}"
-                .format(bucket, key, local_path))
-        return
-    except Exception as exc:
-        report_fatal("FAILED to download file {0} from {1}/{2}: {3}"
-                     .format(local_path, bucket, key, exc))
-
 def parse_s3_path(qualified: str):
     qualified_split = qualified.split('/')
     if _looks_like_url(qualified_split[2]):
@@ -338,84 +326,16 @@ def parse_s3_path(qualified: str):
         key = '/'.join(qualified_split[3:])
     return url, bucket, key
 
-def download_file_from_qualified(qualified, local_path, logger=None):
-    if qualified.startswith('dockerhub://') or \
-            qualified.startswith('shub://'):
-        return
-
-    assert qualified.startswith('s3://') or \
-           qualified.startswith('gs://')
-
-    _, bucket, key = parse_s3_path(qualified)
-
-    if logger is not None:
-        logger.debug(('Downloading file from bucket {0} ' +
-                      ' and key {1} to local path {2}')
-                     .format(bucket, key, local_path))
-
-    if qualified.startswith('s3://'):
-        if qualified.endswith('/'):
-            _s3_download_dir(bucket, key, local_path, logger=logger)
-        else:
-            s3_client = _get_active_s3_client()
-            _s3_download_file(s3_client, bucket, key, local_path, logger=logger)
-    else:
-        raise NotImplementedError
-
-
-def _get_active_s3_client():
+def has_aws_credentials():
     artifact_store = model_setup.get_model_artifact_store()
-    if artifact_store is None \
-            or not isinstance(artifact_store, BaseArtifactStore):
-        raise NotImplementedError("Artifact store is not set up or has the wrong type")
-
+    if artifact_store is None:
+        return False
     storage_handler = artifact_store.get_storage_handler()
     if storage_handler.type == StorageType.storageS3:
         storage_client = storage_handler.get_client()
+        return storage_client._request_signer._credentials is not None
     else:
-        storage_client = None
-    if storage_client is None:
-        raise NotImplementedError("Expected boto3 storage client for current artifact store")
-    return storage_client
-
-
-def _s3_download_dir(bucket, dist, local, logger=None):
-    s3_client = _get_active_s3_client()
-
-    paginator = s3_client.get_paginator('list_objects')
-    for result in paginator.paginate(
-            Bucket=bucket,
-            Delimiter='/',
-            Prefix=dist):
-        if result.get('CommonPrefixes') is not None:
-            for subdir in result.get('CommonPrefixes'):
-                _s3_download_dir(
-                    bucket,
-                    subdir.get('Prefix'),
-                    os.path.join(local, subdir.get('Prefix'))
-                )
-
-        if result.get('Contents') is not None:
-            for file in result.get('Contents'):
-                key = file.get('Key')
-                local_dir_path: str = os.path.dirname(local + os.sep + key)
-                if not os.path.exists(local_dir_path):
-                    os.makedirs(local_dir_path)
-
-                local_path = os.path.join(local, re.sub('^' + dist, '', key))
-
-                if logger:
-                    logger.debug(
-                        'Downloading {0}/{1} to {2}'
-                            .format(bucket, key, local_path))
-
-                _s3_download_file(s3_client, bucket, key, local_path, logger=logger)
-
-
-def has_aws_credentials():
-    s3_client = _get_active_s3_client()
-    return s3_client._request_signer._credentials is not None
-
+        return False
 
 def retry(f,
           no_retries=5, sleep_time=1,

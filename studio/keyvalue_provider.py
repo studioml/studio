@@ -6,11 +6,11 @@ from concurrent.futures import ThreadPoolExecutor, wait
 from . import util, git_util, logs
 from .storage_handler import StorageHandler
 from .auth import get_auth
-from .tartifact_store import TartifactStore, get_immutable_artifact_key
+from .tartifact_store import TartifactStore
 from .artifact import Artifact
 from .experiment import Experiment, experiment_from_dict
 from .model_setup import get_model_verbose_level
-from .util import retry, report_fatal
+from .util import retry, report_fatal, compression_to_extension
 
 
 class KeyValueProvider(object):
@@ -101,7 +101,7 @@ class KeyValueProvider(object):
                     # upload immutable artifacts
                     art.key = art.upload(art.local_path)
                 elif art.hash is not None:
-                    art.key = get_immutable_artifact_key(
+                    art.key = self.get_immutable_artifact_key(
                         art.hash,
                         compression=compression
                     )
@@ -131,6 +131,11 @@ class KeyValueProvider(object):
               sleep_time=10,
               logger=self.logger)
         self.logger.info("Added experiment " + experiment.key)
+
+    def get_immutable_artifact_key(arthash, compression=None):
+        retval = "blobstore/" + arthash + ".tar" + \
+                 compression_to_extension(compression)
+        return retval
 
     def start_experiment(self, experiment):
         time_started = time.time()
@@ -406,5 +411,4 @@ class KeyValueProvider(object):
         return self
 
     def __exit__(self, *args):
-        if self.store:
-            self.store.__exit__()
+        pass

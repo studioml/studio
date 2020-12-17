@@ -246,14 +246,6 @@ class S3ProviderTest(unittest.TestCase, KeyValueProviderTest):
         return 'test_config.yaml'
 
 
-@unittest.skipIf(
-    'GOOGLE_APPLICATION_CREDENTIALS' not in os.environ.keys(),
-    'google app credentials not found, cannot run test')
-class GSProviderTest(unittest.TestCase, KeyValueProviderTest):
-    def get_default_config_name(self):
-        return 'test_config_gs.yaml'
-
-
 if __name__ == "__main__":
     KeyValueProviderTest().get_provider(config_name=None)
     unittest.main()
