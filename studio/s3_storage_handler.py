@@ -75,7 +75,7 @@ class S3StorageHandler(StorageHandler):
 
     def upload_file(self, key, local_path):
         if not os.path.exists(local_path):
-            self.logger.info(
+            self.logger.debug(
                 "Local path {0} does not exist. SKIPPING upload to {1}/{2}"
                     .format(local_path, self.bucket, key))
             return False
@@ -98,7 +98,7 @@ class S3StorageHandler(StorageHandler):
             return True
         except botocore.exceptions.ClientError as exc:
             if self._not_found(exc.response):
-                self.logger.info(
+                self.logger.debug(
                     "No key found: {0}/{1}. SKIPPING download to {2}"
                     .format(self.bucket, key, local_path))
             else:
