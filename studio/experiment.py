@@ -26,12 +26,13 @@ class Experiment(object):
                  git=None,
                  metric=None,
                  pythonver=None,
-                 max_duration=None):
+                 max_duration=None,
+                 owner=None):
 
         self.key = key
         self.args = []
         self.filename = filename
-        self.owner = ""
+        self.owner = owner if owner else None
 
         if filename and '::' in filename:
             self.filename = '-m'
@@ -214,7 +215,8 @@ def experiment_from_dict(data, info={}):
             git=data.get('git'),
             metric=data.get('metric'),
             pythonver=data.get('pythonver'),
-            max_duration=data.get('max_duration')
+            max_duration=data.get('max_duration'),
+            owner=data.get('owner')
         )
     except KeyError as e:
         raise e

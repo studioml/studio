@@ -194,11 +194,18 @@ class KeyValueProvider(object):
         else:
             experiment_key = experiment.key
 
-        experiment_owner = self._get(self._get_experiments_keybase() +
-                                     experiment_key).get('owner')
+        experiment_dict = self._get(self._get_experiments_keybase() +
+                                    experiment_key)
+        if experiment_dict is None:
+            self.logger.error("FAILED to delete experiment {0}: NOT FOUND."
+                              .format(experiment_key))
+            return
 
-        self._delete(self._get_user_keybase(experiment_owner) +
+        experiment_owner = experiment_dict.get('owner')
+        if experiment_owner is not None:
+            self._delete(self._get_user_keybase(experiment_owner) +
                      'experiments/' + experiment_key)
+
         if experiment is not None:
             for tag, art in experiment.artifacts.items():
                 if art.key is not None and art.is_mutable:
@@ -210,7 +217,7 @@ class KeyValueProvider(object):
             if experiment.project is not None:
                 self._delete(
                     self._get_projects_keybase() +
-                    experiment.project + "/" + experiment_key)
+                    experiment.project + "/" + experiment_key + "/" + "owner")
 
         self._delete(self._get_experiments_keybase() + experiment_key)
 
