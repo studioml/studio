@@ -93,9 +93,7 @@ class KeyValueProvider(object):
         for tag, item in experiment.artifacts.items():
             art: Artifact = item
             if art.is_mutable:
-                art.key = self._get_experiments_keybase() + \
-                    experiment.key + '/' + tag + '.tar' + \
-                    util.compression_to_extension(compression)
+                art.key = self.get_mutable_artifact_key(experiment, tag)
             else:
                 if art.local_path is not None:
                     # upload immutable artifacts
@@ -136,6 +134,10 @@ class KeyValueProvider(object):
         retval = "blobstore/" + arthash + ".tar" + \
                  compression_to_extension(compression)
         return retval
+
+    def get_mutable_artifact_key(self, experiment: Experiment, tag: str) -> str:
+        return self._get_experiments_keybase() + \
+            experiment.key + '/' + tag + '.tar'
 
     def start_experiment(self, experiment):
         time_started = time.time()
@@ -194,11 +196,18 @@ class KeyValueProvider(object):
         else:
             experiment_key = experiment.key
 
-        experiment_owner = self._get(self._get_experiments_keybase() +
-                                     experiment_key).get('owner')
+        experiment_dict = self._get(self._get_experiments_keybase() +
+                                    experiment_key)
+        if experiment_dict is None:
+            self.logger.error("FAILED to delete experiment {0}: NOT FOUND."
+                              .format(experiment_key))
+            return
 
-        self._delete(self._get_user_keybase(experiment_owner) +
+        experiment_owner = experiment_dict.get('owner')
+        if experiment_owner is not None:
+            self._delete(self._get_user_keybase(experiment_owner) +
                      'experiments/' + experiment_key)
+
         if experiment is not None:
             for tag, art in experiment.artifacts.items():
                 if art.key is not None and art.is_mutable:
@@ -210,7 +219,7 @@ class KeyValueProvider(object):
             if experiment.project is not None:
                 self._delete(
                     self._get_projects_keybase() +
-                    experiment.project + "/" + experiment_key)
+                    experiment.project + "/" + experiment_key + "/" + "owner")
 
         self._delete(self._get_experiments_keybase() + experiment_key)
 
