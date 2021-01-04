@@ -93,9 +93,7 @@ class KeyValueProvider(object):
         for tag, item in experiment.artifacts.items():
             art: Artifact = item
             if art.is_mutable:
-                art.key = self._get_experiments_keybase() + \
-                    experiment.key + '/' + tag + '.tar' + \
-                    util.compression_to_extension(compression)
+                art.key = self.get_mutable_artifact_key(experiment, tag)
             else:
                 if art.local_path is not None:
                     # upload immutable artifacts
@@ -136,6 +134,10 @@ class KeyValueProvider(object):
         retval = "blobstore/" + arthash + ".tar" + \
                  compression_to_extension(compression)
         return retval
+
+    def get_mutable_artifact_key(self, experiment: Experiment, tag: str) -> str:
+        return self._get_experiments_keybase() + \
+            experiment.key + '/' + tag + '.tar'
 
     def start_experiment(self, experiment):
         time_started = time.time()
