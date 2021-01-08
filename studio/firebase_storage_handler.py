@@ -98,7 +98,7 @@ class FirebaseStorageHandler(StorageHandler):
                     local_file_path,
                     err))
 
-    def delete_file(self, key):
+    def delete_file(self, key, shallow=True):
         self.logger.debug("Deleting file at key {}".format(key))
         try:
             if self.auth:

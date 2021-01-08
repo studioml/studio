@@ -480,6 +480,27 @@ def str2duration(s):
 def get_temp_filename() -> str:
     return os.path.join(tempfile.gettempdir(), str(uuid.uuid4()))
 
+def delete_local_path(local_path: str, root: str, shallow: bool):
+    if local_path is None or len(local_path) == 0:
+        return
+    if not (os.path.exists(local_path) and os.path.isfile(local_path)):
+        return
+    folder_path, _ = os.path.split(local_path)
+    os.remove(local_path)
+    if not shallow:
+        delete_local_folders(folder_path, root)
+
+def delete_local_folders(local_folder_path: str, root: str):
+    if local_folder_path == root:
+        return
+    if len(os.listdir(local_folder_path)) > 0:
+        return
+    head, _ = os.path.split(local_folder_path)
+    try:
+        os.rmdir(local_folder_path)
+    except:
+        pass
+    delete_local_folders(head, root)
 
 def rm_rf(path):
     '''

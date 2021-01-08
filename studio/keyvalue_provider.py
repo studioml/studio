@@ -49,6 +49,9 @@ class KeyValueProvider(object):
     def _report_fatal(self, msg: str):
         report_fatal(msg, self.logger)
 
+    def get_logger(self):
+        return self.logger
+
     def _get_userid(self):
         userid = None
         if self.auth:
@@ -206,7 +209,7 @@ class KeyValueProvider(object):
         experiment_owner = experiment_dict.get('owner')
         if experiment_owner is not None:
             self._delete(self._get_user_keybase(experiment_owner) +
-                     'experiments/' + experiment_key)
+                     'experiments/' + experiment_key, shallow=False)
 
         if experiment is not None:
             for tag, art in experiment.artifacts.items():
@@ -219,9 +222,10 @@ class KeyValueProvider(object):
             if experiment.project is not None:
                 self._delete(
                     self._get_projects_keybase() +
-                    experiment.project + "/" + experiment_key + "/" + "owner")
+                    experiment.project + "/" + experiment_key + "/" + "owner",
+                    shallow=False)
 
-        self._delete(self._get_experiments_keybase() + experiment_key)
+        self._delete(self._get_experiments_keybase() + experiment_key, shallow=False)
 
     def checkpoint_experiment(self, experiment, blocking=False):
         key = self._experiment_key(experiment)

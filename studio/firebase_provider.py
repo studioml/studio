@@ -39,7 +39,7 @@ class FirebaseProvider(KeyValueProvider):
                               "raised an exception: {}")
                              .format(key, value, err))
 
-    def _delete(self, key, token=None):
+    def _delete(self, key, shallow=True, token=None):
         dbobj = self.app.database().child(key)
 
         if self.auth:

@@ -11,6 +11,7 @@ class LocalStorageHandler(StorageHandler):
     def __init__(self, config,
                  measure_timestamp_diff=False,
                  compression=None):
+
         self.logger = logs.getLogger(self.__class__.__name__)
         self.logger.setLevel(get_model_verbose_level())
 
@@ -68,8 +69,11 @@ class LocalStorageHandler(StorageHandler):
         self._copy_file(source_path, local_path)
         return True
 
-    def delete_file(self, key):
-        os.remove(self._get_file_path_from_key(key))
+    def delete_file(self, key, shallow=True):
+        key_path: str = self._get_file_path_from_key(key)
+        if os.path.exists(key_path):
+            self.logger.debug("Deleting local file {0}.".format(key_path))
+            util.delete_local_path(key_path, self.store_root, False)
 
     def _get_file_path_from_key(self, key: str):
         return str(os.path.join(self.store_root, key))

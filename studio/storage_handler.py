@@ -32,7 +32,7 @@ class StorageHandler(object):
     def download_remote_path(self, remote_path, local_path):
         raise NotImplementedError("Not implemented: download_remote_path")
 
-    def delete_file(self, key):
+    def delete_file(self, key, shallow=True):
         raise NotImplementedError("Not implemented: delete_file")
 
     def get_file_url(self, key, method='GET'):

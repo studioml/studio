@@ -3,6 +3,7 @@ import json
 
 from .keyvalue_provider import KeyValueProvider
 from .local_storage_handler import LocalStorageHandler
+from . import util
 
 class LocalDbProvider(KeyValueProvider):
 
@@ -30,10 +31,11 @@ class LocalDbProvider(KeyValueProvider):
             result = json.load(infile)
         return result
 
-    def _delete(self, key):
+    def _delete(self, key, shallow=True):
         file_name = os.path.join(self.db_root, key)
         if os.path.exists(file_name):
-            os.remove(file_name)
+            self.logger.debug("Deleting local database file {0}.".format(file_name))
+            util.delete_local_path(file_name, self.db_root, shallow)
 
     def _set(self, key, value):
         file_name = os.path.join(self.db_root, key)

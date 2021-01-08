@@ -45,7 +45,7 @@ class HTTPStorageHandler(StorageHandler):
         parts = parsed_url.path.split('/')
         return None, parts[len(parts)-1]
 
-    def delete_file(self, key):
+    def delete_file(self, key, shallow=True):
         raise NotImplementedError
 
     def get_file_url(self, key):
