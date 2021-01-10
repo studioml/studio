@@ -185,7 +185,7 @@ class S3StorageHandler(StorageHandler):
             time_updated = obj.get('LastModified', None)
         except botocore.exceptions.ClientError as exc:
             if self._not_found(exc.response):
-                self.logger.info(
+                self.logger.debug(
                     "No key found: {0}/{1}. Cannot get timestamp."
                         .format(self.bucket, key))
             else:
