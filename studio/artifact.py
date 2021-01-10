@@ -221,7 +221,7 @@ class Artifact:
     def delete(self):
         if self.key is not None:
             self.logger.debug('Deleting artifact: {0}'.format(self.key))
-            self.storage_handler.delete_file(self.key)
+            self.storage_handler.delete_file(self.key, shallow=False)
 
 
     def get_url(self, method='GET', get_timestamp=False):
@@ -240,13 +240,28 @@ class Artifact:
 
         return None
 
+    def _looks_like_local_file(self, url: str) -> bool:
+        if url is None:
+            return False
+
+        local_prefix: str = "/"
+        result = url.startswith(local_prefix)
+        return result
 
     def stream(self):
         url = self.get_url()
         if url is None:
             return None
 
-        fileobj = urlopen(url)
+        # if our url is actually a local file reference
+        # (can happen in local execution mode)
+        # then we just open a local file:
+        fileobj = None
+        if self._looks_like_local_file(url):
+            fileobj = open(url, 'rb')
+        else:
+            fileobj = urlopen(url)
+
         if fileobj:
             try:
                 retval = tarfile.open(fileobj=fileobj, mode='r|*')

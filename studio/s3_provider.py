@@ -51,7 +51,7 @@ class S3Provider(KeyValueProvider):
 
         return None
 
-    def _delete(self, key):
+    def _delete(self, key, shallow=True):
         self.logger.info("S3 deleting object: {0}/{1}".format(self.bucket, key))
 
         try:

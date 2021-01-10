@@ -165,7 +165,7 @@ class S3StorageHandler(StorageHandler):
             parts = key.split('/')
             return parts[len(parts)-2], parts[len(parts)-1]
 
-    def delete_file(self, key):
+    def delete_file(self, key, shallow=True):
         self.client.delete_object(Bucket=self.bucket, Key=key)
 
     def get_file_url(self, key, method='GET'):
@@ -185,7 +185,7 @@ class S3StorageHandler(StorageHandler):
             time_updated = obj.get('LastModified', None)
         except botocore.exceptions.ClientError as exc:
             if self._not_found(exc.response):
-                self.logger.info(
+                self.logger.debug(
                     "No key found: {0}/{1}. Cannot get timestamp."
                         .format(self.bucket, key))
             else:
