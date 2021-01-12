@@ -6,8 +6,11 @@ import re
 
 from . import logs
 from .auth import get_auth
-from .http_artifact_store import HTTPArtifactStore
+from .credentials import Credentials
+from .model_setup import get_model_verbose_level
+from .http_storage_handler import HTTPStorageHandler
 from .experiment import experiment_from_dict
+from .tartifact_store import TartifactStore
 from .util import retry
 
 
@@ -22,9 +25,18 @@ class HTTPProvider(object):
             compression=None):
         # TODO: implement connection
         self.url = config.get('serverUrl')
-        self.verbose = verbose
+        self.verbose = get_model_verbose_level()
         self.logger = logs.getLogger('HTTPProvider')
         self.logger.setLevel(self.verbose)
+
+        self.credentials: Credentials = \
+            Credentials.getCredentials(config)
+
+        self.storage_handler = HTTPStorageHandler(
+            self.url,
+            self.credentials.to_dict() if self.credentials else None,
+            compression=compression)
+        self.store = TartifactStore(self.storage_handler, self.logger)
 
         self.auth = None
         guest = config.get('guest')
@@ -45,11 +57,8 @@ class HTTPProvider(object):
         compression = compression if compression else self.compression
 
         for tag, art in six.iteritems(experiment.artifacts):
-            if not art['mutable'] and art.get('local') is not None:
-                art['hash'] = HTTPArtifactStore(None, None,
-                                                compression,
-                                                self.verbose) \
-                    .get_artifact_hash(art)
+            if not art.is_mutable and art.local_path is not None:
+                art['hash'] = self.store.get_artifact_hash(art)
 
         data = {}
         data['experiment'] = experiment.__dict__
@@ -81,16 +90,11 @@ class HTTPProvider(object):
         for tag, art in six.iteritems(experiment.artifacts):
             target_art = artifacts.get(tag)
             if target_art is not None:
-                art['key'] = target_art['key']
-                art['qualified'] = target_art['qualified']
-                art['bucket'] = target_art['bucket']
+                art.key = target_art.key
+                art.remote_path = target_art.remote_path
 
-                if art.get('local'):
-                    HTTPArtifactStore(target_art['url'],
-                                      target_art['timestamp'],
-                                      compression=self.compression,
-                                      verbose=self.verbose) \
-                        .put_artifact(art)
+                if art.local_path is not None:
+                    self.store.put_artifact(art)
 
     def delete_experiment(self, experiment):
         if isinstance(experiment, six.string_types):
@@ -240,11 +244,7 @@ class HTTPProvider(object):
             experiment = self.get_experiment(experiment_key)
             artifact = experiment.artifacts[artifact_tag]
 
-        return HTTPArtifactStore(
-            artifact.get('url'),
-            timestamp=time.time(),
-            verbose=self.verbose
-        ).get_artifact(artifact, local_path=local_path)
+        return self.store.get_artifact(artifact, local_path=local_path)
 
     def get_users(self):
         headers = self._get_headers()
