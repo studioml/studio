@@ -1,4 +1,5 @@
 import os
+import shutil
 import time
 import tarfile
 import tempfile
@@ -132,7 +133,8 @@ def untar_artifact(local_path: str, tar_filename: str, logger):
             with tempfile.TemporaryDirectory() as temp_dir:
                 tf.extractall(temp_dir)
                 rm_rf(local_path)
-                os.rename(os.path.join(temp_dir, single_file_name), local_path)
+                shutil.copyfile(os.path.join(temp_dir, single_file_name),
+                                local_path)
 
     except Exception as exc:
         msg: str = \
