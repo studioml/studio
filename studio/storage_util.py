@@ -128,13 +128,16 @@ def untar_artifact(local_path: str, tar_filename: str, logger):
             rm_rf(local_path)
             # Extract tar file into directory "local_path"
             os.makedirs(local_path, exist_ok=True)
+            logger.debug("Untarring %s to dir. %s", tar_filename, local_path)
             tf.extractall(local_path)
         else:
             with tempfile.TemporaryDirectory() as temp_dir:
+                logger.debug("Untarring %s to temp. dir. %s", tar_filename, temp_dir)
                 tf.extractall(temp_dir)
                 rm_rf(local_path)
-                shutil.copyfile(os.path.join(temp_dir, single_file_name),
-                                local_path)
+                temp_path: str = os.path.join(temp_dir, single_file_name)
+                logger.debug("Copying single file %s to %s", temp_path, local_path)
+                shutil.copy2(temp_path, local_path)
 
     except Exception as exc:
         msg: str = \
