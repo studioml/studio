@@ -34,7 +34,7 @@ class KeyValueProvider(object):
         self.auth = None
         if not guest and 'serviceAccount' not in db_config.keys():
             self.auth = get_auth(
-                db_config['authentication'],
+                db_config.get('authentication', None),
                 blocking_auth
             )
 
@@ -425,3 +425,4 @@ class KeyValueProvider(object):
 
     def __exit__(self, *args):
         pass
+
