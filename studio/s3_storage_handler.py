@@ -11,7 +11,7 @@ import re
 
 from . import logs
 from . import util
-from .credentials import Credentials
+from .credentials import Credentials, AWS_TYPE
 from .storage_handler import StorageHandler
 from .storage_type import StorageType
 from .model_setup import get_model_verbose_level
@@ -25,10 +25,20 @@ class S3StorageHandler(StorageHandler):
         self.credentials: Credentials =\
             Credentials.getCredentials(config)
 
-        aws_key: str =\
-            self.credentials.get_key() if self.credentials else None
-        aws_secret_key =\
-            self.credentials.get_secret_key() if self.credentials else None
+        self.endpoint = config.get('endpoint', None)
+
+        if self.credentials is None:
+            msg: str = "NO CREDENTIALS provided for {0}."\
+                .format(self.endpoint)
+            self._report_fatal(msg)
+
+        if self.credentials.get_type() != AWS_TYPE:
+            msg: str = "EXPECTED aws credentials for {0}: {1}"\
+                .format(self.endpoint, repr(self.credentials.to_dict()))
+            self._report_fatal(msg)
+
+        aws_key: str = self.credentials.get_key()
+        aws_secret_key = self.credentials.get_secret_key()
         session = Session(aws_access_key_id=aws_key,
             aws_secret_access_key=aws_secret_key,
             region_name=config.get('region'))
@@ -38,7 +48,7 @@ class S3StorageHandler(StorageHandler):
 
         self.client = session.client(
             's3',
-            endpoint_url=config.get('endpoint'),
+            endpoint_url=self.endpoint,
             config=Config(signature_version='s3v4'))
 
         if compression is None:
