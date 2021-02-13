@@ -50,6 +50,9 @@ class StorageHandler(object):
     def get_timestamp_shift(self):
         return self._timestamp_shift
 
+    def cleanup(self):
+        pass
+
     def _measure_timestamp_diff(self):
         max_diff = 60
         tmpfile = get_temp_filename() + '.txt'

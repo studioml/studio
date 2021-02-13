@@ -49,6 +49,9 @@ class TartifactStore:
     def delete_artifact(self, artifact: Artifact):
         artifact.delete()
 
+    def cleanup(self):
+        if self.storage_handler is not None:
+            self.storage_handler.cleanup()
 
     def stream_artifact(self, artifact: Artifact):
 
