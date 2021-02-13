@@ -44,6 +44,10 @@ class S3StorageHandler(StorageHandler):
         if compression is None:
             compression = config.get('compression')
 
+        self.cleanup_bucket = config.get('cleanup_bucket', False)
+        if isinstance(self.cleanup_bucket, str):
+            self.cleanup_bucket = self.cleanup_bucket.lower() == 'true'
+
         self.endpoint = self.client._endpoint.host
 
         self.bucket = config['bucket']
@@ -167,6 +171,68 @@ class S3StorageHandler(StorageHandler):
 
     def delete_file(self, key, shallow=True):
         self.client.delete_object(Bucket=self.bucket, Key=key)
+
+    def cleanup(self):
+        if not self.cleanup_bucket:
+            return
+
+        # Delete current S3 bucket completely.
+        prefix: str = ''
+        is_truncated: bool = True
+        max_keys = 1000
+        key_marker = None
+
+        while is_truncated:
+            if key_marker is None:
+                version_list = self.client.list_object_versions(
+                    Bucket=self.bucket,
+                    MaxKeys=max_keys,
+                    Prefix=prefix)
+            else:
+                version_list = self.client.list_object_versions(
+                    Bucket=self.bucket,
+                    MaxKeys=max_keys,
+                    Prefix=prefix,
+                    KeyMarker=key_marker)
+
+            if version_list is None:
+                break
+
+            print("====================== VERSIONS: {0}".format(repr(version_list['Versions'])))
+
+            try:
+                objects = []
+                versions = version_list.get('Versions', [])
+                for v in versions:
+                    objects.append({'VersionId': v['VersionId'], 'Key': v['Key']})
+                response = self.client.delete_objects(
+                    Bucket=self.bucket,
+                    Delete={'Objects': objects})
+            except Exception as exc:
+                self.logger.error("FAILED to delete objects in bucket: %s - %s",
+                                  self.bucket, exc)
+
+            try:
+                objects = []
+                delete_markers = version_list.get('DeleteMarkers', [])
+                for d in delete_markers:
+                    objects.append({'VersionId': d['VersionId'], 'Key': d['Key']})
+                response = self.client.delete_objects(
+                    Bucket=self.bucket,
+                    Delete={'Objects': objects})
+            except Exception as exc:
+                self.logger.error("FAILED to delete markers in bucket: %s - %s",
+                                  self.bucket, exc)
+
+            is_truncated = version_list.get('IsTruncated', False)
+            key_marker = version_list.get('NextKeyMarker', None)
+
+        # Now we can delete bucket itself:
+        try:
+            self.client.delete_bucket(Bucket=self.bucket)
+        except Exception as exc:
+            self.logger.error("FAILED to delete bucket: %s - %s",
+                      self.bucket, exc)
 
     def get_file_url(self, key, method='GET'):
         if method == 'GET':
