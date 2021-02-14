@@ -227,6 +227,12 @@ class KeyValueProvider(object):
 
         self._delete(self._get_experiments_keybase() + experiment_key, shallow=False)
 
+
+    def cleanup(self):
+        if self.storage_handler is not None:
+            self.storage_handler.cleanup()
+
+
     def checkpoint_experiment(self, experiment, blocking=False):
         key = self._experiment_key(experiment)
         key_path = self._get_experiments_keybase() + key
