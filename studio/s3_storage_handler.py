@@ -208,8 +208,6 @@ class S3StorageHandler(StorageHandler):
             if version_list is None:
                 break
 
-            print("====================== VERSIONS: {0}".format(repr(version_list['Versions'])))
-
             try:
                 objects = []
                 versions = version_list.get('Versions', [])
