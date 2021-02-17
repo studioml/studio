@@ -51,7 +51,6 @@ class Experiment(object):
         self.project = project
         self.pythonver = pythonver if pythonver else str(sys.version_info[0]) + '.' + str(sys.version_info[1])
 
-        workspace_path = os.path.abspath('.')
         try:
             model_dir = fs_tracker.get_model_directory(key)
         except BaseException:
@@ -59,7 +58,6 @@ class Experiment(object):
 
         std_artifacts_dict = {
             'workspace': {
-                'local': workspace_path,
                 'mutable': False,
                 'unpack': True
             },
@@ -95,18 +93,14 @@ class Experiment(object):
             }
         }
         if artifacts is not None:
-            std_artifacts_dict.update(artifacts)
-
-        # Semi-hack: make sure 'retval' artifact does have
-        # local path setup
-        # (it could be overwritten by experiment artifacts provided
-        # by constructor parameters.)
-        std_artifacts_dict['retval']['local'] =\
-            fs_tracker.get_artifact_cache('retval', key)
+            for tag, art_dict in artifacts.items():
+                art_update = std_artifacts_dict.get(tag, None)
+                if art_update is not None:
+                    art_dict.update(art_update)
 
         # Build table of experiment artifacts:
         self.artifacts = dict()
-        for tag, art in std_artifacts_dict.items():
+        for tag, art in artifacts.items():
             self.artifacts[tag] = Artifact(tag, art)
 
         self.resources_needed = resources_needed

@@ -1,12 +1,10 @@
 from . import logs, util
 from .model_setup import get_model_verbose_level
 
-AWS_KEY = 'aws_access_key'
-AWS_SECRET_KEY = 'aws_secret_key'
-ACCESS_USER = 'access_user'
-ACCESS_PASSWORD = 'access_password'
+AWS_KEY = 'access_key'
+AWS_SECRET_KEY = 'secret_access_key'
 KEY_CREDENTIALS = 'credentials'
-KEY_AUTHENTICATION = 'authentication'
+AWS_TYPE = 'aws'
 
 # Credentials encapsulates the logic
 # of basic access credentials handling
@@ -16,27 +14,36 @@ class Credentials(object):
         self.logger = logs.getLogger(self.__class__.__name__)
         self.logger.setLevel(get_model_verbose_level())
 
-        if cred_dict is not None and isinstance(cred_dict, str):
-            if cred_dict == 'none':
-                cred_dict = None
-            else:
-                msg: str =\
-                    "NOT SUPPORTED credentials format {0}".format(cred_dict)
-                util.report_fatal(msg, self.logger)
-
+        self.type = None
         self.key = None
         self.secret_key = None
+        if cred_dict is None:
+            return
 
-        if cred_dict is not None:
-            if ACCESS_USER in cred_dict.keys():
-                self.key = cred_dict.get(ACCESS_USER)
-            elif AWS_KEY in cred_dict.keys():
-                self.key = cred_dict.get(AWS_KEY)
+        if isinstance(cred_dict, str) and cred_dict == 'none':
+            return
 
-            if ACCESS_PASSWORD in cred_dict.keys():
-                self.secret_key = cred_dict.get(ACCESS_PASSWORD)
-            elif AWS_SECRET_KEY in cred_dict.keys():
-                self.secret_key = cred_dict.get(AWS_SECRET_KEY)
+        if not isinstance(cred_dict, dict):
+            msg: str =\
+                "NOT SUPPORTED credentials format {0}".format(repr(cred_dict))
+            util.report_fatal(msg, self.logger)
+
+        if len(cred_dict) == 1 and AWS_TYPE in cred_dict.keys():
+            aws_creds = cred_dict[AWS_TYPE]
+            self.type = AWS_TYPE
+            self.key = aws_creds.get(AWS_KEY, None)
+            self.secret_key = aws_creds.get(AWS_SECRET_KEY, None)
+            if self.key is None or self.secret_key is None:
+                msg: str = \
+                    "INVALID aws credentials format {0}".format(repr(cred_dict))
+                util.report_fatal(msg, self.logger)
+        else:
+            msg: str =\
+                "NOT SUPPORTED credentials format {0}".format(repr(cred_dict))
+            util.report_fatal(msg, self.logger)
+
+    def get_type(self):
+        return self.type
 
     def get_key(self):
         return self.key
@@ -45,20 +52,17 @@ class Credentials(object):
         return self.secret_key
 
     def to_dict(self):
-        result = dict()
-        if self.key is not None:
-            result[ACCESS_USER] = self.key
-        if self.secret_key is not None:
-            result[ACCESS_PASSWORD] = self.secret_key
-        return result
+        return {
+            self.type: {
+                AWS_KEY: self.key,
+                AWS_SECRET_KEY: self.secret_key
+            }
+        }
 
     @classmethod
     def getCredentials(cls, config):
         if config is None:
             return None
         cred_dict = config.get(KEY_CREDENTIALS, None)
-        if cred_dict is None:
-            cred_dict = config.get(KEY_AUTHENTICATION, None)
-
         return Credentials(cred_dict) if cred_dict else None
 
