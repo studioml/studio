@@ -26,6 +26,8 @@ terminaltables
 PyYAML
 
 dill==0.3.3
+
+google-api-core
 google-api-python-client
 google-cloud-storage
 google-cloud-pubsub
