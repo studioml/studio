@@ -2,7 +2,7 @@ import os
 import json
 import time
 import google
-from google.gax.errors import RetryError
+from google.api_core.exceptions import RetryError
 
 from .util import sixdecode, retry, parse_verbosity
 from . import logs
@@ -142,7 +142,7 @@ class PubsubQueue(object):
         try:
             self.pubclient.delete_topic(self.topic_name)
             self.subclient.delete_subscription(self.sub_name)
-        except google.gax.errors.RetryError as e:
+        except RetryError as e:
             self.logger.error('Queue deletion failed with exception:')
             self.logger.exception(e)
 
