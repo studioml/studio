@@ -28,6 +28,10 @@ class Credentials(object):
                 "NOT SUPPORTED credentials format {0}".format(repr(cred_dict))
             util.report_fatal(msg, self.logger)
 
+        if len(cred_dict) == 0:
+            # Empty credentials dictionary is like None:
+            return
+
         if len(cred_dict) == 1 and AWS_TYPE in cred_dict.keys():
             aws_creds = cred_dict[AWS_TYPE]
             self.type = AWS_TYPE

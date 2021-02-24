@@ -296,6 +296,16 @@ class Artifact:
                     .format(tar_filename, repr(exc)))
         return None
 
+    def _is_s3_endpoint(self) -> bool:
+        if self.remote_path is None:
+            return False
+        if self.remote_path.startswith('s3://'):
+            return True
+        if self.credentials is not None and\
+            self.credentials.get_type() == credentials.AWS_TYPE:
+            return True
+        return False
+
     def _build_s3_config(self, art_dict):
         """
         For art_dict representing external S3-based artifact,
@@ -323,15 +333,15 @@ class Artifact:
             return
 
         if self.remote_path is not None:
+            if self._is_s3_endpoint():
+                s3_config_dict, art_key = self._build_s3_config(art_dict)
+                self.storage_handler = S3StorageHandler(s3_config_dict)
+                return
+
             if self.remote_path.startswith('http://') or \
                self.remote_path.startswith('https://'):
                 creds_dict = self.credentials.to_dict() if self.credentials else dict()
                 self.storage_handler = HTTPStorageHandler(self.remote_path, creds_dict)
-                return
-
-            if self.remote_path.startswith('s3://'):
-                s3_config_dict, art_key = self._build_s3_config(art_dict)
-                self.storage_handler = S3StorageHandler(s3_config_dict)
                 return
 
         if self.local_path is not None:
