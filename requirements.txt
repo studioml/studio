@@ -11,6 +11,8 @@ flask
 
 cma
 
+psutil
+
 apscheduler
 pycryptodome
 paramiko
