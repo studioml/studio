@@ -338,9 +338,7 @@ class Artifact:
     def _setup_storage_handler(self, art_dict):
         if self.key is not None:
             # Artifact is already stored in our shared blob-cache:
-            artifact_store = model_setup.get_model_artifact_store()
-            self.storage_handler = \
-                artifact_store.get_storage_handler() if artifact_store else None
+            self.storage_handler = model_setup.get_model_artifact_store()
             return
 
         if self.remote_path is not None:
@@ -360,9 +358,7 @@ class Artifact:
                 return
 
         if self.local_path is not None:
-            artifact_store = model_setup.get_model_artifact_store()
-            self.storage_handler = \
-                artifact_store.get_storage_handler() if artifact_store else None
+            self.storage_handler = model_setup.get_model_artifact_store()
             return
 
         raise NotImplementedError(

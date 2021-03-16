@@ -38,7 +38,6 @@ class KeyValueProvider(object):
             )
 
         self.storage_handler = handler
-        self.store = TartifactStore(self.storage_handler, self.logger)
 
         if self.auth and not self.auth.is_expired():
             self.register_user(None, self.auth.get_user_email())
