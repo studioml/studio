@@ -1,5 +1,6 @@
 import os
 import shutil
+from typing import Dict
 
 from .model_setup import get_model_verbose_level
 from .storage_type import StorageType
@@ -74,6 +75,13 @@ class LocalStorageHandler(StorageHandler):
         if os.path.exists(key_path):
             self.logger.debug("Deleting local file {0}.".format(key_path))
             util.delete_local_path(key_path, self.store_root, False)
+
+    @classmethod
+    def get_id(cls, config: Dict) -> str:
+        endpoint = config.get('endpoint', None)
+        if endpoint is None:
+            return None
+        return '[local]{0}'.format(endpoint)
 
     def _get_file_path_from_key(self, key: str):
         return str(os.path.join(self.store_root, key))

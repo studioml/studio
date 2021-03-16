@@ -12,9 +12,9 @@ from .s3_provider import S3Provider
 from .local_queue import LocalQueue
 from .pubsub_queue import PubsubQueue
 from .sqs_queue import SQSQueue
-from .local_storage_handler import LocalStorageHandler
-from .s3_storage_handler import S3StorageHandler
-from .tartifact_store import TartifactStore
+from .storage_handler_factory import StorageHandlerFactory
+from .storage_type import StorageType
+from .storage_handler import StorageHandler
 from .gcloud_worker import GCloudWorkerManager
 from .ec2cloud_worker import EC2WorkerManager
 from .qclient_cache import get_cached_queue, shutdown_cached_queue
@@ -65,13 +65,16 @@ def get_config(config_file=None):
 def reset_model_providers():
     reset_model()
 
-def get_artifact_store(config):
+def get_artifact_store(config) -> StorageHandler:
     storage_type: str = config['type'].lower()
 
+    factory: StorageHandlerFactory = StorageHandlerFactory.get_factory()
     if storage_type == 's3':
-        return TartifactStore(S3StorageHandler(config))
+        handler = factory.get_handler(StorageType.storageS3, config)
+        return handler
     elif storage_type == 'local':
-        return TartifactStore(LocalStorageHandler(config))
+        handler = factory.get_handler(StorageType.storageLocal, config)
+        return handler
     else:
         raise ValueError('Unknown storage type: ' + storage_type)
 
@@ -113,7 +116,7 @@ def get_db_provider(config=None, blocking_auth=True):
         db_provider = S3Provider(db_config,
                           blocking_auth=blocking_auth)
         if artifact_store is None:
-            artifact_store = db_provider.get_artifact_store()
+            artifact_store = db_provider.get_storage_handler()
 
     elif db_config['type'].lower() == 'gs':
         raise NotImplementedError("GS is not supported.")
@@ -122,7 +125,7 @@ def get_db_provider(config=None, blocking_auth=True):
         db_provider = LocalDbProvider(db_config,
                           blocking_auth=blocking_auth)
         if artifact_store is None:
-            artifact_store = db_provider.get_artifact_store()
+            artifact_store = db_provider.get_storage_handler()
 
     else:
         raise ValueError('Unknown type of the database ' + db_config['type'])

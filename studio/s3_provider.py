@@ -1,7 +1,7 @@
 import json
-import re
 from .keyvalue_provider import KeyValueProvider
-from .s3_storage_handler import S3StorageHandler
+from .storage_handler_factory import StorageHandlerFactory
+from .storage_type import StorageType
 
 
 class S3Provider(KeyValueProvider):
@@ -10,7 +10,8 @@ class S3Provider(KeyValueProvider):
         self.config = config
         self.bucket = config.get('bucket', 'studioml-meta')
 
-        self.meta_store = S3StorageHandler(config)
+        factory: StorageHandlerFactory = StorageHandlerFactory.get_factory()
+        self.meta_store = factory.get_handler(StorageType.storageS3, config)
 
         super().__init__(
             config,

@@ -1,5 +1,6 @@
 import os
 from urllib.parse import urlparse
+from typing import Dict
 from . import logs, util
 from .credentials import Credentials
 from .model_setup import get_model_verbose_level
@@ -39,6 +40,15 @@ class HTTPStorageHandler(StorageHandler):
         if head is not None:
             os.makedirs(head, exist_ok=True)
         return util.download_file(remote_path, local_path, self.logger)
+
+    @classmethod
+    def get_id(cls, config: Dict) -> str:
+        endpoint = config.get('endpoint', None)
+        if endpoint is None:
+            return None
+        creds: Credentials = Credentials.getCredentials(config)
+        creds_fingerprint = creds.get_fingerprint() if creds else ''
+        return '[http]{0}::{1}'.format(endpoint, creds_fingerprint)
 
     def get_local_destination(self, remote_path: str):
         parsed_url = urlparse(remote_path)
