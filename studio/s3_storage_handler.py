@@ -209,17 +209,23 @@ class S3StorageHandler(StorageHandler):
         key_marker = None
 
         while is_truncated:
-            if key_marker is None:
-                version_list = self.client.list_object_versions(
-                    Bucket=self.bucket,
-                    MaxKeys=max_keys,
-                    Prefix=prefix)
-            else:
-                version_list = self.client.list_object_versions(
-                    Bucket=self.bucket,
-                    MaxKeys=max_keys,
-                    Prefix=prefix,
-                    KeyMarker=key_marker)
+            version_list = None
+
+            try:
+                if key_marker is None:
+                    version_list = self.client.list_object_versions(
+                        Bucket=self.bucket,
+                        MaxKeys=max_keys,
+                        Prefix=prefix)
+                else:
+                    version_list = self.client.list_object_versions(
+                        Bucket=self.bucket,
+                        MaxKeys=max_keys,
+                        Prefix=prefix,
+                        KeyMarker=key_marker)
+            except Exception as exc:
+                self.logger.error("FAILED to list objects in bucket: %s - %s",
+                                  self.bucket, exc)
 
             if version_list is None:
                 break
