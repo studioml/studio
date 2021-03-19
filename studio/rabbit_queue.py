@@ -2,8 +2,9 @@
 
 import pika
 import time
-import logging
 import threading
+
+from .model_setup import get_model_verbose_level
 
 from . import logs
 
@@ -42,12 +43,13 @@ class RMQueue(object):
         self._routing_key = route
 
         self._url = amqp_url
+        self._is_persistent: bool = False
 
         if logger is not None:
             self._logger = logger
         else:
             self._logger = logs.getLogger('RabbitMQ')
-            self._logger.setLevel(logging.INFO)
+            self._logger.setLevel(get_model_verbose_level())
 
         if config is not None:
             # extract from the config data structure any settings related to
@@ -56,8 +58,13 @@ class RMQueue(object):
                 if 'queue' in config['cloud']:
                     if 'rmq' in config['cloud']['queue']:
                         self._url = config['cloud']['queue']['rmq']
-                        self._logger.warning('url {}'
-                                          .format(self._url))
+                        self._logger.warning('use queue url {}'
+                                             .format(self._url))
+                        flag_persistent = config['cloud']['queue']\
+                            .get('persistent', False)
+                        if isinstance(flag_persistent, str):
+                            flag_persistent = flag_persistent.lower() == 'true'
+                        self._is_persistent = flag_persistent
 
         self._queue = queue
         self._queue_deleted = True
@@ -301,7 +308,9 @@ class RMQueue(object):
         """
         self._logger.debug('declare queue ' + queue_name)
         with self._rmq_lock:
-            self._channel.queue_declare(queue_name, callback=self.on_queue_declareok)
+            self._channel.queue_declare(queue_name,
+                                        durable=self._is_persistent,
+                                        callback=self.on_queue_declareok)
 
     def on_queue_declareok(self, method_frame):
         """
@@ -490,8 +499,15 @@ class RMQueue(object):
 
         self._logger.debug('sending message {} to {} '
                            .format(msg, self._url))
-        properties = pika.BasicProperties(app_id='studioml',
-                                          content_type='application/json')
+        if self._is_persistent:
+            properties = pika.BasicProperties(
+                app_id='studioml',
+                delivery_mode=2,  # make message persistent
+                content_type='application/json')
+        else:
+            properties = pika.BasicProperties(
+                app_id='studioml',
+                content_type='application/json')
 
         self._channel.basic_publish(exchange=self._exchange,
                                     routing_key=self._routing_key,
