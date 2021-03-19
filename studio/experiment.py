@@ -27,12 +27,14 @@ class Experiment(object):
                  metric=None,
                  pythonver=None,
                  max_duration=None,
-                 owner=None):
+                 owner=None,
+                 from_compl_service: bool = False):
 
         self.key = key
         self.args = []
         self.filename = filename
         self.owner = owner if owner else None
+        self.from_compl_service = from_compl_service
 
         if filename and '::' in filename:
             self.filename = '-m'
@@ -133,6 +135,7 @@ class Experiment(object):
         result['metric'] = self.metric
         result['max_duration'] = self.max_duration
         result['owner'] = self.owner
+        result['from_compl_service'] = self.from_compl_service
 
         # Process artifacts:
         artifacts_dict = dict()
@@ -169,7 +172,8 @@ def create_experiment(
         resources_needed=None,
         metric=None,
         max_duration=None,
-        dependency_policy: DependencyPolicy=None):
+        dependency_policy: DependencyPolicy=None,
+        from_compl_service: bool = False):
 
     key = experiment_name if experiment_name else \
         str(int(time.time())) + "_" + str(uuid.uuid4())
@@ -187,7 +191,8 @@ def create_experiment(
         artifacts=artifacts,
         resources_needed=resources_needed,
         metric=metric,
-        max_duration=max_duration)
+        max_duration=max_duration,
+        from_compl_service=from_compl_service)
 
 
 def experiment_from_dict(data, info={}):
@@ -210,7 +215,8 @@ def experiment_from_dict(data, info={}):
             metric=data.get('metric'),
             pythonver=data.get('pythonver'),
             max_duration=data.get('max_duration'),
-            owner=data.get('owner')
+            owner=data.get('owner'),
+            from_compl_service=data.get('from_compl_service', False)
         )
     except KeyError as e:
         raise e

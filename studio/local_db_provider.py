@@ -2,7 +2,8 @@ import os
 import json
 
 from .keyvalue_provider import KeyValueProvider
-from .local_storage_handler import LocalStorageHandler
+from .storage_handler_factory import StorageHandlerFactory
+from .storage_type import StorageType
 from . import util
 
 class LocalDbProvider(KeyValueProvider):
@@ -11,7 +12,8 @@ class LocalDbProvider(KeyValueProvider):
         self.config = config
         self.bucket = config.get('bucket', 'studioml-meta')
 
-        self.meta_store = LocalStorageHandler(config)
+        factory: StorageHandlerFactory = StorageHandlerFactory.get_factory()
+        self.meta_store = factory.get_handler(StorageType.storageLocal, config)
 
         self.endpoint = self.meta_store.get_endpoint()
         self.db_root = os.path.join(self.endpoint, self.bucket)

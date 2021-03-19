@@ -10,7 +10,6 @@ from .credentials import Credentials
 from .model_setup import get_model_verbose_level
 from .http_storage_handler import HTTPStorageHandler
 from .experiment import experiment_from_dict
-from .tartifact_store import TartifactStore
 from .util import retry
 
 
@@ -36,7 +35,6 @@ class HTTPProvider(object):
             self.url,
             self.credentials.to_dict() if self.credentials else None,
             compression=compression)
-        self.store = TartifactStore(self.storage_handler, self.logger)
 
         self.auth = None
         guest = config.get('guest')
@@ -58,7 +56,7 @@ class HTTPProvider(object):
 
         for tag, art in six.iteritems(experiment.artifacts):
             if not art.is_mutable and art.local_path is not None:
-                art['hash'] = self.store.get_artifact_hash(art)
+                art.hash = art.get_hash(art.local_path)
 
         data = {}
         data['experiment'] = experiment.__dict__
@@ -94,7 +92,7 @@ class HTTPProvider(object):
                 art.remote_path = target_art.remote_path
 
                 if art.local_path is not None:
-                    self.store.put_artifact(art)
+                    art.upload(art.local_path)
 
     def delete_experiment(self, experiment):
         if isinstance(experiment, six.string_types):
@@ -244,7 +242,7 @@ class HTTPProvider(object):
             experiment = self.get_experiment(experiment_key)
             artifact = experiment.artifacts[artifact_tag]
 
-        return self.store.get_artifact(artifact, local_path=local_path)
+        return artifact.download(local_path=local_path, only_newer=only_newer)
 
     def get_users(self):
         headers = self._get_headers()

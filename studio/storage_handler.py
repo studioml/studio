@@ -1,6 +1,7 @@
 import os
 import uuid
 import time
+from typing import Dict
 
 from .storage_type import StorageType
 from .util import get_temp_filename
@@ -8,7 +9,7 @@ from .util import get_temp_filename
 # StorageHandler encapsulates the logic of basic storage operations
 # for specific storage endpoint (S3, http, local etc.)
 # together with access credentials for this endpoint.
-class StorageHandler(object):
+class StorageHandler:
     def __init__(self, storage_type: StorageType,
                  logger,
                  measure_timestamp_diff=False,
@@ -22,6 +23,10 @@ class StorageHandler(object):
                 self._timestamp_shift = self._measure_timestamp_diff()
             except BaseException:
                 self._timestamp_shift = 0
+
+    @classmethod
+    def get_id(cls, config: Dict) -> str:
+        raise NotImplementedError("Not implemented: upload_file")
 
     def upload_file(self, key, local_path):
         raise NotImplementedError("Not implemented: upload_file")
