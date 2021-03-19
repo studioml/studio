@@ -7,15 +7,14 @@ try:
     from urllib.request import urlopen
 except ImportError:
     from urllib import urlopen
-from urllib.parse import urlparse
+from typing import Dict
 
 from . import fs_tracker, util, logs
 from . import credentials
 from . import model_setup
 from .storage_type import StorageType
 from .storage_handler import StorageHandler
-from .http_storage_handler import HTTPStorageHandler
-from .s3_storage_handler import S3StorageHandler
+from .storage_handler_factory import StorageHandlerFactory
 from .storage_util import tar_artifact, untar_artifact
 
 # The purpose of this class is to encapsulate the logic
@@ -324,30 +323,42 @@ class Artifact:
 
         return config, key
 
+    def _build_http_config(self):
+        """
+        For external Http-based artifact,
+        build configuration suitable for constructing
+        Http-based storage handler for this artifact.
+        """
+        config = dict()
+        config['endpoint'] = self.remote_path
+        config[credentials.KEY_CREDENTIALS] =\
+            self.credentials.to_dict() if self.credentials else dict()
+        return config
+
     def _setup_storage_handler(self, art_dict):
         if self.key is not None:
             # Artifact is already stored in our shared blob-cache:
-            artifact_store = model_setup.get_model_artifact_store()
-            self.storage_handler = \
-                artifact_store.get_storage_handler() if artifact_store else None
+            self.storage_handler = model_setup.get_model_artifact_store()
             return
 
         if self.remote_path is not None:
             if self._is_s3_endpoint():
                 s3_config_dict, art_key = self._build_s3_config(art_dict)
-                self.storage_handler = S3StorageHandler(s3_config_dict)
+                factory = StorageHandlerFactory.get_factory()
+                self.storage_handler =\
+                    factory.get_handler(StorageType.storageS3, s3_config_dict)
                 return
 
             if self.remote_path.startswith('http://') or \
                self.remote_path.startswith('https://'):
-                creds_dict = self.credentials.to_dict() if self.credentials else dict()
-                self.storage_handler = HTTPStorageHandler(self.remote_path, creds_dict)
+                http_config_dict: Dict = self._build_http_config()
+                factory = StorageHandlerFactory.get_factory()
+                self.storage_handler =\
+                    factory.get_handler(StorageType.storageHTTP, http_config_dict)
                 return
 
         if self.local_path is not None:
-            artifact_store = model_setup.get_model_artifact_store()
-            self.storage_handler = \
-                artifact_store.get_storage_handler() if artifact_store else None
+            self.storage_handler = model_setup.get_model_artifact_store()
             return
 
         raise NotImplementedError(

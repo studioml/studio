@@ -7,6 +7,7 @@ from boto3.session import Session
 import botocore
 from botocore.client import Config
 from botocore.handlers import set_list_objects_encoding_type_url
+from typing import Dict
 import re
 
 from . import logs
@@ -57,6 +58,7 @@ class S3StorageHandler(StorageHandler):
         self.cleanup_bucket = config.get('cleanup_bucket', False)
         if isinstance(self.cleanup_bucket, str):
             self.cleanup_bucket = self.cleanup_bucket.lower() == 'true'
+        self.bucket_cleaned_up: bool = False
 
         self.endpoint = self.client._endpoint.host
 
@@ -80,6 +82,18 @@ class S3StorageHandler(StorageHandler):
             self.logger,
             measure_timestamp_diff,
             compression=compression)
+
+    @classmethod
+    def get_id(cls, config: Dict) -> str:
+        endpoint = config.get('endpoint', None)
+        if endpoint is None:
+            return None
+        bucket = config.get('bucket', None)
+        if bucket is None:
+            return None
+        creds: Credentials = Credentials.getCredentials(config)
+        creds_fingerprint = creds.get_fingerprint() if creds else ''
+        return '[s3]{0}/{1}::{2}'.format(endpoint, bucket, creds_fingerprint)
 
     def _not_found(self, response):
         try:
@@ -185,6 +199,8 @@ class S3StorageHandler(StorageHandler):
     def cleanup(self):
         if not self.cleanup_bucket:
             return
+        if self.bucket_cleaned_up:
+            return
 
         # Delete current S3 bucket completely.
         prefix: str = ''
@@ -193,17 +209,23 @@ class S3StorageHandler(StorageHandler):
         key_marker = None
 
         while is_truncated:
-            if key_marker is None:
-                version_list = self.client.list_object_versions(
-                    Bucket=self.bucket,
-                    MaxKeys=max_keys,
-                    Prefix=prefix)
-            else:
-                version_list = self.client.list_object_versions(
-                    Bucket=self.bucket,
-                    MaxKeys=max_keys,
-                    Prefix=prefix,
-                    KeyMarker=key_marker)
+            version_list = None
+
+            try:
+                if key_marker is None:
+                    version_list = self.client.list_object_versions(
+                        Bucket=self.bucket,
+                        MaxKeys=max_keys,
+                        Prefix=prefix)
+                else:
+                    version_list = self.client.list_object_versions(
+                        Bucket=self.bucket,
+                        MaxKeys=max_keys,
+                        Prefix=prefix,
+                        KeyMarker=key_marker)
+            except Exception as exc:
+                self.logger.error("FAILED to list objects in bucket: %s - %s",
+                                  self.bucket, exc)
 
             if version_list is None:
                 break
@@ -238,9 +260,10 @@ class S3StorageHandler(StorageHandler):
         # Now we can delete bucket itself:
         try:
             self.client.delete_bucket(Bucket=self.bucket)
+            self.bucket_cleaned_up = True
         except Exception as exc:
             self.logger.error("FAILED to delete bucket: %s - %s",
-                      self.bucket, exc)
+                self.bucket, exc)
 
     def get_file_url(self, key, method='GET'):
         if method == 'GET':

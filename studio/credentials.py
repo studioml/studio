@@ -1,3 +1,4 @@
+import hashlib
 from . import logs, util
 from .model_setup import get_model_verbose_level
 
@@ -62,6 +63,14 @@ class Credentials(object):
                 AWS_SECRET_KEY: self.secret_key
             }
         }
+
+    def get_fingerprint(self) -> str:
+        if self.type is None and self.key is None and\
+            self.secret_key is None:
+            return ''
+        id: str = "{0}::{1}::{2}"\
+            .format(self.type, self.key, self.secret_key)
+        return hashlib.sha256(id.encode()).hexdigest()
 
     @classmethod
     def getCredentials(cls, config):

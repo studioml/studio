@@ -6,7 +6,6 @@ from concurrent.futures import ThreadPoolExecutor, wait
 from . import util, git_util, logs
 from .storage_handler import StorageHandler
 from .auth import get_auth
-from .tartifact_store import TartifactStore
 from .artifact import Artifact
 from .experiment import Experiment, experiment_from_dict
 from .model_setup import get_model_verbose_level
@@ -39,7 +38,6 @@ class KeyValueProvider(object):
             )
 
         self.storage_handler = handler
-        self.store = TartifactStore(self.storage_handler, self.logger)
 
         if self.auth and not self.auth.is_expired():
             self.register_user(None, self.auth.get_user_email())
@@ -118,12 +116,13 @@ class KeyValueProvider(object):
         self._set(self._get_experiments_keybase() + experiment.key,
                   experiment_dict)
 
-        self._set(self._get_user_keybase(userid) + "experiments/" +
+        if not experiment.from_compl_service:
+            self._set(self._get_user_keybase(userid) + "experiments/" +
                   experiment.key,
                   experiment.time_added)
 
-        if experiment.project and userid:
-            self._set(self._get_projects_keybase() +
+            if experiment.project and userid:
+                self._set(self._get_projects_keybase() +
                       experiment.project + "/" +
                       experiment.key + "/owner",
                       userid)
@@ -206,8 +205,9 @@ class KeyValueProvider(object):
                               .format(experiment_key))
             return
 
+        from_compl_service: bool = experiment_dict.get('from_compl_service', False)
         experiment_owner = experiment_dict.get('owner')
-        if experiment_owner is not None:
+        if experiment_owner is not None and not from_compl_service:
             self._delete(self._get_user_keybase(experiment_owner) +
                      'experiments/' + experiment_key, shallow=False)
 
@@ -219,7 +219,7 @@ class KeyValueProvider(object):
                          'artifact key {1}').format(tag, art.key))
                     art.delete()
 
-            if experiment.project is not None:
+            if experiment.project is not None and not from_compl_service:
                 self._delete(
                     self._get_projects_keybase() +
                     experiment.project + "/" + experiment_key + "/" + "owner",
@@ -245,7 +245,7 @@ class KeyValueProvider(object):
         with ThreadPoolExecutor(max_workers=8) as executor:
             for _, art in experiment.artifacts.items():
                 if art.is_mutable and art.local_path is not None:
-                    workers.append(executor.submit(self.store.put_artifact, art))
+                    workers.append(executor.submit(art.upload, None))
             wait(workers)
 
         for worker in workers:
@@ -276,7 +276,8 @@ class KeyValueProvider(object):
             metric_name = metric_str[0]
             metric_type = metric_str[1] if len(metric_str) > 1 else None
 
-            tbtar = self.store.stream_artifact(experiment.artifacts['tb'])
+            tb_art = experiment.artifacts['tb']
+            tbtar = tb_art.stream() if tb_art else None
 
             if metric_type == 'min':
                 def metric_accum(x, y): return min(x, y) if x else y
@@ -286,13 +287,14 @@ class KeyValueProvider(object):
                 def metric_accum(x, y): return y
 
             metric_value = None
-            for f in tbtar:
-                if f.isreg():
-                    for e in util.event_reader(tbtar.extractfile(f)):
-                        for v in e.summary.value:
-                            if v.tag == metric_name:
-                                metric_value = metric_accum(
-                                    metric_value, v.simple_value)
+            if tbtar is not None:
+                for f in tbtar:
+                    if f.isreg():
+                        for e in util.event_reader(tbtar.extractfile(f)):
+                            for v in e.summary.value:
+                                if v.tag == metric_name:
+                                    metric_value = metric_accum(
+                                        metric_value, v.simple_value)
 
             info['metric_value'] = metric_value
 
@@ -300,7 +302,7 @@ class KeyValueProvider(object):
 
     def _get_experiment_logtail(self, experiment: Experiment):
         try:
-            tarf = self.store.stream_artifact(experiment.artifacts['output'])
+            tarf = experiment.artifacts['output'].stream()
             if not tarf:
                 return None
             tarf_member = tarf.members[0]
@@ -374,9 +376,9 @@ class KeyValueProvider(object):
         return retval
 
     def get_artifact(self, artifact, local_path=None, only_newer=True):
-        return self.store.get_artifact(artifact,
-                                       local_path=local_path,
-                                       only_newer=only_newer)
+        return artifact.download(
+            local_path=local_path,
+            only_newer=only_newer)
 
     def get_projects(self):
         return self._get(self._get_projects_keybase(), shallow=True)
@@ -423,8 +425,8 @@ class KeyValueProvider(object):
         if existing_email != email:
             self._set(keypath, email)
 
-    def get_artifact_store(self):
-        return self.store
+    def get_storage_handler(self):
+        return self.storage_handler
 
     def __enter__(self):
         return self
