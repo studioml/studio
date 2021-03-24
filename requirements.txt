@@ -14,8 +14,8 @@ cma
 psutil
 
 apscheduler
+openssh_key_parser
 pycryptodome
-paramiko
 sshpubkeys
 PyNaCl
 requests

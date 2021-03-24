@@ -3,12 +3,12 @@ from Crypto.Cipher import PKCS1_OAEP
 from Crypto.Hash import SHA256
 import nacl.secret
 import nacl.utils
-import nacl.signing
-import paramiko
+from nacl.signing import SigningKey, VerifyKey
 import base64
 import json
 from sshpubkeys import SSHKey
 
+from .ed25519_key_util import Ed25519KeyUtil
 from .payload_builder import PayloadBuilder
 from studio import logs
 from .unencrypted_payload_builder import UnencryptedPayloadBuilder
@@ -45,26 +45,33 @@ class EncryptedPayloadBuilder(PayloadBuilder):
             raise ValueError(msg)
 
         self.sender_key_path = sender_keypath
-        self.sender_key = None
+
+        self.sender_key: SigningKey = None
+        self.verify_key: VerifyKey = None
         self.sender_fingerprint = None
 
         if self.sender_key_path is None:
             self.logger.error("Signing key path must be specified for encrypted payloads. ABORTING.")
             raise ValueError()
 
-        # We expect ed25519 signing key in "private key" format
+        # We expect ed25519 signing key in "openssh private key" format
         try:
-            self.sender_key =\
-                paramiko.Ed25519Key(filename=self.sender_key_path)
+            public_key_data, private_key_data =\
+                Ed25519KeyUtil.parse_private_key_file(
+                    self.sender_key_path, self.logger)
+            if public_key_data is None or private_key_data is None:
+                self._raise_error(
+                    "Failed to import private signing key from {0}. ABORTING."
+                        .format(self.sender_key_path))
 
-            if self.sender_key is None:
-                self._raise_error("Failed to import private signing key. ABORTING.")
-        except:
+            self.sender_key = SigningKey(private_key_data)
+            self.verify_key = VerifyKey(public_key_data)
+        except Exception:
             self._raise_error("FAILED to open/read private signing key file: {0}"\
                 .format(self.sender_key_path))
 
         self.sender_fingerprint = \
-            self._get_fingerprint(self.sender_key)
+            self._get_fingerprint(public_key_data)
 
         self.simple_builder =\
             UnencryptedPayloadBuilder("simple-builder-for-encryptor")
@@ -73,12 +80,22 @@ class EncryptedPayloadBuilder(PayloadBuilder):
         self.logger.error(msg)
         raise ValueError(msg)
 
+    def _add_encoding(self, bytes_val):
+        blen: int = len(bytes_val)
+        return blen.to_bytes(4,'big') + bytes_val
+
     def _get_fingerprint(self, signing_key):
+        # This is hard-coded for now, until we figure out
+        # a way to do this properly:
+        encoding = self._add_encoding(b'ssh-ed25519') +\
+                   self._add_encoding(signing_key)
+
+        ssh_key_text: str = base64.b64encode(encoding).decode("utf-8")
         ssh_key = SSHKey("ssh-ed25519 {0}"
-                         .format(signing_key.get_base64()))
+                         .format(ssh_key_text))
         try:
             ssh_key.parse()
-        except:
+        except Exception:
             self._raise_error("INVALID signing key type. ABORTING.")
 
         return ssh_key.hash_sha256()  # SHA256:xyz
@@ -116,32 +133,22 @@ class EncryptedPayloadBuilder(PayloadBuilder):
 
         return encrypted_session_key_text, encrypted_data_text
 
-    def _verify_signature(self, data, msg):
-        if msg.get_text() != "ssh-ed25519":
-            return False
-
-        try:
-            self.sender_key._signing_key.verify_key.verify(data, msg.get_binary())
-        except:
-            return False
-        else:
-            return True
-
     def _sign_payload(self, encrypted_payload):
         """
         encrypted_payload - base64 representation of the encrypted payload.
         returns: base64-encoded signature
         """
-        sign_message = self.sender_key.sign_ssh_data(encrypted_payload)
+        sign_message = self.sender_key.sign(encrypted_payload)
 
         # Verify what we generated just in case:
-        verify_message = paramiko.Message(sign_message.asbytes())
-        verify_res = self._verify_signature(encrypted_payload, verify_message)
+        try:
+            self.verify_key.verify(sign_message)
+        except Exception as exc:
+            msg: str = "FAILED to verify signed data - {0}. ABORTING."\
+                .format(exc)
+            self._raise_error(msg)
 
-        if not verify_res:
-            self._raise_error("FAILED to verify signed data. ABORTING.")
-
-        result = base64.b64encode(sign_message.asbytes())
+        result = base64.b64encode(sign_message.signature)
         return result
 
     def _decrypt_data(self, private_key_path, encrypted_key_text, encrypted_data_text):

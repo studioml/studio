@@ -20,6 +20,39 @@ from .util import sixdecode, str2duration, retry, LogReprinter, parse_verbosity
 
 logs.getLogger('apscheduler.scheduler').setLevel(logs.ERROR)
 
+class TeeOutput:
+    def __init__(self, log_path: str, logger, do_copy: bool = True):
+        self.logger = logger
+        self.do_copy: bool = do_copy
+        try:
+            self.log_file = open(log_path, "w")
+        except Exception as exc:
+            msg: str = "FAILED to open log file {0} - {1}"\
+                .format(log_path, exc)
+            logger.error(msg)
+            self.log_file = None
+
+    def write(self, s):
+        if self.log_file is not None:
+            self.log_file.write(s)
+        if self.do_copy:
+            sys.stdout.write(s)
+
+    def writeln(self, s):
+        self.write(s + '\n')
+
+    def close(self):
+        try:
+            self.log_file.close()
+        except Exception:
+            pass
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self):
+        self.close()
+
 
 class LocalExecutor(object):
     """Runs job while capturing environment and logs results.
@@ -70,7 +103,8 @@ class LocalExecutor(object):
             sched = BackgroundScheduler()
             sched.start()
 
-            with open(log_path, 'w') as output_file:
+            #with open(log_path, 'w') as output_file:
+            with TeeOutput(log_path, self.logger, True) as output_file:
                 python = 'python'
                 if experiment.pythonver[0] == '3':
                     python = 'python3'
@@ -115,13 +149,13 @@ class LocalExecutor(object):
                     cwd=cwd
                 )
 
-                run_log_reprinter = True
-                log_reprinter = LogReprinter(log_path)
-                if run_log_reprinter:
-                    log_reprinter.run()
+                # run_log_reprinter = True
+                # log_reprinter = LogReprinter(log_path)
+                # if run_log_reprinter:
+                #     log_reprinter.run()
 
                 def kill_subprocess():
-                    log_reprinter.stop()
+                    #log_reprinter.stop()
                     p.kill()
 
                 minutes = 0
@@ -195,13 +229,12 @@ class LocalExecutor(object):
                 try:
                     p.wait()
                 finally:
-                    log_reprinter.stop()
+                    #log_reprinter.stop()
                     save_metrics(metrics_path)
                     sched.shutdown()
                     db.checkpoint_experiment(experiment)
                     db.finish_experiment(experiment)
                     return p.returncode
-
 
 def allocate_resources(experiment, config=None, verbose=10):
     logger = logs.getLogger('allocate_resources')
