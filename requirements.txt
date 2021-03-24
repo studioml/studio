@@ -38,6 +38,5 @@ boto3
 rsa
 
 filelock
-pygtail
 pika >= 1.1.0
 

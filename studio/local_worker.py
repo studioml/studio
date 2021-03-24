@@ -16,43 +16,9 @@ from .local_queue import LocalQueue
 from .gpu_util import get_available_gpus, get_gpu_mapping, get_gpus_summary
 from .artifact import Artifact
 from .experiment import Experiment
-from .util import sixdecode, str2duration, retry, LogReprinter, parse_verbosity
+from .util import sixdecode, str2duration, retry, parse_verbosity
 
 logs.getLogger('apscheduler.scheduler').setLevel(logs.ERROR)
-
-class TeeOutput:
-    def __init__(self, log_path: str, logger, do_copy: bool = True):
-        self.logger = logger
-        self.do_copy: bool = do_copy
-        try:
-            self.log_file = open(log_path, "w")
-        except Exception as exc:
-            msg: str = "FAILED to open log file {0} - {1}"\
-                .format(log_path, exc)
-            logger.error(msg)
-            self.log_file = None
-
-    def write(self, s):
-        if self.log_file is not None:
-            self.log_file.write(s)
-        if self.do_copy:
-            sys.stdout.write(s)
-
-    def writeln(self, s):
-        self.write(s + '\n')
-
-    def close(self):
-        try:
-            self.log_file.close()
-        except Exception:
-            pass
-
-    def __enter__(self):
-        return self
-
-    def __exit__(self):
-        self.close()
-
 
 class LocalExecutor(object):
     """Runs job while capturing environment and logs results.
@@ -95,16 +61,13 @@ class LocalExecutor(object):
             fs_tracker.setup_experiment(env, experiment, clean=False)
             log_path = fs_tracker.get_artifact_cache('output', experiment.key)
 
-            # log_path = os.path.join(model_dir, self.config['log']['name'])
-
             self.logger.debug('Child process environment:')
             self.logger.debug(str(env))
 
             sched = BackgroundScheduler()
             sched.start()
 
-            #with open(log_path, 'w') as output_file:
-            with TeeOutput(log_path, self.logger, True) as output_file:
+            with open(log_path, 'w') as output_file:
                 python = 'python'
                 if experiment.pythonver[0] == '3':
                     python = 'python3'
@@ -143,27 +106,19 @@ class LocalExecutor(object):
 
                 p = subprocess.Popen(
                     cmd,
-                    stdout=output_file,
+                    stdout=subprocess.PIPE,
                     stderr=subprocess.STDOUT,
                     env=env,
-                    cwd=cwd
+                    cwd=cwd,
+                    text=True
                 )
 
-                # run_log_reprinter = True
-                # log_reprinter = LogReprinter(log_path)
-                # if run_log_reprinter:
-                #     log_reprinter.run()
-
                 def kill_subprocess():
-                    #log_reprinter.stop()
                     p.kill()
 
-                minutes = 0
-                if self.config.get('saveWorkspaceFrequency'):
-                    minutes = int(
-                        str2duration(
-                            self.config['saveWorkspaceFrequency'])
-                        .total_seconds() / 60)
+                def get_duration(tag: str):
+                    value = self.config.get(tag, '0m')
+                    return int(str2duration(value).total_seconds() / 60)
 
                 def checkpoint():
                     try:
@@ -171,25 +126,15 @@ class LocalExecutor(object):
                     except BaseException as e:
                         self.logger.info(e)
 
-                sched.add_job(
-                    checkpoint,
-                    'interval',
-                    minutes=minutes)
+                minutes = get_duration('saveWorkspaceFrequency')
+                sched.add_job(checkpoint, 'interval', minutes=minutes)
 
                 metrics_path = fs_tracker.get_artifact_cache(
                     '_metrics', experiment.key)
 
-                minutes = 0
-                if self.config.get('saveMetricsFrequency'):
-                    minutes = int(
-                        str2duration(
-                            self.config['saveMetricsFrequency'])
-                        .total_seconds() / 60)
-
-                sched.add_job(
-                    lambda: save_metrics(metrics_path),
-                    'interval',
-                    minutes=minutes)
+                minutes = get_duration('saveMetricsFrequency')
+                sched.add_job(lambda: save_metrics(metrics_path),
+                              'interval', minutes=minutes)
 
                 def kill_if_stopped():
                     try:
@@ -226,10 +171,18 @@ class LocalExecutor(object):
 
                 sched.add_job(kill_if_stopped, 'interval', seconds=10)
 
+                while True:
+                    output = p.stdout.readline()
+                    if output == '' and p.poll() is not None:
+                        break
+                    if output:
+                        line_out = output.strip()
+                        print(line_out)
+                        output_file.write(line_out)
+
                 try:
                     p.wait()
                 finally:
-                    #log_reprinter.stop()
                     save_metrics(metrics_path)
                     sched.shutdown()
                     db.checkpoint_experiment(experiment)

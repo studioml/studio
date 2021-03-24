@@ -10,13 +10,11 @@ import sys
 import shutil
 import subprocess
 import os
-import threading
 import numpy as np
 import requests
 import six
 import tempfile
 import uuid
-from pygtail import Pygtail
 from . import model_setup
 from .storage_type import StorageType
 
@@ -516,30 +514,3 @@ def rm_rf(path):
     else:
         raise ValueError("file {0} is not a file or dir.".format(path))
 
-
-class LogReprinter(object):
-    def __init__(self, log_path):
-        self.logpath = log_path
-        self.logtail = Pygtail(log_path)
-        self.is_running = False
-        self.tail_thread = None
-
-    def run(self):
-        self.tail_thread = \
-            threading.Thread(target=self.tail_func, daemon=True)
-        self.is_running = True
-        self.tail_thread.start()
-
-    def stop(self):
-        self.is_running = False
-        if self.tail_thread is not None:
-            self.tail_thread.join()
-
-    def tail_func(self):
-        while self.is_running and self.logtail:
-            for line in self.logtail:
-                if self.is_running:
-                    print(line)
-                else:
-                    return
-            time.sleep(0.1)
