@@ -14,8 +14,8 @@ cma
 psutil
 
 apscheduler
+openssh_key_parser
 pycryptodome
-paramiko
 sshpubkeys
 PyNaCl
 requests
@@ -38,6 +38,5 @@ boto3
 rsa
 
 filelock
-pygtail
 pika >= 1.1.0
 
