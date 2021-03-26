@@ -6,7 +6,7 @@ import shutil
 import json
 import re
 import six
-import util
+from . import util
 
 STUDIOML_EXPERIMENT = 'STUDIOML_EXPERIMENT'
 STUDIOML_HOME = 'STUDIOML_HOME'
