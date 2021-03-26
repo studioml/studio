@@ -6,6 +6,7 @@ import shutil
 import json
 import re
 import six
+import util
 
 STUDIOML_EXPERIMENT = 'STUDIOML_EXPERIMENT'
 STUDIOML_HOME = 'STUDIOML_HOME'
@@ -60,6 +61,7 @@ def get_artifact(tag):
         else:
             return os.path.join(os.getcwd(), '..', tag)
     except BaseException:
+        util.check_for_kb_interrupt()
         return None
 
 
@@ -74,6 +76,7 @@ def get_artifacts():
             return {art: os.path.join(os.getcwd(), '..', art)
                     for art in artifacts}
     except BaseException:
+        util.check_for_kb_interrupt()
         return {}
 
 

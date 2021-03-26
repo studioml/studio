@@ -19,7 +19,7 @@ except BaseException:
 import google.auth.transport.requests
 import google.oauth2.id_token
 
-from .util import rand_string
+from .util import rand_string, check_for_kb_interrupt
 from . import pyrebase
 from . import logs
 
@@ -300,6 +300,7 @@ class FirebaseAuth(object):
                     with open(self.token_file) as f:
                         user = json.loads(f.read())
                 except BaseException as e:
+                    check_for_kb_interrupt()
                     self.logger.info(e)
                     time.sleep(SLEEP_TIME)
                     counter += 1
@@ -314,6 +315,7 @@ class FirebaseAuth(object):
                         self.refresh_token(user['email'], user['refreshToken'])
                         break
                     except BaseException as e:
+                        check_for_kb_interrupt()
                         self.logger.info(e)
                         time.sleep(SLEEP_TIME)
                         counter += 1
@@ -386,7 +388,7 @@ class FirebaseAuth(object):
             return None
         else:
             if refresh_token:
-                self.refresh_token(claims['email'], refresh_token)
+                refresh_token(claims['email'], refresh_token)
 
             # get_db().register_user(claims['user_id'], claims['email'])
 

@@ -10,7 +10,7 @@ from .credentials import Credentials
 from .model_setup import get_model_verbose_level
 from .http_storage_handler import HTTPStorageHandler
 from .experiment import experiment_from_dict
-from .util import retry
+from .util import retry, check_for_kb_interrupt
 
 
 class HTTPProvider(object):
@@ -129,6 +129,7 @@ class HTTPProvider(object):
             data = request.json()['experiment']
             return experiment_from_dict(data)
         except BaseException as e:
+            check_for_kb_interrupt()
             self.logger.info('error getting experiment {}'.format(key))
             self.logger.info(e)
             return None

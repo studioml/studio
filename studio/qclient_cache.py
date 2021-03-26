@@ -1,6 +1,7 @@
 import threading
 
 from .rabbit_queue import RMQueue
+from .util import check_for_kb_interrupt
 
 _queue_cache = {}
 
@@ -65,6 +66,7 @@ def purge_rmq(q, logger, **kwargs):
     try:
         q.shutdown(True)
     except BaseException as e:
+        check_for_kb_interrupt()
         logger.warning(e)
         return
     return

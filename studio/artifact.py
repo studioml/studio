@@ -192,6 +192,7 @@ class Artifact:
                 self.logger.info(msg)
                 return None
         except BaseException as exc:
+            util.check_for_kb_interrupt()
             msg: str = \
                 "FAILED to download {0}: {1}.".format(self.key, exc)
             self.logger.info(msg)
@@ -266,6 +267,7 @@ class Artifact:
                 retval = tarfile.open(fileobj=fileobj, mode='r|*')
                 return retval
             except BaseException as exc:
+                util.check_for_kb_interrupt()
                 fileobj.close()
                 msg: str = 'FAILED to stream artifact {0}: {1}'.format(url, exc)
                 util.report_fatal(msg, self.logger)
@@ -290,6 +292,7 @@ class Artifact:
                 'deleted local artifact file {0}'.format(tar_filename))
             return retval
         except BaseException as exc:
+            util.check_for_kb_interrupt()
             self.logger.error(
                 'error generating a hash for {0}: {1}'
                     .format(tar_filename, repr(exc)))

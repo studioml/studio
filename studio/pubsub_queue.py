@@ -1,10 +1,9 @@
 import os
 import json
 import time
-import google
 from google.api_core.exceptions import RetryError
 
-from .util import sixdecode, retry, parse_verbosity
+from .util import sixdecode, retry, parse_verbosity, check_for_kb_interrupt
 from . import logs
 
 
@@ -30,6 +29,7 @@ class PubsubQueue(object):
         try:
             self.pubtopic = self.pubclient.get_topic(self.topic_name)
         except BaseException as e:
+            check_for_kb_interrupt()
             self.pubtopic = self.pubclient.create_topic(self.topic_name)
             self.logger.info('topic {} created'.format(self.topic_name))
 
@@ -42,6 +42,7 @@ class PubsubQueue(object):
         try:
             self.subclient.get_subscription(self.sub_name)
         except BaseException as e:
+            check_for_kb_interrupt()
             self.logger.warn(e)
             self.subclient.create_subscription(self.sub_name, self.topic_name,
                                                ack_deadline_seconds=20)

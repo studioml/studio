@@ -6,7 +6,7 @@ import time
 
 from . import fs_tracker
 from .artifact import Artifact
-from .util import shquote
+from .util import shquote, check_for_kb_interrupt
 from .dependencies_policy import DependencyPolicy
 from .studio_dependencies_policy import StudioDependencyPolicy
 
@@ -56,6 +56,7 @@ class Experiment(object):
         try:
             model_dir = fs_tracker.get_model_directory(key)
         except BaseException:
+            check_for_kb_interrupt()
             model_dir = None
 
         std_artifacts_dict = {

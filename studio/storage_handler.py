@@ -4,7 +4,7 @@ import time
 from typing import Dict
 
 from .storage_type import StorageType
-from .util import get_temp_filename
+from .util import get_temp_filename, check_for_kb_interrupt
 
 # StorageHandler encapsulates the logic of basic storage operations
 # for specific storage endpoint (S3, http, local etc.)
@@ -22,6 +22,7 @@ class StorageHandler:
             try:
                 self._timestamp_shift = self._measure_timestamp_diff()
             except BaseException:
+                check_for_kb_interrupt()
                 self._timestamp_shift = 0
 
     @classmethod

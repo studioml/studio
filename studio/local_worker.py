@@ -16,7 +16,8 @@ from .local_queue import LocalQueue
 from .gpu_util import get_available_gpus, get_gpu_mapping, get_gpus_summary
 from .artifact import Artifact
 from .experiment import Experiment
-from .util import sixdecode, str2duration, retry, parse_verbosity
+from .util import sixdecode, str2duration, retry,\
+    parse_verbosity, check_for_kb_interrupt
 
 logs.getLogger('apscheduler.scheduler').setLevel(logs.ERROR)
 
@@ -125,6 +126,7 @@ class LocalExecutor(object):
                         db.checkpoint_experiment(experiment)
                     except BaseException as e:
                         self.logger.info(e)
+                        check_for_kb_interrupt()
 
                 minutes = get_duration('saveWorkspaceFrequency')
                 sched.add_job(checkpoint, 'interval', minutes=minutes)
@@ -142,6 +144,7 @@ class LocalExecutor(object):
                             experiment.key,
                             getinfo=False)
                     except:
+                        check_for_kb_interrupt()
                         db_expr = None
 
                     # Transient issues with getting experiment data might

@@ -85,6 +85,7 @@ def event_reader(fileobj):
             fileobj.read(footer_len)
             yield event
         except BaseException:
+            check_for_kb_interrupt()
             break
 
     fileobj.close()
@@ -342,6 +343,7 @@ def retry(f,
         try:
             return f()
         except exception_class as e:
+            check_for_kb_interrupt()
             if i == no_retries - 1:
                 raise e
 
@@ -403,6 +405,7 @@ def timeit(method):
             logger = args[0].logger
             logger.info(line)
         except BaseException:
+            check_for_kb_interrupt()
             print(line)
 
         return result
@@ -497,6 +500,7 @@ def delete_local_folders(local_folder_path: str, root: str):
     try:
         os.rmdir(local_folder_path)
     except:
+        check_for_kb_interrupt()
         pass
     delete_local_folders(head, root)
 
@@ -513,4 +517,12 @@ def rm_rf(path):
         shutil.rmtree(path)  # remove dir and all contains
     else:
         raise ValueError("file {0} is not a file or dir.".format(path))
+
+def check_for_kb_interrupt():
+    current_exc = sys.exc_info()[1]
+    if current_exc is None:
+        return
+    if isinstance(current_exc, KeyboardInterrupt):
+        raise current_exc
+    return
 
