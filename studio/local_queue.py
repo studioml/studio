@@ -1,6 +1,7 @@
 import os
 import sys
 from . import fs_tracker, logs
+from .util import check_for_kb_interrupt
 import uuid
 import glob
 import time
@@ -36,6 +37,7 @@ class LocalQueue:
         try:
             files.remove(self.status_marker)
         except:
+            check_for_kb_interrupt()
             # Ignore possible exception:
             # we just want list of files without status marker
             pass
@@ -56,6 +58,7 @@ class LocalQueue:
                 try:
                     os.remove(f)
                 except:
+                    check_for_kb_interrupt()
                     pass
 
     def delete(self):
@@ -64,7 +67,8 @@ class LocalQueue:
             try:
                 os.remove(self.status_marker)
             except:
-                    pass
+                check_for_kb_interrupt()
+                pass
 
     def dequeue(self, acknowledge=True, timeout=0):
         sleep_in_seconds = 1
@@ -105,6 +109,7 @@ class LocalQueue:
         try:
             os.remove(key)
         except BaseException:
+            check_for_kb_interrupt()
             pass
 
     def hold(self, key, minutes):

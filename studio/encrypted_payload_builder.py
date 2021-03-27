@@ -12,6 +12,7 @@ from .ed25519_key_util import Ed25519KeyUtil
 from .payload_builder import PayloadBuilder
 from studio import logs
 from .unencrypted_payload_builder import UnencryptedPayloadBuilder
+from .util import check_for_kb_interrupt
 
 class EncryptedPayloadBuilder(PayloadBuilder):
     """
@@ -39,6 +40,7 @@ class EncryptedPayloadBuilder(PayloadBuilder):
             self.recipient_key =\
                 RSA.import_key(open(self.recipient_key_path).read())
         except:
+            check_for_kb_interrupt()
             msg = "FAILED to import recipient public key from: {0}"\
                 .format(self.recipient_key_path)
             self.logger.error(msg)
@@ -105,6 +107,7 @@ class EncryptedPayloadBuilder(PayloadBuilder):
         try:
             key = RSA.import_key(open(key_path).read())
         except:
+            check_for_kb_interrupt()
             self.logger.error(
                 "FAILED to import RSA key from: {0}".format(key_path))
             key = None
@@ -159,6 +162,7 @@ class EncryptedPayloadBuilder(PayloadBuilder):
         try:
             private_key = RSA.import_key(open(private_key_path).read())
         except:
+            check_for_kb_interrupt()
             self.logger.error(
                 "FAILED to import private key from: {0}".format(private_key_path))
             return None

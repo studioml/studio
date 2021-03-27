@@ -9,7 +9,8 @@ from .auth import get_auth
 from .artifact import Artifact
 from .experiment import Experiment, experiment_from_dict
 from .model_setup import get_model_verbose_level
-from .util import retry, report_fatal, compression_to_extension
+from .util import retry, report_fatal,\
+    compression_to_extension, check_for_kb_interrupt
 
 
 class KeyValueProvider(object):
@@ -194,6 +195,7 @@ class KeyValueProvider(object):
                 experiment = self.get_experiment(experiment)
                 experiment_key = experiment.key
             except BaseException:
+                check_for_kb_interrupt()
                 experiment = None
         else:
             experiment_key = experiment.key
@@ -315,6 +317,7 @@ class KeyValueProvider(object):
         except BaseException as e:
             self.logger.debug('Getting experiment logtail raised an exception: {0}'
                               .format(repr(e)))
+            check_for_kb_interrupt()
             return None
 
     def get_experiment(self, key, getinfo=True) -> Experiment:

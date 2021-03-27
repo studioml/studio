@@ -290,6 +290,7 @@ class S3StorageHandler(StorageHandler):
                         .format(self.bucket, key))
             return None
         except BaseException:
+            util.check_for_kb_interrupt()
             self.logger.error("FAILED to get timestamp for S3 object {0}/{1}"
                               .format(self.bucket, key))
             return None

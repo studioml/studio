@@ -8,10 +8,8 @@ import time
 import six
 import numpy as np
 
-from datetime import timedelta
-
 from .hyperparameter import HyperparameterParser
-from .util import rand_string, Progbar, rsync_cp
+from .util import rand_string, Progbar, rsync_cp, check_for_kb_interrupt
 from .experiment import create_experiment
 from .experiment_submitter import submit_experiments
 from . import model
@@ -385,11 +383,13 @@ def main(args=sys.argv[1:]):
                 try:
                     optimizer.tell(hyperparam_pop, fitnesses, behaviors)
                 except BaseException:
+                    check_for_kb_interrupt()
                     optimizer.tell(hyperparam_pop, fitnesses)
 
                 try:
                     optimizer.disp()
                 except BaseException:
+                    check_for_kb_interrupt()
                     logger.warn('Optimizer has no disp() method')
     else:
         if rerun:
@@ -532,10 +532,6 @@ def get_experiment_fitnesses(experiments, optimizer, config, logger):
                     continue
                 returned_experiment = db.get_experiment(experiment.key,
                                                         getinfo=True)
-                # try:
-                #     experiment_output = returned_experiment.info['logtail']
-                # except BaseException:
-                #     logger.warn('Cannot access "logtail" in experiment.info')
                 output = db._get_experiment_logtail(
                     returned_experiment)
                 if output is None:
@@ -564,6 +560,7 @@ def get_experiment_fitnesses(experiments, optimizer, config, logger):
                                 raise
 
                         except BaseException:
+                            check_for_kb_interrupt()
                             if j not in bad_line_dicts[i]:
                                 logger.warn(
                                     'Experiment %s: error parsing or invalid'
@@ -580,6 +577,7 @@ def get_experiment_fitnesses(experiments, optimizer, config, logger):
                             fitness = float(line.rstrip().split(':')[1])
                             # assert fitness >= 0.0
                         except BaseException:
+                            check_for_kb_interrupt()
                             if j not in bad_line_dicts[i]:
                                 logger.warn(
                                     'Experiment %s: error parsing or invalid'
