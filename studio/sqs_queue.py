@@ -1,37 +1,78 @@
+import boto3
 import time
+from typing import Dict
 
-try:
-    import boto3
-except BaseException:
-    boto3 = None
-
-from .util import retry, parse_verbosity
+from .model_setup import get_model_verbose_level
+from .util import retry
 from . import logs
 
+class SQSQueue:
 
-class SQSQueue(object):
+    def __init__(self, name,
+                 config=None, logger=None):
 
-    def __init__(self, name, verbose=10, receive_timeout=300,
-                 retry_time=10, region_name=None):
-        assert boto3 is not None
-        self._client = boto3.client('sqs', region_name=region_name)
+        if logger is not None:
+            self.logger = logger
+        else:
+            self.logger = logs.getLogger('SQSQueue')
+            self.logger.setLevel(get_model_verbose_level())
+
+        self.name = name
+        self.region_name = None
+        self.receive_timeout = None
+        self.retry_time = None
+        self.aws_access_key_id = None
+        self.aws_secret_access_key = None
+        self.aws_session_token = None
+        self.profile_name = None
+        self.is_persistent = False
+
+        if config is not None:
+            self._setup_from_config(config)
+
+        self._session = boto3.session.Session(
+            aws_access_key_id=self.aws_access_key_id,
+            aws_secret_access_key=self.aws_secret_access_key,
+            aws_session_token=self.aws_session_token,
+            region_name=self.region_name,
+            profile_name=self.profile_name
+        )
+        self._client = self._session.client('sqs')
 
         create_q_response = self._client.create_queue(
             QueueName=name)
 
-        self._queue_url = create_q_response['QueueUrl']
-        self.logger = logs.getLogger('SQSQueue')
-        if verbose is not None:
-            self.logger.setLevel(parse_verbosity(verbose))
-        self._name = name
-        self.logger.info('Creating SQS queue with name ' + name)
-        self.logger.info('Queue url = ' + self._queue_url)
+        self.queue_url = create_q_response['QueueUrl']
+        self.logger.info('Creating SQS queue with name %s', name)
+        self.logger.info('Queue url = %s', self.queue_url)
 
-        self._receive_timeout = receive_timeout
-        self._retry_time = retry_time
+
+    def _setup_from_config(self, config):
+        queue_params = config.get('cloud', {})\
+            .get('queue', {})\
+            .get('sqs', {})
+        self.is_persistent =\
+            self._get_bool_flag(queue_params, 'persistent')
+        self.aws_access_key_id =\
+            queue_params.get('aws_access_key_id', None)
+        self.aws_secret_access_key =\
+            queue_params.get('aws_secret_access_key', None)
+        self.aws_session_token =\
+            queue_params.get('aws_session_token', None)
+        self.region_name =\
+            queue_params.get('region_name', None)
+        self.profile_name =\
+            queue_params.get('profile_name', None)
+
+
+    def _get_bool_flag(self, config: Dict, key: str) -> bool:
+        value = config.get(key, False)
+        if isinstance(value, str):
+            value = value.lower() == 'true'
+        return value
 
     def get_name(self):
-        return self._name
+        return self.name
 
     def clean(self, timeout=0):
         while True:
@@ -41,9 +82,9 @@ class SQSQueue(object):
 
     def enqueue(self, msg):
         self.logger.debug("Sending message {} to queue with url {} "
-                          .format(msg, self._queue_url))
+                          .format(msg, self.queue_url))
         self._client.send_message(
-            QueueUrl=self._queue_url,
+            QueueUrl=self.queue_url,
             MessageBody=msg)
 
     def has_next(self):
@@ -55,7 +96,7 @@ class SQSQueue(object):
         no_tries = 3
         for _ in range(no_tries):
             response = self._client.receive_message(
-                QueueUrl=self._queue_url)
+                QueueUrl=self.queue_url)
 
             if 'Messages' not in response.keys():
                 time.sleep(5)
@@ -75,7 +116,7 @@ class SQSQueue(object):
         wait_step = 1
         for waited in range(0, timeout + wait_step, wait_step):
             response = self._client.receive_message(
-                QueueUrl=self._queue_url)
+                QueueUrl=self.queue_url)
             msgs = response.get('Messages', [])
             if any(msgs):
                 break
@@ -108,19 +149,18 @@ class SQSQueue(object):
 
     def acknowledge(self, ack_id):
         retry(lambda: self._client.delete_message(
-            QueueUrl=self._queue_url,
+            QueueUrl=self.queue_url,
             ReceiptHandle=ack_id),
-
             sleep_time=10, logger=self.logger)
 
     def hold(self, ack_id, minutes):
         self._client.change_message_visibility(
-            QueueUrl=self._queue_url,
+            QueueUrl=self.queue_url,
             ReceiptHandle=ack_id,
             VisibilityTimeout=int(minutes * 60))
 
     def delete(self):
-        self._client.delete_queue(QueueUrl=self._queue_url)
+        self._client.delete_queue(QueueUrl=self.queue_url)
 
     def shutdown(self, delete_queue=True):
         self.delete()

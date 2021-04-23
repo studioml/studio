@@ -40,9 +40,22 @@ class S3StorageHandler(StorageHandler):
 
         aws_key: str = self.credentials.get_key()
         aws_secret_key = self.credentials.get_secret_key()
+        region_name = self.credentials.get_region()
+        profile_name = self.credentials.get_profile()
+
+        if profile_name is not None:
+            # it seems that explicitly specified profile name
+            # should not be used with explicitly specified credentials:
+            aws_key = None
+            aws_secret_key = None
+
+        print("CREDENTIALS: {0}   {1}  {2} {3}".format(aws_key, aws_secret_key, profile_name, region_name))
+
+
         session = Session(aws_access_key_id=aws_key,
             aws_secret_access_key=aws_secret_key,
-            region_name=config.get('region'))
+            #region_name=region_name,
+            profile_name=profile_name)
 
         session.events.unregister('before-parameter-build.s3.ListObjects',
                           set_list_objects_encoding_type_url)
@@ -60,7 +73,10 @@ class S3StorageHandler(StorageHandler):
             self.cleanup_bucket = self.cleanup_bucket.lower() == 'true'
         self.bucket_cleaned_up: bool = False
 
+        prev_endpoint = self.endpoint
         self.endpoint = self.client._endpoint.host
+
+        print("========================ENDPOINT: {0} => {1}".format(prev_endpoint, self.endpoint))
 
         self.bucket = config['bucket']
         try:
@@ -82,6 +98,12 @@ class S3StorageHandler(StorageHandler):
             self.logger,
             measure_timestamp_diff,
             compression=compression)
+
+    def _get_region(self, config: Dict):
+        result = config.get('region_name', None)
+        if result is None:
+            result = config.get('region', None)
+        return result
 
     @classmethod
     def get_id(cls, config: Dict) -> str:

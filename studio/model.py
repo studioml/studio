@@ -150,7 +150,7 @@ def get_queue(
 
     if queue_name.startswith('ec2') or \
        queue_name.startswith('sqs'):
-        return SQSQueue(queue_name, verbose=verbose)
+        return SQSQueue(queue_name, config=config, logger=logger)
     elif queue_name.startswith('rmq_'):
         return get_cached_queue(
             name=queue_name,
