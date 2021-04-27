@@ -49,12 +49,9 @@ class S3StorageHandler(StorageHandler):
             aws_key = None
             aws_secret_key = None
 
-        print("CREDENTIALS: {0}   {1}  {2} {3}".format(aws_key, aws_secret_key, profile_name, region_name))
-
-
         session = Session(aws_access_key_id=aws_key,
             aws_secret_access_key=aws_secret_key,
-            #region_name=region_name,
+            region_name=region_name,
             profile_name=profile_name)
 
         session.events.unregister('before-parameter-build.s3.ListObjects',
@@ -73,10 +70,7 @@ class S3StorageHandler(StorageHandler):
             self.cleanup_bucket = self.cleanup_bucket.lower() == 'true'
         self.bucket_cleaned_up: bool = False
 
-        prev_endpoint = self.endpoint
         self.endpoint = self.client._endpoint.host
-
-        print("========================ENDPOINT: {0} => {1}".format(prev_endpoint, self.endpoint))
 
         self.bucket = config['bucket']
         try:
@@ -88,7 +82,14 @@ class S3StorageHandler(StorageHandler):
 
         if self.bucket not in [b['Name'] for b in buckets['Buckets']]:
             try:
-                self.client.create_bucket(Bucket=self.bucket)
+                if region_name is not None:
+                    self.client.create_bucket(
+                        Bucket=self.bucket,
+                        CreateBucketConfiguration={'LocationConstraint': region_name})
+                else:
+                    self.client.create_bucket(
+                        Bucket=self.bucket)
+
             except Exception as exc:
                 msg: str = "FAILED to create bucket {0} for {1}: {2}"\
                     .format(self.bucket, self.endpoint, exc)

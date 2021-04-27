@@ -2,6 +2,7 @@ import boto3
 import time
 from typing import Dict
 
+from .credentials import Credentials, KEY_CREDENTIALS
 from .model_setup import get_model_verbose_level
 from .util import retry
 from . import logs
@@ -30,6 +31,13 @@ class SQSQueue:
         if config is not None:
             self._setup_from_config(config)
 
+        if self.profile_name is not None:
+            # If profile name is specified, for whatever reason
+            # boto3 API will barf if (key, secret key) pair
+            # is also defined.
+            self.aws_access_key_id = None
+            self.aws_secret_access_key = None
+
         self._session = boto3.session.Session(
             aws_access_key_id=self.aws_access_key_id,
             aws_secret_access_key=self.aws_secret_access_key,
@@ -53,16 +61,19 @@ class SQSQueue:
             .get('sqs', {})
         self.is_persistent =\
             self._get_bool_flag(queue_params, 'persistent')
+        cred_params = queue_params.get(KEY_CREDENTIALS, {})
+        credentials = Credentials(cred_params)
+
         self.aws_access_key_id =\
-            queue_params.get('aws_access_key_id', None)
+            credentials.get_key()
         self.aws_secret_access_key =\
-            queue_params.get('aws_secret_access_key', None)
+            credentials.get_secret_key()
         self.aws_session_token =\
-            queue_params.get('aws_session_token', None)
+            credentials.get_session_token()
         self.region_name =\
-            queue_params.get('region_name', None)
+            credentials.get_region()
         self.profile_name =\
-            queue_params.get('profile_name', None)
+            credentials.get_profile()
 
 
     def _get_bool_flag(self, config: Dict, key: str) -> bool:
