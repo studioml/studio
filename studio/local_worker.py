@@ -261,6 +261,15 @@ def main(args=sys.argv):
     parsed_args, script_args = parser.parse_known_args(args)
     verbose = parse_verbosity(parsed_args.verbose)
 
+    worker_config = None
+    if parsed_args.config is not None:
+        print(">>>>>>>>> LOCAL RUNNER CONFIG = {0}".format(parsed_args.config))
+
+        with open(parsed_args.config) as f:
+            worker_config = json.load(f)
+            print(">>>>>>>>> LOCAL RUNNER CONFIG READ: {0}"
+                         .format(json.dumps(worker_config, indent=4)))
+
     queue = LocalQueue(verbose=verbose)
     # queue = glob.glob(fs_tracker.get_queue_directory() + "/*")
     # wait_for_messages(queue, parsed_args.timeout)
