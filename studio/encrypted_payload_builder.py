@@ -223,7 +223,7 @@ class EncryptedPayloadBuilder(PayloadBuilder):
             encrypted_payload["message"]["fingerprint"] =\
                 "{0}".format(self.sender_fingerprint)
 
-        print(json.dumps(encrypted_payload, indent=4))
+        #print(json.dumps(encrypted_payload, indent=4))
 
         return encrypted_payload
 
