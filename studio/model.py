@@ -63,7 +63,7 @@ def get_config(config_file=None):
 
             return config
 
-    raise ValueError('None of the config paths {0} exits!'
+    raise ValueError('None of the config paths {0} exists!'
                      .format(config_paths))
 
 def reset_model_providers():
