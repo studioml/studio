@@ -25,8 +25,7 @@ def get_cached_queue(
         queue=name,
         route=route,
         config=config,
-        logger=logger,
-        verbose=verbose)
+        logger=logger)
 
     if logger is not None:
         logger.info("Created new queue named {0}.".format(name))

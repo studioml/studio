@@ -18,7 +18,7 @@ class RMQueue(object):
     """
 
     def __init__(self, queue, route, amqp_url='',
-                 config=None, logger=None, verbose=None):
+                 config=None, logger=None):
         """Setup the example publisher object, passing in the URL we will use
         to connect to RabbitMQ.
         """

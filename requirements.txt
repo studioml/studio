@@ -26,6 +26,7 @@ sseclient
 terminaltables
 
 PyYAML
+pyhocon
 
 google-api-core
 google-api-python-client
