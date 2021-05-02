@@ -2,6 +2,7 @@
 import os
 import re
 import yaml
+import pyhocon
 import six
 import uuid
 
@@ -45,21 +46,24 @@ def get_config(config_file=None):
             continue
 
         with(open(path)) as f:
-            config = yaml.load(f.read(), Loader=yaml.FullLoader)
+            if path.endswith('.hocon'):
+                config = pyhocon.ConfigFactory.parse_string(f.read())
+            else:
+                config = yaml.load(f.read(), Loader=yaml.FullLoader)
 
-            def replace_with_env(config):
-                for key, value in six.iteritems(config):
-                    if isinstance(value, six.string_types):
-                        config[key] = os.path.expandvars(value)
+                def replace_with_env(config):
+                    for key, value in six.iteritems(config):
+                        if isinstance(value, six.string_types):
+                            config[key] = os.path.expandvars(value)
 
-                    elif isinstance(value, dict):
-                        replace_with_env(value)
+                        elif isinstance(value, dict):
+                            replace_with_env(value)
 
-            replace_with_env(config)
+                replace_with_env(config)
 
             return config
 
-    raise ValueError('None of the config paths {} exits!'
+    raise ValueError('None of the config paths {0} exists!'
                      .format(config_paths))
 
 def reset_model_providers():
@@ -150,7 +154,7 @@ def get_queue(
 
     if queue_name.startswith('ec2') or \
        queue_name.startswith('sqs'):
-        return SQSQueue(queue_name, verbose=verbose)
+        return SQSQueue(queue_name, config=config, logger=logger)
     elif queue_name.startswith('rmq_'):
         return get_cached_queue(
             name=queue_name,

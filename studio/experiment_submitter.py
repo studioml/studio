@@ -55,7 +55,7 @@ def submit_experiments(
 
         payload = payload_builder.construct(experiment, config, python_pkg)
 
-        logger.debug("Submitting experiment: {0}"
+        logger.info("Submitting experiment: {0}"
                      .format(json.dumps(payload, indent=4)))
 
         queue.enqueue(json.dumps(payload))
