@@ -1,3 +1,4 @@
+import copy
 import sys
 import argparse
 import re
@@ -8,6 +9,7 @@ import time
 import six
 import numpy as np
 
+from .credentials import KEY_CREDENTIALS
 from .hyperparameter import HyperparameterParser
 from .util import rand_string, Progbar, rsync_cp, check_for_kb_interrupt
 from .experiment import create_experiment
@@ -266,11 +268,25 @@ def main(args=sys.argv[1:]):
     logger.debug('resources requested: ')
     logger.debug(str(resources_needed))
 
-    artifacts = {}
+    artifacts = dict()
+
+    # Set up default artifacts:
+    workspace_art = {
+        'mutable': False,
+        'local': os.getcwd(),
+        'unpack': True
+    }
+
+    artifacts['workspace'] = workspace_art
+
     artifacts.update(_parse_artifacts(runner_args.capture, mutable=True))
     artifacts.update(_parse_artifacts(runner_args.capture_once, mutable=False))
     with model.get_db_provider(config) as db:
         artifacts.update(_parse_external_artifacts(runner_args.reuse, db))
+
+    logger.debug("Task artifacts: %s", repr(artifacts))
+    storage_creds = config.get('storage', {}).get(KEY_CREDENTIALS, None)
+    _setup_artifacts_creds(artifacts, storage_creds)
 
     if runner_args.branch:
         config['cloud']['branch'] = runner_args.branch
@@ -662,6 +678,10 @@ def _parse_external_artifacts(art_list, db):
         }
     return retval
 
+def _setup_artifacts_creds(artifacts, storage_creds):
+    for tag, art_dict in artifacts.items():
+        if 'local' in art_dict.keys():
+            art_dict[KEY_CREDENTIALS] = copy.deepcopy(storage_creds)
 
 def _parse_hardware(runner_args, config={}):
     resources_needed = {}
