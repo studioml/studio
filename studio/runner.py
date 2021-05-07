@@ -9,7 +9,7 @@ import time
 import six
 import numpy as np
 
-from .credentials import KEY_CREDENTIALS
+from credentials.credentials import KEY_CREDENTIALS
 from .hyperparameter import HyperparameterParser
 from .util import rand_string, Progbar, rsync_cp, check_for_kb_interrupt
 from .experiment import create_experiment
