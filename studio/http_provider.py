@@ -1,14 +1,13 @@
 import requests
 import json
-import six
 import time
 import re
 
 from . import logs
 from .auth import get_auth
-from .credentials import Credentials
-from .model_setup import get_model_verbose_level
-from .http_storage_handler import HTTPStorageHandler
+from credentials.credentials import Credentials
+from storage.storage_setup import get_storage_verbose_level
+from storage.http_storage_handler import HTTPStorageHandler
 from .experiment import experiment_from_dict
 from .util import retry, check_for_kb_interrupt
 
@@ -24,7 +23,7 @@ class HTTPProvider(object):
             compression=None):
         # TODO: implement connection
         self.url = config.get('serverUrl')
-        self.verbose = get_model_verbose_level()
+        self.verbose = get_storage_verbose_level()
         self.logger = logs.getLogger('HTTPProvider')
         self.logger.setLevel(self.verbose)
 
@@ -54,7 +53,7 @@ class HTTPProvider(object):
         headers = self._get_headers()
         compression = compression if compression else self.compression
 
-        for tag, art in six.iteritems(experiment.artifacts):
+        for tag, art in experiment.artifacts.items():
             if not art.is_mutable and art.local_path is not None:
                 art.hash = art.get_hash(art.local_path)
 
@@ -85,7 +84,7 @@ class HTTPProvider(object):
         self.logger.debug(str(experiment.artifacts.keys()))
         self.logger.debug(str(artifacts.keys()))
 
-        for tag, art in six.iteritems(experiment.artifacts):
+        for tag, art in experiment.artifacts.items():
             target_art = artifacts.get(tag)
             if target_art is not None:
                 art.key = target_art.key
@@ -95,7 +94,7 @@ class HTTPProvider(object):
                     art.upload(art.local_path)
 
     def delete_experiment(self, experiment):
-        if isinstance(experiment, six.string_types):
+        if isinstance(experiment, str):
             key = experiment
         else:
             key = experiment.key
@@ -113,7 +112,7 @@ class HTTPProvider(object):
         # retry(post_request, sleep_time=10, logger=self.logger)
 
     def get_experiment(self, experiment, getinfo='True'):
-        if isinstance(experiment, six.string_types):
+        if isinstance(experiment, str):
             key = experiment
         else:
             key = experiment.key
@@ -136,7 +135,7 @@ class HTTPProvider(object):
 
     def start_experiment(self, experiment):
         self.checkpoint_experiment(experiment)
-        if isinstance(experiment, six.string_types):
+        if isinstance(experiment, str):
             key = experiment
         else:
             key = experiment.key
@@ -151,11 +150,11 @@ class HTTPProvider(object):
             self._raise_detailed_error(request)
         retry(post_request, sleep_time=10, logger=self.logger)
 
-        if not isinstance(experiment, six.string_types):
+        if not isinstance(experiment, str):
             experiment.time_started = time.time()
 
     def stop_experiment(self, experiment):
-        if isinstance(experiment, six.string_types):
+        if isinstance(experiment, str):
             key = experiment
         else:
             key = experiment.key
@@ -172,7 +171,7 @@ class HTTPProvider(object):
         retry(post_request, sleep_time=10, logger=self.logger)
 
     def finish_experiment(self, experiment):
-        if isinstance(experiment, six.string_types):
+        if isinstance(experiment, str):
             key = experiment
         else:
             key = experiment.key
@@ -187,7 +186,7 @@ class HTTPProvider(object):
             self._raise_detailed_error(request)
 
         retry(post_request, sleep_time=10, logger=self.logger)
-        if not isinstance(experiment, six.string_types):
+        if not isinstance(experiment, str):
             experiment.time_finished = time.time()
 
     def get_user_experiments(self, user=None, blocking=True):
@@ -232,12 +231,12 @@ class HTTPProvider(object):
 
     def get_artifacts(self, key):
         return {t: a['url'] for t, a in
-                six.iteritems(self.get_experiment(key).artifacts)}
+                self.get_experiment(key).artifacts.items()}
 
     def get_artifact(self, artifact,
                      local_path=None, only_newer='True'):
 
-        if isinstance(artifact, six.string_types):
+        if isinstance(artifact, str):
             experiment_key = re.match(r'.*(?=/)', artifact).group(0)
             artifact_tag = re.search(r'(?<=/)[^/]*\Z', artifact).group(0)
             experiment = self.get_experiment(experiment_key)
@@ -257,7 +256,7 @@ class HTTPProvider(object):
         return users
 
     def checkpoint_experiment(self, experiment):
-        if isinstance(experiment, six.string_types):
+        if isinstance(experiment, str):
             key = experiment
             experiment = self.get_experiment(key)
         else:

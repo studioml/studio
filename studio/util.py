@@ -12,11 +12,10 @@ import subprocess
 import os
 import numpy as np
 import requests
-import six
 import tempfile
 import uuid
-from . import model_setup
-from .storage_type import StorageType
+from storage import storage_setup
+from storage.storage_type import StorageType
 
 DAY = 86400
 HOUR = 3600
@@ -326,7 +325,7 @@ def parse_s3_path(qualified: str):
     return url, bucket, key
 
 def has_aws_credentials():
-    artifact_store = model_setup.get_model_artifact_store()
+    artifact_store = storage_setup.get_storage_artifact_store()
     if artifact_store is None:
         return False
     storage_handler = artifact_store.get_storage_handler()
@@ -414,9 +413,9 @@ def timeit(method):
 
 
 def sixdecode(s):
-    if isinstance(s, six.string_types):
+    if isinstance(s, str):
         return s
-    if isinstance(s, six.binary_type):
+    if isinstance(s, bytes):
         return s.decode('utf8')
     raise TypeError("Unknown type of " + str(s))
 
@@ -445,7 +444,7 @@ def parse_duration(duration_str):
         return
     parts = parts.groupdict()
     time_params = {}
-    for (name, param) in six.iteritems(parts):
+    for (name, param) in parts.items():
         if param:
             time_params[name] = int(param)
     retval = timedelta(**time_params)
@@ -467,7 +466,7 @@ def parse_verbosity(verbosity=None):
         'crit': 50
     }
 
-    if isinstance(verbosity, six.string_types) and \
+    if isinstance(verbosity, str) and \
             verbosity in logger_levels.keys():
         return logger_levels[verbosity]
     else:

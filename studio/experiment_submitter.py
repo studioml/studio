@@ -39,7 +39,7 @@ def submit_experiments(
     # that we rebuild our database and storage provider objects
     # that's important in the case that previous experiment batch
     # cleaned up after itself.
-    model.reset_model_providers()
+    model.reset_storage_providers()
 
     for experiment in experiments:
         # Update Python environment info for our experiments:

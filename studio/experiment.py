@@ -5,7 +5,7 @@ import sys
 import time
 
 from . import fs_tracker
-from .artifact import Artifact
+from artifacts.artifact import Artifact
 from .util import shquote, check_for_kb_interrupt
 from .dependencies_policy import DependencyPolicy
 from .studio_dependencies_policy import StudioDependencyPolicy

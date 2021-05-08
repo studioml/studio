@@ -3,7 +3,6 @@ import os
 import re
 import yaml
 import pyhocon
-import six
 import uuid
 
 from .firebase_provider import FirebaseProvider
@@ -13,17 +12,17 @@ from .s3_provider import S3Provider
 from .local_queue import LocalQueue
 from .pubsub_queue import PubsubQueue
 from .sqs_queue import SQSQueue
-from .storage_handler_factory import StorageHandlerFactory
-from .storage_type import StorageType
-from .storage_handler import StorageHandler
+from storage.storage_handler_factory import StorageHandlerFactory
+from storage.storage_type import StorageType
+from storage.storage_handler import StorageHandler
 from .gcloud_worker import GCloudWorkerManager
 from .ec2cloud_worker import EC2WorkerManager
 from .qclient_cache import get_cached_queue, shutdown_cached_queue
 from .util import parse_verbosity
 from .auth import get_auth
 
-from .model_setup import setup_model, get_model_db_provider,\
-    reset_model, set_model_verbose_level
+from storage.storage_setup import setup_storage, get_storage_db_provider,\
+    reset_storage, set_storage_verbose_level
 from . import logs
 
 def get_config(config_file=None):
@@ -52,8 +51,8 @@ def get_config(config_file=None):
                 config = yaml.load(f.read(), Loader=yaml.FullLoader)
 
                 def replace_with_env(config):
-                    for key, value in six.iteritems(config):
-                        if isinstance(value, six.string_types):
+                    for key, value in config.items():
+                        if isinstance(value, str):
                             config[key] = os.path.expandvars(value)
 
                         elif isinstance(value, dict):
@@ -66,8 +65,8 @@ def get_config(config_file=None):
     raise ValueError('None of the config paths {0} exists!'
                      .format(config_paths))
 
-def reset_model_providers():
-    reset_model()
+def reset_storage_providers():
+    reset_storage()
 
 def get_artifact_store(config) -> StorageHandler:
     storage_type: str = config['type'].lower()
@@ -84,7 +83,7 @@ def get_artifact_store(config) -> StorageHandler:
 
 def get_db_provider(config=None, blocking_auth=True):
 
-    db_provider = get_model_db_provider()
+    db_provider = get_storage_db_provider()
     if db_provider is not None:
         return db_provider
 
@@ -93,7 +92,7 @@ def get_db_provider(config=None, blocking_auth=True):
     verbose = parse_verbosity(config.get('verbose'))
 
     # Save this verbosity level as global for the whole experiment job:
-    set_model_verbose_level(verbose)
+    set_storage_verbose_level(verbose)
 
     logger = logs.getLogger("get_db_provider")
     logger.setLevel(verbose)
@@ -134,7 +133,7 @@ def get_db_provider(config=None, blocking_auth=True):
     else:
         raise ValueError('Unknown type of the database ' + db_config['type'])
 
-    setup_model(db_provider, artifact_store)
+    setup_storage(db_provider, artifact_store)
     return db_provider
 
 def get_queue(

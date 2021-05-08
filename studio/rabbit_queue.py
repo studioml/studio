@@ -4,7 +4,7 @@ import pika
 import time
 import threading
 
-from .model_setup import get_model_verbose_level
+from storage.storage_setup import get_storage_verbose_level
 
 from . import logs
 
@@ -49,7 +49,7 @@ class RMQueue(object):
             self._logger = logger
         else:
             self._logger = logs.getLogger('RabbitMQ')
-            self._logger.setLevel(get_model_verbose_level())
+            self._logger.setLevel(get_storage_verbose_level())
 
         if config is not None:
             # extract from the config data structure any settings related to

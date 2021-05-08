@@ -1,14 +1,13 @@
 import time
 import os
-import six
 from concurrent.futures import ThreadPoolExecutor, wait
 
 from . import util, git_util, logs
-from .storage_handler import StorageHandler
+from storage.storage_handler import StorageHandler
 from .auth import get_auth
-from .artifact import Artifact
+from artifacts.artifact import Artifact
 from .experiment import Experiment, experiment_from_dict
-from .model_setup import get_model_verbose_level
+from storage.storage_setup import get_storage_verbose_level
 from .util import retry, report_fatal,\
     compression_to_extension, check_for_kb_interrupt
 
@@ -22,14 +21,14 @@ class KeyValueProvider(object):
             handler: StorageHandler,
             blocking_auth=True,
             compression=None):
-        guest = db_config.get('guest')
+        guest = db_config.get('guest', None)
 
         self.logger = logs.getLogger(self.__class__.__name__)
-        self.logger.setLevel(get_model_verbose_level())
+        self.logger.setLevel(get_storage_verbose_level())
 
         self.compression = compression
         if self.compression is None:
-            self.compression = db_config.get('compression')
+            self.compression = db_config.get('compression', None)
 
         self.auth = None
         if not guest and 'serviceAccount' not in db_config.keys():
@@ -71,7 +70,7 @@ class KeyValueProvider(object):
         return "projects/"
 
     def _experiment_key(self, experiment):
-        if not isinstance(experiment, six.string_types):
+        if not isinstance(experiment, str):
             key = experiment.key
         else:
             key = experiment
@@ -175,7 +174,7 @@ class KeyValueProvider(object):
     def finish_experiment(self, experiment):
         time_finished = time.time()
         key = self._experiment_key(experiment)
-        if not isinstance(experiment, six.string_types):
+        if not isinstance(experiment, str):
             experiment.status = 'finished'
             experiment.time_finished = time_finished
 
@@ -189,7 +188,7 @@ class KeyValueProvider(object):
                   key, experiment_dict)
 
     def delete_experiment(self, experiment):
-        if isinstance(experiment, six.string_types):
+        if isinstance(experiment, str):
             experiment_key = experiment
             try:
                 experiment = self.get_experiment(experiment)
@@ -365,7 +364,7 @@ class KeyValueProvider(object):
         return experiment_keys.keys()
 
     def get_artifacts(self, key):
-        if isinstance(key, six.string_types):
+        if isinstance(key, str):
             experiment = self.get_experiment(key, getinfo=False)
         else:
             experiment = key

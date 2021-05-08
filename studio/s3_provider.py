@@ -1,7 +1,7 @@
 import json
 from .keyvalue_provider import KeyValueProvider
-from .storage_handler_factory import StorageHandlerFactory
-from .storage_type import StorageType
+from storage.storage_handler_factory import StorageHandlerFactory
+from storage.storage_type import StorageType
 
 
 class S3Provider(KeyValueProvider):

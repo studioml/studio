@@ -6,9 +6,9 @@ import json
 from . import pyrebase
 from . import logs
 from .auth import get_auth
-from .model_setup import get_model_verbose_level
-from .storage_type import StorageType
-from .storage_handler import StorageHandler
+from storage.storage_setup import get_storage_verbose_level
+from storage.storage_type import StorageType
+from storage.storage_handler import StorageHandler
 
 class FirebaseStorageHandler(StorageHandler):
 
@@ -17,7 +17,7 @@ class FirebaseStorageHandler(StorageHandler):
                  blocking_auth=True,
                  compression=None):
 
-        verbose = get_model_verbose_level()
+        verbose = get_storage_verbose_level()
         self.logger = logs.getLogger(self.__class__.__name__)
         self.logger.setLevel(verbose)
 

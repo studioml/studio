@@ -2,8 +2,8 @@ import boto3
 import time
 from typing import Dict
 
-from .credentials import Credentials, KEY_CREDENTIALS
-from .model_setup import get_model_verbose_level
+from credentials.credentials import Credentials, KEY_CREDENTIALS
+from storage.storage_setup import get_storage_verbose_level
 from .util import retry
 from . import logs
 
@@ -16,7 +16,7 @@ class SQSQueue:
             self.logger = logger
         else:
             self.logger = logs.getLogger('SQSQueue')
-            self.logger.setLevel(get_model_verbose_level())
+            self.logger.setLevel(get_storage_verbose_level())
 
         self.name = name
         self.region_name = None

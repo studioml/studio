@@ -14,7 +14,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from . import fs_tracker, model, logs
 from .local_queue import LocalQueue
 from .gpu_util import get_available_gpus, get_gpu_mapping, get_gpus_summary
-from .artifact import Artifact
+from artifacts.artifact import Artifact
 from .experiment import Experiment
 from .util import sixdecode, str2duration, retry,\
     parse_verbosity, check_for_kb_interrupt
