@@ -268,16 +268,38 @@ def main(args=sys.argv[1:]):
     logger.debug('resources requested: ')
     logger.debug(str(resources_needed))
 
-    artifacts = dict()
-
     # Set up default artifacts:
-    workspace_art = {
-        'mutable': False,
-        'local': os.getcwd(),
-        'unpack': True
+    artifacts = {
+        'workspace': {
+            'mutable': False,
+            'local': os.getcwd(),
+            'unpack': True
+        },
+        'modeldir': {
+            'mutable': True,
+            'unpack': True
+        },
+        'retval': {
+            'mutable': True,
+            'unpack': True
+        },
+        'output': {
+            'mutable': True,
+            'unpack': True
+        },
+        'tb': {
+            'mutable': True,
+            'unpack': True
+        },
+        '_metrics': {
+            'mutable': True,
+            'unpack': True
+        },
+        '_metadata': {
+            'mutable': True,
+            'unpack': True
+        }
     }
-
-    artifacts['workspace'] = workspace_art
 
     artifacts.update(_parse_artifacts(runner_args.capture, mutable=True))
     artifacts.update(_parse_artifacts(runner_args.capture_once, mutable=False))
