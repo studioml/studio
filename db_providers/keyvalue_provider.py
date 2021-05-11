@@ -2,9 +2,9 @@ import time
 import os
 from concurrent.futures import ThreadPoolExecutor, wait
 
-from . import util, git_util, logs
+from util import util, logs
+from studio import git_util
 from storage.storage_handler import StorageHandler
-from .auth import get_auth
 from artifacts.artifact import Artifact
 from .experiment import Experiment, experiment_from_dict
 from storage.storage_setup import get_storage_verbose_level
@@ -31,16 +31,8 @@ class KeyValueProvider(object):
             self.compression = db_config.get('compression', None)
 
         self.auth = None
-        if not guest and 'serviceAccount' not in db_config.keys():
-            self.auth = get_auth(
-                db_config.get('authentication', None),
-                blocking_auth
-            )
 
         self.storage_handler = handler
-
-        if self.auth and not self.auth.is_expired():
-            self.register_user(None, self.auth.get_user_email())
 
         self.max_keys = db_config.get('max_keys', 100)
 

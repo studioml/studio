@@ -4,11 +4,11 @@ import uuid
 import sys
 import time
 
-from . import fs_tracker
+from artifacts import artifacts_tracker
 from artifacts.artifact import Artifact
-from .util import shquote, check_for_kb_interrupt
-from .dependencies_policy import DependencyPolicy
-from .studio_dependencies_policy import StudioDependencyPolicy
+from util.util import shquote, check_for_kb_interrupt
+from studio.dependencies_policy import DependencyPolicy
+from studio.studio_dependencies_policy import StudioDependencyPolicy
 
 class Experiment(object):
     """Experiment information."""
@@ -54,7 +54,7 @@ class Experiment(object):
         self.pythonver = pythonver if pythonver else str(sys.version_info[0]) + '.' + str(sys.version_info[1])
 
         try:
-            model_dir = fs_tracker.get_model_directory(key)
+            model_dir = artifacts_tracker.get_artifact_cache('modeldir', key)
         except BaseException:
             check_for_kb_interrupt()
             model_dir = None
@@ -70,27 +70,27 @@ class Experiment(object):
                 'unpack': True
             },
             'retval': {
-                'local': fs_tracker.get_artifact_cache('retval', key),
+                'local': artifacts_tracker.get_artifact_cache('retval', key),
                 'mutable': True,
                 'unpack': True
             },
             'output': {
-                'local': fs_tracker.get_artifact_cache('output', key),
+                'local': artifacts_tracker.get_artifact_cache('output', key),
                 'mutable': True,
                 'unpack': True
             },
             'tb': {
-                'local': fs_tracker.get_tensorboard_dir(key),
+                'local': artifacts_tracker.get_artifact_cache('tb', key),
                 'mutable': True,
                 'unpack': True
             },
             '_metrics': {
-                'local': fs_tracker.get_artifact_cache('_metrics', key),
+                'local': artifacts_tracker.get_artifact_cache('_metrics', key),
                 'mutable': True,
                 'unpack': True
             },
             '_metadata': {
-                'local': fs_tracker.get_artifact_cache('_metadata', key),
+                'local': artifacts_tracker.get_artifact_cache('_metadata', key),
                 'mutable': True,
                 'unpack': True
             }
