@@ -22,14 +22,14 @@ class KeyValueProvider(object):
             handler: StorageHandler,
             blocking_auth=True,
             compression=None):
-        guest = db_config.get('guest')
+        guest = db_config.get('guest', None)
 
         self.logger = logs.getLogger(self.__class__.__name__)
         self.logger.setLevel(get_model_verbose_level())
 
         self.compression = compression
         if self.compression is None:
-            self.compression = db_config.get('compression')
+            self.compression = db_config.get('compression', None)
 
         self.auth = None
         if not guest and 'serviceAccount' not in db_config.keys():

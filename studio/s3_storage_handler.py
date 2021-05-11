@@ -63,7 +63,7 @@ class S3StorageHandler(StorageHandler):
             config=Config(signature_version='s3v4'))
 
         if compression is None:
-            compression = config.get('compression')
+            compression = config.get('compression', None)
 
         self.cleanup_bucket = config.get('cleanup_bucket', False)
         if isinstance(self.cleanup_bucket, str):
