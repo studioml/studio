@@ -8,7 +8,7 @@ try:
 except ImportError:
     freeze = None
 
-from .dependencies_policy import DependencyPolicy
+from dependencies_policies.dependencies_policy import DependencyPolicy
 
 class StudioDependencyPolicy(DependencyPolicy):
     """

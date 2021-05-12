@@ -2,10 +2,10 @@ import json
 import time
 import traceback
 
-from .payload_builder import PayloadBuilder
-from .unencrypted_payload_builder import UnencryptedPayloadBuilder
-from .encrypted_payload_builder import EncryptedPayloadBuilder
-from . import model
+from payload_builders.payload_builder import PayloadBuilder
+from studio.unencrypted_payload_builder import UnencryptedPayloadBuilder
+from studio.encrypted_payload_builder import EncryptedPayloadBuilder
+from studio import model
 
 def submit_experiments(
         experiments,

@@ -1,4 +1,4 @@
-class DependencyPolicy(object):
+class DependencyPolicy:
     """
     Abstract class representing some policy
     for generating Python packages dependencies

@@ -7,7 +7,7 @@ import time
 from artifacts import artifacts_tracker
 from artifacts.artifact import Artifact
 from util.util import shquote, check_for_kb_interrupt
-from studio.dependencies_policy import DependencyPolicy
+from dependencies_policies.dependencies_policy import DependencyPolicy
 from studio.studio_dependencies_policy import StudioDependencyPolicy
 
 class Experiment(object):
