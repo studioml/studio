@@ -1,4 +1,5 @@
 import os
+import requests
 import shutil
 import time
 import tarfile
@@ -146,3 +147,55 @@ def untar_artifact(local_path: str, tar_filename: str, logger):
     finally:
         if tf is not None:
             tf.close()
+
+def download_file(url, local_path, logger=None):
+    if url.startswith('s3://'):
+        raise NotImplementedError('util.download_file() NOT implemented for s3 endpoints.')
+
+    response = requests.get(
+        url,
+        stream=True)
+    if logger:
+        logger.info(("Trying to download file at url {0} to " +
+                     "local path {1}").format(url, local_path))
+
+    if response.status_code == 200:
+        try:
+            with open(local_path, 'wb') as f:
+                for chunk in response:
+                    f.write(chunk)
+            return True
+        except Exception as exc:
+            msg: str = 'Download/write {0} from {1} FAILED: {2}.' \
+                .format(local_path, url, exc)
+            if logger:
+                logger.error(msg)
+            return False
+
+    elif logger:
+        msg: str = 'Download {0} from {1}: Response error with code {2}.' \
+            .format(local_path, url, response.status_code)
+        logger.error(msg)
+        return False
+
+def upload_file(url, local_path, logger=None):
+    if logger:
+        logger.info(("Trying to upload file {0} to " +
+                     "url {1}").format(local_path, url))
+    tic = time.time()
+    try:
+        with open(local_path, 'rb') as f:
+            resp = requests.put(url, data=f)
+    except Exception as exc:
+        msg: str = 'Upload {0} to {1} FAILED: {2}. Aborting.' \
+            .format(local_path, url, exc)
+        report_fatal(msg, logger)
+
+    if resp.status_code != 200 and logger:
+        msg: str = 'Upload {0} to {1}: Response error {2}:{3}. Aborting.' \
+            .format(local_path, url, resp.status_code, resp.reason)
+        report_fatal(msg, logger)
+
+    if logger:
+        logger.debug('File {0} upload to {1} done in {2} s'
+                     .format(local_path, url, time.time() - tic))

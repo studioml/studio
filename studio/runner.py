@@ -10,15 +10,15 @@ import six
 import numpy as np
 
 from credentials.credentials import KEY_CREDENTIALS
-from .hyperparameter import HyperparameterParser
-from .util import rand_string, Progbar, rsync_cp, check_for_kb_interrupt
+from studio.hyperparameter import HyperparameterParser
+from studio.util import Progbar, rsync_cp
 from experiments.experiment import create_experiment
-from .experiment_submitter import submit_experiments
-from . import model
-from . import git_util
-from . import local_worker
-from . import fs_tracker
-from util import logs
+from studio.experiment_submitter import submit_experiments
+from studio import model
+from studio import git_util
+from studio import local_worker
+from studio import fs_tracker
+from util import logs, util
 
 def main(args=sys.argv[1:]):
     logger = logs.getLogger('studio-runner')
@@ -431,13 +431,13 @@ def main(args=sys.argv[1:]):
                 try:
                     optimizer.tell(hyperparam_pop, fitnesses, behaviors)
                 except BaseException:
-                    check_for_kb_interrupt()
+                    util.check_for_kb_interrupt()
                     optimizer.tell(hyperparam_pop, fitnesses)
 
                 try:
                     optimizer.disp()
                 except BaseException:
-                    check_for_kb_interrupt()
+                    util.check_for_kb_interrupt()
                     logger.warn('Optimizer has no disp() method')
     else:
         if rerun:
@@ -608,7 +608,7 @@ def get_experiment_fitnesses(experiments, optimizer, config, logger):
                                 raise
 
                         except BaseException:
-                            check_for_kb_interrupt()
+                            util.check_for_kb_interrupt()
                             if j not in bad_line_dicts[i]:
                                 logger.warn(
                                     'Experiment %s: error parsing or invalid'
@@ -625,7 +625,7 @@ def get_experiment_fitnesses(experiments, optimizer, config, logger):
                             fitness = float(line.rstrip().split(':')[1])
                             # assert fitness >= 0.0
                         except BaseException:
-                            check_for_kb_interrupt()
+                            util.check_for_kb_interrupt()
                             if j not in bad_line_dicts[i]:
                                 logger.warn(
                                     'Experiment %s: error parsing or invalid'
@@ -759,7 +759,7 @@ def _add_hyperparam_experiments(
         # experiment_names = {}
         for hyperparam_tuple in hyperparam_tuples:
             experiment_name = experiment_name_base
-            experiment_name += "__opt__%s__%s" % (rand_string(32),
+            experiment_name += "__opt__%s__%s" % (util.rand_string(32),
                                                   int(time.time()))
             experiment_name = experiment_name.replace('.', '_')
 
@@ -779,7 +779,7 @@ def _add_hyperparam_experiments(
 
             for param_name, param_value in six.iteritems(hyperparam_tuple):
                 if isinstance(param_value, np.ndarray):
-                    array_filepath = '/tmp/%s.npy' % rand_string(32)
+                    array_filepath = '/tmp/%s.npy' % util.rand_string(32)
                     np.save(array_filepath, param_value)
                     assert param_name not in current_artifacts
                     current_artifacts[param_name] = {'local': array_filepath,

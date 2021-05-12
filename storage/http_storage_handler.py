@@ -1,11 +1,12 @@
 import os
 from urllib.parse import urlparse
 from typing import Dict
-from util import logs, util
+from util import logs
 from credentials.credentials import Credentials
 from storage.storage_setup import get_storage_verbose_level
 from storage.storage_type import StorageType
 from storage.storage_handler import StorageHandler
+from storage import storage_util
 
 class HTTPStorageHandler(StorageHandler):
     def __init__(self, remote_path, credentials_dict,
@@ -30,16 +31,16 @@ class HTTPStorageHandler(StorageHandler):
             compression=compression)
 
     def upload_file(self, key, local_path):
-        util.upload_file(self.url, local_path, self.logger)
+        storage_util.upload_file(self.url, local_path, self.logger)
 
     def download_file(self, key, local_path):
-        return util.download_file(self.url, local_path, self.logger)
+        return storage_util.download_file(self.url, local_path, self.logger)
 
     def download_remote_path(self, remote_path, local_path):
         head, _ = os.path.split(local_path)
         if head is not None:
             os.makedirs(head, exist_ok=True)
-        return util.download_file(remote_path, local_path, self.logger)
+        return storage_util.download_file(remote_path, local_path, self.logger)
 
     @classmethod
     def get_id(cls, config: Dict) -> str:

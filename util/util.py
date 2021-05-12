@@ -4,18 +4,12 @@ from datetime import timedelta
 import re
 import random
 import string
-import struct
 import time
 import sys
 import shutil
-import subprocess
 import os
-import requests
-import six
 import tempfile
 import uuid
-
-from storage.storage_type import StorageType
 
 DAY = 86400
 HOUR = 3600
@@ -58,123 +52,6 @@ def filehash(filename, block_size=65536, hashobj=hashlib.sha256()):
 def rand_string(length):
     return "".join([random.choice(string.ascii_letters + string.digits)
                     for n in range(length)])
-
-
-def event_reader(fileobj):
-    from tensorflow.core.util import event_pb2
-
-    if isinstance(fileobj, str):
-        fileobj = open(fileobj, 'rb')
-
-    header_len = 12
-    footer_len = 4
-    size_len = 8
-
-    while True:
-        try:
-            data_len = struct.unpack('Q', fileobj.read(size_len))[0]
-            fileobj.read(header_len - size_len)
-
-            data = fileobj.read(data_len)
-
-            event = None
-            event = event_pb2.Event()
-            event.ParseFromString(data)
-
-            fileobj.read(footer_len)
-            yield event
-        except BaseException:
-            check_for_kb_interrupt()
-            break
-
-    fileobj.close()
-
-
-def rsync_cp(source, dest, ignore_arg='', logger=None):
-    try:
-        if os.path.exists(dest):
-            shutil.rmtree(dest) if os.path.isdir(dest) else os.remove(dest)
-        os.makedirs(dest)
-    except OSError:
-        pass
-
-    if ignore_arg != '':
-        source += "/"
-        tool = 'rsync'
-        args = [tool, ignore_arg, '-aHAXE', source, dest]
-    else:
-        try:
-            os.rmdir(dest)
-        except OSError:
-            pass
-
-        tool = 'cp'
-        args = [
-            tool,
-            '-pR',
-            source,
-            dest
-        ]
-
-    pcp = subprocess.Popen(args, stdout=subprocess.PIPE,
-                           stderr=subprocess.STDOUT)
-    cpout, _ = pcp.communicate()
-    if pcp.returncode != 0 and logger is not None:
-        logger.info('%s returned non-zero exit code. Output:' % tool)
-        logger.info(cpout)
-
-
-def download_file(url, local_path, logger=None):
-    if url.startswith('s3://'):
-        raise NotImplementedError('util.download_file() NOT implemented for s3 endpoints.')
-
-    response = requests.get(
-        url,
-        stream=True)
-    if logger:
-        logger.info(("Trying to download file at url {0} to " +
-                     "local path {1}").format(url, local_path))
-
-    if response.status_code == 200:
-        try:
-            with open(local_path, 'wb') as f:
-                for chunk in response:
-                    f.write(chunk)
-            return True
-        except Exception as exc:
-            msg: str = 'Download/write {0} from {1} FAILED: {2}.' \
-                .format(local_path, url, exc)
-            if logger:
-                logger.error(msg)
-            return False
-
-    elif logger:
-        msg: str = 'Download {0} from {1}: Response error with code {2}.' \
-            .format(local_path, url, response.status_code)
-        logger.error(msg)
-        return False
-
-def upload_file(url, local_path, logger=None):
-    if logger:
-        logger.info(("Trying to upload file {0} to " +
-                     "url {1}").format(local_path, url))
-    tic = time.time()
-    try:
-        with open(local_path, 'rb') as f:
-            resp = requests.put(url, data=f)
-    except Exception as exc:
-        msg: str = 'Upload {0} to {1} FAILED: {2}. Aborting.' \
-            .format(local_path, url, exc)
-        report_fatal(msg, logger)
-
-    if resp.status_code != 200 and logger:
-        msg: str = 'Upload {0} to {1}: Response error {2}:{3}. Aborting.' \
-            .format(local_path, url, resp.status_code, resp.reason)
-        report_fatal(msg, logger)
-
-    if logger:
-        logger.debug('File {0} upload to {1} done in {2} s'
-                     .format(local_path, url, time.time() - tic))
 
 
 def _looks_like_url(name):
@@ -283,9 +160,9 @@ def timeit(method):
 
 
 def sixdecode(s):
-    if isinstance(s, six.string_types):
+    if isinstance(s, str):
         return s
-    if isinstance(s, six.binary_type):
+    if isinstance(s, bytes):
         return s.decode('utf8')
     raise TypeError("Unknown type of " + str(s))
 
@@ -314,7 +191,7 @@ def parse_duration(duration_str):
         return
     parts = parts.groupdict()
     time_params = {}
-    for (name, param) in six.iteritems(parts):
+    for (name, param) in parts.items():
         if param:
             time_params[name] = int(param)
     retval = timedelta(**time_params)
@@ -336,7 +213,7 @@ def parse_verbosity(verbosity=None):
         'crit': 50
     }
 
-    if isinstance(verbosity, six.string_types) and \
+    if isinstance(verbosity, str) and \
             verbosity in logger_levels.keys():
         return logger_levels[verbosity]
     else:

@@ -29,7 +29,7 @@ try:
 except BaseException:
     RSA = None
 import datetime
-from .util import retry
+from util.util import retry
 
 NUM_RETRIES = 3
 POOL_SIZE = 100

@@ -1,13 +1,13 @@
 """Data providers."""
 import uuid
 
-from .firebase_provider import FirebaseProvider
-from .http_provider import HTTPProvider
-from .pubsub_queue import PubsubQueue
-from .gcloud_worker import GCloudWorkerManager
-from .ec2cloud_worker import EC2WorkerManager
-from .util import parse_verbosity
-from .auth import get_auth
+from studio.firebase_provider import FirebaseProvider
+from studio.http_provider import HTTPProvider
+from studio.pubsub_queue import PubsubQueue
+from studio.gcloud_worker import GCloudWorkerManager
+from studio.ec2cloud_worker import EC2WorkerManager
+from util.util import parse_verbosity
+from studio.auth import get_auth
 
 from db_providers import db_provider_setup
 from queues import queues_setup
