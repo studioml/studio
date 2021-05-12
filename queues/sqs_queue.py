@@ -4,8 +4,7 @@ from typing import Dict
 
 from credentials.credentials import Credentials, KEY_CREDENTIALS
 from storage.storage_setup import get_storage_verbose_level
-from .util import retry
-from . import logs
+from util import logs, util
 
 class SQSQueue:
 
@@ -159,7 +158,7 @@ class SQSQueue:
             return (retval['Body'], retval['ReceiptHandle'])
 
     def acknowledge(self, ack_id):
-        retry(lambda: self._client.delete_message(
+        util.retry(lambda: self._client.delete_message(
             QueueUrl=self.queue_url,
             ReceiptHandle=ack_id),
             sleep_time=10, logger=self.logger)

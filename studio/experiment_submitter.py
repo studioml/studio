@@ -2,10 +2,12 @@ import json
 import time
 import traceback
 
+from db_providers import db_provider_setup
 from payload_builders.payload_builder import PayloadBuilder
 from studio.unencrypted_payload_builder import UnencryptedPayloadBuilder
 from studio.encrypted_payload_builder import EncryptedPayloadBuilder
-from studio import model
+from storage import storage_setup
+from util import util
 
 def submit_experiments(
         experiments,
@@ -35,19 +37,19 @@ def submit_experiments(
 
     start_time = time.time()
 
-    # Reset our model setup, which will guarantee
+    # Reset our storage setup, which will guarantee
     # that we rebuild our database and storage provider objects
     # that's important in the case that previous experiment batch
     # cleaned up after itself.
-    model.reset_storage_providers()
+    storage_setup.reset_storage()
 
     for experiment in experiments:
         # Update Python environment info for our experiments:
-        experiment.pythonenv = model.add_packages(experiment.pythonenv, python_pkg)
+        experiment.pythonenv = util.add_packages(experiment.pythonenv, python_pkg)
 
         # Add experiment to database:
         try:
-            with model.get_db_provider(config) as db:
+            with db_provider_setup.get_db_provider(config) as db:
                 db.add_experiment(experiment)
         except BaseException:
             traceback.print_exc()

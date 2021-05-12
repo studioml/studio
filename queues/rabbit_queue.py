@@ -6,7 +6,7 @@ import threading
 
 from storage.storage_setup import get_storage_verbose_level
 
-from . import logs
+from util import logs
 
 class RMQueue(object):
     """This publisher will handle failures and closures and will

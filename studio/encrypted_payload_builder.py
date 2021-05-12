@@ -9,7 +9,7 @@ import json
 from sshpubkeys import SSHKey
 
 from .ed25519_key_util import Ed25519KeyUtil
-from .payload_builder import PayloadBuilder
+from payload_builders.payload_builder import PayloadBuilder
 from studio import logs
 from .unencrypted_payload_builder import UnencryptedPayloadBuilder
 from .util import check_for_kb_interrupt

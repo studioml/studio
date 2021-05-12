@@ -1,4 +1,3 @@
-from storage.storage_handler_factory import StorageHandlerFactory
 from storage.storage_handler import StorageHandler
 from storage.storage_type import StorageType
 from util.logs import INFO
@@ -31,19 +30,6 @@ def get_storage_artifact_store():
 def reset_storage():
     global _storage_setup
     _storage_setup = None
-
-def get_artifact_store(config) -> StorageHandler:
-    storage_type: str = config['type'].lower()
-
-    factory: StorageHandlerFactory = StorageHandlerFactory.get_factory()
-    if storage_type == 's3':
-        handler = factory.get_handler(StorageType.storageS3, config)
-        return handler
-    elif storage_type == 'local':
-        handler = factory.get_handler(StorageType.storageLocal, config)
-        return handler
-    else:
-        raise ValueError('Unknown storage type: ' + storage_type)
 
 def get_storage_verbose_level():
     global _storage_verbose_level

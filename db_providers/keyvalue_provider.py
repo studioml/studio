@@ -6,9 +6,9 @@ from util import util, logs
 from studio import git_util
 from storage.storage_handler import StorageHandler
 from artifacts.artifact import Artifact
-from .experiment import Experiment, experiment_from_dict
+from experiments.experiment import Experiment, experiment_from_dict
 from storage.storage_setup import get_storage_verbose_level
-from .util import retry, report_fatal,\
+from util.util import retry, report_fatal,\
     compression_to_extension, check_for_kb_interrupt
 
 

@@ -18,6 +18,11 @@ from util import logs
 def reset_storage_providers():
     reset_storage()
 
+
+def get_config(config_file=None):
+    return db_provider_setup.get_config(config_file=config_file)
+
+
 def get_db_provider(config=None, blocking_auth=True):
 
     db_provider = get_storage_db_provider()
@@ -37,7 +42,7 @@ def get_db_provider(config=None, blocking_auth=True):
     logger.debug(config)
 
     if 'storage' in config.keys():
-        artifact_store = get_artifact_store(config['storage'])
+        artifact_store = db_provider_setup.get_artifact_store(config['storage'])
     else:
         artifact_store = None
 

@@ -5,8 +5,11 @@ import pyhocon
 
 from db_providers.local_db_provider import LocalDbProvider
 from db_providers.s3_provider import S3Provider
+from storage.storage_handler import StorageHandler
+from storage.storage_handler_factory import StorageHandlerFactory
 from storage.storage_setup import setup_storage, get_storage_db_provider,\
-    set_storage_verbose_level, get_artifact_store
+    set_storage_verbose_level
+from storage.storage_type import StorageType
 from util import logs
 from util.util import parse_verbosity
 
@@ -49,6 +52,19 @@ def get_config(config_file=None):
 
     raise ValueError('None of the config paths {0} exists!'
                      .format(config_paths))
+
+def get_artifact_store(config) -> StorageHandler:
+    storage_type: str = config['type'].lower()
+
+    factory: StorageHandlerFactory = StorageHandlerFactory.get_factory()
+    if storage_type == 's3':
+        handler = factory.get_handler(StorageType.storageS3, config)
+        return handler
+    elif storage_type == 'local':
+        handler = factory.get_handler(StorageType.storageLocal, config)
+        return handler
+    else:
+        raise ValueError('Unknown storage type: ' + storage_type)
 
 def get_db_provider(config=None, blocking_auth=True):
 

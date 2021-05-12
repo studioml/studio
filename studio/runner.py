@@ -12,13 +12,13 @@ import numpy as np
 from credentials.credentials import KEY_CREDENTIALS
 from .hyperparameter import HyperparameterParser
 from .util import rand_string, Progbar, rsync_cp, check_for_kb_interrupt
-from .experiment import create_experiment
+from experiments.experiment import create_experiment
 from .experiment_submitter import submit_experiments
 from . import model
 from . import git_util
 from . import local_worker
 from . import fs_tracker
-from . import logs
+from util import logs
 
 def main(args=sys.argv[1:]):
     logger = logs.getLogger('studio-runner')

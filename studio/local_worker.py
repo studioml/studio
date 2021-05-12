@@ -11,12 +11,12 @@ import pdb
 
 from apscheduler.schedulers.background import BackgroundScheduler
 
-from . import fs_tracker, model, logs
-from .local_queue import LocalQueue
-from .gpu_util import get_available_gpus, get_gpu_mapping, get_gpus_summary
+from studio import fs_tracker, model, logs
+from queues.local_queue import LocalQueue
+from studio.gpu_util import get_available_gpus, get_gpu_mapping, get_gpus_summary
 from artifacts.artifact import Artifact
-from .experiment import Experiment
-from .util import sixdecode, str2duration, retry,\
+from experiments.experiment import Experiment
+from util.util import sixdecode, str2duration, retry,\
     parse_verbosity, check_for_kb_interrupt
 
 logs.getLogger('apscheduler.scheduler').setLevel(logs.ERROR)

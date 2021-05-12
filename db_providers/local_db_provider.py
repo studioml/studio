@@ -1,10 +1,10 @@
 import os
 import json
 
-from .keyvalue_provider import KeyValueProvider
+from db_providers.keyvalue_provider import KeyValueProvider
 from storage.storage_handler_factory import StorageHandlerFactory
 from storage.storage_type import StorageType
-from . import util
+from util import util
 
 class LocalDbProvider(KeyValueProvider):
 

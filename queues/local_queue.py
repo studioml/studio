@@ -1,7 +1,7 @@
 import os
 import sys
-from . import fs_tracker, logs
-from .util import check_for_kb_interrupt
+from studio import fs_tracker, logs
+from util.util import check_for_kb_interrupt
 import uuid
 import glob
 import time

@@ -8,8 +8,8 @@ from .auth import get_auth
 from credentials.credentials import Credentials
 from storage.storage_setup import get_storage_verbose_level
 from storage.http_storage_handler import HTTPStorageHandler
-from .experiment import experiment_from_dict
-from .util import retry, check_for_kb_interrupt
+from experiments.experiment import experiment_from_dict
+from util.util import retry, check_for_kb_interrupt
 
 
 class HTTPProvider(object):
