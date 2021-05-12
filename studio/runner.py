@@ -269,6 +269,10 @@ def main(args=sys.argv[1:]):
     logger.debug(str(resources_needed))
 
     # Set up default artifacts:
+    # note that their "local" paths will be updated
+    # on Experiment creation,
+    # but they must have "local" field defined
+    # to have storage credentials set up properly.
     artifacts = {
         'workspace': {
             'mutable': False,
@@ -277,26 +281,32 @@ def main(args=sys.argv[1:]):
         },
         'modeldir': {
             'mutable': True,
+            'local': '',
             'unpack': True
         },
         'retval': {
             'mutable': True,
+            'local': '',
             'unpack': True
         },
         'output': {
             'mutable': True,
+            'local': '',
             'unpack': True
         },
         'tb': {
             'mutable': True,
+            'local': '',
             'unpack': True
         },
         '_metrics': {
             'mutable': True,
+            'local': '',
             'unpack': True
         },
         '_metadata': {
             'mutable': True,
+            'local': '',
             'unpack': True
         }
     }
