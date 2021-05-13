@@ -2,7 +2,7 @@ import os
 from urllib.parse import urlparse
 from typing import Dict
 from studio.util import logs
-from credentials.credentials import Credentials
+from studio.credentials.credentials import Credentials
 from studio.storage.storage_setup import get_storage_verbose_level
 from studio.storage.storage_type import StorageType
 from studio.storage.storage_handler import StorageHandler

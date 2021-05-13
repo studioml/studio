@@ -9,7 +9,7 @@ import time
 import six
 import numpy as np
 
-from credentials.credentials import KEY_CREDENTIALS
+from studio.credentials.credentials import KEY_CREDENTIALS
 from studio.hyperparameter import HyperparameterParser
 from studio.extra_util import Progbar, rsync_cp
 from studio.experiments.experiment import create_experiment

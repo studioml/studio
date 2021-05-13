@@ -2,7 +2,7 @@ import boto3
 import time
 from typing import Dict
 
-from credentials.credentials import Credentials, KEY_CREDENTIALS
+from studio.credentials.credentials import Credentials, KEY_CREDENTIALS
 from studio.storage.storage_setup import get_storage_verbose_level
 from studio.util import logs, util
 

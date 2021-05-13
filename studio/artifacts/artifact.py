@@ -11,7 +11,7 @@ from typing import Dict
 
 from studio.artifacts import artifacts_tracker
 from studio.util import util, logs
-from credentials import credentials
+from studio.credentials import credentials
 from studio.storage import storage_setup
 from studio.storage.storage_type import StorageType
 from studio.storage.storage_handler import StorageHandler

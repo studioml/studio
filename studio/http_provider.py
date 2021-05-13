@@ -5,7 +5,7 @@ import re
 
 from studio.util import logs
 from studio.auth import get_auth
-from credentials.credentials import Credentials
+from studio.credentials.credentials import Credentials
 from studio.storage.storage_setup import get_storage_verbose_level
 from studio.storage.http_storage_handler import HTTPStorageHandler
 from studio.experiments.experiment import experiment_from_dict

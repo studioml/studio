@@ -12,7 +12,7 @@ import re
 
 from studio.util import logs
 from studio.util import util
-from credentials.credentials import Credentials, AWS_TYPE
+from studio.credentials.credentials import Credentials, AWS_TYPE
 from studio.storage.storage_handler import StorageHandler
 from studio.storage.storage_type import StorageType
 from studio.storage.storage_setup import get_storage_verbose_level
