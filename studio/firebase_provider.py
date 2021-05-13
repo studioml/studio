@@ -1,4 +1,4 @@
-from db_providers.keyvalue_provider import KeyValueProvider
+from studio.db_providers.keyvalue_provider import KeyValueProvider
 from .firebase_storage_handler import FirebaseStorageHandler
 
 class FirebaseProvider(KeyValueProvider):

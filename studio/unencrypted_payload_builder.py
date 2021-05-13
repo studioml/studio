@@ -1,5 +1,5 @@
-from payload_builders.payload_builder import PayloadBuilder
-from experiments.experiment import Experiment
+from studio.payload_builders.payload_builder import PayloadBuilder
+from studio.experiments.experiment import Experiment
 
 class UnencryptedPayloadBuilder(PayloadBuilder):
     """

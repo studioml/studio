@@ -19,9 +19,9 @@ except BaseException:
 import google.auth.transport.requests
 import google.oauth2.id_token
 
-from util.util import rand_string, check_for_kb_interrupt
+from studio.util.util import rand_string, check_for_kb_interrupt
 from studio import pyrebase
-from util import logs
+from studio.util import logs
 
 
 TOKEN_DIR = os.path.expanduser('~/.studioml/keys')

@@ -7,7 +7,8 @@ import uuid
 import math
 import json
 
-from . import git_util, logs
+from studio import git_util
+from studio.util import logs
 from .gpu_util import memstr2int
 from .cloud_worker_util import insert_user_startup_script
 

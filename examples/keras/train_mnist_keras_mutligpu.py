@@ -6,7 +6,7 @@ from keras.utils import to_categorical
 from keras.callbacks import ModelCheckpoint, TensorBoard
 
 from studio import fs_tracker
-from . import multi_gpu
+from studio import multi_gpu
 
 # this placeholder will contain our input digits, as flat vectors
 img = Input((784,))

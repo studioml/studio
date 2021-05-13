@@ -6,14 +6,14 @@ from studio.http_provider import HTTPProvider
 from studio.pubsub_queue import PubsubQueue
 from studio.gcloud_worker import GCloudWorkerManager
 from studio.ec2cloud_worker import EC2WorkerManager
-from util.util import parse_verbosity
+from studio.util.util import parse_verbosity
 from studio.auth import get_auth
 
-from db_providers import db_provider_setup
-from queues import queues_setup
-from storage.storage_setup import setup_storage, get_storage_db_provider,\
+from studio.db_providers import db_provider_setup
+from studio.queues import queues_setup
+from studio.storage.storage_setup import setup_storage, get_storage_db_provider,\
     reset_storage, set_storage_verbose_level
-from util import logs
+from studio.util import logs
 
 def reset_storage_providers():
     reset_storage()

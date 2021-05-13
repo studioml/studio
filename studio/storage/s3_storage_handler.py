@@ -10,12 +10,12 @@ from botocore.handlers import set_list_objects_encoding_type_url
 from typing import Dict
 import re
 
-from util import logs
-from util import util
+from studio.util import logs
+from studio.util import util
 from credentials.credentials import Credentials, AWS_TYPE
-from storage.storage_handler import StorageHandler
-from storage.storage_type import StorageType
-from storage.storage_setup import get_storage_verbose_level
+from studio.storage.storage_handler import StorageHandler
+from studio.storage.storage_type import StorageType
+from studio.storage.storage_setup import get_storage_verbose_level
 
 class S3StorageHandler(StorageHandler):
     def __init__(self, config,

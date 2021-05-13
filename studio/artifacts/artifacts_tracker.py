@@ -8,7 +8,7 @@ import uuid
 import json
 import re
 
-from util import util
+from studio.util import util
 
 STUDIOML_EXPERIMENT = 'STUDIOML_EXPERIMENT'
 STUDIOML_HOME = 'STUDIOML_HOME'

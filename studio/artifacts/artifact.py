@@ -9,14 +9,14 @@ except ImportError:
     from urllib import urlopen
 from typing import Dict
 
-from artifacts import artifacts_tracker
-from util import util, logs
+from studio.artifacts import artifacts_tracker
+from studio.util import util, logs
 from credentials import credentials
-from storage import storage_setup
-from storage.storage_type import StorageType
-from storage.storage_handler import StorageHandler
-from storage.storage_handler_factory import StorageHandlerFactory
-from storage.storage_util import tar_artifact, untar_artifact
+from studio.storage import storage_setup
+from studio.storage.storage_type import StorageType
+from studio.storage.storage_handler import StorageHandler
+from studio.storage.storage_handler_factory import StorageHandlerFactory
+from studio.storage.storage_util import tar_artifact, untar_artifact
 
 # The purpose of this class is to encapsulate the logic
 # of handling artifact's state and it's transition between
@@ -158,7 +158,7 @@ class Artifact:
                         return local_path
 
         local_path = re.sub('\/\Z', '', local_path)
-        self.logger.debug("Downloading dir {0} to local path {1} from storage..."
+        self.logger.debug("Downloading dir {0} to local path {1} from studio.storage..."
                           .format(self.key, local_path))
 
         if only_newer and os.path.exists(local_path):
@@ -183,7 +183,7 @@ class Artifact:
         tar_filename = util.get_temp_filename()
         self.logger.debug("tar_filename = {0} ".format(tar_filename))
 
-        # Now download our artifact from storage and untar it:
+        # Now download our artifact from studio.storage and untar it:
         try:
             result: bool =\
                 self.storage_handler.download_file(self.key, tar_filename)

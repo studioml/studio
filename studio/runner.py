@@ -11,14 +11,14 @@ import numpy as np
 
 from credentials.credentials import KEY_CREDENTIALS
 from studio.hyperparameter import HyperparameterParser
-from studio.util import Progbar, rsync_cp
-from experiments.experiment import create_experiment
+from studio.extra_util import Progbar, rsync_cp
+from studio.experiments.experiment import create_experiment
 from studio.experiment_submitter import submit_experiments
 from studio import model
 from studio import git_util
 from studio import local_worker
 from studio import fs_tracker
-from util import logs, util
+from studio.util import logs, util
 
 def main(args=sys.argv[1:]):
     logger = logs.getLogger('studio-runner')

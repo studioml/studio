@@ -1,8 +1,8 @@
 import hashlib
 from typing import Dict
 
-from util import logs, util
-from storage import storage_setup
+from studio.util import logs, util
+from studio.storage import storage_setup
 
 AWS_KEY = 'access_key'
 AWS_SECRET_KEY = 'secret_access_key'

@@ -5,8 +5,8 @@ import time
 import tarfile
 import tempfile
 
-from artifacts import artifacts_tracker
-from util import util
+from studio.artifacts import artifacts_tracker
+from studio.util import util
 
 def _find_ignore_list(local_path: str):
     if os.path.isdir(local_path):

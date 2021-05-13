@@ -15,7 +15,9 @@ import filelock
 import hashlib
 import pickle
 
-from . import git_util, util, logs
+from studio import git_util
+from studio.util import logs
+from studio.storage import storage_util
 from .gpu_util import memstr2int
 from .cloud_worker_util import insert_user_startup_script
 
@@ -460,7 +462,7 @@ class EC2WorkerManager(object):
                 'Getting prices info from AWS (this may take a moment...)')
 
             with offer_file_lock:
-                util.download_file(
+                storage_util.download_file(
                     'https://pricing.us-east-1.amazonaws.com/offers/v1.0/'
                     'aws/AmazonEC2/current/index.json',
                     price_path)

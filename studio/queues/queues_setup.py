@@ -1,15 +1,15 @@
 """Data providers."""
 import uuid
 
-from queues.local_queue import LocalQueue
-from queues.sqs_queue import SQSQueue
-from queues.qclient_cache import get_cached_queue, shutdown_cached_queue
-from util.util import parse_verbosity
+from studio.queues.local_queue import LocalQueue
+from studio.queues.sqs_queue import SQSQueue
+from studio.queues.qclient_cache import get_cached_queue, shutdown_cached_queue
+from studio.util.util import parse_verbosity
 
-from db_providers import db_provider_setup
-from storage.storage_setup import setup_storage, get_storage_db_provider,\
+from studio.db_providers import db_provider_setup
+from studio.storage.storage_setup import setup_storage, get_storage_db_provider,\
     reset_storage, set_storage_verbose_level
-from util import logs
+from studio.util import logs
 
 def get_queue(
         queue_name=None,

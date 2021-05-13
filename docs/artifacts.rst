@@ -133,7 +133,7 @@ Or, if we have a worker listening to the queue ``work_queue``:
 In the former case, the call ``fs_tracker.get_artifact('weights')`` will
 simply return ``os.path.expanduser('~/weights')``. In the latter case, a
 remote worker will set up a cache directory that corresponds to the artifact
-tagged as ``weights`` and copy existing data from storage into it (so that
+tagged as ``weights`` and copy existing data from studio.storage into it (so that
 data can be read from that directory as well). The call
 ``fs_tracker.get_artifact('weights')`` will return the path to that
 directory. In both cases, the ``--experiment`` flag is not mandatory; if you don’t specify a name,

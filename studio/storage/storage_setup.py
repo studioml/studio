@@ -1,6 +1,6 @@
-from storage.storage_handler import StorageHandler
-from storage.storage_type import StorageType
-from util.logs import INFO
+from studio.storage.storage_handler import StorageHandler
+from studio.storage.storage_type import StorageType
+from studio.util.logs import INFO
 
 DB_KEY = "database"
 STORE_KEY = "store"

@@ -1,7 +1,7 @@
 import threading
 
-from queues.rabbit_queue import RMQueue
-from util.util import check_for_kb_interrupt
+from studio.queues.rabbit_queue import RMQueue
+from studio.util.util import check_for_kb_interrupt
 
 _queue_cache = {}
 

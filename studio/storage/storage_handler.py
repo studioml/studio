@@ -3,8 +3,8 @@ import uuid
 import time
 from typing import Dict
 
-from storage.storage_type import StorageType
-from util.util import get_temp_filename, check_for_kb_interrupt
+from studio.storage.storage_type import StorageType
+from studio.util.util import get_temp_filename, check_for_kb_interrupt
 
 # StorageHandler encapsulates the logic of basic storage operations
 # for specific storage endpoint (S3, http, local etc.)

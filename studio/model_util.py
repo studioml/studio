@@ -5,7 +5,7 @@ try:
 except ImportError:
     keras = None
 
-from . import logs
+from studio.util import logs
 
 from PIL import Image
 

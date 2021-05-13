@@ -4,9 +4,9 @@ import pika
 import time
 import threading
 
-from storage.storage_setup import get_storage_verbose_level
+from studio.storage.storage_setup import get_storage_verbose_level
 
-from util import logs
+from studio.util import logs
 
 class RMQueue(object):
     """This publisher will handle failures and closures and will

@@ -1,12 +1,12 @@
 import os
 from urllib.parse import urlparse
 from typing import Dict
-from util import logs
+from studio.util import logs
 from credentials.credentials import Credentials
-from storage.storage_setup import get_storage_verbose_level
-from storage.storage_type import StorageType
-from storage.storage_handler import StorageHandler
-from storage import storage_util
+from studio.storage.storage_setup import get_storage_verbose_level
+from studio.storage.storage_type import StorageType
+from studio.storage.storage_handler import StorageHandler
+from studio.storage import storage_util
 
 class HTTPStorageHandler(StorageHandler):
     def __init__(self, remote_path, credentials_dict,

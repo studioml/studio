@@ -1,12 +1,12 @@
-from util import logs
+from studio.util import logs
 from typing import Dict
 
-from storage.http_storage_handler import HTTPStorageHandler
-from storage.local_storage_handler import LocalStorageHandler
-from storage.storage_setup import get_storage_verbose_level
-from storage.storage_handler import StorageHandler
-from storage.storage_type import StorageType
-from storage.s3_storage_handler import S3StorageHandler
+from studio.storage.http_storage_handler import HTTPStorageHandler
+from studio.storage.local_storage_handler import LocalStorageHandler
+from studio.storage.storage_setup import get_storage_verbose_level
+from studio.storage.storage_handler import StorageHandler
+from studio.storage.storage_type import StorageType
+from studio.storage.s3_storage_handler import S3StorageHandler
 
 _storage_factory = None
 

@@ -3,8 +3,8 @@ import time
 from typing import Dict
 
 from credentials.credentials import Credentials, KEY_CREDENTIALS
-from storage.storage_setup import get_storage_verbose_level
-from util import logs, util
+from studio.storage.storage_setup import get_storage_verbose_level
+from studio.util import logs, util
 
 class SQSQueue:
 

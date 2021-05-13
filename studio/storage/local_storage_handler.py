@@ -2,11 +2,11 @@ import os
 import shutil
 from typing import Dict
 
-from storage.storage_setup import get_storage_verbose_level
-from storage.storage_type import StorageType
-from storage.storage_handler import StorageHandler
-from util import logs
-from util import util
+from studio.storage.storage_setup import get_storage_verbose_level
+from studio.storage.storage_type import StorageType
+from studio.storage.storage_handler import StorageHandler
+from studio.util import logs
+from studio.util import util
 
 class LocalStorageHandler(StorageHandler):
     def __init__(self, config,

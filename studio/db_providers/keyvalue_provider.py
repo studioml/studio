@@ -2,13 +2,13 @@ import time
 import os
 from concurrent.futures import ThreadPoolExecutor, wait
 
-from util import util, logs
+from studio.util import util, logs
 from studio import git_util
-from storage.storage_handler import StorageHandler
-from artifacts.artifact import Artifact
-from experiments.experiment import Experiment, experiment_from_dict
-from storage.storage_setup import get_storage_verbose_level
-from util.util import retry, report_fatal,\
+from studio.storage.storage_handler import StorageHandler
+from studio.artifacts.artifact import Artifact
+from studio.experiments.experiment import Experiment, experiment_from_dict
+from studio.storage.storage_setup import get_storage_verbose_level
+from studio.util.util import retry, report_fatal,\
     compression_to_extension, check_for_kb_interrupt
 
 
@@ -263,34 +263,6 @@ class KeyValueProvider(object):
             info['type'] = 'unknown'
 
         info['logtail'] = self._get_experiment_logtail(experiment)
-
-        if experiment.metric is not None:
-            metric_str = experiment.metric.split(':')
-            metric_name = metric_str[0]
-            metric_type = metric_str[1] if len(metric_str) > 1 else None
-
-            tb_art = experiment.artifacts['tb']
-            tbtar = tb_art.stream() if tb_art else None
-
-            if metric_type == 'min':
-                def metric_accum(x, y): return min(x, y) if x else y
-            elif metric_type == 'max':
-                def metric_accum(x, y): return max(x, y) if x else y
-            else:
-                def metric_accum(x, y): return y
-
-            metric_value = None
-            if tbtar is not None:
-                for f in tbtar:
-                    if f.isreg():
-                        for e in util.event_reader(tbtar.extractfile(f)):
-                            for v in e.summary.value:
-                                if v.tag == metric_name:
-                                    metric_value = metric_accum(
-                                        metric_value, v.simple_value)
-
-            info['metric_value'] = metric_value
-
         return info
 
     def _get_experiment_logtail(self, experiment: Experiment):

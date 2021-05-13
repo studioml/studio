@@ -1,11 +1,13 @@
 import os
 import sys
-from studio import fs_tracker, logs
-from util.util import check_for_kb_interrupt
 import uuid
 import glob
 import time
 import filelock
+
+from studio import fs_tracker
+from studio.util import logs
+from studio.util.util import check_for_kb_interrupt
 
 _local_queue_lock = filelock.FileLock(
     os.path.expanduser('~/.studioml/local_queue.lock')

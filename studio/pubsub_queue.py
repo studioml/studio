@@ -3,8 +3,8 @@ import json
 import time
 from google.api_core.exceptions import RetryError
 
-from util.util import sixdecode, retry, parse_verbosity, check_for_kb_interrupt
-from util import logs
+from studio.util.util import sixdecode, retry, parse_verbosity, check_for_kb_interrupt
+from studio.util import logs
 
 
 class PubsubQueue(object):

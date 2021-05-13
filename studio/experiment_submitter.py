@@ -2,12 +2,12 @@ import json
 import time
 import traceback
 
-from db_providers import db_provider_setup
-from payload_builders.payload_builder import PayloadBuilder
+from studio.db_providers import db_provider_setup
+from studio.payload_builders.payload_builder import PayloadBuilder
 from studio.unencrypted_payload_builder import UnencryptedPayloadBuilder
 from studio.encrypted_payload_builder import EncryptedPayloadBuilder
-from storage import storage_setup
-from util import util
+from studio.storage import storage_setup
+from studio.util import util
 
 def submit_experiments(
         experiments,

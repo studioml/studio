@@ -3,15 +3,15 @@ import os
 import yaml
 import pyhocon
 
-from db_providers.local_db_provider import LocalDbProvider
-from db_providers.s3_provider import S3Provider
-from storage.storage_handler import StorageHandler
-from storage.storage_handler_factory import StorageHandlerFactory
-from storage.storage_setup import setup_storage, get_storage_db_provider,\
+from studio.db_providers.local_db_provider import LocalDbProvider
+from studio.db_providers.s3_provider import S3Provider
+from studio.storage.storage_handler import StorageHandler
+from studio.storage.storage_handler_factory import StorageHandlerFactory
+from studio.storage.storage_setup import setup_storage, get_storage_db_provider,\
     set_storage_verbose_level
-from storage.storage_type import StorageType
-from util import logs
-from util.util import parse_verbosity
+from studio.storage.storage_type import StorageType
+from studio.util import logs
+from studio.util.util import parse_verbosity
 
 def get_config(config_file=None):
 

@@ -14,8 +14,8 @@ import numpy as np
 import requests
 import tempfile
 import uuid
-from storage import storage_setup
-from storage.storage_type import StorageType
+from studio.storage import storage_setup
+from studio.storage.storage_type import StorageType
 
 def event_reader(fileobj):
     from tensorflow.core.util import event_pb2
@@ -46,6 +46,39 @@ def event_reader(fileobj):
 
     fileobj.close()
 
+def get_experiment_metric(experiment):
+    info = dict()
+    info['metric_value'] = None
+    if experiment.metric is not None:
+        metric_str = experiment.metric.split(':')
+        metric_name = metric_str[0]
+        metric_type = metric_str[1] if len(metric_str) > 1 else None
+
+        tb_art = experiment.artifacts['tb']
+        tbtar = tb_art.stream() if tb_art else None
+
+        if metric_type == 'min':
+            def metric_accum(x, y):
+                return min(x, y) if x else y
+        elif metric_type == 'max':
+            def metric_accum(x, y):
+                return max(x, y) if x else y
+        else:
+            def metric_accum(x, y):
+                return y
+
+        metric_value = None
+        if tbtar is not None:
+            for f in tbtar:
+                if f.isreg():
+                    for e in util.event_reader(tbtar.extractfile(f)):
+                        for v in e.summary.value:
+                            if v.tag == metric_name:
+                                metric_value = metric_accum(
+                                    metric_value, v.simple_value)
+
+        info['metric_value'] = metric_value
+    return info
 
 def rsync_cp(source, dest, ignore_arg='', logger=None):
     try:

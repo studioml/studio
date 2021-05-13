@@ -9,10 +9,10 @@ import json
 from sshpubkeys import SSHKey
 
 from studio.ed25519_key_util import Ed25519KeyUtil
-from payload_builders.payload_builder import PayloadBuilder
-from studio import logs
+from studio.payload_builders.payload_builder import PayloadBuilder
+from studio.util import logs
 from studio.unencrypted_payload_builder import UnencryptedPayloadBuilder
-from util.util import check_for_kb_interrupt
+from studio.util.util import check_for_kb_interrupt
 
 class EncryptedPayloadBuilder(PayloadBuilder):
     """

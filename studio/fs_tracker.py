@@ -3,7 +3,7 @@
 import os
 import shutil
 
-from artifacts import artifacts_tracker
+from studio.artifacts import artifacts_tracker
 
 STUDIOML_EXPERIMENT = 'STUDIOML_EXPERIMENT'
 STUDIOML_HOME = 'STUDIOML_HOME'
