@@ -39,15 +39,4 @@ def set_storage_verbose_level(level: int):
     global _storage_verbose_level
     _storage_verbose_level = level
 
-def has_aws_credentials():
-    artifact_store = get_storage_artifact_store()
-    if artifact_store is None:
-        return False
-    storage_handler = artifact_store.get_storage_handler()
-    if storage_handler.type == StorageType.storageS3:
-        storage_client = storage_handler.get_client()
-        return storage_client._request_signer._credentials is not None
-    else:
-        return False
-
 

@@ -18,7 +18,7 @@ import pickle
 from studio import git_util
 from studio.util import logs
 from studio.storage import storage_util
-from .gpu_util import memstr2int
+from studio.util.gpu_util import memstr2int
 from .cloud_worker_util import insert_user_startup_script
 
 # list of instance types sorted by price

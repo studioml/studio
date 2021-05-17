@@ -5,11 +5,12 @@ import time
 import yaml
 
 from studio.pubsub_queue import PubsubQueue
-from studio.sqs_queue import SQSQueue
-from studio.local_queue import LocalQueue, get_local_queue_lock
+from studio.queues.sqs_queue import SQSQueue
+from studio.queues.local_queue import LocalQueue, get_local_queue_lock
 
-from studio.util import has_aws_credentials
-from studio import logs, model
+from studio.extra_util import has_aws_credentials
+from studio import model
+from studio.util import logs
 
 # Configuration of specific queue instance
 # is driven primarily by queue name itself.

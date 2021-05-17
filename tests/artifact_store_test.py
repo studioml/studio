@@ -17,10 +17,10 @@ except ImportError:
 from studio import model
 from studio.auth import remove_all_keys
 
-from studio.artifact import Artifact
+from studio.artifacts.artifact import Artifact
 from studio.gcloud_artifact_store import GCloudArtifactStore
-from studio.tartifact_store import TartifactStore
-from studio.util import has_aws_credentials
+from studio.storage.storage_handler import StorageHandler
+from studio.extra_util import has_aws_credentials
 from env_detect import on_gcp, on_aws
 
 def _get_config():
@@ -52,7 +52,7 @@ class ArtifactStoreTest(object):
         with open(config_file) as f:
             config = yaml.load(f, Loader=yaml.SafeLoader)
 
-        return model.get_db_provider(config).store
+        return model.get_db_provider(config).storage_handler
 
     def test_get_put_artifact(self):
         fb = self.get_store()
@@ -369,7 +369,7 @@ class S3ArtifactStoreTest(ArtifactStoreTest, unittest.TestCase):
     def get_store(self, config_name=None):
         store = ArtifactStoreTest.get_store(
             self, 'test_config.yaml')
-        self.assertTrue(isinstance(store, TartifactStore))
+        self.assertTrue(isinstance(store, StorageHandler))
         return store
 
     def get_qualified_location_prefix(self):

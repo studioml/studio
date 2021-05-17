@@ -8,7 +8,7 @@ from studio.artifacts import artifacts_tracker
 from studio.artifacts.artifact import Artifact
 from studio.util.util import shquote, check_for_kb_interrupt
 from studio.dependencies_policies.dependencies_policy import DependencyPolicy
-from studio.studio_dependencies_policy import StudioDependencyPolicy
+from studio.dependencies_policies.studio_dependencies_policy import StudioDependencyPolicy
 
 class Experiment(object):
     """Experiment information."""
@@ -180,7 +180,8 @@ def create_experiment(
         str(int(time.time())) + "_" + str(uuid.uuid4())
 
     if dependency_policy is None:
-        dependency_policy = StudioDependencyPolicy()
+        raise ValueError("dependency_policy argument must be set.")
+
     packages = dependency_policy.generate(resources_needed)
 
     return Experiment(

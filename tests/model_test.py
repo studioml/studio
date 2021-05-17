@@ -10,14 +10,15 @@ except ImportError:
 import os
 
 from studio import model
-from studio.experiment import create_experiment
+from studio.experiments.experiment import create_experiment
+from studio.dependencies_policies.studio_dependencies_policy import StudioDependencyPolicy
 
 
 def get_test_experiment():
     filename = 'test.py'
     args = ['a', 'b', 'c']
     experiment_name = 'test_experiment_' + str(uuid.uuid4())
-    experiment = create_experiment(filename, args, experiment_name)
+    experiment = create_experiment(filename, args, experiment_name, dependency_policy=StudioDependencyPolicy())
     return experiment, experiment_name, filename, args
 
 
@@ -26,7 +27,7 @@ class ModelTest(unittest.TestCase):
         _, experiment_name, filename, args = get_test_experiment()
         experiment_project = 'create_experiment_project'
         experiment = create_experiment(
-            filename, args, experiment_name, experiment_project)
+            filename, args, experiment_name, experiment_project, dependency_policy=StudioDependencyPolicy())
 
         packages = [p for p in freeze.freeze()]
 

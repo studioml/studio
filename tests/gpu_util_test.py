@@ -1,5 +1,5 @@
 import unittest
-from studio.gpu_util import memstr2int
+from studio.util.gpu_util import memstr2int
 
 
 class GpuUtilTest(unittest.TestCase):

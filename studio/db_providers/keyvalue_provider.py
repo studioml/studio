@@ -3,7 +3,6 @@ import os
 from concurrent.futures import ThreadPoolExecutor, wait
 
 from studio.util import util, logs
-from studio import git_util
 from studio.storage.storage_handler import StorageHandler
 from studio.artifacts.artifact import Artifact
 from studio.experiments.experiment import Experiment, experiment_from_dict
@@ -75,13 +74,6 @@ class KeyValueProvider(object):
         experiment.status = 'waiting'
 
         compression = compression if compression else self.compression
-
-        wrk_space: Artifact = experiment.artifacts.get('workspace', None)
-        if wrk_space is not None:
-            if wrk_space.local_path is not None and \
-                    os.path.exists(wrk_space.local_path):
-                self.logger.info("git location for experiment %s", wrk_space.local_path)
-            experiment.git = git_util.get_git_info(wrk_space.local_path)
 
         for tag, item in experiment.artifacts.items():
             art: Artifact = item

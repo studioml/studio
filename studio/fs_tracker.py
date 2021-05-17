@@ -20,7 +20,6 @@ def get_studio_home():
 
 def setup_experiment(env, experiment, clean=True):
     artifacts_tracker.setup_experiment(env, experiment, clean=clean)
-    _setup_model_directory(_get_experiment_key(experiment), clean)
 
 
 def get_artifact(tag):

@@ -9,7 +9,7 @@ import json
 
 from studio import git_util
 from studio.util import logs
-from .gpu_util import memstr2int
+from studio.util.gpu_util import memstr2int
 from .cloud_worker_util import insert_user_startup_script
 
 

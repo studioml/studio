@@ -18,6 +18,7 @@ from studio import model
 from studio import git_util
 from studio import local_worker
 from studio import fs_tracker
+from studio.dependencies_policies.studio_dependencies_policy import StudioDependencyPolicy
 from studio.util import logs, util
 
 def main(args=sys.argv[1:]):
@@ -461,6 +462,7 @@ def main(args=sys.argv[1:]):
                 resources_needed=resources_needed,
                 metric=runner_args.metric,
                 max_duration=runner_args.max_duration,
+                dependency_policy=StudioDependencyPolicy()
             )]
 
         queue = model.get_queue(
@@ -809,6 +811,7 @@ def _add_hyperparam_experiments(
                 resources_needed=resources_needed,
                 metric=runner_args.metric,
                 max_duration=runner_args.max_duration,
+                dependency_policy=StudioDependencyPolicy()
             ))
         return experiments
 

@@ -2,7 +2,10 @@ import json
 import time
 import traceback
 
+from studio.artifacts.artifact import Artifact
 from studio.db_providers import db_provider_setup
+from studio.experiments.experiment import Experiment
+from studio import git_util
 from studio.payload_builders.payload_builder import PayloadBuilder
 from studio.unencrypted_payload_builder import UnencryptedPayloadBuilder
 from studio.encrypted_payload_builder import EncryptedPayloadBuilder
@@ -50,6 +53,7 @@ def submit_experiments(
         # Add experiment to database:
         try:
             with db_provider_setup.get_db_provider(config) as db:
+                _add_git_info(experiment, logger)
                 db.add_experiment(experiment)
         except BaseException:
             traceback.print_exc()
@@ -67,4 +71,11 @@ def submit_experiments(
                 .format(num_experiments, int(time.time() - start_time), queue.get_name()))
     return queue.get_name()
 
-
+def _add_git_info(experiment: Experiment, logger):
+    wrk_space: Artifact = experiment.artifacts.get('workspace', None)
+    if wrk_space is not None:
+        if wrk_space.local_path is not None and \
+                os.path.exists(wrk_space.local_path):
+            if logger is not None:
+                logger.info("git location for experiment %s", wrk_space.local_path)
+            experiment.git = git_util.get_git_info(wrk_space.local_path)

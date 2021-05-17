@@ -5,7 +5,7 @@ import glob
 import time
 import filelock
 
-from studio import fs_tracker
+from studio.artifacts.artifacts_tracker import get_studio_home
 from studio.util import logs
 from studio.util.util import check_for_kb_interrupt
 
@@ -16,7 +16,7 @@ _local_queue_lock = filelock.FileLock(
 class LocalQueue:
     def __init__(self, path=None, verbose=10):
         if path is None:
-            self.path = fs_tracker.get_queue_directory()
+            self.path = self._get_queue_directory()
         else:
             self.path = path
         self.logger = logs.getLogger(self.__class__.__name__)
@@ -44,6 +44,18 @@ class LocalQueue:
             # we just want list of files without status marker
             pass
         return is_active, files
+
+    def _get_queue_directory(self):
+        queue_dir = os.path.join(
+            get_studio_home(),
+            'queue')
+        if not os.path.exists(queue_dir):
+            try:
+                os.makedirs(queue_dir)
+            except OSError:
+                pass
+
+        return queue_dir
 
     def has_next(self):
         is_active, files = self._get_queue_status()
@@ -119,6 +131,9 @@ class LocalQueue:
 
     def get_name(self):
         return 'local'
+
+    def get_path(self):
+        return self.path
 
     def shutdown(self, delete_queue=True):
         self.delete()

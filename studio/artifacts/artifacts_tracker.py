@@ -28,6 +28,13 @@ def get_studio_home():
     else:
         return os.path.join(os.path.expanduser('~'), '.studioml')
 
+def _setup_model_directory(experiment_name, clean=False):
+    path = get_artifact_cache('modeldir', experiment_name)
+    if clean and os.path.exists(path):
+        shutil.rmtree(path)
+
+    if not os.path.exists(path):
+        os.makedirs(path)
 
 def setup_experiment(env, experiment, clean=True):
     if not isinstance(experiment, str):
