@@ -1,0 +1,15 @@
+pip
+setuptools_scm
+
+configparser
+
+requests
+
+PyYAML
+pyhocon
+
+boto3
+
+filelock
+pika >= 1.1.0
+
