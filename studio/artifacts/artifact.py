@@ -70,8 +70,9 @@ class Artifact:
             local_path = self.local_path
 
         if self.in_blobstore:
-            self.logger.debug(('Artifact with key {0} exists in blobstore, ' +
-                              'skipping the upload').format(self.key))
+            msg: str = ('Artifact with key {0} exists in blobstore, ' +
+                        'skipping the upload').format(self.key)
+            self.logger.debug(msg)
             return self.key
 
         if os.path.exists(local_path):
@@ -84,19 +85,18 @@ class Artifact:
                 time_stamp = self.storage_handler.get_file_timestamp(self.key)
                 if time_stamp is not None:
                     self.logger.debug(
-                        ('Artifact with key {0} exists in blobstore, ' +
-                         'skipping the upload').format(self.key))
+                        'Artifact with key %s exists in blobstore, skipping the upload',
+                        self.key)
                     os.remove(tar_filename)
                     return self.key
 
             self.storage_handler.upload_file(self.key, tar_filename)
             os.remove(tar_filename)
             return self.key
-        else:
-            self.logger.debug(("Local path {0} does not exist. " +
-                               "Not uploading anything.")
-                              .format(local_path))
-            return None
+        self.logger.debug(
+            "Local path %s does not exist. Not uploading anything.",
+            local_path)
+        return None
 
     def download(self, local_path=None, only_newer=True):
         if self.storage_handler is None:
@@ -108,8 +108,8 @@ class Artifact:
 
         if self.key is None:
             if self.is_mutable:
-                self.logger.info("Downloading mutable artifact: {0}"
-                                  .format(self.name))
+                self.logger.info("Downloading mutable artifact: %s",
+                                 self.name)
             if self.remote_path is None:
                 msg: str =\
                     "CANNOT download artifact without remote path: {0}"\
@@ -121,23 +121,24 @@ class Artifact:
             local_path =\
                 self._get_target_local_path(local_path, self.remote_path)
             if os.path.exists(local_path):
-                self.logger.debug(('Immutable artifact exists at local_path {0},' +
-                                   ' skipping the download').format(local_path))
+                msg: str = ('Immutable artifact exists at local_path {0},' +
+                            ' skipping the download').format(local_path)
+                self.logger.debug(msg)
                 self.local_path = local_path
                 return local_path
 
             if self.storage_handler.type == StorageType.storageDockerHub or \
                self.storage_handler.type == StorageType.storageSHub:
-                self.logger.debug(
-                        'Qualified {0} points to a shub or dockerhub,' +
-                        ' skipping the download'.format(self.remote_path))
+                msg: str = ('Qualified {0} points to a shub or dockerhub,' +
+                            ' skipping the download').format(self.remote_path)
+                self.logger.debug(msg)
                 return self.remote_path
 
             self.storage_handler.download_remote_path(
                 self.remote_path, local_path)
 
-            self.logger.debug('Downloaded file {0} from external source {1}'
-                              .format(local_path, self.remote_path))
+            self.logger.debug('Downloaded file %s from external source %s',
+                              local_path, self.remote_path)
             self.local_path = local_path
             #self.key = key
             return self.local_path
@@ -152,36 +153,37 @@ class Artifact:
                 else:
                     local_path = artifacts_tracker.get_blob_cache(self.key)
                     if os.path.exists(local_path):
-                        self.logger.debug('Immutable artifact exists at local_path {0},' +
-                                          ' skipping the download').format(local_path)
+                        msg: str = ('Immutable artifact exists at local_path {0},' +
+                                    ' skipping the download').format(local_path)
+                        self.logger.debug(msg)
                         self.local_path = local_path
                         return local_path
 
-        local_path = re.sub('\/\Z', '', local_path)
-        self.logger.debug("Downloading dir {0} to local path {1} from studio.storage..."
-                          .format(self.key, local_path))
+        local_path = re.sub(r'\/\Z', '', local_path)
+        self.logger.debug("Downloading dir %s to local path %s from studio.storage...",
+                          self.key, local_path)
 
         if only_newer and os.path.exists(local_path):
             self.logger.debug(
-                'Comparing date of the artifact {0} in storage with local {1}'
-                    .format(self.key, local_path))
+                'Comparing date of the artifact %s in storage with local %s',
+                    self.key, local_path)
             storage_time = self.storage_handler.get_file_timestamp(self.key)
             local_time = os.path.getmtime(local_path)
             if storage_time is None:
                 msg: str = \
-                    "Unable to get storage timestamp for {0}, storage is either " + \
-                    "corrupted or has not finished uploading".format(self.key)
-                util.report_fatal(msg)
+                    ("Unable to get storage timestamp for {0}, storage is either " + \
+                    "corrupted or has not finished uploading").format(self.key)
+                util.report_fatal(msg, self.logger)
                 return local_path
 
             if local_time > storage_time - timestamp_shift:
                 self.logger.debug(
-                    "Local path {0} is younger than stored {1}, skipping the download"
-                        .format(local_path, self.key))
+                    "Local path %s is younger than stored %s, skipping the download",
+                        local_path, self.key)
                 return local_path
 
         tar_filename = util.get_temp_filename()
-        self.logger.debug("tar_filename = {0} ".format(tar_filename))
+        self.logger.debug("tar_filename = %s", tar_filename)
 
         # Now download our artifact from studio.storage and untar it:
         try:
@@ -204,10 +206,8 @@ class Artifact:
             os.remove(tar_filename)
             self.local_path = local_path
             return local_path
-        else:
-            msg: str = 'file {0} download failed'.format(tar_filename)
-            self.logger.info(msg)
-            return None
+        self.logger.info('file %s download failed', tar_filename)
+        return None
 
     def _get_target_local_path(self, local_path: str, remote_path: str):
         result: str = local_path
@@ -221,7 +221,7 @@ class Artifact:
 
     def delete(self):
         if self.key is not None:
-            self.logger.debug('Deleting artifact: {0}'.format(self.key))
+            self.logger.debug('Deleting artifact: %s', self.key)
             self.storage_handler.delete_file(self.key, shallow=False)
 
 
@@ -236,10 +236,7 @@ class Artifact:
         if get_timestamp:
             timestamp = self.storage_handler.get_file_timestamp(self.key)
             return url, timestamp
-        else:
-            return url
-
-        return None
+        return url
 
     def _looks_like_local_file(self, url: str) -> bool:
         if url is None:
@@ -257,7 +254,6 @@ class Artifact:
         # if our url is actually a local file reference
         # (can happen in local execution mode)
         # then we just open a local file:
-        fileobj = None
         if self._looks_like_local_file(url):
             fileobj = open(url, 'rb')
         else:
@@ -289,14 +285,13 @@ class Artifact:
         try:
             retval = util.sha256_checksum(tar_filename)
             os.remove(tar_filename)
-            self.logger.debug(
-                'deleted local artifact file {0}'.format(tar_filename))
+            self.logger.debug('deleted local artifact file %s', tar_filename)
             return retval
         except BaseException as exc:
             util.check_for_kb_interrupt()
             self.logger.error(
-                'error generating a hash for {0}: {1}'
-                    .format(tar_filename, repr(exc)))
+                'error generating a hash for %s: %s',
+                    tar_filename, repr(exc))
         return None
 
     def _is_s3_endpoint(self) -> bool:
@@ -347,7 +342,7 @@ class Artifact:
 
         if self.remote_path is not None:
             if self._is_s3_endpoint():
-                s3_config_dict, art_key = self._build_s3_config(art_dict)
+                s3_config_dict, _ = self._build_s3_config(art_dict)
                 factory = StorageHandlerFactory.get_factory()
                 self.storage_handler =\
                     factory.get_handler(StorageType.storageS3, s3_config_dict)
@@ -404,6 +399,3 @@ class Artifact:
 
     def _generate_key(self):
         return hashlib.sha256(self.remote_path.encode()).hexdigest()
-
-
-
