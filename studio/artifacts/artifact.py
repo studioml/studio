@@ -42,7 +42,6 @@ class Artifact:
             self.logger.setLevel(storage_setup.get_storage_verbose_level())
 
         self.storage_handler: StorageHandler = None
-        self.compression: str = None
 
         self.unpack: bool = art_dict.get('unpack')
         self.is_mutable: bool = art_dict.get('mutable')
@@ -78,10 +77,10 @@ class Artifact:
         if os.path.exists(local_path):
             tar_filename =\
                 tar_artifact(local_path, self.key,
-                             self.compression, self.logger)
+                             self.get_compression(), self.logger)
             if self.key is None:
                 self.key = 'blobstore/' + util.sha256_checksum(tar_filename) \
-                      + '.tar' + util.compression_to_extension(self.compression)
+                      + '.tar' + util.compression_to_extension(self.get_compression())
                 time_stamp = self.storage_handler.get_file_timestamp(self.key)
                 if time_stamp is not None:
                     self.logger.debug(
@@ -98,96 +97,77 @@ class Artifact:
             local_path)
         return None
 
-    def download(self, local_path=None, only_newer=True):
-        if self.storage_handler is None:
-            msg: str = "No storage handler is set for artifact {0}"\
-                .format(self.key)
+    def get_compression(self):
+        if self.storage_handler is not None:
+            return self.storage_handler.get_compression()
+        return None
+
+    def _download_no_key_artifact(self):
+        if self.is_mutable:
+            self.logger.info("Downloading mutable artifact: %s",
+                             self.name)
+        if self.remote_path is None:
+            msg: str =\
+                "CANNOT download artifact without remote path: {0}"\
+                    .format(self.name)
             util.report_fatal(msg, self.logger)
 
-        timestamp_shift = self.storage_handler.get_timestamp_shift()
-
-        if self.key is None:
-            if self.is_mutable:
-                self.logger.info("Downloading mutable artifact: %s",
-                                 self.name)
-            if self.remote_path is None:
-                msg: str =\
-                    "CANNOT download artifact without remote path: {0}"\
-                        .format(self.name)
-                util.report_fatal(msg, self.logger)
-
-            key = self._generate_key()
-            local_path = artifacts_tracker.get_blob_cache(key)
-            local_path =\
-                self._get_target_local_path(local_path, self.remote_path)
-            if os.path.exists(local_path):
-                msg: str = ('Immutable artifact exists at local_path {0},' +
-                            ' skipping the download').format(local_path)
-                self.logger.debug(msg)
-                self.local_path = local_path
-                return local_path
-
-            if self.storage_handler.type == StorageType.storageDockerHub or \
-               self.storage_handler.type == StorageType.storageSHub:
-                msg: str = ('Qualified {0} points to a shub or dockerhub,' +
-                            ' skipping the download').format(self.remote_path)
-                self.logger.debug(msg)
-                return self.remote_path
-
-            self.storage_handler.download_remote_path(
-                self.remote_path, local_path)
-
-            self.logger.debug('Downloaded file %s from external source %s',
-                              local_path, self.remote_path)
+        key = self._generate_key()
+        local_path = artifacts_tracker.get_blob_cache(key)
+        local_path =\
+            self._get_target_local_path(local_path, self.remote_path)
+        if os.path.exists(local_path):
+            msg: str = ('Immutable artifact exists at local_path {0},' +
+                        ' skipping the download').format(local_path)
+            self.logger.debug(msg)
             self.local_path = local_path
-            #self.key = key
-            return self.local_path
+            return local_path
 
-        if local_path is None:
-            if self.local_path is not None and \
-                os.path.exists(self.local_path):
-                local_path = self.local_path
-            else:
-                if self.is_mutable:
-                    local_path = artifacts_tracker.get_artifact_cache(self.key)
-                else:
-                    local_path = artifacts_tracker.get_blob_cache(self.key)
-                    if os.path.exists(local_path):
-                        msg: str = ('Immutable artifact exists at local_path {0},' +
-                                    ' skipping the download').format(local_path)
-                        self.logger.debug(msg)
-                        self.local_path = local_path
-                        return local_path
+        if self.storage_handler.type == StorageType.storageDockerHub or \
+           self.storage_handler.type == StorageType.storageSHub:
+            msg: str = ('Qualified {0} points to a shub or dockerhub,' +
+                        ' skipping the download').format(self.remote_path)
+            self.logger.debug(msg)
+            return self.remote_path
 
-        local_path = re.sub(r'\/\Z', '', local_path)
-        self.logger.debug("Downloading dir %s to local path %s from studio.storage...",
-                          self.key, local_path)
+        self.storage_handler.download_remote_path(
+            self.remote_path, local_path)
 
-        if only_newer and os.path.exists(local_path):
+        self.logger.debug('Downloaded file %s from external source %s',
+                          local_path, self.remote_path)
+        self.local_path = local_path
+        #self.key = key
+        return self.local_path
+
+    def _has_newer_artifact(self, local_path) -> bool:
+        self.logger.debug(
+            'Comparing date of the artifact %s in storage with local %s',
+            self.key, local_path)
+        storage_time = self.storage_handler.get_file_timestamp(self.key)
+        local_time = os.path.getmtime(local_path)
+        if storage_time is None:
+            msg: str = \
+                ("Unable to get storage timestamp for {0}, storage is either " + \
+                 "corrupted or has not finished uploading").format(self.key)
+            util.report_fatal(msg, self.logger)
+            return False
+
+        timestamp_shift = self.storage_handler.get_timestamp_shift()
+        if local_time > storage_time - timestamp_shift:
             self.logger.debug(
-                'Comparing date of the artifact %s in storage with local %s',
-                    self.key, local_path)
-            storage_time = self.storage_handler.get_file_timestamp(self.key)
-            local_time = os.path.getmtime(local_path)
-            if storage_time is None:
-                msg: str = \
-                    ("Unable to get storage timestamp for {0}, storage is either " + \
-                    "corrupted or has not finished uploading").format(self.key)
-                util.report_fatal(msg, self.logger)
-                return local_path
+                "Local path %s is younger than stored %s, skipping the download",
+                local_path, self.key)
+            return False
 
-            if local_time > storage_time - timestamp_shift:
-                self.logger.debug(
-                    "Local path %s is younger than stored %s, skipping the download",
-                        local_path, self.key)
-                return local_path
+        return True
 
-        tar_filename = util.get_temp_filename()
+    def _download_and_untar_artifact(self, local_path):
+        tar_filename: str = util.get_temp_filename()
         self.logger.debug("tar_filename = %s", tar_filename)
 
         # Now download our artifact from studio.storage and untar it:
         try:
-            result: bool =\
+            result: bool = \
                 self.storage_handler.download_file(self.key, tar_filename)
             if not result:
                 msg: str = \
@@ -208,6 +188,42 @@ class Artifact:
             return local_path
         self.logger.info('file %s download failed', tar_filename)
         return None
+
+    def download(self, local_path=None, only_newer=True):
+        if self.storage_handler is None:
+            msg: str = "No storage handler is set for artifact {0}" \
+                .format(self.key)
+            util.report_fatal(msg, self.logger)
+
+        if self.key is None:
+            return self._download_no_key_artifact()
+
+        if local_path is None:
+            if self.local_path is not None and \
+                    os.path.exists(self.local_path):
+                local_path = self.local_path
+            else:
+                if self.is_mutable:
+                    local_path = artifacts_tracker.get_artifact_cache(self.key)
+                else:
+                    local_path = artifacts_tracker.get_blob_cache(self.key)
+                    if os.path.exists(local_path):
+                        msg: str = ('Immutable artifact exists at local_path {0},' +
+                                    ' skipping the download').format(local_path)
+                        self.logger.debug(msg)
+                        self.local_path = local_path
+                        return local_path
+
+        local_path = re.sub(r'\/\Z', '', local_path)
+        self.logger.debug("Downloading dir %s to local path %s from studio.storage...",
+                          self.key, local_path)
+
+        if only_newer and os.path.exists(local_path):
+            if not self._has_newer_artifact(local_path):
+                return local_path
+
+        # Now download our artifact from studio.storage and untar it:
+        return self._download_and_untar_artifact(local_path)
 
     def _get_target_local_path(self, local_path: str, remote_path: str):
         result: str = local_path
@@ -251,6 +267,8 @@ class Artifact:
         if url is None:
             return None
 
+        # pylint: disable=consider-using-with
+
         # if our url is actually a local file reference
         # (can happen in local execution mode)
         # then we just open a local file:
@@ -280,7 +298,8 @@ class Artifact:
             return self._generate_key()
 
         tar_filename =\
-            tar_artifact(local_path, self.key, self.compression, self.logger)
+            tar_artifact(local_path, self.key,
+                         self.get_compression(), self.logger)
 
         try:
             retval = util.sha256_checksum(tar_filename)

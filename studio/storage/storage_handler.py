@@ -56,6 +56,9 @@ class StorageHandler:
     def get_timestamp_shift(self):
         return self._timestamp_shift
 
+    def get_compression(self):
+        return self.compression
+
     def cleanup(self):
         pass
 
