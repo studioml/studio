@@ -1,4 +1,5 @@
 import json
+import os
 import time
 import traceback
 
@@ -7,7 +8,7 @@ from studio.db_providers import db_provider_setup
 from studio.experiments.experiment import Experiment
 from studio import git_util
 from studio.payload_builders.payload_builder import PayloadBuilder
-from studio.unencrypted_payload_builder import UnencryptedPayloadBuilder
+from studio.payload_builders.unencrypted_payload_builder import UnencryptedPayloadBuilder
 from studio.encrypted_payload_builder import EncryptedPayloadBuilder
 from studio.storage import storage_setup
 from studio.util import util
