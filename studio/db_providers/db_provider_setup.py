@@ -32,11 +32,11 @@ def get_config(config_file=None):
         if not os.path.exists(path):
             continue
 
-        with(open(path)) as f:
+        with(open(path)) as f_in:
             if path.endswith('.hocon'):
-                config = pyhocon.ConfigFactory.parse_string(f.read())
+                config = pyhocon.ConfigFactory.parse_string(f_in.read())
             else:
-                config = yaml.load(f.read(), Loader=yaml.FullLoader)
+                config = yaml.load(f_in.read(), Loader=yaml.FullLoader)
 
                 def replace_with_env(config):
                     for key, value in config.items():
@@ -60,11 +60,10 @@ def get_artifact_store(config) -> StorageHandler:
     if storage_type == 's3':
         handler = factory.get_handler(StorageType.storageS3, config)
         return handler
-    elif storage_type == 'local':
+    if storage_type == 'local':
         handler = factory.get_handler(StorageType.storageLocal, config)
         return handler
-    else:
-        raise ValueError('Unknown storage type: ' + storage_type)
+    raise ValueError('Unknown storage type: ' + storage_type)
 
 def get_db_provider(config=None, blocking_auth=True):
 
@@ -111,5 +110,3 @@ def get_db_provider(config=None, blocking_auth=True):
 
     setup_storage(db_provider, artifact_store)
     return db_provider
-
-

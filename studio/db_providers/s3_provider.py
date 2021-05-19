@@ -1,5 +1,5 @@
 import json
-from .keyvalue_provider import KeyValueProvider
+from studio.db_providers.keyvalue_provider import KeyValueProvider
 from studio.storage.storage_handler_factory import StorageHandlerFactory
 from studio.storage.storage_type import StorageType
 
@@ -30,7 +30,7 @@ class S3Provider(KeyValueProvider):
             msg: str = "FAILED to list objects in bucket {0}: {1}"\
                 .format(self.bucket, exc)
             self._report_fatal(msg)
-            return
+            return None
 
         if response is None:
             return None
@@ -38,9 +38,9 @@ class S3Provider(KeyValueProvider):
         if 'Contents' not in response.keys():
             return None
 
-        keyCount = len(response['Contents'])
+        key_count = len(response['Contents'])
 
-        if keyCount == 0:
+        if key_count == 0:
             return None
 
         for key_item in response['Contents']:
@@ -53,7 +53,7 @@ class S3Provider(KeyValueProvider):
         return None
 
     def _delete(self, key, shallow=True):
-        self.logger.info("S3 deleting object: {0}/{1}".format(self.bucket, key))
+        self.logger.info("S3 deleting object: %s/%s", self.bucket, key)
 
         try:
             response = self.meta_store.client.delete_object(
@@ -68,8 +68,8 @@ class S3Provider(KeyValueProvider):
         reason = response['ResponseMetadata'] if response else "None"
         if response is None or\
             response['ResponseMetadata']['HTTPStatusCode'] != 204:
-            msg: str = 'attempt to delete key {0} in bucket {1}' +\
-                       ' returned response {2}'\
+            msg: str = ('attempt to delete key {0} in bucket {1}' +
+                       ' returned response {2}')\
                            .format(key, self.bucket, reason)
             self.logger.info(msg)
 
@@ -87,7 +87,7 @@ class S3Provider(KeyValueProvider):
         reason = response['ResponseMetadata'] if response else "None"
         if response is None or \
                 response['ResponseMetadata']['HTTPStatusCode'] != 200:
-            msg: str = 'attempt to write key {0} in bucket {1}' +\
-                       ' returned response {2}'\
-                           .format(key, self.bucket, reason)
+            msg: str = ('attempt to write key {0} in bucket {1}' +
+                       ' returned response {2}')\
+                .format(key, self.bucket, reason)
             self._report_fatal(msg)

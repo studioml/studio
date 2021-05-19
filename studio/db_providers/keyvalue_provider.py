@@ -1,5 +1,4 @@
 import time
-import os
 from concurrent.futures import ThreadPoolExecutor, wait
 
 from studio.util import util, logs
@@ -11,17 +10,14 @@ from studio.util.util import retry, report_fatal,\
     compression_to_extension, check_for_kb_interrupt
 
 
-class KeyValueProvider(object):
+class KeyValueProvider:
     """Data provider for managing experiment lifecycle."""
 
     def __init__(
             self,
             db_config,
             handler: StorageHandler,
-            blocking_auth=True,
             compression=None):
-        guest = db_config.get('guest', None)
-
         self.logger = logs.getLogger(self.__class__.__name__)
         self.logger.setLevel(get_storage_verbose_level())
 
@@ -54,7 +50,7 @@ class KeyValueProvider(object):
 
         return "users/" + userid + "/"
 
-    def _get_experiments_keybase(self, userid=None):
+    def _get_experiments_keybase(self):
         return "experiments/"
 
     def _get_projects_keybase(self):
@@ -78,13 +74,13 @@ class KeyValueProvider(object):
         for tag, item in experiment.artifacts.items():
             art: Artifact = item
             if art.is_mutable:
-                art.key = self.get_mutable_artifact_key(experiment, tag)
+                art.key = self._get_mutable_artifact_key(experiment, tag)
             else:
                 if art.local_path is not None:
                     # upload immutable artifacts
                     art.key = art.upload(art.local_path)
                 elif art.hash is not None:
-                    art.key = self.get_immutable_artifact_key(
+                    art.key = self._get_immutable_artifact_key(
                         art.hash,
                         compression=compression
                     )
@@ -111,17 +107,17 @@ class KeyValueProvider(object):
                       experiment.key + "/owner",
                       userid)
 
-        retry(lambda: self.checkpoint_experiment(experiment, blocking=True),
+        retry(lambda: self.checkpoint_experiment(experiment),
               sleep_time=10,
               logger=self.logger)
-        self.logger.info("Added experiment " + experiment.key)
+        self.logger.info("Added experiment %s", experiment.key)
 
-    def get_immutable_artifact_key(arthash, compression=None):
+    def _get_immutable_artifact_key(self, arthash, compression=None):
         retval = "blobstore/" + arthash + ".tar" + \
                  compression_to_extension(compression)
         return retval
 
-    def get_mutable_artifact_key(self, experiment: Experiment, tag: str) -> str:
+    def _get_mutable_artifact_key(self, experiment: Experiment, tag: str) -> str:
         return self._get_experiments_keybase() + \
             experiment.key + '/' + tag + '.tar'
 
@@ -139,7 +135,7 @@ class KeyValueProvider(object):
                   experiment.key,
                   experiment_dict)
 
-        self.checkpoint_experiment(experiment, blocking=True)
+        self.checkpoint_experiment(experiment)
 
     def stop_experiment(self, key):
         # can be called remotely (the assumption is
@@ -186,8 +182,8 @@ class KeyValueProvider(object):
         experiment_dict = self._get(self._get_experiments_keybase() +
                                     experiment_key)
         if experiment_dict is None:
-            self.logger.error("FAILED to delete experiment {0}: NOT FOUND."
-                              .format(experiment_key))
+            self.logger.error("FAILED to delete experiment %s: NOT FOUND.",
+                              experiment_key)
             return
 
         from_compl_service: bool = experiment_dict.get('from_compl_service', False)
@@ -199,9 +195,10 @@ class KeyValueProvider(object):
         if experiment is not None:
             for tag, art in experiment.artifacts.items():
                 if art.key is not None and art.is_mutable:
-                    self.logger.debug(
+                    msg: str =\
                         ('Deleting artifact {0} from the store, ' +
-                         'artifact key {1}').format(tag, art.key))
+                         'artifact key {1}').format(tag, art.key)
+                    self.logger.debug(msg)
                     art.delete()
 
             if experiment.project is not None and not from_compl_service:
@@ -218,11 +215,11 @@ class KeyValueProvider(object):
             self.storage_handler.cleanup()
 
 
-    def checkpoint_experiment(self, experiment, blocking=False):
+    def checkpoint_experiment(self, experiment):
         key = self._experiment_key(experiment)
         key_path = self._get_experiments_keybase() + key
 
-        self.logger.debug('checkpointing {0}'.format(key_path))
+        self.logger.debug('checkpointing %s', key_path)
 
         experiment_dict = self._get(key_path)
 
@@ -269,9 +266,9 @@ class KeyValueProvider(object):
             logdata = tarf.extractfile(tarf_member).read()
             logdata = util.remove_backspaces(logdata).split('\n')
             return logdata
-        except BaseException as e:
-            self.logger.debug('Getting experiment logtail raised an exception: {0}'
-                              .format(repr(e)))
+        except BaseException as exc:
+            self.logger.debug('Getting experiment logtail raised an exception: %s',
+                              repr(exc))
             check_for_kb_interrupt()
             return None
 
@@ -290,19 +287,17 @@ class KeyValueProvider(object):
                 expinfo = self._get_experiment_info(experiment_stub)
             except Exception as exc:
                 self.logger.info(
-                    "Exception {0} while info download for {1}"
-                        .format(exc, key))
+                    "Exception %s while info download for %s", repr(exc), key)
 
         return experiment_from_dict(data, expinfo)
 
-    def get_user_experiments(self, userid=None, blocking=True):
+    def get_user_experiments(self, userid=None):
         if userid and '@' in userid:
             users = self.get_users()
             user_ids = [u for u in users if users[u].get('email') == userid]
             if len(user_ids) < 1:
                 return None
-            else:
-                userid = user_ids[0]
+            userid = user_ids[0]
 
         experiment_keys = self._get(
             self._get_user_keybase(userid) + "experiments/", shallow=True)
@@ -358,8 +353,7 @@ class KeyValueProvider(object):
     def is_auth_expired(self):
         if self.auth:
             return self.auth.expired
-        else:
-            return False
+        return False
 
     def can_write_experiment(self, key=None, user=None):
         assert key is not None
@@ -372,10 +366,8 @@ class KeyValueProvider(object):
             owner = experiment.get('owner')
             if owner is None or owner == 'guest':
                 return True
-            else:
-                return (owner == user)
-        else:
-            return True
+            return owner == user
+        return True
 
     def register_user(self, userid, email):
         keypath = self._get_user_keybase(userid) + 'email'
@@ -386,9 +378,17 @@ class KeyValueProvider(object):
     def get_storage_handler(self):
         return self.storage_handler
 
+    def _get(self, key, shallow=False):
+        raise NotImplementedError("Not implemented: _get")
+
+    def _set(self, key, value):
+        raise NotImplementedError("Not implemented: _set")
+
+    def _delete(self, key, shallow=True):
+        raise NotImplementedError("Not implemented: _delete")
+
     def __enter__(self):
         return self
 
     def __exit__(self, *args):
         pass
-

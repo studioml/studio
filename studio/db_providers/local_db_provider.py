@@ -36,7 +36,7 @@ class LocalDbProvider(KeyValueProvider):
     def _delete(self, key, shallow=True):
         file_name = os.path.join(self.db_root, key)
         if os.path.exists(file_name):
-            self.logger.debug("Deleting local database file {0}.".format(file_name))
+            self.logger.debug("Deleting local database file %s.", file_name)
             util.delete_local_path(file_name, self.db_root, shallow)
 
     def _set(self, key, value):
@@ -44,4 +44,3 @@ class LocalDbProvider(KeyValueProvider):
         self._ensure_path_dirs_exist(file_name)
         with open(file_name, 'w') as outfile:
             json.dump(value, outfile)
-
