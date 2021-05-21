@@ -1,7 +1,7 @@
 import sys
 import argparse
 
-from . import model, logs
+from studio import model, logs
 from .local_worker import worker_loop
 from .pubsub_queue import PubsubQueue
 from .sqs_queue import SQSQueue

@@ -14,11 +14,11 @@ import time
 import gzip
 from apscheduler.schedulers.background import BackgroundScheduler
 
-from .util import rsync_cp
-from . import fs_tracker, model
-from .runner import main as runner_main
+from studio.extra_util import rsync_cp
+from studio import fs_tracker, model
+from studio.runner import main as runner_main
 
-from . import logs
+from studio.util import logs
 
 
 @magics_class

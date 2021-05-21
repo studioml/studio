@@ -1,6 +1,6 @@
 import sys
 import argparse
-from . import runner
+from studio import runner
 
 
 def main():

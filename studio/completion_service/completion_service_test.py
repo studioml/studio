@@ -9,8 +9,9 @@ from timeout_decorator import timeout
 
 from .completion_service import CompletionService
 
-from studio.util import has_aws_credentials, filehash
-from studio.util import download_file, rand_string
+from studio.extra_util import has_aws_credentials
+from studio.util.util import rand_string, filehash
+from studio.storage.storage_util import download_file
 
 _file_url = 'https://s3-us-west-2.amazonaws.com/ml-enn/' + \
             'deepbilevel_datafiles/' + \

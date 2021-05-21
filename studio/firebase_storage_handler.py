@@ -3,12 +3,12 @@ import calendar
 import certifi
 import json
 
-from . import pyrebase
-from . import logs
-from .auth import get_auth
-from .model_setup import get_model_verbose_level
-from .storage_type import StorageType
-from .storage_handler import StorageHandler
+from studio import pyrebase
+from studio.util import logs
+from studio.auth import get_auth
+from studio.storage.storage_setup import get_storage_verbose_level
+from studio.storage.storage_type import StorageType
+from studio.storage.storage_handler import StorageHandler
 
 class FirebaseStorageHandler(StorageHandler):
 
@@ -17,7 +17,7 @@ class FirebaseStorageHandler(StorageHandler):
                  blocking_auth=True,
                  compression=None):
 
-        verbose = get_model_verbose_level()
+        verbose = get_storage_verbose_level()
         self.logger = logs.getLogger(self.__class__.__name__)
         self.logger.setLevel(verbose)
 
@@ -92,7 +92,7 @@ class FirebaseStorageHandler(StorageHandler):
             self.logger.debug("Done")
         except Exception as err:
             self.logger.warn(
-                ("Downloading file {} to local path {} from storage " +
+                ("Downloading file {} to local path {} from studio.storage " +
                  "raised an exception: {}") .format(
                     key,
                     local_file_path,
@@ -122,7 +122,7 @@ class FirebaseStorageHandler(StorageHandler):
             self.logger.debug("Done")
         except Exception as err:
             self.logger.warning(
-                ("Deleting file {} from storage " +
+                ("Deleting file {} from studio.storage " +
                  "raised an exception: {}") .format(key, err))
 
     def get_file_url(self, key, method='GET'):

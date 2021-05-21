@@ -14,9 +14,11 @@ try:
 except BaseException:
     keras = None
 
-from studio import model, logs
-from studio.local_queue import LocalQueue, get_local_queue_lock
-from studio.util import has_aws_credentials, sixdecode, retry
+from studio import model
+from studio.util import logs
+from studio.queues.local_queue import LocalQueue, get_local_queue_lock
+from studio.util.util import sixdecode, retry
+from studio.extra_util import has_aws_credentials
 from env_detect import on_gcp, on_aws
 
 TEST_TIMEOUT = 600

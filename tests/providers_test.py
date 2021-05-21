@@ -10,9 +10,9 @@ import shutil
 from studio import model
 from studio.firebase_provider import FirebaseProvider
 from studio.postgres_provider import PostgresProvider
-from studio.s3_provider import S3Provider
+from studio.db_providers.s3_provider import S3Provider
 from studio.auth import remove_all_keys
-from studio.util import has_aws_credentials
+from studio.extra_util import has_aws_credentials
 from env_detect import on_gcp, on_aws
 
 from model_test import get_test_experiment

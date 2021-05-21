@@ -1,7 +1,7 @@
 import time
 import sys
 from flask import Flask, render_template, request, redirect, abort
-from . import model
+from studio import model
 import argparse
 import yaml
 import json
@@ -16,7 +16,7 @@ from requests.exceptions import ChunkedEncodingError
 from .experiment import experiment_from_dict
 from .auth import get_and_verify_user, get_auth
 from .util import parse_verbosity
-from . import logs
+from studio.util import logs
 
 app = Flask(__name__)
 

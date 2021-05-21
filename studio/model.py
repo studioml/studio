@@ -1,90 +1,31 @@
 """Data providers."""
-import os
-import re
-import yaml
-import pyhocon
-import six
 import uuid
 
-from .firebase_provider import FirebaseProvider
-from .http_provider import HTTPProvider
-from .local_db_provider import LocalDbProvider
-from .s3_provider import S3Provider
-from .local_queue import LocalQueue
-from .pubsub_queue import PubsubQueue
-from .sqs_queue import SQSQueue
-from .storage_handler_factory import StorageHandlerFactory
-from .storage_type import StorageType
-from .storage_handler import StorageHandler
-from .gcloud_worker import GCloudWorkerManager
-from .ec2cloud_worker import EC2WorkerManager
-from .qclient_cache import get_cached_queue, shutdown_cached_queue
-from .util import parse_verbosity
-from .auth import get_auth
+from studio.firebase_provider import FirebaseProvider
+from studio.http_provider import HTTPProvider
+from studio.pubsub_queue import PubsubQueue
+from studio.gcloud_worker import GCloudWorkerManager
+from studio.ec2cloud_worker import EC2WorkerManager
+from studio.util.util import parse_verbosity
+from studio.auth import get_auth
 
-from .model_setup import setup_model, get_model_db_provider,\
-    reset_model, set_model_verbose_level
-from . import logs
+from studio.db_providers import db_provider_setup
+from studio.queues import queues_setup
+from studio.storage.storage_setup import setup_storage, get_storage_db_provider,\
+    reset_storage, set_storage_verbose_level
+from studio.util import logs
+
+def reset_storage_providers():
+    reset_storage()
+
 
 def get_config(config_file=None):
+    return db_provider_setup.get_config(config_file=config_file)
 
-    config_paths = []
-    if config_file:
-        if not os.path.exists(config_file):
-            raise ValueError('User config file {} not found'
-                             .format(config_file))
-        config_paths.append(os.path.expanduser(config_file))
-
-    config_paths.append(os.path.expanduser('~/.studioml/config.yaml'))
-    config_paths.append(
-        os.path.join(
-            os.path.dirname(os.path.realpath(__file__)),
-            "default_config.yaml"))
-
-    for path in config_paths:
-        if not os.path.exists(path):
-            continue
-
-        with(open(path)) as f:
-            if path.endswith('.hocon'):
-                config = pyhocon.ConfigFactory.parse_string(f.read())
-            else:
-                config = yaml.load(f.read(), Loader=yaml.FullLoader)
-
-                def replace_with_env(config):
-                    for key, value in six.iteritems(config):
-                        if isinstance(value, six.string_types):
-                            config[key] = os.path.expandvars(value)
-
-                        elif isinstance(value, dict):
-                            replace_with_env(value)
-
-                replace_with_env(config)
-
-            return config
-
-    raise ValueError('None of the config paths {0} exists!'
-                     .format(config_paths))
-
-def reset_model_providers():
-    reset_model()
-
-def get_artifact_store(config) -> StorageHandler:
-    storage_type: str = config['type'].lower()
-
-    factory: StorageHandlerFactory = StorageHandlerFactory.get_factory()
-    if storage_type == 's3':
-        handler = factory.get_handler(StorageType.storageS3, config)
-        return handler
-    elif storage_type == 'local':
-        handler = factory.get_handler(StorageType.storageLocal, config)
-        return handler
-    else:
-        raise ValueError('Unknown storage type: ' + storage_type)
 
 def get_db_provider(config=None, blocking_auth=True):
 
-    db_provider = get_model_db_provider()
+    db_provider = get_storage_db_provider()
     if db_provider is not None:
         return db_provider
 
@@ -93,7 +34,7 @@ def get_db_provider(config=None, blocking_auth=True):
     verbose = parse_verbosity(config.get('verbose'))
 
     # Save this verbosity level as global for the whole experiment job:
-    set_model_verbose_level(verbose)
+    set_storage_verbose_level(verbose)
 
     logger = logs.getLogger("get_db_provider")
     logger.setLevel(verbose)
@@ -101,7 +42,7 @@ def get_db_provider(config=None, blocking_auth=True):
     logger.debug(config)
 
     if 'storage' in config.keys():
-        artifact_store = get_artifact_store(config['storage'])
+        artifact_store = db_provider_setup.get_artifact_store(config['storage'])
     else:
         artifact_store = None
 
@@ -115,26 +56,11 @@ def get_db_provider(config=None, blocking_auth=True):
         db_provider = HTTPProvider(db_config,
                             verbose=verbose,
                             blocking_auth=blocking_auth)
-
-    elif db_config['type'].lower() == 's3':
-        db_provider = S3Provider(db_config,
-                          blocking_auth=blocking_auth)
-        if artifact_store is None:
-            artifact_store = db_provider.get_storage_handler()
-
-    elif db_config['type'].lower() == 'gs':
-        raise NotImplementedError("GS is not supported.")
-
-    elif db_config['type'].lower() == 'local':
-        db_provider = LocalDbProvider(db_config,
-                          blocking_auth=blocking_auth)
-        if artifact_store is None:
-            artifact_store = db_provider.get_storage_handler()
-
     else:
-        raise ValueError('Unknown type of the database ' + db_config['type'])
+        db_provider = db_provider_setup.get_db_provider(
+            config=config, blocking_auth=blocking_auth)
 
-    setup_model(db_provider, artifact_store)
+    setup_storage(db_provider, artifact_store)
     return db_provider
 
 def get_queue(
@@ -144,38 +70,18 @@ def get_queue(
         logger=None,
         close_after=None,
         verbose=10):
-    if queue_name is None:
-        if cloud in ['gcloud', 'gcspot']:
-            queue_name = 'pubsub_' + str(uuid.uuid4())
-        elif cloud in ['ec2', 'ec2spot']:
-            queue_name = 'sqs_' + str(uuid.uuid4())
-        else:
-            queue_name = 'local'
-
-    if queue_name.startswith('ec2') or \
-       queue_name.startswith('sqs'):
-        return SQSQueue(queue_name, config=config, logger=logger)
-    elif queue_name.startswith('rmq_'):
-        return get_cached_queue(
-            name=queue_name,
-            route='StudioML.' + queue_name,
-            config=config,
-            close_after=close_after,
-            logger=logger,
-            verbose=verbose)
-    elif queue_name == 'local':
-        return LocalQueue(verbose=verbose)
-    else:
-        return PubsubQueue(queue_name, verbose=verbose)
+    queue = queues_setup.get_queue(queue_name=queue_name,
+                                   cloud=cloud,
+                                   config=config,
+                                   logger=logger,
+                                   close_after=close_after,
+                                   verbose=verbose)
+    if queue is None:
+        queue = PubsubQueue(queue_name, verbose=verbose)
+    return queue
 
 def shutdown_queue(queue, logger=None, delete_queue=True):
-    if queue is None:
-        return
-    queue_name = queue.get_name()
-    if queue_name.startswith("rmq_"):
-        shutdown_cached_queue(queue, logger, delete_queue)
-    else:
-        queue.shutdown(delete_queue)
+    queues_setup.shutdown_queue(queue, logger=logger, delete_queue=delete_queue)
 
 def get_worker_manager(config, cloud=None, verbose=10):
     if cloud is None:
@@ -209,17 +115,4 @@ def get_worker_manager(config, cloud=None, verbose=10):
             user_startup_script=config['cloud'].get('user_startup_script')
         )
     return worker_manager
-
-def add_packages(list1, list2):
-    # This function dedups the package names which I think could be
-    # functionally not desirable however rather than changing the behavior
-    # instead we will do the dedup in a stable manner that prevents
-    # package re-ordering
-    pkgs = {re.sub('==.+', '', pkg): pkg for pkg in list1 + list2}
-    merged = []
-    for k in list1 + list2:
-        v = pkgs.pop(re.sub('==.+', '', k), None)
-        if v is not None:
-            merged.append(v)
-    return merged
 
