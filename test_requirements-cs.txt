@@ -1,0 +1,8 @@
+pycodestyle
+pytest_xdist
+tensorflow
+keras
+certifi==2018.1.18
+pillow
+timeout_decorator
+
