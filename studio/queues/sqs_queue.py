@@ -1,6 +1,6 @@
-import boto3
 import time
 from typing import Dict
+import boto3
 
 from studio.credentials.credentials import Credentials, KEY_CREDENTIALS
 from studio.storage.storage_setup import get_storage_verbose_level
@@ -91,8 +91,8 @@ class SQSQueue:
                 break
 
     def enqueue(self, msg):
-        self.logger.debug("Sending message {} to queue with url {} "
-                          .format(msg, self.queue_url))
+        self.logger.debug("Sending message %s to queue with url %s ",
+                          msg, self.queue_url)
         self._client.send_message(
             QueueUrl=self.queue_url,
             MessageBody=msg)
@@ -103,24 +103,23 @@ class SQSQueue:
             'such as pubsub will bite you in the ass! ' +
             'Use dequeue with timeout instead')
 
-        no_tries = 3
-        for _ in range(no_tries):
-            response = self._client.receive_message(
-                QueueUrl=self.queue_url)
-
-            if 'Messages' not in response.keys():
-                time.sleep(5)
-                continue
-            else:
-                break
-
-        msgs = response.get('Messages', [])
-
-        for m in msgs:
-            self.logger.debug('Received message {} '.format(m['MessageId']))
-            self.hold(m['ReceiptHandle'], 0)
-
-        return any(msgs)
+        # no_tries = 3
+        # for _ in range(no_tries):
+        #     response = self._client.receive_message(
+        #         QueueUrl=self.queue_url)
+        #
+        #     if 'Messages' not in response.keys():
+        #         time.sleep(5)
+        #         continue
+        #     break
+        #
+        # msgs = response.get('Messages', [])
+        #
+        # for m in msgs:
+        #     self.logger.debug('Received message %s', m['MessageId'])
+        #     self.hold(m['ReceiptHandle'], 0)
+        #
+        # return any(msgs)
 
     def dequeue(self, acknowledge=True, timeout=0):
         wait_step = 1
@@ -130,13 +129,12 @@ class SQSQueue:
             msgs = response.get('Messages', [])
             if any(msgs):
                 break
-            elif waited == timeout:
+            if waited == timeout:
                 return None
-            else:
-                self.logger.info(
-                    ('No messages found, sleeping for {} ' +
-                     ' (total sleep time {})').format(wait_step, waited))
-                time.sleep(wait_step)
+            self.logger.info(
+                'No messages found, sleeping for %s '
+                ' (total sleep time %s)', wait_step, waited)
+            time.sleep(wait_step)
 
         msgs = response['Messages']
 
@@ -147,15 +145,15 @@ class SQSQueue:
 
         if acknowledge:
             self.acknowledge(retval['ReceiptHandle'])
-            self.logger.debug("Message {} received and acknowledged"
-                              .format(retval['MessageId']))
+            self.logger.debug("Message %s received and acknowledged",
+                              retval['MessageId'])
 
             return retval['Body']
-        else:
-            self.logger.debug("Message {} received, ack_id {}"
-                              .format(retval['MessageId'],
-                                      retval['ReceiptHandle']))
-            return (retval['Body'], retval['ReceiptHandle'])
+
+        self.logger.debug("Message %s received, ack_id %s",
+                          retval['MessageId'],
+                          retval['ReceiptHandle'])
+        return (retval['Body'], retval['ReceiptHandle'])
 
     def acknowledge(self, ack_id):
         util.retry(lambda: self._client.delete_message(
@@ -173,4 +171,5 @@ class SQSQueue:
         self._client.delete_queue(QueueUrl=self.queue_url)
 
     def shutdown(self, delete_queue=True):
+        _ = delete_queue
         self.delete()
