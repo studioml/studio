@@ -16,6 +16,10 @@ class RMQueue:
 
     """
 
+    # pylint: disable=too-many-instance-attributes
+
+    # Doing it properly will require more serious refactoring
+    # then we want to do just now.
     def __init__(self, queue, route, amqp_url='',
                  config=None, logger=None):
         """Setup the example publisher object, passing in the URL we will use

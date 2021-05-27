@@ -28,7 +28,7 @@ class HTTPProvider(object):
         self.logger.setLevel(self.verbose)
 
         self.credentials: Credentials = \
-            Credentials.getCredentials(config)
+            Credentials.get_credentials(config)
 
         self.storage_handler = HTTPStorageHandler(
             self.url,

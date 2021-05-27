@@ -47,7 +47,7 @@ class HTTPStorageHandler(StorageHandler):
         endpoint = config.get('endpoint', None)
         if endpoint is None:
             return None
-        creds: Credentials = Credentials.getCredentials(config)
+        creds: Credentials = Credentials.get_credentials(config)
         creds_fingerprint = creds.get_fingerprint() if creds else ''
         return '[http]{0}::{1}'.format(endpoint, creds_fingerprint)
 

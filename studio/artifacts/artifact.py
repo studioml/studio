@@ -55,7 +55,7 @@ class Artifact:
             self.remote_path = art_dict['url']
         if 'hash' in art_dict.keys():
             self.hash = art_dict['hash']
-        self.credentials = credentials.Credentials.getCredentials(art_dict)
+        self.credentials = credentials.Credentials.get_credentials(art_dict)
 
         self._setup_storage_handler(art_dict)
 

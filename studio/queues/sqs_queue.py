@@ -18,31 +18,26 @@ class SQSQueue:
             self.logger.setLevel(get_storage_verbose_level())
 
         self.name = name
-        self.region_name = None
-        self.receive_timeout = None
-        self.retry_time = None
-        self.aws_access_key_id = None
-        self.aws_secret_access_key = None
-        self.aws_session_token = None
-        self.profile_name = None
         self.is_persistent = False
 
-        if config is not None:
-            self._setup_from_config(config)
+        self.credentials = self._setup_from_config(config)
 
-        if self.profile_name is not None:
+        aws_access_key_id = self.credentials.get_key()
+        aws_secret_access_key = self.credentials.get_secret_key()
+
+        if self.credentials.get_profile() is not None:
             # If profile name is specified, for whatever reason
             # boto3 API will barf if (key, secret key) pair
             # is also defined.
-            self.aws_access_key_id = None
-            self.aws_secret_access_key = None
+            aws_access_key_id = None
+            aws_secret_access_key = None
 
         self._session = boto3.session.Session(
-            aws_access_key_id=self.aws_access_key_id,
-            aws_secret_access_key=self.aws_secret_access_key,
-            aws_session_token=self.aws_session_token,
-            region_name=self.region_name,
-            profile_name=self.profile_name
+            aws_access_key_id=aws_access_key_id,
+            aws_secret_access_key=aws_secret_access_key,
+            aws_session_token=None,
+            region_name=self.credentials.get_region(),
+            profile_name=self.credentials.get_profile()
         )
         self._client = self._session.client('sqs')
 
@@ -54,7 +49,10 @@ class SQSQueue:
         self.logger.info('Queue url = %s', self.queue_url)
 
 
-    def _setup_from_config(self, config):
+    def _setup_from_config(self, config) -> Credentials:
+        if config is None:
+            return Credentials(None)
+
         queue_params = config.get('cloud', {})\
             .get('queue', {})\
             .get('sqs', {})
@@ -62,18 +60,7 @@ class SQSQueue:
             self._get_bool_flag(queue_params, 'persistent')
         cred_params = queue_params.get(KEY_CREDENTIALS, {})
         credentials = Credentials(cred_params)
-
-        self.aws_access_key_id =\
-            credentials.get_key()
-        self.aws_secret_access_key =\
-            credentials.get_secret_key()
-        self.aws_session_token =\
-            credentials.get_session_token()
-        self.region_name =\
-            credentials.get_region()
-        self.profile_name =\
-            credentials.get_profile()
-
+        return credentials
 
     def _get_bool_flag(self, config: Dict, key: str) -> bool:
         value = config.get(key, False)

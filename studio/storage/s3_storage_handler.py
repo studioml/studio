@@ -24,7 +24,7 @@ class S3StorageHandler(StorageHandler):
         self.logger = logs.getLogger(self.__class__.__name__)
         self.logger.setLevel(get_storage_verbose_level())
         self.credentials: Credentials =\
-            Credentials.getCredentials(config)
+            Credentials.get_credentials(config)
 
         self.endpoint = config.get('endpoint', None)
 
@@ -114,7 +114,7 @@ class S3StorageHandler(StorageHandler):
         bucket = config.get('bucket', None)
         if bucket is None:
             return None
-        creds: Credentials = Credentials.getCredentials(config)
+        creds: Credentials = Credentials.get_credentials(config)
         creds_fingerprint = creds.get_fingerprint() if creds else ''
         return '[s3]{0}/{1}::{2}'.format(endpoint, bucket, creds_fingerprint)
 

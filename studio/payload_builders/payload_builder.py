@@ -10,11 +10,3 @@ class PayloadBuilder:
     def construct(self, experiment, config, packages):
         raise NotImplementedError(
             'Not implemented for payload builder {0}'.format(self.name))
-
-
-
-
-
-
-
-
