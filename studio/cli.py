@@ -120,7 +120,7 @@ def _kill(args, cli_args):
 def get_logger():
     global _my_logger
     if not _my_logger:
-        _my_logger = logs.getLogger('studio-runs')
+        _my_logger = logs.get_logger('studio-runs')
     return _my_logger
 
 

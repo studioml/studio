@@ -24,7 +24,7 @@ class HTTPProvider(object):
         # TODO: implement connection
         self.url = config.get('serverUrl')
         self.verbose = get_storage_verbose_level()
-        self.logger = logs.getLogger('HTTPProvider')
+        self.logger = logs.get_logger('HTTPProvider')
         self.logger.setLevel(self.verbose)
 
         self.credentials: Credentials = \

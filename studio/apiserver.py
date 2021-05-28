@@ -495,7 +495,7 @@ def get_allow_tensorboard():
 def getlogger():
     global logger
     if logger is None:
-        logger = logs.getLogger('studio_server')
+        logger = logs.get_logger('studio_server')
         logger.setLevel(10)
 
     return logger

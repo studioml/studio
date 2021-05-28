@@ -11,7 +11,7 @@ from .qclient_cache import get_cached_queue
 
 
 def main(args=sys.argv):
-    logger = logs.getLogger('studio-remote-worker')
+    logger = logs.get_logger('studio-remote-worker')
     parser = argparse.ArgumentParser(
         description='Studio remote worker. \
                      Usage: studio-remote-worker \

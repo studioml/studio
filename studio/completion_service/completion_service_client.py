@@ -9,7 +9,7 @@ import pdb
 
 from studio import fs_tracker, model, logs, util
 
-logger = logs.getLogger('completion_service_client')
+logger = logs.get_logger('completion_service_client')
 try:
     logger.setLevel(model.parse_verbosity(sys.argv[1]))
 except BaseException:

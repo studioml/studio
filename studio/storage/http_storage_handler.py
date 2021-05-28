@@ -13,7 +13,7 @@ class HTTPStorageHandler(StorageHandler):
                  timestamp=None,
                  compression=None):
 
-        self.logger = logs.getLogger(self.__class__.__name__)
+        self.logger = logs.get_logger(self.__class__.__name__)
         self.logger.setLevel(get_storage_verbose_level())
 
         self.url = remote_path

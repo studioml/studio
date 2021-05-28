@@ -78,7 +78,7 @@ def get_db_provider(config=None, blocking_auth=True):
     # Save this verbosity level as global for the whole experiment job:
     set_storage_verbose_level(verbose)
 
-    logger = logs.getLogger("get_db_provider")
+    logger = logs.get_logger("get_db_provider")
     logger.setLevel(verbose)
     logger.debug('Choosing db provider with config:')
     logger.debug(config)

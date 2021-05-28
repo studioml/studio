@@ -38,7 +38,7 @@ class Artifact:
 
         self.logger = logger
         if self.logger is None:
-            self.logger = logs.getLogger(self.__class__.__name__)
+            self.logger = logs.get_logger(self.__class__.__name__)
             self.logger.setLevel(storage_setup.get_storage_verbose_level())
 
         self.storage_handler: StorageHandler = None

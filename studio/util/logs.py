@@ -10,7 +10,7 @@ logging.basicConfig(
     datefmt='%Y-%m-%d %H:%M:%S')
 
 
-def getLogger(name):
+def get_logger(name):
     return logging.getLogger(name)
 
 

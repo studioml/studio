@@ -17,7 +17,7 @@ AWS_TYPE = 'aws'
 # for different kinds of studioml storage providers (S3, http, local etc.)
 class Credentials:
     def __init__(self, cred_dict):
-        self.logger = logs.getLogger(self.__class__.__name__)
+        self.logger = logs.get_logger(self.__class__.__name__)
         self.logger.setLevel(storage_setup.get_storage_verbose_level())
 
         self.type = None

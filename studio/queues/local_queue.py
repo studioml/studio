@@ -19,7 +19,7 @@ class LocalQueue:
             self.path = self._get_queue_directory()
         else:
             self.path = path
-        self.logger = logs.getLogger(self.__class__.__name__)
+        self.logger = logs.get_logger(self.__class__.__name__)
         self.logger.setLevel(verbose)
         self.status_marker = os.path.join(self.path, 'is_active.queue')
         try:

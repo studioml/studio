@@ -35,7 +35,7 @@ class RemoteWorkerTest(unittest.TestCase):
     def test_remote_worker(self):
         experiment_name = 'test_remote_worker_' + str(uuid.uuid4())
         queue_name = experiment_name
-        logger = logs.getLogger('test_remote_worker')
+        logger = logs.get_logger('test_remote_worker')
         logger.setLevel(10)
 
         pw = subprocess.Popen(
@@ -76,7 +76,7 @@ class RemoteWorkerTest(unittest.TestCase):
         tmpfile = os.path.join(tempfile.gettempdir(),
                                str(uuid.uuid4()))
 
-        logger = logs.getLogger('test_remote_worker_c')
+        logger = logs.get_logger('test_remote_worker_c')
         logger.setLevel(10)
         experiment_name = "test_remote_worker_c_" + str(uuid.uuid4())
 
@@ -140,7 +140,7 @@ class RemoteWorkerTest(unittest.TestCase):
         ' be able to use google ' +
         'PubSub')
     def test_remote_worker_co(self):
-        logger = logs.getLogger('test_remote_worker_co')
+        logger = logs.get_logger('test_remote_worker_co')
         logger.setLevel(10)
 
         tmpfile = os.path.join(tempfile.gettempdir(),
@@ -191,7 +191,7 @@ class RemoteWorkerTest(unittest.TestCase):
 
         # create a docker image with baked in credentials
         # and run a remote worker tests with it
-        logger = logs.getLogger('test_baked_image')
+        logger = logs.get_logger('test_baked_image')
         logger.setLevel(logs.DEBUG)
 
         # check if docker is installed
@@ -227,7 +227,7 @@ class RemoteWorkerTest(unittest.TestCase):
 
         experiment_name = 'test_remote_worker_baked' + str(uuid.uuid4())
         queue_name = experiment_name
-        logger = logs.getLogger('test_baked_image')
+        logger = logs.get_logger('test_baked_image')
         logger.setLevel(10)
 
         pw = subprocess.Popen(

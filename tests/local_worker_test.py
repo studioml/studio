@@ -8,6 +8,7 @@ import time
 from timeout_decorator import timeout
 import traceback
 import numpy as np
+import glob
 
 try:
     import keras
@@ -225,7 +226,7 @@ class LocalWorkerTest(unittest.TestCase):
         ) as db:
 
             experiment = db.get_experiment(experiment_name)
-            saved_model = experiment.get_model(db)
+            saved_model = self._get_model(db, experiment)
 
             v = np.random.rand(1, 2)
             prediction = saved_model.predict(v)
@@ -235,12 +236,29 @@ class LocalWorkerTest(unittest.TestCase):
 
             db.delete_experiment(experiment)
 
+    def _get_model(self, db, experiment):
+        modeldir = db.get_artifact(experiment.artifacts['modeldir'])
+        hdf5_files = [
+            (p, os.path.getmtime(p))
+            for p in
+            glob.glob(modeldir + '/*.hdf*') +
+            glob.glob(modeldir + '/*.h5')]
+        if any(hdf5_files):
+            # experiment type - keras
+            import keras
+            last_checkpoint = max(hdf5_files, key=lambda t: t[1])[0]
+            return keras.models.load_model(last_checkpoint)
+
+        if self.info.get('type') == 'tensorflow':
+            raise NotImplementedError
+
+        raise ValueError("Experiment type is unknown!")
 
     @timeout(TEST_TIMEOUT, use_signals=True)
     def test_stop_experiment(self):
         my_path = os.path.dirname(os.path.realpath(__file__))
 
-        logger = logs.getLogger('test_stop_experiment')
+        logger = logs.get_logger('test_stop_experiment')
         logger.setLevel(10)
 
         config_name = os.path.join(my_path, 'test_config.yaml')
@@ -285,7 +303,7 @@ class LocalWorkerTest(unittest.TestCase):
     def test_experiment_maxduration(self):
         my_path = os.path.dirname(os.path.realpath(__file__))
 
-        logger = logs.getLogger('test_experiment_maxduration')
+        logger = logs.get_logger('test_experiment_maxduration')
         logger.setLevel(10)
 
         config_name = os.path.join(my_path, 'test_config.yaml')
@@ -318,7 +336,7 @@ class LocalWorkerTest(unittest.TestCase):
     def test_experiment_lifetime(self):
         my_path = os.path.dirname(os.path.realpath(__file__))
 
-        logger = logs.getLogger('test_experiment_lifetime')
+        logger = logs.get_logger('test_experiment_lifetime')
         logger.setLevel(10)
 
         config_name = os.path.join(my_path, 'test_config.yaml')
@@ -365,7 +383,7 @@ def stubtest_worker(
 
     my_path = os.path.dirname(os.path.realpath(__file__))
     config_name = os.path.join(my_path, config_name)
-    logger = logs.getLogger('stubtest_worker')
+    logger = logs.get_logger('stubtest_worker')
     logger.setLevel(10)
 
     queue.clean()

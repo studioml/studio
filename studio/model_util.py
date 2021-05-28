@@ -49,7 +49,7 @@ class BufferedPipe:
         self.q_in = q_in
         self.q_size = max(min_q_size, 2 * num_workers)
 
-        self.logger = logs.getLogger('BufferedPipe')
+        self.logger = logs.get_logger('BufferedPipe')
         self.logger.setLevel(10)
         self.timeout = timeout
         self.worker_frame = Thread

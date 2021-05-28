@@ -7,6 +7,7 @@ import string
 import time
 import sys
 import shutil
+import shlex
 import os
 import tempfile
 import uuid
@@ -88,17 +89,18 @@ def retry(f,
     for i in range(no_retries):
         try:
             return f()
-        except exception_class as e:
+        except exception_class as exc:
             check_for_kb_interrupt()
             if i == no_retries - 1:
-                raise e
+                raise exc
 
             if logger:
                 logger.info(
                     ('Exception {0} is caught, ' +
                      'sleeping {1}s and retrying (attempt {2} of {3})')
-                        .format(e, sleep_time, i, no_retries))
+                        .format(exc, sleep_time, i, no_retries))
             time.sleep(sleep_time)
+    return None
 
 
 def compression_to_extension(compression):
@@ -119,19 +121,19 @@ def _compression_to_extension_taropt(compression):
     if compression == 'bzip2':
         return '.bz2', '--bzip2'
 
-    elif compression == 'gzip':
+    if compression == 'gzip':
         return '.gz', '--gzip'
 
-    elif compression == 'xz':
+    if compression == 'xz':
         return '.xz', '--xz'
 
-    elif compression == 'lzma':
+    if compression == 'lzma':
         return '.lzma', '--lzma'
 
-    elif compression == 'lzop':
+    if compression == 'lzop':
         return '.lzop', '--lzop'
 
-    elif compression == 'none':
+    if compression == 'none':
         return '', ''
 
     raise ValueError('Unknown compression method {}'
@@ -140,12 +142,12 @@ def _compression_to_extension_taropt(compression):
 
 def timeit(method):
     def timed(*args, **kw):
-        ts = time.time()
+        tstart = time.time()
         result = method(*args, **kw)
-        te = time.time()
+        tend = time.time()
 
         line = '%r (%r, %r) %2.2f sec' % \
-               (method.__name__, args, kw, te - ts)
+               (method.__name__, args, kw, tend - tstart)
 
         try:
             logger = args[0].logger
@@ -159,21 +161,16 @@ def timeit(method):
     return timed
 
 
-def sixdecode(s):
-    if isinstance(s, str):
-        return s
-    if isinstance(s, bytes):
-        return s.decode('utf8')
-    raise TypeError("Unknown type of " + str(s))
+def sixdecode(sval):
+    if isinstance(sval, str):
+        return sval
+    if isinstance(sval, bytes):
+        return sval.decode('utf8')
+    raise TypeError("Unknown type of " + str(sval))
 
 
-def shquote(s):
-    try:
-        import pipes as P
-    except ImportError:
-        import shlex as P
-
-    return P.quote(s)
+def shquote(sval):
+    return shlex.quote(sval)
 
 
 duration_regex = re.compile(
@@ -188,7 +185,7 @@ duration_regex = re.compile(
 def parse_duration(duration_str):
     parts = duration_regex.match(duration_str)
     if not parts:
-        return
+        return None
     parts = parts.groupdict()
     time_params = {}
     for (name, param) in parts.items():
@@ -216,12 +213,11 @@ def parse_verbosity(verbosity=None):
     if isinstance(verbosity, str) and \
             verbosity in logger_levels.keys():
         return logger_levels[verbosity]
-    else:
-        return int(verbosity)
+    return int(verbosity)
 
 
-def str2duration(s):
-    return parse_duration(s.lower())
+def str2duration(sval):
+    return parse_duration(sval.lower())
 
 
 def get_temp_filename() -> str:
@@ -245,9 +241,9 @@ def delete_local_folders(local_folder_path: str, root: str):
     head, _ = os.path.split(local_folder_path)
     try:
         os.rmdir(local_folder_path)
-    except:
+    except BaseException:
         check_for_kb_interrupt()
-        pass
+
     delete_local_folders(head, root)
 
 def rm_rf(path):
@@ -280,7 +276,7 @@ def add_packages(list1, list2):
     pkgs = {re.sub('==.+', '', pkg): pkg for pkg in list1 + list2}
     merged = []
     for k in list1 + list2:
-        v = pkgs.pop(re.sub('==.+', '', k), None)
-        if v is not None:
-            merged.append(v)
+        val = pkgs.pop(re.sub('==.+', '', k), None)
+        if val is not None:
+            merged.append(val)
     return merged

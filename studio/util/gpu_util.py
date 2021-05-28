@@ -12,9 +12,9 @@ def memstr2int(string):
         ('kb', 2**10), ('k', 2**10)
     ]
 
-    for k, f in conversion_factors:
-        if string.endswith(k):
-            return int(float(string.replace(k, '')) * f)
+    for key, factor in conversion_factors:
+        if string.endswith(key):
+            return int(float(string.replace(key, '')) * factor)
 
     return int(string)
 
@@ -29,8 +29,7 @@ def get_available_gpus(gpu_mem_needed=None, strict=False):
         if strict:
             return [gpu.find('minor_number').text for gpu in gpus if
                     check_gpu_nomem_strict(gpu)]
-        else:
-            return [gpu.find('minor_number').text for gpu in gpus]
+        return [gpu.find('minor_number').text for gpu in gpus]
 
     gpu_mem_needed = memstr2int(gpu_mem_needed)
 
@@ -46,21 +45,18 @@ def get_available_gpus(gpu_mem_needed=None, strict=False):
     if strict:
         return [gpu.find('minor_number').text
                 for gpu in gpus if check_gpu_mem_strict(gpu)]
-    else:
-        return [gpu.find('minor_number').text
-                for gpu in gpus if check_gpu_mem_loose(gpu)]
+    return [gpu.find('minor_number').text
+            for gpu in gpus if check_gpu_mem_loose(gpu)]
 
 
 def _get_gpu_info():
     try:
-        smi_proc = subprocess.Popen(['nvidia-smi', '-q', '-x'],
-                                    stdout=subprocess.PIPE,
-                                    stderr=subprocess.STDOUT)
-
-        smi_output, _ = smi_proc.communicate()
-        xmlroot = ET.fromstring(sixdecode(smi_output))
-
-        return xmlroot.findall('gpu')
+        with subprocess.Popen(['nvidia-smi', '-q', '-x'],
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.STDOUT) as smi_proc:
+            smi_output, _ = smi_proc.communicate()
+            xmlroot = ET.fromstring(sixdecode(smi_output))
+            return xmlroot.findall('gpu')
     except Exception:
         return []
 

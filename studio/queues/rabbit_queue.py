@@ -51,7 +51,7 @@ class RMQueue:
         if logger is not None:
             self._logger = logger
         else:
-            self._logger = logs.getLogger('RabbitMQ')
+            self._logger = logs.get_logger('RabbitMQ')
             self._logger.setLevel(get_storage_verbose_level())
 
         if config is not None:
