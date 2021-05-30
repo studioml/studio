@@ -39,7 +39,7 @@ class CompletionService:
         # StudioML configuration
         self.config = model.get_config(studio_config_file)
 
-        self.logger = logs.getLogger(self.__class__.__name__)
+        self.logger = logs.get_logger(self.__class__.__name__)
         self.verbose_level = parse_verbosity(self.config['verbose'])
         self.logger.setLevel(self.verbose_level)
 

@@ -1,7 +1,7 @@
 import time
 from studio import logs
 
-logger = logs.getLogger('helloworld')
+logger = logs.get_logger('helloworld')
 logger.setLevel(10)
 
 i = 0

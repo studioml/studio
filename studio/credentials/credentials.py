@@ -17,7 +17,7 @@ AWS_TYPE = 'aws'
 # for different kinds of studioml storage providers (S3, http, local etc.)
 class Credentials:
     def __init__(self, cred_dict):
-        self.logger = logs.getLogger(self.__class__.__name__)
+        self.logger = logs.get_logger(self.__class__.__name__)
         self.logger.setLevel(storage_setup.get_storage_verbose_level())
 
         self.type = None
@@ -102,14 +102,14 @@ class Credentials:
         if self.type is None and self.key is None and\
             self.secret_key is None:
             return ''
-        id: str = "{0}::{1}::{2}::{3}::{4}::{5}"\
+        id_str: str = "{0}::{1}::{2}::{3}::{4}::{5}"\
             .format(self.type, self.key, self.secret_key,
                     self.session_token,
                     self.profile, self.region)
-        return hashlib.sha256(id.encode()).hexdigest()
+        return hashlib.sha256(id_str.encode()).hexdigest()
 
     @classmethod
-    def getCredentials(cls, config):
+    def get_credentials(cls, config):
         if config is None:
             return None
         cred_dict = config.get(KEY_CREDENTIALS, None)
@@ -118,4 +118,3 @@ class Credentials:
     def to_string(self):
         return "type: {0} key: {1} secret: <reducted> profile: {2} region: {3}"\
             .format(self.type, self.key, self.profile, self.region)
-

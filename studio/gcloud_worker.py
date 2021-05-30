@@ -33,7 +33,7 @@ class GCloudWorkerManager(object):
 
         self.zone = zone
         self.projectid = credentials_dict['project_id']
-        self.logger = logs.getLogger("GCloudWorkerManager")
+        self.logger = logs.get_logger("GCloudWorkerManager")
         self.logger.setLevel(verbose)
         self.auth_cookie = auth_cookie
         self.user_startup_script = user_startup_script

@@ -13,7 +13,7 @@ class HTTPStorageHandler(StorageHandler):
                  timestamp=None,
                  compression=None):
 
-        self.logger = logs.getLogger(self.__class__.__name__)
+        self.logger = logs.get_logger(self.__class__.__name__)
         self.logger.setLevel(get_storage_verbose_level())
 
         self.url = remote_path
@@ -47,7 +47,7 @@ class HTTPStorageHandler(StorageHandler):
         endpoint = config.get('endpoint', None)
         if endpoint is None:
             return None
-        creds: Credentials = Credentials.getCredentials(config)
+        creds: Credentials = Credentials.get_credentials(config)
         creds_fingerprint = creds.get_fingerprint() if creds else ''
         return '[http]{0}::{1}'.format(endpoint, creds_fingerprint)
 

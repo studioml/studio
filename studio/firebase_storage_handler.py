@@ -18,7 +18,7 @@ class FirebaseStorageHandler(StorageHandler):
                  compression=None):
 
         verbose = get_storage_verbose_level()
-        self.logger = logs.getLogger(self.__class__.__name__)
+        self.logger = logs.get_logger(self.__class__.__name__)
         self.logger.setLevel(verbose)
 
         guest = db_config.get('guest')

@@ -13,7 +13,7 @@ class RunnerArgs(object):
 
 class HyperparamTest(unittest.TestCase):
     def test_parse_range(self):
-        logger = logs.getLogger('test_stop_experiment')
+        logger = logs.get_logger('test_stop_experiment')
         h = HyperparameterParser(RunnerArgs(), logger)
         range_strs = ['1,2,3', ':5', '2:5', '0.1:0.05:0.3', '0.1:3:0.3',
                       '0.01:4l:10']
@@ -31,7 +31,7 @@ class HyperparamTest(unittest.TestCase):
             self.assertTrue(np.isclose(hyperparameter.values, gd_truth).all())
 
     def test_unfold_tuples(self):
-        logger = logs.getLogger('test_stop_experiment')
+        logger = logs.get_logger('test_stop_experiment')
         h = HyperparameterParser(RunnerArgs(), logger)
 
         hyperparams = [Hyperparameter(name='a', values=[1, 2, 3]),

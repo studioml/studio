@@ -32,7 +32,7 @@ class EncryptedPayloadBuilder(PayloadBuilder):
         super(EncryptedPayloadBuilder, self).__init__(name)
 
         # XXX Set logger verbosity level here
-        self.logger = logs.getLogger(self.__class__.__name__)
+        self.logger = logs.get_logger(self.__class__.__name__)
 
         self.recipient_key_path = receiver_keypath
         self.recipient_key = None

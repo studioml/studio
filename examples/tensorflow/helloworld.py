@@ -9,7 +9,7 @@ x = tf.constant([1.0, 2.0])
 y = x * 2
 
 logging.basicConfig()
-logger = logging.getLogger('helloworld')
+logger = logging.get_logger('helloworld')
 logger.setLevel(10)
 
 while True:

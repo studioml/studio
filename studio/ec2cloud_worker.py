@@ -85,7 +85,7 @@ class EC2WorkerManager(object):
 
         self.region = self.client._client_config.region_name
 
-        self.logger = logs.getLogger('EC2WorkerManager')
+        self.logger = logs.get_logger('EC2WorkerManager')
         self.logger.setLevel(verbose)
         self.auth_cookie = auth_cookie
 

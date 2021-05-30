@@ -22,7 +22,7 @@ from studio.dependencies_policies.studio_dependencies_policy import StudioDepend
 from studio.util import logs, util
 
 def main(args=sys.argv[1:]):
-    logger = logs.getLogger('studio-runner')
+    logger = logs.get_logger('studio-runner')
     parser = argparse.ArgumentParser(
         description='Studio runner. \
                      Usage: studio run <runner_arguments> \

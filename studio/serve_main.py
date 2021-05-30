@@ -25,7 +25,7 @@ killtimer_duration = None
 def get_logger():
     global logger
     if not logger:
-        logger = logs.getLogger('studio-serve')
+        logger = logs.get_logger('studio-serve')
         logger.setLevel(logs.DEBUG)
     return logger
 

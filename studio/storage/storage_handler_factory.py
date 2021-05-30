@@ -12,7 +12,7 @@ _storage_factory = None
 
 class StorageHandlerFactory:
     def __init__(self):
-        self.logger = logs.getLogger(self.__class__.__name__)
+        self.logger = logs.get_logger(self.__class__.__name__)
         self.logger.setLevel(get_storage_verbose_level())
         self.handlers_cache = dict()
         self.cleanup_at_exit: bool = True

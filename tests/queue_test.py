@@ -119,7 +119,7 @@ class DistributedQueueTest(QueueTest):
         self.assertTrue(q.dequeue() is None)
 
     def test_two_receivers(self):
-        logger = logs.getLogger('test_two_receivers')
+        logger = logs.get_logger('test_two_receivers')
         logger.setLevel(10)
         q1 = self.get_queue()
         q1.clean()

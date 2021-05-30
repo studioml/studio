@@ -105,7 +105,7 @@ class GithubAuth(object):
         blocking=True,
         verbose=logs.DEBUG
     ):
-        self.logger = logs.getLogger(self.__class__.__name__)
+        self.logger = logs.get_logger(self.__class__.__name__)
         self.logger.setLevel(verbose)
 
         if isinstance(config, dict):
@@ -242,7 +242,7 @@ class FirebaseAuth(object):
             except OSError:
                 pass
 
-        self.logger = logs.getLogger(self.__class__.__name__)
+        self.logger = logs.get_logger(self.__class__.__name__)
         self.logger.setLevel(logs.DEBUG)
 
         self.firebase = pyrebase.initialize_app(config)

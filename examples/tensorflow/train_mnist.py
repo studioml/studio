@@ -48,7 +48,7 @@ saver = tf.train.Saver()
 sess.run(init_op)
 
 
-logger = logging.getLogger('train_mnist')
+logger = logging.get_logger('train_mnist')
 logger.setLevel(10)
 # Run training loop
 with sess.as_default():

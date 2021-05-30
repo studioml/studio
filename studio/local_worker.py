@@ -20,7 +20,7 @@ from studio.experiments.experiment import Experiment
 from studio.util.util import sixdecode, str2duration, retry,\
     parse_verbosity, check_for_kb_interrupt
 
-logs.getLogger('apscheduler.scheduler').setLevel(logs.ERROR)
+logs.get_logger('apscheduler.scheduler').setLevel(logs.ERROR)
 
 class LocalExecutor(object):
     """Runs job while capturing environment and logs results.
@@ -33,7 +33,7 @@ class LocalExecutor(object):
             self.config['database']['guest'] = True
 
         self.task_queue = queue
-        self.logger = logs.getLogger('LocalExecutor')
+        self.logger = logs.get_logger('LocalExecutor')
         self.logger.setLevel(model.parse_verbosity(self.config.get('verbose')))
         self.logger.debug("Config: ")
         self.logger.debug(self.config)
@@ -194,7 +194,7 @@ class LocalExecutor(object):
                     return p.returncode
 
 def allocate_resources(experiment, config=None, verbose=10):
-    logger = logs.getLogger('allocate_resources')
+    logger = logs.get_logger('allocate_resources')
     logger.setLevel(verbose)
     logger.info('Allocating resources {} for experiment {}'
                 .format(experiment.resources_needed, experiment.key))
@@ -301,7 +301,7 @@ def worker_loop(queue, parsed_args,
 
     fetch_artifacts = True
 
-    logger = logs.getLogger('worker_loop')
+    logger = logs.get_logger('worker_loop')
 
     hold_period = 4
     retval = 0

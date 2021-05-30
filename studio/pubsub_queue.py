@@ -16,7 +16,7 @@ class PubsubQueue(object):
             credentials = json.loads(f.read())
 
         project_name = credentials['project_id']
-        self.logger = logs.getLogger(self.__class__.__name__)
+        self.logger = logs.get_logger(self.__class__.__name__)
         if verbose is not None:
             self.logger.setLevel(parse_verbosity(verbose))
 

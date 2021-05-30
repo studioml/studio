@@ -36,7 +36,7 @@ def get_db_provider(config=None, blocking_auth=True):
     # Save this verbosity level as global for the whole experiment job:
     set_storage_verbose_level(verbose)
 
-    logger = logs.getLogger("get_db_provider")
+    logger = logs.get_logger("get_db_provider")
     logger.setLevel(verbose)
     logger.debug('Choosing db provider with config:')
     logger.debug(config)
@@ -88,7 +88,7 @@ def get_worker_manager(config, cloud=None, verbose=10):
         return None
 
     assert cloud in ['gcloud', 'gcspot', 'ec2', 'ec2spot']
-    logger = logs.getLogger('runner.get_worker_manager')
+    logger = logs.get_logger('runner.get_worker_manager')
     logger.setLevel(verbose)
 
     auth = get_auth(config['database']['authentication'])

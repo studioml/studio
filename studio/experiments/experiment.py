@@ -1,5 +1,3 @@
-import glob
-import os
 import uuid
 import sys
 import time
@@ -8,9 +6,10 @@ from studio.artifacts import artifacts_tracker
 from studio.artifacts.artifact import Artifact
 from studio.util.util import shquote, check_for_kb_interrupt
 from studio.dependencies_policies.dependencies_policy import DependencyPolicy
-from studio.dependencies_policies.studio_dependencies_policy import StudioDependencyPolicy
 
-class Experiment(object):
+# pylint: disable=too-many-instance-attributes
+# pylint: disable=too-many-arguments
+class Experiment:
     """Experiment information."""
 
     def __init__(self, key, filename, args, pythonenv,
@@ -22,19 +21,44 @@ class Experiment(object):
                  time_started=None,
                  time_last_checkpoint=None,
                  time_finished=None,
-                 info={},
+                 info=None,
                  git=None,
                  metric=None,
                  pythonver=None,
                  max_duration=None,
                  owner=None,
                  from_compl_service: bool = False):
+        if info is None:
+            info = {}
 
         self.key = key
-        self.args = []
-        self.filename = filename
+        self._build_args(filename, args)
         self.owner = owner if owner else None
         self.from_compl_service = from_compl_service
+
+        self.pythonenv = pythonenv
+        self.project = project
+        self.pythonver = pythonver
+        if self.pythonver is None:
+            self.pythonver = "{0}.{1}"\
+                .format(sys.version_info[0], sys.version_info[1])
+
+        self._build_artifacts(key, artifacts)
+
+        self.resources_needed = resources_needed
+        self.status = status
+        self.time_added = time_added
+        self.time_started = time_started
+        self.time_last_checkpoint = time_last_checkpoint
+        self.time_finished = time_finished
+        self.info = info
+        self.git = git
+        self.metric = metric
+        self.max_duration = max_duration
+
+    def _build_args(self, filename, args):
+        self.args = []
+        self.filename = filename
 
         if filename and '::' in filename:
             self.filename = '-m'
@@ -49,10 +73,7 @@ class Experiment(object):
 
         self.args = [shquote(a) for a in self.args]
 
-        self.pythonenv = pythonenv
-        self.project = project
-        self.pythonver = pythonver if pythonver else str(sys.version_info[0]) + '.' + str(sys.version_info[1])
-
+    def _build_artifacts(self, key, artifacts):
         try:
             model_dir = artifacts_tracker.get_artifact_cache('modeldir', key)
         except BaseException:
@@ -106,16 +127,6 @@ class Experiment(object):
         for tag, art in artifacts.items():
             self.artifacts[tag] = Artifact(tag, art)
 
-        self.resources_needed = resources_needed
-        self.status = status
-        self.time_added = time_added
-        self.time_started = time_started
-        self.time_last_checkpoint = time_last_checkpoint
-        self.time_finished = time_finished
-        self.info = info
-        self.git = git
-        self.metric = metric
-        self.max_duration = max_duration
 
     def to_dict(self):
         result = dict()
@@ -143,38 +154,22 @@ class Experiment(object):
         for art_name, art in self.artifacts.items():
             artifacts_dict[art_name] = art.to_dict()
         result['artifacts'] = artifacts_dict
-
         return result
-
-    def get_model(self, db):
-        modeldir = db.get_artifact(self.artifacts['modeldir'])
-        hdf5_files = [
-            (p, os.path.getmtime(p))
-            for p in
-            glob.glob(modeldir + '/*.hdf*') +
-            glob.glob(modeldir + '/*.h5')]
-        if any(hdf5_files):
-            # experiment type - keras
-            import keras
-            last_checkpoint = max(hdf5_files, key=lambda t: t[1])[0]
-            return keras.models.load_model(last_checkpoint)
-
-        if self.info.get('type') == 'tensorflow':
-            raise NotImplementedError
-
-        raise ValueError("Experiment type is unknown!")
 
 def create_experiment(
         filename,
         args,
         experiment_name=None,
         project=None,
-        artifacts={},
+        artifacts=None,
         resources_needed=None,
         metric=None,
         max_duration=None,
         dependency_policy: DependencyPolicy=None,
         from_compl_service: bool = False):
+
+    if artifacts is None:
+        artifacts = {}
 
     key = experiment_name if experiment_name else \
         str(int(time.time())) + "_" + str(uuid.uuid4())
@@ -188,7 +183,7 @@ def create_experiment(
         key=key,
         filename=filename,
         args=args,
-        pythonenv=[p for p in packages],
+        pythonenv=packages,
         project=project,
         artifacts=artifacts,
         resources_needed=resources_needed,
@@ -197,7 +192,10 @@ def create_experiment(
         from_compl_service=from_compl_service)
 
 
-def experiment_from_dict(data, info={}):
+def experiment_from_dict(data, info=None):
+    if info is None:
+        info = {}
+
     try:
         return Experiment(
             key=data['key'],
@@ -220,5 +218,5 @@ def experiment_from_dict(data, info={}):
             owner=data.get('owner'),
             from_compl_service=data.get('from_compl_service', False)
         )
-    except KeyError as e:
-        raise e
+    except KeyError as exc:
+        raise exc

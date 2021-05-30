@@ -16,9 +16,6 @@ class StudioDependencyPolicy(DependencyPolicy):
     to specific execution environment and required resources.
     """
 
-    def __init__(self):
-        super(DependencyPolicy, self).__init__()
-
     def generate(self, resources_needed):
         if freeze is None:
             raise ValueError(
@@ -54,4 +51,3 @@ class StudioDependencyPolicy(DependencyPolicy):
     def _needs_gpu(self, resources_needed):
         return resources_needed is not None and \
             int(resources_needed.get('gpus')) > 0
-

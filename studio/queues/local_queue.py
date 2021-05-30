@@ -19,15 +19,15 @@ class LocalQueue:
             self.path = self._get_queue_directory()
         else:
             self.path = path
-        self.logger = logs.getLogger(self.__class__.__name__)
+        self.logger = logs.get_logger(self.__class__.__name__)
         self.logger.setLevel(verbose)
         self.status_marker = os.path.join(self.path, 'is_active.queue')
         try:
-            with open(self.status_marker, "w") as sm:
-                pass
-        except IOError as error:
-            self.logger.error('FAILED to create {0} for LocalQueue. ABORTING.'
-                              .format(self.status_marker))
+            with open(self.status_marker, "w") as smark:
+                _ = smark
+        except IOError:
+            self.logger.error('FAILED to create %s for LocalQueue. ABORTING.',
+                              self.status_marker)
             sys.exit(-1)
 
     def _get_queue_status(self):
@@ -38,11 +38,11 @@ class LocalQueue:
         is_active = self.status_marker in files
         try:
             files.remove(self.status_marker)
-        except:
+        except BaseException:
             check_for_kb_interrupt()
             # Ignore possible exception:
             # we just want list of files without status marker
-            pass
+
         return is_active, files
 
     def _get_queue_directory(self):
@@ -66,23 +66,24 @@ class LocalQueue:
         return is_active
 
     def clean(self, timeout=0):
+        _ = timeout
         with _local_queue_lock:
             _, files = self._get_queue_status()
-            for f in files:
+            for one_file in files:
                 try:
-                    os.remove(f)
-                except:
+                    os.remove(one_file)
+                except BaseException:
                     check_for_kb_interrupt()
-                    pass
+
 
     def delete(self):
         self.clean()
         with _local_queue_lock:
             try:
                 os.remove(self.status_marker)
-            except:
+            except BaseException:
                 check_for_kb_interrupt()
-                pass
+
 
     def dequeue(self, acknowledge=True, timeout=0):
         sleep_in_seconds = 1
@@ -96,37 +97,33 @@ class LocalQueue:
                     first_file = min([(p, os.path.getmtime(p)) for p in files],
                                      key=lambda t: t[1])[0]
 
-                    with open(first_file, 'r') as f:
-                        data = f.read()
+                    with open(first_file, 'r') as f_in:
+                        data = f_in.read()
 
                     if acknowledge:
                         self.acknowledge(first_file)
                         return data, None
-                    else:
-                        return data, first_file
+                    return data, first_file
 
             if total_wait_time >= timeout:
                 return None
-            # self.logger.info(
-            #    ('No messages found, sleeping for {0} sec'
-            #      .format(sleep_in_seconds))
             time.sleep(sleep_in_seconds)
             total_wait_time += sleep_in_seconds
 
     def enqueue(self, data):
         with _local_queue_lock:
             filename = os.path.join(self.path, str(uuid.uuid4()))
-            with open(filename, 'w') as f:
-                f.write(data)
+            with open(filename, 'w') as f_out:
+                f_out.write(data)
 
     def acknowledge(self, key):
         try:
             os.remove(key)
         except BaseException:
             check_for_kb_interrupt()
-            pass
 
     def hold(self, key, minutes):
+        _ = minutes
         self.acknowledge(key)
 
     def get_name(self):
@@ -136,6 +133,7 @@ class LocalQueue:
         return self.path
 
     def shutdown(self, delete_queue=True):
+        _ = delete_queue
         self.delete()
 
 def get_local_queue_lock():
