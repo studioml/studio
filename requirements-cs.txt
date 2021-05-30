@@ -2,7 +2,6 @@ pip
 setuptools_scm
 
 configparser
-shlex
 
 requests
 
