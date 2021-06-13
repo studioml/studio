@@ -29,8 +29,12 @@ class LocalDbProvider(KeyValueProvider):
         file_name = os.path.join(self.db_root, key)
         if not os.path.exists(file_name):
             return None
-        with open(file_name) as infile:
-            result = json.load(infile)
+        try:
+            with open(file_name) as infile:
+                result = json.load(infile)
+        except BaseException as exc:
+            self.logger.error("FAILED to load file %s - %s", file_name, exc)
+            result = None
         return result
 
     def _delete(self, key, shallow=True):

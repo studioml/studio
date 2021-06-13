@@ -108,10 +108,10 @@ class CompletionServiceTest(unittest.TestCase):
                 tmpfilename = os.path.join(
                     tempfile.gettempdir(), rand_string(10))
                 download_file(v, tmpfilename)
-                retval[k] = filehash(tmpfilename, hashobj=hashlib.md5())
+                retval[k] = filehash(tmpfilename)
                 os.remove(tmpfilename)
             else:
-                retval[k] = filehash(v, hashobj=hashlib.md5())
+                retval[k] = filehash(v)
 
         return retval
 

@@ -168,14 +168,15 @@ class KeyValueProvider:
                   key, experiment_dict)
 
     def delete_experiment(self, experiment):
+        if experiment is None:
+            return
         if isinstance(experiment, str):
-            experiment_key = experiment
             try:
-                experiment = self.get_experiment(experiment)
+                experiment = self.get_experiment(experiment, getinfo=False)
                 experiment_key = experiment.key
             except BaseException:
                 check_for_kb_interrupt()
-                experiment = None
+                return
         else:
             experiment_key = experiment.key
 
