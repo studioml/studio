@@ -149,7 +149,7 @@ class Artifact:
             msg: str = \
                 ("Unable to get storage timestamp for {0}, storage is either " + \
                  "corrupted or has not finished uploading").format(self.key)
-            util.report_fatal(msg, self.logger)
+            self.logger.info(msg)
             return False
 
         timestamp_shift = self.storage_handler.get_timestamp_shift()
