@@ -249,8 +249,8 @@ class FirebaseAuth(object):
         self.user = {}
         self.use_email_auth = config.get('use_email_auth', False)
         if self.use_email_auth:
-            self.email = config.get('email')
-            self.password = config.get('password')
+            self.email = config.get('email', None)
+            self.password = config.get('password', None)
             if not self.password or not self.email:
                 self.email = input(
                     'Firebase token is not found or expired! ' +

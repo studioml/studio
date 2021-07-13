@@ -17,7 +17,7 @@ class LocalStorageHandler(StorageHandler):
         self.logger.setLevel(get_storage_verbose_level())
 
         if compression is None:
-            compression = config.get('compression')
+            compression = config.get('compression', None)
 
         self.endpoint = config.get('endpoint', '~')
         self.endpoint = os.path.realpath(os.path.expanduser(self.endpoint))

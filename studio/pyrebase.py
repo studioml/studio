@@ -53,13 +53,13 @@ class Firebase:
     """ Firebase Interface """
 
     def __init__(self, config):
-        self.api_key = config.get("apiKey")
-        self.auth_domain = config.get("authDomain")
-        self.database_url = config.get("databaseURL")
-        self.storage_bucket = config.get("storageBucket")
+        self.api_key = config.get("apiKey", None)
+        self.auth_domain = config.get("authDomain", None)
+        self.database_url = config.get("databaseURL", None)
+        self.storage_bucket = config.get("storageBucket", None)
         self.credentials = None
         self.requests = requests.Session()
-        if config.get("serviceAccount"):
+        if config.get("serviceAccount", None):
             scopes = [
                 'https://www.googleapis.com/auth/firebase.database',
                 'https://www.googleapis.com/auth/userinfo.email',

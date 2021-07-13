@@ -22,7 +22,7 @@ class HTTPProvider(object):
             blocking_auth=True,
             compression=None):
         # TODO: implement connection
-        self.url = config.get('serverUrl')
+        self.url = config.get('serverUrl', None)
         self.verbose = get_storage_verbose_level()
         self.logger = logs.get_logger('HTTPProvider')
         self.logger.setLevel(self.verbose)
@@ -36,16 +36,16 @@ class HTTPProvider(object):
             compression=compression)
 
         self.auth = None
-        guest = config.get('guest')
+        guest = config.get('guest', None)
         if not guest and 'serviceAccount' not in config.keys():
             self.auth = get_auth(
-                config.get('authentication'),
+                config.get('authentication', None),
                 blocking_auth
             )
 
         self.compression = compression
         if self.compression is None:
-            self.compression = config.get('compression')
+            self.compression = config.get('compression', None)
 
     def add_experiment(self, experiment, userid=None,
                        compression=None):
