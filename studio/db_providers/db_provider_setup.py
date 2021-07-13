@@ -73,7 +73,7 @@ def get_db_provider(config=None, blocking_auth=True):
 
     if config is None:
         config = get_config()
-    verbose = parse_verbosity(config.get('verbose'))
+    verbose = parse_verbosity(config.get('verbose', None))
 
     # Save this verbosity level as global for the whole experiment job:
     set_storage_verbose_level(verbose)

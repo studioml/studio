@@ -579,7 +579,7 @@ def main(args=sys.argv[1:]):
     _config = config
     _db_provider = model.get_db_provider(_config)
 
-    getlogger().setLevel(parse_verbosity(config.get('verbose')))
+    getlogger().setLevel(parse_verbosity(config.get('verbose', None)))
 
     global _save_auth_cookie
     _save_auth_cookie = True

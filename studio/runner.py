@@ -722,7 +722,7 @@ def _parse_hardware(runner_args, config={}):
     parse_list = ['gpus', 'cpus', 'ram', 'hdd', 'gpuMem']
     for key in parse_list:
         from_args = runner_args.__dict__.get(key)
-        from_config = config.get(key)
+        from_config = config.get(key, None)
         if from_args is not None:
             resources_needed[key] = from_args
         elif from_config is not None:
