@@ -24,7 +24,6 @@ class LocalQueue:
         else:
             self.path = path
         self.path = os.path.join(self.path, name)
-        rm_rf(self.path)
         os.makedirs(self.path, exist_ok=True)
 
         # Local queue is considered active, iff its directory exists.
@@ -49,7 +48,10 @@ class LocalQueue:
         return False, list()
 
     def _get_queue_directory(self):
-        return self.path
+        queue_dir: str = os.path.join(
+            get_studio_home(),
+            'queue')
+        return queue_dir
 
     def has_next(self):
         is_active, files = self._get_queue_status()
