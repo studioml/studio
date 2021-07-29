@@ -21,12 +21,12 @@ class FirebaseStorageHandler(StorageHandler):
         self.logger = logs.get_logger(self.__class__.__name__)
         self.logger.setLevel(verbose)
 
-        guest = db_config.get('guest')
+        guest = db_config.get('guest', None)
 
         self.app = pyrebase.initialize_app(db_config)
 
         if compression is None:
-            compression = db_config.get('compression')
+            compression = db_config.get('compression', None)
 
         self.auth = None
         if not guest and 'serviceAccount' not in db_config.keys():

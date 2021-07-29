@@ -34,7 +34,7 @@ class LocalExecutor(object):
 
         self.task_queue = queue
         self.logger = logs.get_logger('LocalExecutor')
-        self.logger.setLevel(model.parse_verbosity(self.config.get('verbose')))
+        self.logger.setLevel(model.parse_verbosity(self.config.get('verbose', None)))
         self.logger.debug("Config: ")
         self.logger.debug(self.config)
 
@@ -320,7 +320,7 @@ def worker_loop(queue, parsed_args,
         if verbose:
             config['verbose'] = verbose
         else:
-            verbose = model.parse_verbosity(config.get('verbose'))
+            verbose = model.parse_verbosity(config.get('verbose', None))
 
         logger.setLevel(verbose)
 
@@ -342,12 +342,12 @@ def worker_loop(queue, parsed_args,
                 sleep_time=10,
                 logger=logger)
 
-            if config.get('experimentLifetime') and \
+            if config.get('experimentLifetime', None) and \
                 int(str2duration(config['experimentLifetime'])
                     .total_seconds()) + experiment.time_added < time.time():
                 logger.info(
                     'Experiment expired (max lifetime of {0} was exceeded)'
-                    .format(config.get('experimentLifetime'))
+                    .format(config.get('experimentLifetime', None))
                 )
                 queue.acknowledge(ack_key)
                 continue
