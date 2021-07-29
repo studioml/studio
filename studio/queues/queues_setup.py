@@ -18,7 +18,7 @@ def get_queue(
         elif cloud in ['ec2', 'ec2spot']:
             queue_name = 'sqs_' + str(uuid.uuid4())
         else:
-            queue_name = 'local'
+            queue_name = 'local_' + str(uuid.uuid4())
 
     if queue_name.startswith('ec2') or \
        queue_name.startswith('sqs'):
@@ -30,8 +30,8 @@ def get_queue(
             config=config,
             close_after=close_after,
             logger=logger)
-    if queue_name == 'local':
-        return LocalQueue(verbose=verbose)
+    if queue_name.startswith('local'):
+        return LocalQueue(queue_name, logger=logger)
     return None
 
 def shutdown_queue(queue, logger=None, delete_queue=True):
