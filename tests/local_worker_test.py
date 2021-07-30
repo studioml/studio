@@ -375,7 +375,7 @@ def stubtest_worker(
         test_script,
         expected_output,
         script_args=[],
-        queue=LocalQueue(),
+        queue=LocalQueue('test'),
         wait_for_experiment=True,
         delete_when_done=True,
         test_output=True,

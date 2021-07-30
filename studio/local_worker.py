@@ -268,7 +268,7 @@ def main(args=sys.argv):
     #     with open(parsed_args.config) as f:
     #         worker_config = json.load(f)
 
-    queue = LocalQueue(verbose=verbose)
+    queue = LocalQueue('local')
     # queue = glob.glob(fs_tracker.get_queue_directory() + "/*")
     # wait_for_messages(queue, parsed_args.timeout)
     returncode = worker_loop(queue, parsed_args, timeout=parsed_args.timeout)

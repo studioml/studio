@@ -6,7 +6,7 @@ import yaml
 
 from studio.pubsub_queue import PubsubQueue
 from studio.queues.sqs_queue import SQSQueue
-from studio.queues.local_queue import LocalQueue, get_local_queue_lock
+from studio.queues.local_queue import LocalQueue
 
 from studio.extra_util import has_aws_credentials
 from studio import model
@@ -91,10 +91,10 @@ class QueueTest(object):
 
 class LocalQueueTest(QueueTest, unittest.TestCase):
     def get_queue(self):
-        return LocalQueue()
+        return LocalQueue('test')
 
     def get_lock(self):
-        return get_local_queue_lock()
+        return DummyContextManager()
 
 
 class DistributedQueueTest(QueueTest):
