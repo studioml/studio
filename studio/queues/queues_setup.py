@@ -12,6 +12,7 @@ def get_queue(
         logger=None,
         close_after=None,
         verbose=10):
+    _ = verbose
     if queue_name is None:
         if cloud in ['gcloud', 'gcspot']:
             queue_name = 'pubsub_' + str(uuid.uuid4())
