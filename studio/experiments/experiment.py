@@ -74,53 +74,52 @@ class Experiment:
         self.args = [shquote(a) for a in self.args]
 
     def _build_artifacts(self, key, artifacts):
-        try:
-            model_dir = artifacts_tracker.get_artifact_cache('modeldir', key)
-        except BaseException:
-            check_for_kb_interrupt()
-            model_dir = None
-
-        std_artifacts_dict = {
-            'workspace': {
-                'mutable': False,
-                'unpack': True
-            },
-            'modeldir': {
-                'local': model_dir,
-                'mutable': True,
-                'unpack': True
-            },
-            'retval': {
-                'local': artifacts_tracker.get_artifact_cache('retval', key),
-                'mutable': True,
-                'unpack': True
-            },
-            'output': {
-                'local': artifacts_tracker.get_artifact_cache('output', key),
-                'mutable': True,
-                'unpack': True
-            },
-            'tb': {
-                'local': artifacts_tracker.get_artifact_cache('tb', key),
-                'mutable': True,
-                'unpack': True
-            },
-            '_metrics': {
-                'local': artifacts_tracker.get_artifact_cache('_metrics', key),
-                'mutable': True,
-                'unpack': True
-            },
-            '_metadata': {
-                'local': artifacts_tracker.get_artifact_cache('_metadata', key),
-                'mutable': True,
-                'unpack': True
-            }
-        }
+        # try:
+        #     model_dir = artifacts_tracker.get_artifact_cache('modeldir', key)
+        # except BaseException:
+        #     check_for_kb_interrupt()
+        #     model_dir = None
+        #
+        # std_artifacts_dict = {
+        #     'workspace': {
+        #         'mutable': False,
+        #         'unpack': True
+        #     },
+        #     'modeldir': {
+        #         'local': model_dir,
+        #         'mutable': True,
+        #         'unpack': True
+        #     },
+        #     'retval': {
+        #         'local': artifacts_tracker.get_artifact_cache('retval', key),
+        #         'mutable': True,
+        #         'unpack': True
+        #     },
+        #     'output': {
+        #         'local': artifacts_tracker.get_artifact_cache('output', key),
+        #         'mutable': True,
+        #         'unpack': True
+        #     },
+        #     'tb': {
+        #         'local': artifacts_tracker.get_artifact_cache('tb', key),
+        #         'mutable': True,
+        #         'unpack': True
+        #     },
+        #     '_metrics': {
+        #         'local': artifacts_tracker.get_artifact_cache('_metrics', key),
+        #         'mutable': True,
+        #         'unpack': True
+        #     },
+        #     '_metadata': {
+        #         'local': artifacts_tracker.get_artifact_cache('_metadata', key),
+        #         'mutable': True,
+        #         'unpack': True
+        #     }
+        # }
         if artifacts is not None:
             for tag, art_dict in artifacts.items():
-                art_update = std_artifacts_dict.get(tag, None)
-                if art_update is not None:
-                    art_dict.update(art_update)
+                if art_dict.get('mutable', False):
+                    art_dict['local'] = artifacts_tracker.get_artifact_cache(tag, key)
 
         # Build table of experiment artifacts:
         self.artifacts = dict()
