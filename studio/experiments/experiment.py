@@ -4,8 +4,9 @@ import time
 
 from studio.artifacts import artifacts_tracker
 from studio.artifacts.artifact import Artifact
-from studio.util.util import shquote, check_for_kb_interrupt
+from studio.util.util import shquote
 from studio.dependencies_policies.dependencies_policy import DependencyPolicy
+
 
 # pylint: disable=too-many-instance-attributes
 # pylint: disable=too-many-arguments
@@ -84,7 +85,6 @@ class Experiment:
         for tag, art in artifacts.items():
             self.artifacts[tag] = Artifact(tag, art)
 
-
     def to_dict(self):
         result = dict()
         result['key'] = self.key
@@ -113,6 +113,7 @@ class Experiment:
         result['artifacts'] = artifacts_dict
         return result
 
+
 def create_experiment(
         filename,
         args,
@@ -122,7 +123,7 @@ def create_experiment(
         resources_needed=None,
         metric=None,
         max_duration=None,
-        dependency_policy: DependencyPolicy=None,
+        dependency_policy: DependencyPolicy = None,
         from_compl_service: bool = False):
 
     if artifacts is None:

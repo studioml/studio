@@ -10,6 +10,7 @@ except ImportError:
 
 from studio.dependencies_policies.dependencies_policy import DependencyPolicy
 
+
 class StudioDependencyPolicy(DependencyPolicy):
     """
     StudioML policy for adjusting experiment dependencies

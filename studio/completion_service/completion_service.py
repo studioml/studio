@@ -11,16 +11,23 @@ from studio import experiment_submitter, model, fs_tracker, logs
 from studio.util import rsync_cp, parse_verbosity
 from studio.experiment import create_experiment
 
+# FYI: This is dangerous as it does not allow the values
+# in the configuration file to be loaded unless they are
+# in this default block.  It is also case sensitive so
+# can really trip things up.
 DEFAULT_RESOURCES_NEEDED = {
     'cpus': 2,
     'ram': '3g',
     'hdd': '10g',
-    'gpus': 0
+    'gpus': 0,
+    'gpuMem': 0,
+    'gpuCount': 0
 }
 
 RESUMABLE = False
 CLEAN_QUEUE = True
 QUEUE_UPSCALING = False
+
 
 class CompletionService:
 

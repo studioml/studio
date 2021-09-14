@@ -71,6 +71,11 @@ def main(args=sys.argv[1:]):
         default=None)
 
     parser.add_argument(
+        '--gpuCount',
+        help='Number of GPU cards needed to run the experiment',
+        default=None)
+
+    parser.add_argument(
         '--hdd',
         help='Amount of hard drive space needed to run the experiment' +
              ' (used to configure cloud instance), ex: 10G, 10GB',
@@ -712,14 +717,16 @@ def _parse_external_artifacts(art_list, db):
         }
     return retval
 
+
 def _setup_artifacts_creds(artifacts, storage_creds):
     for tag, art_dict in artifacts.items():
         if 'local' in art_dict.keys():
             art_dict[KEY_CREDENTIALS] = copy.deepcopy(storage_creds)
 
+
 def _parse_hardware(runner_args, config={}):
     resources_needed = {}
-    parse_list = ['gpus', 'cpus', 'ram', 'hdd', 'gpuMem']
+    parse_list = ['gpus', 'cpus', 'ram', 'hdd', 'gpuMem', 'gpuCount']
     for key in parse_list:
         from_args = runner_args.__dict__.get(key)
         from_config = config.get(key, None)
